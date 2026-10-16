@@ -42,6 +42,10 @@ export async function GET(req: Request): Promise<Response> {
     });
   } catch (err) {
     console.error('GET /api/progress error', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('não configurada')) {
+      return json({ error: msg }, 500);
+    }
     return json({ error: 'Erro ao buscar progresso' }, 500);
   }
 }
@@ -87,6 +91,10 @@ export async function POST(req: Request): Promise<Response> {
     return json({ ok: true });
   } catch (err) {
     console.error('POST /api/progress error', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('não configurada')) {
+      return json({ error: msg }, 500);
+    }
     return json({ error: 'Erro ao salvar progresso' }, 500);
   }
 }

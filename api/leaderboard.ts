@@ -22,6 +22,10 @@ export async function GET(): Promise<Response> {
     return json({ entries });
   } catch (err) {
     console.error('leaderboard GET error', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('não configurada')) {
+      return json({ error: msg }, 500);
+    }
     return json({ error: 'Erro ao carregar o ranking.' }, 500);
   }
 }
@@ -59,6 +63,10 @@ export async function POST(req: Request): Promise<Response> {
     return json({ ok: true });
   } catch (err) {
     console.error('leaderboard POST error', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('não configurada')) {
+      return json({ error: msg }, 500);
+    }
     return json({ error: 'Erro ao registrar pontuação.' }, 500);
   }
 }

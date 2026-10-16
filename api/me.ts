@@ -11,6 +11,10 @@ export async function GET(req: Request): Promise<Response> {
     return json({ user: rows[0] });
   } catch (err) {
     console.error('me error', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('não configurada')) {
+      return json({ error: msg }, 500);
+    }
     return json({ error: 'Erro interno.' }, 500);
   }
 }

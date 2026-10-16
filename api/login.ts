@@ -19,6 +19,10 @@ export async function POST(req: Request): Promise<Response> {
     return json({ token: createToken(row.id, row.username), user: { id: row.id, username: row.username } });
   } catch (err) {
     console.error('login error', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('não configurada')) {
+      return json({ error: msg }, 500);
+    }
     return json({ error: 'Erro interno ao entrar.' }, 500);
   }
 }

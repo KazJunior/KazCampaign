@@ -17,6 +17,10 @@ export async function POST(req: Request): Promise<Response> {
       return json({ error: 'Este nome de usuário já está em uso.' }, 409);
     }
     console.error('register error', err);
+    const msg = err instanceof Error ? err.message : '';
+    if (msg.includes('não configurada')) {
+      return json({ error: msg }, 500);
+    }
     return json({ error: 'Erro interno ao criar conta.' }, 500);
   }
 }
