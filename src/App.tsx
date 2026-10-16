@@ -542,7 +542,7 @@ export function App() {
     if (skill && skill.targetType === 'self') {
       soundManager.playHeal();
       if (boardRef.current) {
-        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing');
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', 0, skill);
       }
       const effect = skill.statusEffect;
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
@@ -577,7 +577,7 @@ export function App() {
     else soundManager.playPhysicalAttack();
 
     if (boardRef.current) {
-      await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius);
+      await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius, skill);
     }
 
     const aoeRadius = skill?.aoeRadius || 0;
@@ -724,7 +724,7 @@ export function App() {
             else soundManager.playPhysicalAttack();
 
             if (boardRef.current) {
-              await boardRef.current.playAttackAnimation(freshAttacker.id, freshTarget.id, dmgType, skill?.aoeRadius);
+              await boardRef.current.playAttackAnimation(freshAttacker.id, freshTarget.id, dmgType, skill?.aoeRadius, skill);
             }
 
             const aoeRad = skill?.aoeRadius || 0;
