@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="shield" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#2e1065"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <!-- Espadas cruzadas -->
+  <g stroke="url(#gold)" stroke-width="3.5" stroke-linecap="round">
+    <line x1="8" y1="8" x2="56" y2="56"/>
+    <line x1="56" y1="8" x2="8" y2="56"/>
+  </g>
+  <!-- Escudo -->
+  <path d="M32 6 L54 14 V30 C54 44 44 54 32 59 C20 54 10 44 10 30 V14 Z"
+        fill="url(#shield)" stroke="url(#gold)" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Letra K -->
+  <path d="M24 19 V46 M24 33 L40 19 M28 30 L41 46"
+        fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

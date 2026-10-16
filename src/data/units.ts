@@ -181,6 +181,54 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
   },
 };
 
+export const INITIAL_CLASSES: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
+
+export interface ClassUnlockInfo {
+  requiredLevel: number;
+  bossName: string;
+  isBoss: boolean; // true = Boss, false = Mini Boss
+  description: string;
+}
+
+export const CLASS_UNLOCK_CONDITIONS: Record<string, ClassUnlockInfo> = {
+  assassino: {
+    requiredLevel: 5,
+    bossName: 'Devorador das Profundezas (Fase 5)',
+    isBoss: false,
+    description: 'Derrote o Mini Boss Devorador na Fase 5 para desbloquear o Assassino.',
+  },
+  cavaleiro_arcano: {
+    requiredLevel: 10,
+    bossName: 'Astaroth, Soberano do Abismo (Fase 10)',
+    isBoss: true,
+    description: 'Derrote o Boss Poderoso Astaroth na Fase 10 para desbloquear o Cavaleiro Arcano.',
+  },
+  necromante: {
+    requiredLevel: 15,
+    bossName: 'Arauto dos Espectros (Fase 15)',
+    isBoss: false,
+    description: 'Derrote o Mini Boss Arauto dos Espectros na Fase 15 para desbloquear o Necromante.',
+  },
+  engenheiro: {
+    requiredLevel: 20,
+    bossName: 'Vulcanus, Titã das Forjas (Fase 20)',
+    isBoss: true,
+    description: 'Derrote o Boss Poderoso Vulcanus na Fase 20 para desbloquear o Engenheiro.',
+  },
+  mago_runico: {
+    requiredLevel: 25,
+    bossName: 'Arquimago das Runas (Fase 25)',
+    isBoss: false,
+    description: 'Derrote o Mini Boss Arquimago das Runas na Fase 25 para desbloquear o Mago Rúnico.',
+  },
+  berserker: {
+    requiredLevel: 30,
+    bossName: 'Valgar, o Carniceiro Imortal (Fase 30)',
+    isBoss: true,
+    description: 'Derrote o Boss Poderoso Valgar na Fase 30 para desbloquear o Berserker.',
+  },
+};
+
 export function createPlayerUnit(
   className: keyof typeof CLASS_DEFINITIONS,
   id: string,
@@ -191,13 +239,17 @@ export function createPlayerUnit(
   bonusHp = 0,
   bonusAtk = 0,
   bonusDef = 0,
+  bonusMag = 0,
+  bonusRes = 0,
   learnedSkillIds: string[] = []
 ): Unit {
   const def = CLASS_DEFINITIONS[className];
   const hpBonus = (level - 1) * 12 + bonusHp;
   const maxHp = def.maxHp + hpBonus;
   const atk = def.atk + (level - 1) * 3 + bonusAtk;
+  const mag = def.mag + (level - 1) * 3 + bonusMag;
   const unitDef = def.def + (level - 1) * 2 + bonusDef;
+  const res = def.res + (level - 1) * 1 + bonusRes;
 
   // Build active skill list from baseSkill + learnedSkillIds
   const skillListIds = Array.from(new Set([def.baseSkillId, ...learnedSkillIds]));
@@ -217,9 +269,9 @@ export function createPlayerUnit(
     maxHp,
     currentHp: maxHp,
     atk,
-    mag: def.mag + (level - 1) * 3,
+    mag,
     def: unitDef,
-    res: def.res + (level - 1) * 1,
+    res,
     mov: def.mov,
     range: def.range,
     x,

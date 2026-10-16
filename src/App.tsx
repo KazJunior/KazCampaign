@@ -1,17 +1,40 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import type { BattlePhase, DamagePreview, FloatingNumber, LevelConfig, PlayerProgress, Point, SelectedAction, Skill, TileData, Unit } from './types/game';
+import type {
+  ActiveAdventure,
+  AdventureRecord,
+  BattlePhase,
+  DamagePreview,
+  FloatingNumber,
+  LevelConfig,
+  PlayerProgress,
+  Point,
+  SelectedAction,
+  Skill,
+  StatType,
+  TileData,
+  Unit,
+  UnitProgression,
+} from './types/game';
 import { LEVELS } from './data/levels';
-import { createPlayerUnit } from './data/units';
+import { createPlayerUnit, CLASS_UNLOCK_CONDITIONS } from './data/units';
 import { createMonsterUnit } from './data/monsters';
-import { loadAudioSettings, loadPlayerProgress, resetPlayerProgress, saveAudioSettings, savePlayerProgress } from './utils/storage';
+import {
+  createInitialUnitsState,
+  loadAudioSettings,
+  loadPlayerProgress,
+  resetPlayerProgress,
+  saveAudioSettings,
+  savePlayerProgress,
+} from './utils/storage';
 import { soundManager } from './utils/audio';
 import { getAttackableTiles, getAoETiles, getReachableTiles } from './utils/pathfinding';
-import { getDamagePreview, rollActualDamage } from './utils/damage';
+import { rollActualDamage } from './utils/damage';
 import { decideMonsterAction } from './ai/monsterAI';
 import { BoardRenderer3D } from './game/BoardRenderer3D';
 import type { BoardRenderer3DHandle } from './game/BoardRenderer3D';
 import { TopBar } from './components/TopBar';
 import { SidePanel } from './components/SidePanel';
+import { SkillsPanel } from './components/SkillsPanel';
 import { ActionPreviewModal } from './components/ActionPreviewModal';
 import { DeploymentBanner } from './components/DeploymentBanner';
 import { ObjectivesModal } from './components/ObjectivesModal';
@@ -21,7 +44,16 @@ import { VictoryDefeatModal } from './components/VictoryDefeatModal';
 import { LevelSelect } from './components/LevelSelect';
 import { PartySelectionModal } from './components/PartySelectionModal';
 import { SkillChoiceModal } from './components/SkillChoiceModal';
+import { StatChoiceModal } from './components/StatChoiceModal';
+import { ClassUnlockModal } from './components/ClassUnlockModal';
 import { BossIntroBanner } from './components/BossIntroBanner';
+import { AuthScreen } from './components/AuthScreen';
+import { LeaderboardModal } from './components/LeaderboardModal';
+import { BestiaryModal } from './components/BestiaryModal';
+import { AdventureHistoryModal } from './components/AdventureHistoryModal';
+import { fetchCurrentUser, logout, submitScore } from './utils/api';
+import type { AuthUser } from './utils/api';
+import { LogOut, Trophy, User as UserIcon, Loader2 } from 'lucide-react';
 
 export function App() {
   const boardRef = useRef<BoardRenderer3DHandle>(null);
@@ -29,6 +61,29 @@ export function App() {
   const [currentView, setCurrentView] = useState<'level_select' | 'party_select' | 'battle'>('level_select');
   const [progress, setProgress] = useState<PlayerProgress>(loadPlayerProgress());
   const [audioSettings, setAudioSettings] = useState(loadAudioSettings());
+
+  // Autenticação e ranking
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [showBestiary, setShowBestiary] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  const authUserRef = useRef<AuthUser | null>(null);
+  authUserRef.current = authUser;
+
+  useEffect(() => {
+    fetchCurrentUser().then((user) => {
+      setAuthUser(user);
+      setAuthChecked(true);
+    });
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setAuthUser(null);
+    setCurrentView('level_select');
+  };
 
   const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(null);
   const [grid, setGrid] = useState<TileData[][]>([]);
@@ -48,7 +103,9 @@ export function App() {
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [pendingStatChoices, setPendingStatChoices] = useState<{ unit: Unit; newLevel: number }[]>([]);
   const [pendingSkillChoices, setPendingSkillChoices] = useState<Unit[]>([]);
+  const [pendingUnlockClasses, setPendingUnlockClasses] = useState<string[]>([]);
   const [activeBossBanner, setActiveBossBanner] = useState<{ name: string; subtitle: string; phase?: number } | null>(null);
 
   const [victorySummary, setVictorySummary] = useState<{
@@ -69,13 +126,25 @@ export function App() {
   const selectedUnit = units.find((u) => u.id === selectedUnitId) || null;
   const bossUnit = units.find((u) => u.isBoss || u.isMiniBoss) || null;
 
-  const startLevel = (levelId: number) => {
+  // Start or resume a specific level within an adventure run
+  const startLevel = (levelId: number, customUnitsState?: Record<string, UnitProgression>) => {
     const lvlConfig = LEVELS.find((l) => l.id === levelId) || LEVELS[0];
     setCurrentLevel(lvlConfig);
 
+    // Auto-discover monsters for Bestiary
+    const enemyMonsterTypeIds = lvlConfig.enemySpawns.map((s) => s.monsterTypeId);
+    const prevDiscovered = progress.discoveredMonsterIds || [];
+    const mergedDiscovered = Array.from(new Set([...prevDiscovered, ...enemyMonsterTypeIds]));
+    if (mergedDiscovered.length !== prevDiscovered.length) {
+      const updatedP = { ...progress, discoveredMonsterIds: mergedDiscovered };
+      setProgress(updatedP);
+      savePlayerProgress(updatedP);
+    }
+
     const tileGrid: TileData[][] = lvlConfig.grid.map((row, y) =>
       row.map((cell, x) => ({
-        x, y,
+        x,
+        y,
         terrain: cell.terrain,
         obstacle: cell.obstacle,
         isWalkable: cell.obstacle === 'none',
@@ -84,19 +153,36 @@ export function App() {
     );
     setGrid(tileGrid);
 
+    const effectiveUnitsState =
+      customUnitsState || progress.activeAdventure?.unitsState || progress.unitsState;
+
     const playerUnits: Unit[] = progress.selectedPartyClasses.map((cKey, idx) => {
-      const uState = progress.unitsState[cKey];
+      const uState = effectiveUnitsState[cKey];
       const spawnPt = lvlConfig.deploymentZone[idx] || { x: 3 + idx, y: 6 };
       return createPlayerUnit(
-        cKey as any, `player_${cKey}`, spawnPt.x, spawnPt.y,
-        uState ? uState.level : 1, uState ? uState.xp : 0,
-        uState ? uState.bonusHp : 0, uState ? uState.bonusAtk : 0,
-        uState ? uState.bonusDef : 0, uState ? uState.learnedSkillIds : []
+        cKey as any,
+        `player_${cKey}`,
+        spawnPt.x,
+        spawnPt.y,
+        uState ? uState.level : 1,
+        uState ? uState.xp : 0,
+        uState ? uState.bonusHp : 0,
+        uState ? uState.bonusAtk : 0,
+        uState ? uState.bonusDef : 0,
+        uState ? uState.bonusMag || 0 : 0,
+        uState ? uState.bonusRes || 0 : 0,
+        uState ? uState.learnedSkillIds : []
       );
     });
 
     const enemyUnits: Unit[] = lvlConfig.enemySpawns.map((spawn, idx) =>
-      createMonsterUnit(spawn.monsterTypeId as any, `enemy_${spawn.monsterTypeId}_${idx}`, spawn.x, spawn.y, spawn.levelOffset || 0)
+      createMonsterUnit(
+        spawn.monsterTypeId as any,
+        `enemy_${spawn.monsterTypeId}_${idx}`,
+        spawn.x,
+        spawn.y,
+        spawn.levelOffset || 0
+      )
     );
 
     setUnits([...playerUnits, ...enemyUnits]);
@@ -111,12 +197,79 @@ export function App() {
     setIsAnimatingAction(false);
     setCurrentView('battle');
 
-    if (lvlConfig.hasMiniBoss) {
-      setActiveBossBanner({ name: 'Devorador das Profundezas', subtitle: 'MINI BOSS (FASE 5) — Criatura Abissal Colossal', phase: 1 });
-    } else if (lvlConfig.hasFinalBoss) {
-      setActiveBossBanner({ name: 'Astaroth, Soberano do Abismo', subtitle: 'BOSS FINAL (FASE 10) — Soberano do Abismo em 3 Fases', phase: 1 });
+    const bossFound = enemyUnits.find((u) => u.isBoss || u.isMiniBoss);
+    if (bossFound) {
+      setActiveBossBanner({
+        name: bossFound.name,
+        subtitle: bossFound.isBoss
+          ? `BOSS PODEROSO (FASE ${lvlConfig.id}) — ${lvlConfig.subtitle}`
+          : `MINI BOSS (FASE ${lvlConfig.id}) — ${lvlConfig.subtitle}`,
+        phase: 1,
+      });
     }
     soundManager.playSelect();
+  };
+
+  // Start a fresh Adventure Run from Level 1
+  const handleStartNewAdventure = () => {
+    const initialUnits = createInitialUnitsState();
+    const newActiveAdv: ActiveAdventure = {
+      currentLevelId: 1,
+      startedAt: new Date().toISOString(),
+      unitsState: initialUnits,
+      partyClasses: progress.selectedPartyClasses,
+      goldEarnedInRun: 0,
+    };
+    const updated: PlayerProgress = {
+      ...progress,
+      activeAdventure: newActiveAdv,
+      unitsState: initialUnits,
+    };
+    setProgress(updated);
+    savePlayerProgress(updated);
+    startLevel(1, initialUnits);
+  };
+
+  // Continue existing active adventure
+  const handleContinueAdventure = () => {
+    if (progress.activeAdventure) {
+      startLevel(progress.activeAdventure.currentLevelId, progress.activeAdventure.unitsState);
+    } else {
+      handleStartNewAdventure();
+    }
+  };
+
+  // Forfeit/Abandon current adventure
+  const handleAbandonAdventure = () => {
+    if (!progress.activeAdventure) return;
+    const currentAdv = progress.activeAdventure;
+    const record: AdventureRecord = {
+      id: `adv_${Date.now()}`,
+      startedAt: currentAdv.startedAt,
+      endedAt: new Date().toISOString(),
+      farthestLevel: currentAdv.currentLevelId,
+      farthestLevelName:
+        LEVELS.find((l) => l.id === currentAdv.currentLevelId)?.name ||
+        `Fase ${currentAdv.currentLevelId}`,
+      result: 'defeat',
+      partyClasses: currentAdv.partyClasses,
+      goldEarned: currentAdv.goldEarnedInRun,
+    };
+    const updatedHistory = [record, ...(progress.adventureHistory || [])].slice(0, 10);
+    const initialUnits = createInitialUnitsState();
+    const updated: PlayerProgress = {
+      ...progress,
+      activeAdventure: null,
+      unitsState: initialUnits,
+      adventureHistory: updatedHistory,
+    };
+    setProgress(updated);
+    savePlayerProgress(updated);
+    if (authUserRef.current) {
+      submitScore(currentAdv.currentLevelId, currentAdv.partyClasses).catch((err) =>
+        console.error('Falha ao registrar no ranking:', err)
+      );
+    }
   };
 
   const handleConfirmParty = (selectedPartyClasses: string[]) => {
@@ -168,37 +321,92 @@ export function App() {
   }, [selectedUnit, phase, selectedAction, activeSkill, grid, isAnimatingAction]);
 
   const aoeTiles: Point[] = React.useMemo(() => {
-    if (!activeSkill || !hoveredTile || activeSkill.aoeRadius === 0) return [];
-    return getAoETiles(hoveredTile, activeSkill.aoeRadius, grid[0].length, grid.length);
-  }, [activeSkill, hoveredTile, grid]);
+    if (!activeSkill || activeSkill.aoeRadius === 0) return [];
+    const targetUnit = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
+    const center = targetUnit ? { x: targetUnit.x, y: targetUnit.y } : hoveredTile;
+    if (!center) return [];
+    return getAoETiles(center, activeSkill.aoeRadius, grid[0].length, grid.length);
+  }, [activeSkill, hoveredTile, targetUnitId, units, grid]);
 
-  // --- ANIMATED Tile Click Handler ---
+  // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
+  const handleDefeat = useCallback(() => {
+    setPhase('defeat');
+    soundManager.playDefeat();
+
+    const stageReached = currentLevel ? currentLevel.id : 1;
+    const runGold = progress.activeAdventure?.goldEarnedInRun || 0;
+    const party = progress.selectedPartyClasses;
+
+    const record: AdventureRecord = {
+      id: `adv_${Date.now()}`,
+      startedAt: progress.activeAdventure?.startedAt || new Date().toISOString(),
+      endedAt: new Date().toISOString(),
+      farthestLevel: stageReached,
+      farthestLevelName: currentLevel ? currentLevel.name : `Fase ${stageReached}`,
+      result: 'defeat',
+      partyClasses: party,
+      goldEarned: runGold,
+    };
+
+    const updatedHistory = [record, ...(progress.adventureHistory || [])].slice(0, 10);
+    const initialUnits = createInitialUnitsState();
+
+    const updatedProgress: PlayerProgress = {
+      ...progress,
+      activeAdventure: null,
+      unitsState: initialUnits,
+      adventureHistory: updatedHistory,
+    };
+    setProgress(updatedProgress);
+    savePlayerProgress(updatedProgress);
+
+    if (authUserRef.current) {
+      submitScore(stageReached, party).catch((err) =>
+        console.error('Falha ao registrar no ranking:', err)
+      );
+    }
+  }, [currentLevel, progress]);
+
+  // Check battle status
+  const checkBattleStatusWithUnits = useCallback((currentUnits: Unit[]) => {
+    const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+    const enemyLiving = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
+    if (enemyLiving.length === 0) {
+      handleVictory(currentUnits);
+    } else if (playerLiving.length === 0) {
+      handleDefeat();
+    }
+  }, [handleDefeat]);
+
+  // ANIMATED Tile Click Handler
   const handleTileClick = async (x: number, y: number) => {
     if (isAnimatingAction) return;
 
     const clickedUnit = units.find((u) => u.x === x && u.y === y && !u.isDead);
 
-    // Deployment phase
+    // Deployment swap
     if (phase === 'deployment') {
-      if (selectedUnitId && selectedUnit) {
-        const inZone = currentLevel?.deploymentZone.some((pt) => pt.x === x && pt.y === y);
-        if (inZone) {
-          const oldX = selectedUnit.x;
-          const oldY = selectedUnit.y;
-          setUnits((prev) =>
-            prev.map((u) => {
-              if (u.id === selectedUnitId) return { ...u, x, y };
-              if (u.x === x && u.y === y && u.faction === 'player') return { ...u, x: oldX, y: oldY };
-              return u;
-            })
-          );
-          soundManager.playStep();
+      if (selectedUnit && selectedUnit.faction === 'player') {
+        const isDepTile = currentLevel?.deploymentZone.some((z) => z.x === x && z.y === y);
+        if (isDepTile) {
+          if (clickedUnit && clickedUnit.faction === 'player') {
+            setUnits((prev) =>
+              prev.map((u) => {
+                if (u.id === selectedUnit.id) return { ...u, x, y };
+                if (u.id === clickedUnit.id) return { ...u, x: selectedUnit.x, y: selectedUnit.y };
+                return u;
+              })
+            );
+            soundManager.playStep();
+          } else if (!clickedUnit) {
+            setUnits((prev) => prev.map((u) => (u.id === selectedUnit.id ? { ...u, x, y } : u)));
+            soundManager.playStep();
+          }
           setSelectedUnitId(null);
-        } else if (clickedUnit && clickedUnit.faction === 'player') {
-          setSelectedUnitId(clickedUnit.id);
-          soundManager.playSelect();
+          return;
         }
-      } else if (clickedUnit && clickedUnit.faction === 'player') {
+      }
+      if (clickedUnit && clickedUnit.faction === 'player') {
         setSelectedUnitId(clickedUnit.id);
         soundManager.playSelect();
       }
@@ -207,44 +415,15 @@ export function App() {
 
     if (phase !== 'player_turn') return;
 
-    // Attack / Skill targeting
-    if (selectedUnit && (selectedAction === 'attack' || activeSkill)) {
-      if (clickedUnit) {
-        const isTargetValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
-        if (isTargetValid) {
-          const targetType = activeSkill ? activeSkill.targetType : 'enemy';
-          if (
-            (targetType === 'enemy' && clickedUnit.faction === 'enemy') ||
-            (targetType === 'ally' && clickedUnit.faction === 'player') ||
-            targetType === 'any'
-          ) {
-            const preview = getDamagePreview(selectedUnit, clickedUnit, activeSkill || undefined);
-            setDamagePreview(preview);
-            setTargetUnitId(clickedUnit.id);
-            soundManager.playSelect();
-            return;
-          }
-        }
-      }
-    }
-
-    // Movement (ANIMATED)
-    if (selectedUnit && selectedAction === 'move' && !selectedUnit.hasMoved) {
-      const isReachable = reachableTiles.some((pt) => pt.x === x && pt.y === y);
-      if (isReachable) {
+    // Movement execution
+    if (selectedAction === 'move' && selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasMoved) {
+      const isReachable = reachableTiles.some((t) => t.x === x && t.y === y);
+      if (isReachable && !clickedUnit) {
         setIsAnimatingAction(true);
-        const fromX = selectedUnit.x;
-        const fromY = selectedUnit.y;
-
-        // Play 3D hop animation FIRST
         if (boardRef.current) {
-          await boardRef.current.playMoveAnimation(selectedUnit.id, fromX, fromY, x, y);
+          await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, x, y);
         }
-
-        // THEN update game state
-        setUnits((prev) =>
-          prev.map((u) => (u.id === selectedUnit.id ? { ...u, x, y, hasMoved: true } : u))
-        );
+        setUnits((prev) => prev.map((u) => (u.id === selectedUnit.id ? { ...u, x, y, hasMoved: true } : u)));
         setSelectedAction('none');
         soundManager.playStep();
         setIsAnimatingAction(false);
@@ -265,73 +444,152 @@ export function App() {
     }
   };
 
-  const checkBattleStatusWithUnits = useCallback((currentUnits: Unit[]) => {
-    const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
-    const enemyLiving = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
-    if (enemyLiving.length === 0) {
-      handleVictory(currentUnits);
-    } else if (playerLiving.length === 0) {
-      setPhase('defeat');
-      soundManager.playDefeat();
-    }
-  }, []);
-
-  // --- ANIMATED Attack Confirm ---
+  // ANIMATED Attack Confirm
   const handleConfirmAttack = async () => {
     if (!selectedUnit || !targetUnitId || !damagePreview) return;
 
     const target = units.find((u) => u.id === targetUnitId);
     if (!target) return;
 
+    if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+      return;
+    }
+
     setIsAnimatingAction(true);
     setDamagePreview(null);
 
     const skill = activeSkill || undefined;
+
+    // Self-targeting skill
+    if (skill && skill.targetType === 'self') {
+      soundManager.playHeal();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing');
+      }
+      const effect = skill.statusEffect;
+      let updatedEffects = [...(selectedUnit.statusEffects || [])];
+      if (effect) {
+        if (effect.type === 'shield') {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${effect.value} Escudo`, 'shield', '#38BDF8');
+        } else if (effect.type === 'buff_atk') {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${effect.value}% Dano`, 'status', '#F97316');
+        }
+        updatedEffects = [...updatedEffects.filter((e) => e.type !== effect.type), { ...effect }];
+      }
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+      );
+      const updatedUnits = units.map((u) =>
+        u.id === selectedUnit.id
+          ? { ...u, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects }
+          : u
+      );
+      setUnits(updatedUnits);
+      setTargetUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
     const { finalDamage, isKill, damageType } = rollActualDamage(selectedUnit, target, skill);
 
-    // Play sound
     if (damageType === 'healing') soundManager.playHeal();
     else if (damageType === 'magical') soundManager.playMagicSpell();
     else soundManager.playPhysicalAttack();
 
-    // Play 3D attack/skill animation FIRST
     if (boardRef.current) {
-      await boardRef.current.playAttackAnimation(
-        selectedUnit.id, target.id, damageType,
-        skill?.aoeRadius
+      await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius);
+    }
+
+    const aoeRadius = skill?.aoeRadius || 0;
+    let targetsToHit: Unit[] = [];
+    if (aoeRadius > 0) {
+      const matchFaction = skill?.targetType === 'ally' ? 'player' : 'enemy';
+      targetsToHit = units.filter(
+        (u) =>
+          u.faction === matchFaction &&
+          !u.isDead &&
+          Math.abs(u.x - target.x) <= aoeRadius &&
+          Math.abs(u.y - target.y) <= aoeRadius
+      );
+    } else {
+      targetsToHit = [target];
+    }
+
+    let updatedUnits = [...units];
+    let totalDmgDone = 0;
+    let totalKills = 0;
+
+    for (const t of targetsToHit) {
+      const isMain = t.id === target.id;
+      const dmgResult = isMain ? { finalDamage, isKill, damageType } : rollActualDamage(selectedUnit, t, skill);
+      let actualDmg = dmgResult.finalDamage;
+
+      let currentEffects = [...(t.statusEffects || [])];
+      if (dmgResult.damageType !== 'healing') {
+        const sIdx = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+        if (sIdx !== -1) {
+          const sh = currentEffects[sIdx];
+          if (sh.value >= actualDmg) {
+            addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
+            sh.value -= actualDmg;
+            actualDmg = 0;
+          } else {
+            addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
+            actualDmg -= sh.value;
+            sh.value = 0;
+          }
+          if (sh.value <= 0) {
+            currentEffects = currentEffects.filter((_, idx) => idx !== sIdx);
+          }
+        }
+      }
+
+      let newHp = t.currentHp;
+      if (dmgResult.damageType === 'healing') {
+        newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
+        addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
+      } else {
+        newHp = Math.max(0, t.currentHp - actualDmg);
+        if (actualDmg > 0) {
+          const color = dmgResult.damageType === 'magical' ? '#B58AFF' : '#FF5252';
+          addFloatingNumber(t.x, t.y, `-${actualDmg}`, dmgResult.damageType, color);
+        }
+        totalDmgDone += actualDmg;
+      }
+
+      if (newHp === 0) {
+        soundManager.playDeath();
+        totalKills++;
+        if (boardRef.current) {
+          await boardRef.current.playDeathAnimation(t.id);
+        }
+      } else if (skill?.statusEffect) {
+        const eff = skill.statusEffect;
+        currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+        if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+        else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+        else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+      }
+
+      updatedUnits = updatedUnits.map((u) =>
+        u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
       );
     }
 
-    // Show floating damage number
-    let newHp = target.currentHp;
-    if (damageType === 'healing') {
-      newHp = Math.min(target.maxHp, target.currentHp + finalDamage);
-      addFloatingNumber(target.x, target.y, `+${finalDamage}`, 'healing', '#56E59A');
-    } else {
-      newHp = Math.max(0, target.currentHp - finalDamage);
-      const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
-      addFloatingNumber(target.x, target.y, `-${finalDamage}`, damageType, color);
-    }
-
-    // Death animation
-    if (newHp === 0) {
-      soundManager.playDeath();
-      if (boardRef.current) {
-        await boardRef.current.playDeathAnimation(target.id);
-      }
-    }
-
-    // Update state
-    const updatedUnits = units.map((u) => {
-      if (u.id === target.id) return { ...u, currentHp: newHp, isDead: newHp === 0 };
+    updatedUnits = updatedUnits.map((u) => {
       if (u.id === selectedUnit.id) {
         const updatedSkills = u.skills.map((s) =>
           skill && s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
         );
         return {
-          ...u, hasAttacked: true, skills: updatedSkills,
-          damageDealt: u.damageDealt + (damageType !== 'healing' ? finalDamage : 0),
-          kills: u.kills + (isKill ? 1 : 0),
+          ...u,
+          hasAttacked: true,
+          skills: updatedSkills,
+          damageDealt: u.damageDealt + totalDmgDone,
+          kills: u.kills + totalKills,
         };
       }
       return u;
@@ -346,7 +604,7 @@ export function App() {
     setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 200);
   };
 
-  // --- ANIMATED AI Turn ---
+  // ANIMATED AI Turn
   const runAiTurn = useCallback(async () => {
     let currentUnits = [...units];
     const delayMult = progress.combatSpeed === 'fast' ? 0.5 : 1.0;
@@ -356,55 +614,103 @@ export function App() {
       const freshMonster = currentUnits.find((u) => u.id === monster.id);
       if (!freshMonster || freshMonster.isDead) continue;
 
+      const isStunned = freshMonster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
+      if (isStunned) {
+        addFloatingNumber(freshMonster.x, freshMonster.y, 'Atordoado!', 'status', '#FACC15');
+        await new Promise((r) => setTimeout(r, 200 * delayMult));
+        continue;
+      }
+
       const choice = decideMonsterAction(freshMonster, grid, currentUnits);
       if (choice) {
-        // ANIMATED movement
-        if (choice.moveTo.x !== freshMonster.x || choice.moveTo.y !== freshMonster.y) {
+        if (choice.moveTo && (choice.moveTo.x !== freshMonster.x || choice.moveTo.y !== freshMonster.y)) {
           if (boardRef.current) {
-            await boardRef.current.playMoveAnimation(
-              freshMonster.id, freshMonster.x, freshMonster.y,
-              choice.moveTo.x, choice.moveTo.y
-            );
+            await boardRef.current.playMoveAnimation(freshMonster.id, freshMonster.x, freshMonster.y, choice.moveTo.x, choice.moveTo.y);
           }
           currentUnits = currentUnits.map((u) =>
-            u.id === freshMonster.id ? { ...u, x: choice.moveTo.x, y: choice.moveTo.y, hasMoved: true } : u
+            u.id === freshMonster.id ? { ...u, x: choice.moveTo.x, y: choice.moveTo.y } : u
           );
           setUnits([...currentUnits]);
           soundManager.playStep();
-          await new Promise((r) => setTimeout(r, 150 * delayMult));
+          await new Promise((r) => setTimeout(r, 200 * delayMult));
         }
 
-        // ANIMATED attack
         if (choice.targetUnit) {
-          const target = currentUnits.find((u) => u.id === choice.targetUnit!.id);
-          if (target && !target.isDead) {
-            const { finalDamage, damageType } = rollActualDamage(freshMonster, target, choice.skillToUse);
+          const freshAttacker = currentUnits.find((u) => u.id === freshMonster.id);
+          const freshTarget = currentUnits.find((u) => u.id === choice.targetUnit!.id);
 
-            if (damageType === 'magical') soundManager.playMagicSpell();
+          if (freshAttacker && freshTarget && !freshTarget.isDead) {
+            const skill = choice.skillToUse;
+            const dmgType = skill?.damageType || (freshAttacker.mag > freshAttacker.atk ? 'magical' : 'physical');
+
+            if (dmgType === 'magical') soundManager.playMagicSpell();
             else soundManager.playPhysicalAttack();
 
-            // Play 3D attack animation
             if (boardRef.current) {
-              await boardRef.current.playAttackAnimation(
-                freshMonster.id, target.id, damageType,
-                choice.skillToUse?.aoeRadius
+              await boardRef.current.playAttackAnimation(freshAttacker.id, freshTarget.id, dmgType, skill?.aoeRadius);
+            }
+
+            const aoeRad = skill?.aoeRadius || 0;
+            let enemyTargets: Unit[] = [];
+            if (aoeRad > 0) {
+              enemyTargets = currentUnits.filter(
+                (u) =>
+                  u.faction === 'player' &&
+                  !u.isDead &&
+                  Math.abs(u.x - freshTarget.x) <= aoeRad &&
+                  Math.abs(u.y - freshTarget.y) <= aoeRad
+              );
+            } else {
+              enemyTargets = [freshTarget];
+            }
+
+            for (const t of enemyTargets) {
+              const res = rollActualDamage(freshAttacker, t, skill);
+              let actualDmg = res.finalDamage;
+              const damageType = res.damageType;
+
+              let currentEffects = [...(t.statusEffects || [])];
+              const sIdx = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+              if (sIdx !== -1) {
+                const sh = currentEffects[sIdx];
+                if (sh.value >= actualDmg) {
+                  addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
+                  sh.value -= actualDmg;
+                  actualDmg = 0;
+                } else {
+                  addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
+                  actualDmg -= sh.value;
+                  sh.value = 0;
+                }
+                if (sh.value <= 0) {
+                  currentEffects = currentEffects.filter((_, idx) => idx !== sIdx);
+                }
+              }
+
+              const newHp = Math.max(0, t.currentHp - actualDmg);
+              if (actualDmg > 0) {
+                const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
+                addFloatingNumber(t.x, t.y, `-${actualDmg}`, damageType, color);
+              }
+
+              if (newHp === 0) {
+                soundManager.playDeath();
+                if (boardRef.current) {
+                  await boardRef.current.playDeathAnimation(t.id);
+                }
+              } else if (choice.skillToUse?.statusEffect) {
+                const eff = choice.skillToUse.statusEffect;
+                currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+                if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+                else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+                else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+              }
+
+              currentUnits = currentUnits.map((u) =>
+                u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
               );
             }
 
-            const newHp = Math.max(0, target.currentHp - finalDamage);
-            const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
-            addFloatingNumber(target.x, target.y, `-${finalDamage}`, damageType, color);
-
-            if (newHp === 0) {
-              soundManager.playDeath();
-              if (boardRef.current) {
-                await boardRef.current.playDeathAnimation(target.id);
-              }
-            }
-
-            currentUnits = currentUnits.map((u) =>
-              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0 } : u
-            );
             setUnits([...currentUnits]);
             await new Promise((r) => setTimeout(r, 200 * delayMult));
           }
@@ -416,8 +722,7 @@ export function App() {
     const enemyLiving = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
 
     if (playerLiving.length === 0) {
-      setPhase('defeat');
-      soundManager.playDefeat();
+      handleDefeat();
       return;
     }
     if (enemyLiving.length === 0) {
@@ -427,14 +732,36 @@ export function App() {
 
     setTurnNumber((t) => t + 1);
     setUnits((prev) =>
-      prev.map((u) => ({
-        ...u, hasMoved: false, hasAttacked: false,
-        skills: u.skills.map((s) => ({ ...s, currentCooldown: Math.max(0, s.currentCooldown - 1) })),
-      }))
+      prev.map((u) => {
+        let currentHp = u.currentHp;
+        let isDead = u.isDead;
+        if (!isDead) {
+          const poison = u.statusEffects?.find((e) => e.type === 'poison');
+          if (poison) {
+            const pDmg = poison.value || 15;
+            currentHp = Math.max(0, currentHp - pDmg);
+            isDead = currentHp === 0;
+            addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+          }
+        }
+        const updatedEffects = (u.statusEffects || [])
+          .map((e) => ({ ...e, duration: e.duration - 1 }))
+          .filter((e) => e.duration > 0);
+
+        return {
+          ...u,
+          currentHp,
+          isDead,
+          hasMoved: false,
+          hasAttacked: false,
+          statusEffects: updatedEffects,
+          skills: u.skills.map((s) => ({ ...s, currentCooldown: Math.max(0, s.currentCooldown - 1) })),
+        };
+      })
     );
     setPhase('player_turn');
     soundManager.playTurnStart(true);
-  }, [units, grid, progress.combatSpeed]);
+  }, [units, grid, progress.combatSpeed, handleDefeat]);
 
   const handleEndPlayerTurn = useCallback(() => {
     if (isAnimatingAction) return;
@@ -446,6 +773,7 @@ export function App() {
     setTimeout(() => runAiTurn(), 500);
   }, [runAiTurn, isAnimatingAction]);
 
+  // Handle Victory in current stage
   const handleVictory = (finalUnitsState: Unit[]) => {
     if (!currentLevel) return;
     soundManager.playVictory();
@@ -455,29 +783,161 @@ export function App() {
     const goldReward = currentLevel.rewards.gold;
     const surviving = finalUnitsState.filter((u) => u.faction === 'player' && !u.isDead);
     const levelUps: { unitName: string; oldLevel: number; newLevel: number }[] = [];
-    const skillChoiceQueue: Unit[] = [];
+    const statChoiceQueue: { unit: Unit; newLevel: number }[] = [];
     const updatedUnitsState = { ...progress.unitsState };
 
     surviving.forEach((match) => {
       const uState = updatedUnitsState[match.className] || {
-        className: match.className, level: 1, xp: 0,
-        bonusAtk: 0, bonusDef: 0, bonusHp: 0, learnedSkillIds: [],
+        className: match.className,
+        level: 1,
+        xp: 0,
+        bonusAtk: 0,
+        bonusDef: 0,
+        bonusHp: 0,
+        bonusMag: 0,
+        bonusRes: 0,
+        learnedSkillIds: [],
       };
       const oldLevel = uState.level;
       const newLevel = oldLevel + 1;
       levelUps.push({ unitName: match.name, oldLevel, newLevel });
-      const updatedUnitObj = { ...match, level: newLevel, maxHp: match.maxHp + 12, currentHp: match.maxHp + 12, atk: match.atk + 3, def: match.def + 2 };
-      skillChoiceQueue.push(updatedUnitObj);
-      updatedUnitsState[match.className] = { ...uState, level: newLevel, bonusHp: uState.bonusHp + 12, bonusAtk: uState.bonusAtk + 3, bonusDef: uState.bonusDef + 2 };
+      const updatedUnitObj = {
+        ...match,
+        level: newLevel,
+      };
+      statChoiceQueue.push({ unit: updatedUnitObj, newLevel });
+      updatedUnitsState[match.className] = {
+        ...uState,
+        level: newLevel,
+      };
     });
+
+    // Check for newly unlocked classes
+    const currentUnlocked = progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
+    const newlyUnlocked: string[] = [];
+    Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
+      if (currentLevel.id === cond.requiredLevel && !currentUnlocked.includes(cName)) {
+        newlyUnlocked.push(cName);
+      }
+    });
+    const finalUnlockedClasses = Array.from(new Set([...currentUnlocked, ...newlyUnlocked]));
 
     const nextUnlocked = Math.max(progress.unlockedLevel, currentLevel.id + 1);
     const completedList = Array.from(new Set([...progress.completedLevels, currentLevel.id]));
-    const newProgress: PlayerProgress = { ...progress, unlockedLevel: nextUnlocked, completedLevels: completedList, gold: progress.gold + goldReward, unitsState: updatedUnitsState };
+    const totalGold = progress.gold + goldReward;
+    const totalRunGold = (progress.activeAdventure?.goldEarnedInRun || 0) + goldReward;
+
+    const isFinalCampaignLevel = currentLevel.id >= LEVELS.length;
+
+    let updatedHistory = progress.adventureHistory || [];
+    let updatedActiveAdventure: ActiveAdventure | null = null;
+    let nextUnitsState = updatedUnitsState;
+
+    if (isFinalCampaignLevel) {
+      // Supreme victory! Archive finished run
+      const record: AdventureRecord = {
+        id: `adv_${Date.now()}`,
+        startedAt: progress.activeAdventure?.startedAt || new Date().toISOString(),
+        endedAt: new Date().toISOString(),
+        farthestLevel: 50,
+        farthestLevelName: currentLevel.name,
+        result: 'victory',
+        partyClasses: progress.selectedPartyClasses,
+        goldEarned: totalRunGold,
+      };
+      updatedHistory = [record, ...updatedHistory].slice(0, 10);
+      updatedActiveAdventure = null;
+      nextUnitsState = createInitialUnitsState();
+    } else {
+      // Advance active adventure to next stage
+      updatedActiveAdventure = {
+        currentLevelId: currentLevel.id + 1,
+        startedAt: progress.activeAdventure?.startedAt || new Date().toISOString(),
+        unitsState: updatedUnitsState,
+        partyClasses: progress.selectedPartyClasses,
+        goldEarnedInRun: totalRunGold,
+      };
+    }
+
+    const newProgress: PlayerProgress = {
+      ...progress,
+      unlockedLevel: nextUnlocked,
+      completedLevels: completedList,
+      gold: totalGold,
+      unlockedClasses: finalUnlockedClasses,
+      unitsState: nextUnitsState,
+      activeAdventure: updatedActiveAdventure,
+      adventureHistory: updatedHistory,
+    };
     setProgress(newProgress);
     savePlayerProgress(newProgress);
+
+    if (authUserRef.current) {
+      submitScore(currentLevel.id, progress.selectedPartyClasses).catch((err) =>
+        console.error('Falha ao registrar no ranking:', err)
+      );
+    }
+
     setVictorySummary({ xpGained: xpReward, goldGained: goldReward, survivingUnits: surviving, levelUps });
-    if (skillChoiceQueue.length > 0) setPendingSkillChoices(skillChoiceQueue);
+    if (statChoiceQueue.length > 0) setPendingStatChoices(statChoiceQueue);
+    if (newlyUnlocked.length > 0) setPendingUnlockClasses(newlyUnlocked);
+  };
+
+  const handleChooseStat = (chosenStat: StatType) => {
+    if (pendingStatChoices.length === 0) return;
+    const currentUpgrade = pendingStatChoices[0];
+    const { unit, newLevel } = currentUpgrade;
+    const className = unit.className;
+    const uState = progress.unitsState[className] || {
+      className,
+      level: newLevel,
+      xp: 0,
+      bonusAtk: 0,
+      bonusDef: 0,
+      bonusHp: 0,
+      bonusMag: 0,
+      bonusRes: 0,
+      learnedSkillIds: [],
+    };
+
+    let bonusHp = uState.bonusHp || 0;
+    let bonusAtk = uState.bonusAtk || 0;
+    let bonusMag = uState.bonusMag || 0;
+    let bonusDef = uState.bonusDef || 0;
+    let bonusRes = uState.bonusRes || 0;
+
+    if (chosenStat === 'hp') bonusHp += 25;
+    else if (chosenStat === 'atk') bonusAtk += 5;
+    else if (chosenStat === 'mag') bonusMag += 5;
+    else if (chosenStat === 'def') bonusDef += 4;
+    else if (chosenStat === 'res') bonusRes += 4;
+
+    const updatedUnitsState = {
+      ...progress.unitsState,
+      [className]: {
+        ...uState,
+        bonusHp,
+        bonusAtk,
+        bonusMag,
+        bonusDef,
+        bonusRes,
+      },
+    };
+
+    const updatedActiveAdv = progress.activeAdventure
+      ? { ...progress.activeAdventure, unitsState: updatedUnitsState }
+      : null;
+
+    const updatedProgress = { ...progress, unitsState: updatedUnitsState, activeAdventure: updatedActiveAdv };
+    setProgress(updatedProgress);
+    savePlayerProgress(updatedProgress);
+
+    // 1 nova habilidade a cada 3 níveis!
+    if (newLevel % 3 === 0) {
+      setPendingSkillChoices((prev) => [...prev, unit]);
+    }
+
+    setPendingStatChoices((prev) => prev.slice(1));
   };
 
   const handleLearnSkillChoice = (chosenSkill: Skill) => {
@@ -488,7 +948,18 @@ export function App() {
     const learnedList = uState ? uState.learnedSkillIds : [];
     if (!learnedList.includes(chosenSkill.id)) {
       const updatedLearned = [...learnedList, chosenSkill.id];
-      const updatedProgress = { ...progress, unitsState: { ...progress.unitsState, [className]: { ...uState, learnedSkillIds: updatedLearned } } };
+      const updatedUnitsState = {
+        ...progress.unitsState,
+        [className]: { ...uState, learnedSkillIds: updatedLearned },
+      };
+      const updatedActiveAdv = progress.activeAdventure
+        ? { ...progress.activeAdventure, unitsState: updatedUnitsState }
+        : null;
+      const updatedProgress = {
+        ...progress,
+        unitsState: updatedUnitsState,
+        activeAdventure: updatedActiveAdv,
+      };
       setProgress(updatedProgress);
       savePlayerProgress(updatedProgress);
     }
@@ -520,12 +991,85 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentView, phase, selectedUnit, handleEndPlayerTurn, isAnimatingAction]);
 
+  // Auth gate
+  if (!authChecked) {
+    return (
+      <div className="h-screen w-screen bg-[#10131C] flex items-center justify-center text-[#D4AD65]">
+        <Loader2 className="animate-spin" size={32} />
+      </div>
+    );
+  }
+  if (!authUser) {
+    return (
+      <>
+        <AuthScreen onAuthenticated={setAuthUser} onOpenLeaderboard={() => setShowLeaderboard(true)} />
+        {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
+      </>
+    );
+  }
+
   // View Router
   if (currentView === 'level_select') {
-    return <LevelSelect progress={progress} onSelectLevel={startLevel} onChangeParty={() => setCurrentView('party_select')} onResetProgress={handleResetProgress} />;
+    return (
+      <>
+        <div className="fixed top-3 right-3 z-40 flex items-center gap-2 bg-[#1B2030]/90 backdrop-blur border border-[#343B50] rounded-xl p-1.5 shadow-lg text-xs font-sans">
+          <span className="flex items-center gap-1.5 px-2 text-[#F3F4F8] font-semibold">
+            <UserIcon size={14} className="text-[#4C8DFF]" /> {authUser.username}
+          </span>
+          <button
+            id="open-leaderboard"
+            onClick={() => setShowLeaderboard(true)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#D4AD65]/10 text-[#D4AD65] font-bold hover:bg-[#D4AD65]/20 transition-colors"
+          >
+            <Trophy size={14} /> Ranking
+          </button>
+          <button
+            id="logout"
+            onClick={handleLogout}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[#A7B0C4] hover:text-[#FF7A7A] hover:bg-[#FF5252]/10 transition-colors"
+          >
+            <LogOut size={14} /> Sair
+          </button>
+        </div>
+
+        <LevelSelect
+          progress={progress}
+          onStartAdventure={handleStartNewAdventure}
+          onContinueAdventure={handleContinueAdventure}
+          onAbandonAdventure={handleAbandonAdventure}
+          onChangeParty={() => setCurrentView('party_select')}
+          onResetProgress={handleResetProgress}
+          onOpenBestiary={() => setShowBestiary(true)}
+          onOpenHistory={() => setShowHistory(true)}
+        />
+
+        {showLeaderboard && (
+          <LeaderboardModal currentUsername={authUser.username} onClose={() => setShowLeaderboard(false)} />
+        )}
+        {showBestiary && (
+          <BestiaryModal
+            discoveredMonsterIds={progress.discoveredMonsterIds || []}
+            onClose={() => setShowBestiary(false)}
+          />
+        )}
+        {showHistory && (
+          <AdventureHistoryModal
+            history={progress.adventureHistory || []}
+            onClose={() => setShowHistory(false)}
+          />
+        )}
+      </>
+    );
   }
+
   if (currentView === 'party_select') {
-    return <PartySelectionModal initialSelected={progress.selectedPartyClasses} onConfirmParty={handleConfirmParty} />;
+    return (
+      <PartySelectionModal
+        initialSelected={progress.selectedPartyClasses}
+        unlockedClasses={progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro']}
+        onConfirmParty={handleConfirmParty}
+      />
+    );
   }
 
   const alliesCount = units.filter((u) => u.faction === 'player' && !u.isDead).length;
@@ -548,11 +1092,29 @@ export function App() {
         onOpenTutorial={() => setShowTutorial(true)}
         onRestartLevel={() => currentLevel && startLevel(currentLevel.id)}
         onEndTurn={handleEndPlayerTurn}
+        onOpenBestiary={() => setShowBestiary(true)}
+        onOpenHistory={() => setShowHistory(true)}
+        onSaveAndExit={() => setCurrentView('level_select')}
       />
 
       <div className="flex-1 flex overflow-hidden relative">
         {phase === 'deployment' && <DeploymentBanner onStartBattle={handleConfirmDeployment} />}
 
+        {/* LEFT: Skills List Panel */}
+        <SkillsPanel
+          selectedUnit={selectedUnit}
+          activeSkill={activeSkill}
+          onSelectSkill={(sk) => {
+            setActiveSkill(sk);
+            setSelectedAction('none');
+          }}
+          onClearSkill={() => {
+            setActiveSkill(null);
+          }}
+          isPlayerTurn={phase === 'player_turn'}
+        />
+
+        {/* CENTER: 3D Tactical Battlefield */}
         <main className="flex-1 flex items-center justify-center p-2 overflow-hidden relative">
           <BoardRenderer3D
             ref={boardRef}
@@ -572,39 +1134,112 @@ export function App() {
           />
         </main>
 
+        {/* RIGHT: Unit Status & Movement / Actions Panel */}
         <SidePanel
           selectedUnit={selectedUnit}
           selectedAction={selectedAction}
-          activeSkill={activeSkill}
-          onSelectAction={(act) => { setSelectedAction(act); setActiveSkill(null); }}
-          onSelectSkill={(sk) => { setActiveSkill(sk); setSelectedAction('none'); }}
+          onSelectAction={(act) => {
+            setSelectedAction(act);
+            setActiveSkill(null);
+          }}
           onWaitUnit={() => {
             if (selectedUnit) {
-              setUnits((prev) => prev.map((u) => (u.id === selectedUnit.id ? { ...u, hasMoved: true, hasAttacked: true } : u)));
+              setUnits((prev) =>
+                prev.map((u) => (u.id === selectedUnit.id ? { ...u, hasMoved: true, hasAttacked: true } : u))
+              );
               setSelectedUnitId(null);
               setSelectedAction('none');
             }
           }}
-          onCancelSelection={() => { setSelectedUnitId(null); setSelectedAction('none'); setActiveSkill(null); }}
+          onCancelSelection={() => {
+            setSelectedUnitId(null);
+            setSelectedAction('none');
+            setActiveSkill(null);
+          }}
           isPlayerTurn={phase === 'player_turn'}
         />
       </div>
 
-      {damagePreview && <ActionPreviewModal preview={damagePreview} onConfirm={handleConfirmAttack} onCancel={() => setDamagePreview(null)} />}
+      {damagePreview && (
+        <ActionPreviewModal preview={damagePreview} onConfirm={handleConfirmAttack} onCancel={() => setDamagePreview(null)} />
+      )}
       {showObjectives && currentLevel && <ObjectivesModal level={currentLevel} onClose={() => setShowObjectives(false)} />}
-      {showSettings && <SettingsModal settings={audioSettings} onUpdateSettings={(newSets) => setAudioSettings((prev) => ({ ...prev, ...newSets }))} onResetProgress={handleResetProgress} onClose={() => setShowSettings(false)} />}
+      {showSettings && (
+        <SettingsModal
+          settings={audioSettings}
+          onUpdateSettings={(newSets) => setAudioSettings((prev) => ({ ...prev, ...newSets }))}
+          onResetProgress={handleResetProgress}
+          onClose={() => setShowSettings(false)}
+        />
+      )}
       {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} />}
-      {activeBossBanner && <BossIntroBanner bossName={activeBossBanner.name} subtitle={activeBossBanner.subtitle} phaseNumber={activeBossBanner.phase} onDismiss={() => setActiveBossBanner(null)} />}
-      {pendingSkillChoices.length > 0 && <SkillChoiceModal unit={pendingSkillChoices[0]} onChooseSkill={handleLearnSkillChoice} />}
-      {(phase === 'victory' || phase === 'defeat') && currentLevel && pendingSkillChoices.length === 0 && (
-        <VictoryDefeatModal
-          isVictory={phase === 'victory'}
-          levelNumber={currentLevel.id}
-          summary={victorySummary || { xpGained: currentLevel.rewards.xpPerUnit, goldGained: currentLevel.rewards.gold, survivingUnits: [], levelUps: [] }}
-          hasNextLevel={currentLevel.id < LEVELS.length}
-          onNextLevel={() => startLevel(currentLevel.id + 1)}
-          onRetry={() => startLevel(currentLevel.id)}
-          onGoToMenu={() => setCurrentView('level_select')}
+      {activeBossBanner && (
+        <BossIntroBanner
+          bossName={activeBossBanner.name}
+          subtitle={activeBossBanner.subtitle}
+          phaseNumber={activeBossBanner.phase}
+          onDismiss={() => setActiveBossBanner(null)}
+        />
+      )}
+
+      {pendingStatChoices.length > 0 && (
+        <StatChoiceModal
+          unit={pendingStatChoices[0].unit}
+          newLevel={pendingStatChoices[0].newLevel}
+          onChooseStat={handleChooseStat}
+        />
+      )}
+
+      {pendingStatChoices.length === 0 && pendingSkillChoices.length > 0 && (
+        <SkillChoiceModal
+          unit={pendingSkillChoices[0]}
+          onChooseSkill={handleLearnSkillChoice}
+        />
+      )}
+
+      {pendingStatChoices.length === 0 && pendingSkillChoices.length === 0 && pendingUnlockClasses.length > 0 && (
+        <ClassUnlockModal
+          unlockedClasses={pendingUnlockClasses}
+          onDismiss={() => setPendingUnlockClasses((prev) => prev.slice(1))}
+        />
+      )}
+
+      {(phase === 'victory' || phase === 'defeat') &&
+        currentLevel &&
+        pendingStatChoices.length === 0 &&
+        pendingSkillChoices.length === 0 &&
+        pendingUnlockClasses.length === 0 && (
+          <VictoryDefeatModal
+            isVictory={phase === 'victory'}
+            levelNumber={currentLevel.id}
+            summary={
+              victorySummary || {
+                xpGained: currentLevel.rewards.xpPerUnit,
+                goldGained: currentLevel.rewards.gold,
+                survivingUnits: [],
+                levelUps: [],
+              }
+            }
+            hasNextLevel={currentLevel.id < LEVELS.length}
+            playerGold={progress.gold}
+            unlockedClassesCount={progress.unlockedClasses?.length || 4}
+            onNextLevel={() => startLevel(currentLevel.id + 1)}
+            onRetry={handleStartNewAdventure}
+            onGoToMenu={() => setCurrentView('level_select')}
+          />
+        )}
+
+      {/* Global Modals accessible anytime */}
+      {showBestiary && (
+        <BestiaryModal
+          discoveredMonsterIds={progress.discoveredMonsterIds || []}
+          onClose={() => setShowBestiary(false)}
+        />
+      )}
+      {showHistory && (
+        <AdventureHistoryModal
+          history={progress.adventureHistory || []}
+          onClose={() => setShowHistory(false)}
         />
       )}
     </div>

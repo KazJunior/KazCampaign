@@ -1,0 +1,326 @@
+import React, { useState, useEffect } from 'react';
+import { X, BookOpen, Skull, Swords, Shield, Sparkles, Footprints, Crown, Flame, Zap, Hammer } from 'lucide-react';
+import { MONSTER_DEFINITIONS } from '../data/monsters';
+import type { MonsterDefinition } from '../data/monsters';
+import { SKILLS } from '../data/skills';
+
+interface BestiaryModalProps {
+  discoveredMonsterIds: string[];
+  onClose: () => void;
+}
+
+export const BestiaryModal: React.FC<BestiaryModalProps> = ({
+  discoveredMonsterIds,
+  onClose,
+}) => {
+  // Apenas os monstros já encontrados pelo jogador
+  const discoveredMonsters = Object.values(MONSTER_DEFINITIONS).filter((m) =>
+    discoveredMonsterIds.includes(m.typeId)
+  );
+
+  const [selectedMonster, setSelectedMonster] = useState<MonsterDefinition | null>(
+    discoveredMonsters[0] || null
+  );
+  const [filter, setFilter] = useState<'all' | 'normal' | 'bosses'>('all');
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  const filteredMonsters = discoveredMonsters.filter((m) => {
+    if (filter === 'normal') return !m.isBoss && !m.isMiniBoss;
+    if (filter === 'bosses') return m.isBoss || m.isMiniBoss;
+    return true;
+  });
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-4xl max-h-[88vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65]">
+              <BookOpen size={22} />
+            </div>
+            <div>
+              <h2 className="font-black text-lg text-[#F3F4F8] flex items-center gap-2">
+                Bestiário do Abismo
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40">
+                  {discoveredMonsters.length} / {Object.keys(MONSTER_DEFINITIONS).length} Descobertos
+                </span>
+              </h2>
+              <p className="text-xs text-[#A7B0C4]">
+                Catálogo de criaturas e abominações já enfrentadas durante suas aventuras.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-2 px-6 py-2.5 bg-[#141824] border-b border-[#343B50] text-xs">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              filter === 'all'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow'
+                : 'text-[#A7B0C4] hover:bg-[#1B2030]'
+            }`}
+          >
+            Todos ({discoveredMonsters.length})
+          </button>
+          <button
+            onClick={() => setFilter('normal')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              filter === 'normal'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow'
+                : 'text-[#A7B0C4] hover:bg-[#1B2030]'
+            }`}
+          >
+            Monstros Normais ({discoveredMonsters.filter((m) => !m.isBoss && !m.isMiniBoss).length})
+          </button>
+          <button
+            onClick={() => setFilter('bosses')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              filter === 'bosses'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow'
+                : 'text-[#A7B0C4] hover:bg-[#1B2030]'
+            }`}
+          >
+            Chefes & Mini Bosses ({discoveredMonsters.filter((m) => m.isBoss || m.isMiniBoss).length})
+          </button>
+        </div>
+
+        {/* Content Body */}
+        {discoveredMonsters.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-[#A7B0C4]">
+            <Skull size={48} className="text-[#343B50] mb-3" />
+            <h3 className="font-bold text-base text-[#F3F4F8]">Nenhum monstro descoberto ainda</h3>
+            <p className="text-xs text-[#A7B0C4] max-w-sm mt-1">
+              Inicie uma nova aventura! Conforme você enfrentar monstros e chefes pelas 50 fases, seus registros e habilidades serão catalogados aqui.
+            </p>
+          </div>
+        ) : (
+          <div className="flex-1 flex overflow-hidden">
+            {/* Left Monster List */}
+            <div className="w-72 border-r border-[#343B50] bg-[#141824] overflow-y-auto p-3 space-y-2">
+              {filteredMonsters.map((monster) => {
+                const isSelected = selectedMonster?.typeId === monster.typeId;
+                return (
+                  <button
+                    key={monster.typeId}
+                    onClick={() => setSelectedMonster(monster)}
+                    className={`w-full p-2.5 rounded-xl border flex items-center gap-3 text-left transition-all ${
+                      isSelected
+                        ? 'bg-[#D4AD65]/20 border-[#D4AD65] text-white shadow-md'
+                        : 'bg-[#1B2030] border-[#343B50] hover:border-[#D4AD65]/50 text-[#F3F4F8]'
+                    }`}
+                  >
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow shrink-0 border border-white/20"
+                      style={{ backgroundColor: monster.color }}
+                    >
+                      {getAvatarIcon(monster.avatarKey, 20)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="font-bold text-xs truncate">{monster.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        {monster.isBoss ? (
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                            BOSS
+                          </span>
+                        ) : monster.isMiniBoss ? (
+                          <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            MINI BOSS
+                          </span>
+                        ) : (
+                          <span className="text-[9px] text-[#A7B0C4]">Monstro Comum</span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Right Monster Sheet */}
+            {selectedMonster && (
+              <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-[#1B2030]">
+                {/* Header Profile */}
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#10131C] border border-[#343B50]">
+                  <div
+                    className="w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg border-2 border-white/20 shrink-0 relative"
+                    style={{ backgroundColor: selectedMonster.color }}
+                  >
+                    {getAvatarIcon(selectedMonster.avatarKey, 40)}
+                    {selectedMonster.isBoss && (
+                      <Crown size={18} className="absolute -top-2 -right-2 text-[#D4AD65] drop-shadow" />
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-black text-lg text-[#F3F4F8]">{selectedMonster.name}</h3>
+                      {selectedMonster.isBoss ? (
+                        <span className="text-xs font-black px-2.5 py-1 rounded-full bg-purple-500/25 text-purple-300 border border-purple-500/50 flex items-center gap-1">
+                          <Crown size={12} /> CHEFE SUPREMO
+                        </span>
+                      ) : selectedMonster.isMiniBoss ? (
+                        <span className="text-xs font-black px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 border border-amber-500/50">
+                          MINI BOSS
+                        </span>
+                      ) : (
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+                          MONSTRO
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-[#A7B0C4] mt-1.5 leading-relaxed">
+                      {selectedMonster.description}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Base Attributes Grid */}
+                <div>
+                  <h4 className="text-xs font-bold text-[#D4AD65] uppercase tracking-wider mb-2">
+                    Atributos Básicos
+                  </h4>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 text-xs">
+                    <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] text-center">
+                      <div className="text-[10px] text-[#A7B0C4]">HP Base</div>
+                      <div className="font-black text-[#56E59A] text-sm mt-0.5">{selectedMonster.maxHp}</div>
+                    </div>
+                    <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] text-center">
+                      <div className="text-[10px] text-[#A7B0C4]">Ataque</div>
+                      <div className="font-black text-[#FF5252] text-sm mt-0.5">{selectedMonster.atk}</div>
+                    </div>
+                    <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] text-center">
+                      <div className="text-[10px] text-[#A7B0C4]">Magia</div>
+                      <div className="font-black text-[#B58AFF] text-sm mt-0.5">{selectedMonster.mag}</div>
+                    </div>
+                    <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] text-center">
+                      <div className="text-[10px] text-[#A7B0C4]">Defesa</div>
+                      <div className="font-black text-[#43C878] text-sm mt-0.5">{selectedMonster.def}</div>
+                    </div>
+                    <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] text-center">
+                      <div className="text-[10px] text-[#A7B0C4]">Resistência</div>
+                      <div className="font-black text-[#F0B44D] text-sm mt-0.5">{selectedMonster.res}</div>
+                    </div>
+                    <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] text-center">
+                      <div className="text-[10px] text-[#A7B0C4]">Mov / Alcance</div>
+                      <div className="font-black text-[#4C8DFF] text-sm mt-0.5">
+                        {selectedMonster.mov} / {selectedMonster.range}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Skills Section */}
+                <div>
+                  <h4 className="text-xs font-bold text-[#D4AD65] uppercase tracking-wider mb-2">
+                    Habilidades Catalogadas ({selectedMonster.skillIds.length})
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {selectedMonster.skillIds.map((sId) => {
+                      const skill = SKILLS[sId];
+                      if (!skill) return null;
+
+                      let typeColor = 'bg-[#4C8DFF]/20 text-[#4C8DFF] border-[#4C8DFF]/30';
+                      if (skill.damageType === 'magical') typeColor = 'bg-[#B58AFF]/20 text-[#B58AFF] border-[#B58AFF]/30';
+                      else if (skill.damageType === 'healing') typeColor = 'bg-[#56E59A]/20 text-[#56E59A] border-[#56E59A]/30';
+
+                      return (
+                        <div
+                          key={sId}
+                          className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] flex flex-col justify-between gap-1.5"
+                        >
+                          <div>
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="font-bold text-xs text-[#F3F4F8]">{skill.name}</span>
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${typeColor}`}>
+                                {skill.damageType.toUpperCase()}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-[#A7B0C4] mt-1 leading-snug">
+                              {skill.description}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[9px] text-[#A7B0C4]">
+                            <span className="px-1.5 py-0.5 rounded bg-[#1B2030] border border-[#343B50]">
+                              Alcance: {skill.rangeMin}-{skill.rangeMax}
+                            </span>
+                            {skill.aoeRadius > 0 && (
+                              <span className="px-1.5 py-0.5 rounded bg-[#FF9800]/20 text-[#FF9800] border border-[#FF9800]/40 font-bold">
+                                💥 Área 3x3
+                              </span>
+                            )}
+                            <span className="px-1.5 py-0.5 rounded bg-[#1B2030] border border-[#343B50]">
+                              Recarga: {skill.cooldownMax}T
+                            </span>
+                            {skill.statusEffect && (
+                              <span className="text-[#F0B44D] font-semibold">
+                                Efeito: {skill.statusEffect.type} ({skill.statusEffect.duration}T)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+function getAvatarIcon(key: string, size = 20) {
+  switch (key) {
+    case 'goblin':
+      return <Zap size={size} />;
+    case 'orc':
+      return <Hammer size={size} />;
+    case 'spider':
+      return <Skull size={size} />;
+    case 'dark_mage':
+      return <Flame size={size} />;
+    case 'spectral_wolf':
+      return <Footprints size={size} />;
+    case 'basalt_golem':
+      return <Shield size={size} />;
+    case 'thorn_witch':
+      return <Sparkles size={size} />;
+    case 'fallen_knight':
+      return <Swords size={size} />;
+    case 'mimic':
+      return <Skull size={size} />;
+    case 'volcanic_drake':
+      return <Flame size={size} />;
+    case 'devourer_boss':
+      return <Skull size={size} />;
+    case 'astaroth_boss':
+      return <Crown size={size} />;
+    default:
+      return <Skull size={size} />;
+  }
+}

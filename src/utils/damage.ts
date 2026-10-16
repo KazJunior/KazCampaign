@@ -22,6 +22,10 @@ export function calculateBaseDamage(
   }
 
   let attackStat = damageType === 'physical' ? attacker.atk : attacker.mag;
+  const atkBuff = attacker.statusEffects?.find((e) => e.type === 'buff_atk' && e.duration > 0);
+  if (atkBuff) {
+    attackStat = Math.round(attackStat * (1 + atkBuff.value / 100));
+  }
   let targetDef = damageType === 'physical' ? target.def : target.res;
 
   if (isSkill) {

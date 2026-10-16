@@ -38,6 +38,15 @@ export function getReachableTiles(
     { x: 0, y: -1 },
   ];
 
+  // Stun prevents all movement
+  if (unit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+    return [];
+  }
+
+  // Slow reduces movement points by 1 (minimum 1)
+  const isSlowed = unit.statusEffects?.some((e) => e.type === 'slow' && e.duration > 0);
+  const effectiveMov = isSlowed ? Math.max(1, unit.mov - 1) : unit.mov;
+
   while (queue.length > 0) {
     const curr = queue.shift()!;
 
@@ -46,7 +55,7 @@ export function getReachableTiles(
       reachable.push({ x: curr.x, y: curr.y });
     }
 
-    if (curr.cost >= unit.mov) continue;
+    if (curr.cost >= effectiveMov) continue;
 
     for (const dir of directions) {
       const nx = curr.x + dir.x;

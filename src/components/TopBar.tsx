@@ -1,5 +1,17 @@
 import React from 'react';
-import { Shield, Target, HelpCircle, Settings, RotateCcw, Award, Play, Gauge } from 'lucide-react';
+import {
+  Shield,
+  Target,
+  HelpCircle,
+  Settings,
+  RotateCcw,
+  Award,
+  Play,
+  Gauge,
+  BookOpen,
+  History,
+  Home,
+} from 'lucide-react';
 import type { BattlePhase, Unit } from '../types/game';
 
 interface TopBarProps {
@@ -17,6 +29,9 @@ interface TopBarProps {
   onOpenTutorial: () => void;
   onRestartLevel: () => void;
   onEndTurn: () => void;
+  onOpenBestiary?: () => void;
+  onOpenHistory?: () => void;
+  onSaveAndExit?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -34,6 +49,9 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenTutorial,
   onRestartLevel,
   onEndTurn,
+  onOpenBestiary,
+  onOpenHistory,
+  onSaveAndExit,
 }) => {
   const isPlayerTurn = phase === 'player_turn';
   const isDeployment = phase === 'deployment';
@@ -43,7 +61,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* Level & Turn Info */}
       <div className="flex items-center gap-3">
         <div className="bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 py-1 rounded-md font-bold text-sm tracking-wide">
-          FASE {levelNumber} / 10
+          FASE {levelNumber} / 50
         </div>
         <div>
           <h1 className="font-bold text-base text-[#F3F4F8] leading-tight">{levelName}</h1>
@@ -61,7 +79,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         </div>
       </div>
 
-      {/* Dedicated Boss Healthbar (Section 11 Requirement) */}
+      {/* Dedicated Boss Healthbar */}
       {bossUnit && !bossUnit.isDead && (
         <div className="hidden md:flex flex-col items-center min-w-[240px] bg-[#10131C] px-3 py-1 rounded-xl border border-[#E65353]/50">
           <div className="flex items-center justify-between w-full text-[11px] font-bold text-[#E65353]">
@@ -122,10 +140,32 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="hidden sm:inline">{combatSpeed === 'fast' ? 'Vel: 2.0x' : 'Vel: 1.0x'}</span>
         </button>
 
+        {/* Bestiary shortcut */}
+        {onOpenBestiary && (
+          <button
+            onClick={onOpenBestiary}
+            className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#A7B0C4] hover:text-[#D4AD65] transition-colors"
+            title="Abrir Bestiário"
+          >
+            <BookOpen size={16} />
+          </button>
+        )}
+
+        {/* History shortcut */}
+        {onOpenHistory && (
+          <button
+            onClick={onOpenHistory}
+            className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] hover:text-[#4C8DFF] transition-colors"
+            title="Histórico de Aventuras"
+          >
+            <History size={16} />
+          </button>
+        )}
+
         <button
           onClick={onOpenObjectives}
           className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#A7B0C4] hover:text-[#D4AD65] transition-colors"
-          title="Objetivos"
+          title="Objetivos da Fase"
         >
           <Award size={16} />
         </button>
@@ -141,7 +181,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           onClick={onOpenSettings}
           className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] hover:text-[#4C8DFF] transition-colors"
-          title="Configurações"
+          title="Configurações de Áudio"
         >
           <Settings size={16} />
         </button>
@@ -149,10 +189,21 @@ export const TopBar: React.FC<TopBarProps> = ({
         <button
           onClick={onRestartLevel}
           className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#E65353] text-[#A7B0C4] hover:text-[#E65353] transition-colors"
-          title="Reiniciar"
+          title="Reiniciar Esta Batalha"
         >
           <RotateCcw size={16} />
         </button>
+
+        {/* Save and Exit to Menu */}
+        {onSaveAndExit && (
+          <button
+            onClick={onSaveAndExit}
+            className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#F0B44D] text-[#A7B0C4] hover:text-[#F0B44D] transition-colors"
+            title="Salvar e Sair ao Menu"
+          >
+            <Home size={16} />
+          </button>
+        )}
       </div>
     </header>
   );

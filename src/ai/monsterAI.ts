@@ -103,7 +103,26 @@ export function decideMonsterAction(
         const hpPercent = (target.currentHp / target.maxHp) * 100;
         score += (100 - hpPercent) * 2;
 
-        if (act.skill) score += 50;
+        if (act.skill) {
+          score += 50;
+          if (act.skill.statusEffect) score += 60;
+          if (act.skill.aoeRadius && act.skill.aoeRadius > 0) {
+            for (const other of playerUnits) {
+              if (other.id === target.id) continue;
+              if (
+                Math.abs(other.x - target.x) <= act.skill.aoeRadius &&
+                Math.abs(other.y - target.y) <= act.skill.aoeRadius
+              ) {
+                const { base: splashDmg } = calculateBaseDamage(
+                  { ...monster, x: moveTile.x, y: moveTile.y },
+                  other,
+                  act.skill
+                );
+                score += splashDmg + 80;
+              }
+            }
+          }
+        }
 
         if (target.className === 'mago' || target.className === 'curandeiro') {
           score += 30;

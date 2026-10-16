@@ -66,6 +66,17 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </span>
         </div>
 
+        {preview.skill && preview.skill.aoeRadius > 0 && (
+          <div className="bg-[#FF9800]/15 border border-[#FF9800]/50 text-[#FF9800] px-3 py-1.5 rounded-lg text-xs font-black flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <span>💥</span> ATAQUE EM ÁREA 3x3
+            </span>
+            <span className="bg-[#FF9800]/25 px-2 py-0.5 rounded text-[11px]">
+              {preview.aoeTargetsCount || 1} {preview.aoeTargetsCount === 1 ? 'alvo na área' : 'alvos na área'}
+            </span>
+          </div>
+        )}
+
         {preview.isKillLikely && !isHeal && (
           <div className="bg-[#E65353]/15 border border-[#E65353]/40 text-[#E65353] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 animate-pulse">
             <AlertTriangle size={14} /> ALTO RISCO DE ELIMINAR O ALVO!

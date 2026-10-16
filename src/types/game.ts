@@ -103,6 +103,7 @@ export interface DamagePreview {
   targetHpAfterMax: number;
   isKillLikely: boolean;
   damageType: DamageType;
+  aoeTargetsCount?: number;
 }
 
 export interface FloatingNumber {
@@ -141,12 +142,46 @@ export interface LevelConfig {
   hasFinalBoss?: boolean;
 }
 
+export type StatType = 'hp' | 'atk' | 'mag' | 'def' | 'res';
+
+export type UnitProgression = {
+  className: string;
+  level: number;
+  xp: number;
+  bonusAtk: number;
+  bonusDef: number;
+  bonusHp: number;
+  bonusMag?: number;
+  bonusRes?: number;
+  learnedSkillIds: string[];
+};
+
+export interface AdventureRecord {
+  id: string;
+  startedAt: string;
+  endedAt: string;
+  farthestLevel: number;
+  farthestLevelName: string;
+  result: 'victory' | 'defeat';
+  partyClasses: string[];
+  goldEarned: number;
+}
+
+export interface ActiveAdventure {
+  currentLevelId: number;
+  partyClasses: string[];
+  startedAt: string;
+  goldEarnedInRun: number;
+  unitsState: Record<string, UnitProgression>;
+}
+
 export interface PlayerProgress {
-  version: number; // Save schema version (v2)
+  version: number; // Save schema version (v4)
   unlockedLevel: number;
   completedLevels: number[];
-  gold: number;
-  selectedPartyClasses: string[]; // Array of 4 class names selected by player
+  gold: number; // Persistent gold kept across all runs
+  unlockedClasses: string[]; // Persistent unlocked playable class names
+  selectedPartyClasses: string[]; // Current 4 classes
   unitsState: Record<string, {
     className: string;
     level: number;
@@ -154,10 +189,17 @@ export interface PlayerProgress {
     bonusAtk: number;
     bonusDef: number;
     bonusHp: number;
+    bonusMag?: number;
+    bonusRes?: number;
     learnedSkillIds: string[];
   }>;
   combatSpeed: 'normal' | 'fast';
   highScore: number;
+
+  // Roguelike & Collection systems:
+  activeAdventure: ActiveAdventure | null; // Null if no run is currently underway
+  discoveredMonsterIds: string[]; // Discovered monsters for bestiary
+  adventureHistory: AdventureRecord[]; // Up to 10 last finished adventures
 }
 
 export interface AudioSettings {

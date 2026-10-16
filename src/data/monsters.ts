@@ -14,18 +14,20 @@ export interface MonsterDefinition {
   color: string;
   avatarKey: string;
   skillId?: string;
+  skillIds: string[];
   description: string;
   isBoss?: boolean;
   isMiniBoss?: boolean;
 }
 
 export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
+  // --- 10 NORMAL MONSTER ARCHETYPES ---
   goblin: {
     typeId: 'goblin',
     name: 'Goblin Solteiro',
     maxHp: 55,
     atk: 14,
-    mag: 2,
+    mag: 4,
     def: 3,
     res: 2,
     mov: 3,
@@ -33,7 +35,8 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#E65353',
     avatarKey: 'goblin',
     skillId: 'ataque_goblin',
-    description: 'Pequena criatura ágil que ataca em bando.',
+    skillIds: ['ataque_goblin', 'bomba_fedida', 'adaga_furtiva'],
+    description: 'Pequena criatura ágil que ataca em bando e arremessa bombas fétidas.',
   },
   orc: {
     typeId: 'orc',
@@ -48,14 +51,15 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#D93838',
     avatarKey: 'orc',
     skillId: 'golpe_esmagador',
-    description: 'Guerreiro brutal com alto ataque físico e armadura pesada.',
+    skillIds: ['golpe_esmagador', 'rugido_de_guerra_orc', 'machadada_violenta'],
+    description: 'Guerreiro brutal com alto ataque físico, grito de guerra e golpes esmagadores.',
   },
   aranha: {
     typeId: 'aranha',
     name: 'Aranha Sombria',
     maxHp: 65,
     atk: 17,
-    mag: 5,
+    mag: 6,
     def: 4,
     res: 5,
     mov: 4,
@@ -63,7 +67,8 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#9C27B0',
     avatarKey: 'spider',
     skillId: 'picada_venenosa',
-    description: 'Predadora veloz que envenena suas vítimas com cada picada.',
+    skillIds: ['picada_venenosa', 'teia_paralisante', 'bote_sombrio'],
+    description: 'Predadora veloz que envenena presas e dispara teias que reduzem a mobilidade.',
   },
   mago_trevas: {
     typeId: 'mago_trevas',
@@ -78,10 +83,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#7E57C2',
     avatarKey: 'dark_mage',
     skillId: 'chama_sombria',
-    description: 'Conjurador maligno que ataca à distância com magia negra.',
+    skillIds: ['chama_sombria', 'vortice_obscuro', 'maldicao_debilitante'],
+    description: 'Conjurador maligno que ataca à distância com fogo sombrio e vórtices em área.',
   },
-
-  // --- 6 NEW MONSTER ARCHETYPES ---
   lobo_espectral: {
     typeId: 'lobo_espectral',
     name: 'Lobo Espectral',
@@ -94,8 +98,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 1,
     color: '#29B6F6',
     avatarKey: 'spectral_wolf',
-    skillId: 'ataque_goblin',
-    description: 'Criatura velocíssima com rastro translúcido azulado.',
+    skillId: 'mordida_fantasma',
+    skillIds: ['mordida_fantasma', 'uivo_aterrador', 'salto_espectral'],
+    description: 'Fera etérea veloz capaz de atordoar com uivos aterradores e saltos spectrais.',
   },
   golem_basalto: {
     typeId: 'golem_basalto',
@@ -110,7 +115,8 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#78909C',
     avatarKey: 'basalt_golem',
     skillId: 'golpe_esmagador',
-    description: 'Monstro gigante de pedra com fissuras incandescentes e alta defesa.',
+    skillIds: ['golpe_esmagador', 'armadura_petrea', 'terremoto_basalto'],
+    description: 'Colosso de pedra imponente com escudo rochoso e terremotos em área devastadores.',
   },
   bruxa_espinhos: {
     typeId: 'bruxa_espinhos',
@@ -124,8 +130,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 3,
     color: '#66BB6A',
     avatarKey: 'thorn_witch',
-    skillId: 'picada_venenosa',
-    description: 'Conjuradora que aprisiona heróis com raízes e veneno.',
+    skillId: 'espinhos_envenenados',
+    skillIds: ['espinhos_envenenados', 'raiz_espinhosa', 'dreno_de_seiva'],
+    description: 'Feiticeira das matas que atordoa com raízes, dispara espinhos tóxicos e drena vida.',
   },
   cavaleiro_caido: {
     typeId: 'cavaleiro_caido',
@@ -139,8 +146,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 1,
     color: '#8D6E63',
     avatarKey: 'fallen_knight',
-    skillId: 'golpe_esmagador',
-    description: 'Guerreiro morto-vivo implacável com armadura desgastada.',
+    skillId: 'corte_profano',
+    skillIds: ['corte_profano', 'escudo_espectral', 'investida_caida'],
+    description: 'Guerreiro nobre corrompido que ignora armaduras, ergue escudos e desfere estocadas fúnebres.',
   },
   mimico: {
     typeId: 'mimico',
@@ -154,8 +162,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 1,
     color: '#FFA726',
     avatarKey: 'mimic',
-    skillId: 'ataque_goblin',
-    description: 'Criatura traiçoeira que ataca com mandíbulas afiadas.',
+    skillId: 'mordida_devoradora',
+    skillIds: ['mordida_devoradora', 'acido_corrosivo', 'lingua_voraz'],
+    description: 'Criatura traiçoeira com ácido dissolvente, mordidas vorazes e chicote carniceiro.',
   },
   draco_volcanico: {
     typeId: 'draco_volcanico',
@@ -169,41 +178,180 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 2,
     color: '#FF5722',
     avatarKey: 'volcanic_drake',
-    skillId: 'chama_sombria',
-    description: 'Réptil colossal de escamas incandescentes que cospe chamas.',
+    skillId: 'sopro_de_magma',
+    skillIds: ['sopro_de_magma', 'mordida_incandescente', 'furia_draconica'],
+    description: 'Réptil colossal de escamas incandescentes com sopro de magma em área e fúria devastadora.',
   },
 
-  // --- SPECIAL BOSSES ---
+  // --- SPECIAL BOSSES & MINI BOSSES (FASES 5 A 50) ---
   devorador: {
     typeId: 'devorador',
     name: 'Devorador das Profundezas',
-    maxHp: 320,
-    atk: 32,
-    mag: 15,
-    def: 15,
-    res: 12,
+    maxHp: 380,
+    atk: 34,
+    mag: 18,
+    def: 16,
+    res: 14,
     mov: 3,
     range: 1,
     color: '#FF6F00',
     avatarKey: 'devourer_boss',
     skillId: 'investida_devoradora',
+    skillIds: ['investida_devoradora', 'impacto_abissal', 'carapaca_de_ferro', 'acido_corrosivo'],
     description: 'MINI BOSS (FASE 5): Criatura abissal gigantesca com mandíbulas de ferro e carapaça incandescente.',
     isMiniBoss: true,
   },
   astaroth: {
     typeId: 'astaroth',
     name: 'Astaroth, Soberano do Abismo',
-    maxHp: 550,
-    atk: 40,
-    mag: 38,
-    def: 18,
-    res: 16,
+    maxHp: 650,
+    atk: 42,
+    mag: 40,
+    def: 20,
+    res: 18,
     mov: 3,
     range: 3,
     color: '#4A148C',
     avatarKey: 'astaroth_boss',
     skillId: 'lanca_do_abismo',
-    description: 'BOSS FINAL (FASE 10): Soberano supremo do abismo em 3 fases de transformação devastadoras.',
+    skillIds: ['lanca_do_abismo', 'despertar_sombrio', 'ruina_absoluta', 'vortice_obscuro'],
+    description: 'BOSS PODEROSO (FASE 10): Soberano supremo do abismo em 3 fases de transformação devastadoras.',
+    isBoss: true,
+  },
+  arauto_espectral: {
+    typeId: 'arauto_espectral',
+    name: 'Arauto dos Espectros',
+    maxHp: 580,
+    atk: 38,
+    mag: 40,
+    def: 20,
+    res: 22,
+    mov: 3,
+    range: 2,
+    color: '#00E5FF',
+    avatarKey: 'spectral_wolf',
+    skillId: 'dreno_de_vida',
+    skillIds: ['dreno_de_vida', 'maldicao_fraqueza', 'chama_sombria', 'uivo_aterrador'],
+    description: 'MINI BOSS (FASE 15): Ceifador espectral etéreo que suga a força vital dos inimigos.',
+    isMiniBoss: true,
+  },
+  tita_forjador: {
+    typeId: 'tita_forjador',
+    name: 'Vulcanus, Titã das Forjas',
+    maxHp: 950,
+    atk: 50,
+    mag: 34,
+    def: 30,
+    res: 24,
+    mov: 2,
+    range: 2,
+    color: '#FF3D00',
+    avatarKey: 'basalt_golem',
+    skillId: 'golpe_esmagador',
+    skillIds: ['golpe_esmagador', 'impacto_abissal', 'chama_sombria', 'terremoto_basalto'],
+    description: 'BOSS PODEROSO (FASE 20): Colosso mecânico incandescente forjado no coração vulcânico.',
+    isBoss: true,
+  },
+  mestre_runico: {
+    typeId: 'mestre_runico',
+    name: 'Arquimago das Runas',
+    maxHp: 780,
+    atk: 32,
+    mag: 52,
+    def: 22,
+    res: 28,
+    mov: 3,
+    range: 3,
+    color: '#7C4DFF',
+    avatarKey: 'dark_mage',
+    skillId: 'runa_de_choque',
+    skillIds: ['runa_de_choque', 'glifo_incandescente', 'apocalipse_runico', 'vortice_obscuro'],
+    description: 'MINI BOSS (FASE 25): Guardião ancestral de segredos e magias rúnicas proibidas.',
+    isMiniBoss: true,
+  },
+  valgar_sanguinario: {
+    typeId: 'valgar_sanguinario',
+    name: 'Valgar, o Carniceiro Imortal',
+    maxHp: 1300,
+    atk: 62,
+    mag: 28,
+    def: 28,
+    res: 22,
+    mov: 3,
+    range: 1,
+    color: '#B71C1C',
+    avatarKey: 'orc',
+    skillId: 'golpe_selvagem',
+    skillIds: ['golpe_selvagem', 'frenesi_sanguinario', 'salto_destrutivo', 'ruina_absoluta'],
+    description: 'BOSS PODEROSO (FASE 30): Senhor da guerra implacável movido por pura fúria sanguinária.',
+    isBoss: true,
+  },
+  quimera_venenosa: {
+    typeId: 'quimera_venenosa',
+    name: 'Quimera das Sombras Antigas',
+    maxHp: 1050,
+    atk: 52,
+    mag: 46,
+    def: 26,
+    res: 28,
+    mov: 3,
+    range: 2,
+    color: '#00C853',
+    avatarKey: 'spider',
+    skillId: 'picada_venenosa',
+    skillIds: ['picada_venenosa', 'teia_paralisante', 'impacto_abissal', 'sopro_de_magma'],
+    description: 'MINI BOSS (FASE 35): Fera mutante de veneno letal e garras peçonhentas.',
+    isMiniBoss: true,
+  },
+  leviata_vazio: {
+    typeId: 'leviata_vazio',
+    name: 'Leviatã do Vazio Primordial',
+    maxHp: 1800,
+    atk: 66,
+    mag: 66,
+    def: 34,
+    res: 34,
+    mov: 3,
+    range: 3,
+    color: '#311B92',
+    avatarKey: 'devourer_boss',
+    skillId: 'lanca_do_abismo',
+    skillIds: ['lanca_do_abismo', 'despertar_sombrio', 'ruina_absoluta', 'vortice_obscuro', 'maldicao_debilitante'],
+    description: 'BOSS PODEROSO (FASE 40): Entidade colossal cósmica que distorce o tecido da realidade.',
+    isBoss: true,
+  },
+  cavaleiro_apocalipse: {
+    typeId: 'cavaleiro_apocalipse',
+    name: 'Cavaleiro do Eclipse Eterno',
+    maxHp: 1400,
+    atk: 62,
+    mag: 50,
+    def: 32,
+    res: 30,
+    mov: 3,
+    range: 2,
+    color: '#FFD600',
+    avatarKey: 'fallen_knight',
+    skillId: 'corte_profano',
+    skillIds: ['corte_profano', 'golpe_esmagador', 'escudo_espectral', 'ruina_absoluta'],
+    description: 'MINI BOSS (FASE 45): O último cavaleiro sagrado corrompido pela escuridão do eclipse.',
+    isMiniBoss: true,
+  },
+  cronos_abissal: {
+    typeId: 'cronos_abissal',
+    name: 'Malakor, O Fim de Todas as Eras',
+    maxHp: 2800,
+    atk: 78,
+    mag: 82,
+    def: 38,
+    res: 38,
+    mov: 3,
+    range: 3,
+    color: '#D50000',
+    avatarKey: 'astaroth_boss',
+    skillId: 'ruina_absoluta',
+    skillIds: ['ruina_absoluta', 'lanca_do_abismo', 'despertar_sombrio', 'apocalipse_runico', 'furia_draconica'],
+    description: 'BOSS SUPREMO FINAL (FASE 50): A divindade do caos definitivo. O teste final para a sua guilda.',
     isBoss: true,
   },
 };
@@ -217,25 +365,42 @@ export function createMonsterUnit(
 ): Unit {
   const def = MONSTER_DEFINITIONS[typeId];
   const level = 1 + levelOffset;
-  const maxHp = def.maxHp + levelOffset * 20;
-  const atk = def.atk + levelOffset * 4;
-  const unitDef = def.def + levelOffset * 2;
 
-  const skillList: any[] = [];
-  if (def.skillId && SKILLS[def.skillId]) {
-    skillList.push(JSON.parse(JSON.stringify(SKILLS[def.skillId])));
+  let maxHp: number;
+  let atk: number;
+  let mag: number;
+  let unitDef: number;
+  let res: number;
+
+  if (def.isBoss) {
+    // Boss scaling: matches endgame player level 10 to 50
+    maxHp = def.maxHp + levelOffset * 90;
+    atk = def.atk + Math.round(levelOffset * 8.0);
+    mag = def.mag + Math.round(levelOffset * 8.0);
+    unitDef = def.def + Math.round(levelOffset * 4.0);
+    res = def.res + Math.round(levelOffset * 4.0);
+  } else if (def.isMiniBoss) {
+    // Mini-boss scaling: stages 5, 15, 25, 35, 45
+    maxHp = def.maxHp + levelOffset * 55;
+    atk = def.atk + Math.round(levelOffset * 6.0);
+    mag = def.mag + Math.round(levelOffset * 6.0);
+    unitDef = def.def + Math.round(levelOffset * 3.2);
+    res = def.res + Math.round(levelOffset * 3.0);
+  } else {
+    // Normal monster progressive scaling
+    maxHp = def.maxHp + levelOffset * 28;
+    atk = def.atk + Math.round(levelOffset * 4.5);
+    mag = def.mag + Math.round(levelOffset * 4.5);
+    unitDef = def.def + Math.round(levelOffset * 2.2);
+    res = def.res + Math.round(levelOffset * 2.0);
   }
 
-  // Add extra skills for Devorador
-  if (typeId === 'devorador') {
-    if (SKILLS.impacto_abissal) skillList.push(JSON.parse(JSON.stringify(SKILLS.impacto_abissal)));
-    if (SKILLS.carapaca_de_ferro) skillList.push(JSON.parse(JSON.stringify(SKILLS.carapaca_de_ferro)));
-  }
-  // Add extra skills for Astaroth
-  if (typeId === 'astaroth') {
-    if (SKILLS.despertar_sombrio) skillList.push(JSON.parse(JSON.stringify(SKILLS.despertar_sombrio)));
-    if (SKILLS.ruina_absoluta) skillList.push(JSON.parse(JSON.stringify(SKILLS.ruina_absoluta)));
-  }
+  // Load active skill list
+  const skillIds = def.skillIds && def.skillIds.length > 0 ? def.skillIds : (def.skillId ? [def.skillId] : []);
+  const skillList: any[] = skillIds
+    .map((sId) => SKILLS[sId])
+    .filter(Boolean)
+    .map((s) => JSON.parse(JSON.stringify(s)));
 
   return {
     id,
@@ -244,13 +409,13 @@ export function createMonsterUnit(
     faction: 'enemy',
     level,
     xp: 0,
-    maxXp: 100,
+    maxXp: 100 * level,
     maxHp,
     currentHp: maxHp,
     atk,
-    mag: def.mag + levelOffset * 4,
+    mag,
     def: unitDef,
-    res: def.res + levelOffset * 2,
+    res,
     mov: def.mov,
     range: def.range,
     x,

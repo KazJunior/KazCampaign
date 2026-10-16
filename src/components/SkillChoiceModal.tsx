@@ -22,6 +22,10 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
       if (unit.className === 'curandeiro' && ['cura_em_area', 'escudo_sagrado', 'purificacao', 'luz_restauradora', 'martelo_sagrado', 'bencao_divina', 'aura_de_protecao', 'ressurreicao_mistica', 'paz_espiritual'].includes(sk.id)) return true;
       if (unit.className === 'assassino' && ['passo_das_sombras', 'veneno_mortal', 'execucao', 'laminas_duplas', 'mortalha_das_sombras', 'corte_traicoeiro', 'danca_das_laminas', 'assassinato', 'agilidade_sombria'].includes(sk.id)) return true;
       if (unit.className === 'cavaleiro_arcano' && ['barreira_arcana', 'ruptura_mistica', 'marca_do_cacador', 'golpe_flamejante', 'estocada_eletrica', 'aura_runica', 'sedenta_de_runas', 'lamina_do_destino', 'armadura_runica'].includes(sk.id)) return true;
+      if (unit.className === 'necromante' && ['maldicao_fraqueza', 'explosao_corpse', 'pacto_de_sangue', 'toque_apodrecedor', 'profanar_solo'].includes(sk.id)) return true;
+      if (unit.className === 'engenheiro' && ['lanca_granada', 'barreira_tecnologica', 'choque_estatico', 'injecao_de_adrenalina', 'sobrecarga_nuclear'].includes(sk.id)) return true;
+      if (unit.className === 'mago_runico' && ['runa_de_protecao', 'glifo_incandescente', 'marca_do_destino', 'campo_runico', 'apocalipse_runico'].includes(sk.id)) return true;
+      if (unit.className === 'berserker' && ['frenesi_sanguinario', 'salto_destrutivo', 'rugido_intimidante', 'corte_temerario', 'ira_incontrolavel'].includes(sk.id)) return true;
 
       return false;
     });
@@ -53,13 +57,13 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
         {/* Header Banner */}
         <div className="text-center space-y-1">
           <div className="inline-flex items-center gap-2 bg-[#D4AD65]/15 border border-[#D4AD65]/40 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">
-            <ArrowUpRight size={16} /> SUBIU PARA O NÍVEL {unit.level}!
+            <ArrowUpRight size={16} /> MARCO DE HABILIDADE (NÍVEL {unit.level})
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#F3F4F8]">
             Escolha 1 Nova Habilidade para {unit.name}
           </h2>
           <p className="text-xs text-[#A7B0C4]">
-            Escolha uma das 3 opções para adicionar permanentemente ao arsenal do seu herói.
+            Habilidade especial ganha a cada 3 níveis! Escolha uma das 3 opções para adicionar permanentemente ao arsenal.
           </p>
         </div>
 

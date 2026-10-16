@@ -366,6 +366,10 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         if (targetObj) {
           await engine.playHitReaction(targetObj, 'physical', 300);
         }
+        // AoE shockwave for physical AoE attacks (e.g. Chuva de Flechas, Tremor Sísmico)
+        if (skillAoeRadius && skillAoeRadius > 0) {
+          await engine.playAoEAnimation(targetUnit.x, targetUnit.y, skillAoeRadius, 0xef4444, 500);
+        }
       }
     },
 
