@@ -28,7 +28,7 @@ import {
 } from './utils/storage';
 import { soundManager } from './utils/audio';
 import { getAttackableTiles, getAoETiles, getReachableTiles } from './utils/pathfinding';
-import { rollActualDamage } from './utils/damage';
+import { getDamagePreview, rollActualDamage } from './utils/damage';
 import { decideMonsterAction } from './ai/monsterAI';
 import { BoardRenderer3D } from './game/BoardRenderer3D';
 import type { BoardRenderer3DHandle } from './game/BoardRenderer3D';
@@ -459,16 +459,65 @@ export function App() {
       }
     }
 
+    // Attack / Skill targeting execution
+    if (selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasAttacked) {
+      const isTargeting = selectedAction === 'attack' || !!activeSkill;
+      const targetType = activeSkill ? activeSkill.targetType : 'enemy';
+
+      // Self-targeting skill
+      if (activeSkill && targetType === 'self' && x === selectedUnit.x && y === selectedUnit.y) {
+        const preview = getDamagePreview(selectedUnit, selectedUnit, activeSkill);
+        setDamagePreview(preview);
+        setTargetUnitId(selectedUnit.id);
+        soundManager.playSelect();
+        return;
+      }
+
+      // Unit targeting (Enemy, Ally or Any)
+      if (clickedUnit) {
+        const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
+        const isFactionValid =
+          (targetType === 'enemy' && clickedUnit.faction === 'enemy') ||
+          (targetType === 'ally' && clickedUnit.faction === 'player') ||
+          targetType === 'any';
+
+        if (isTargetTileValid && (isTargeting ? isFactionValid : clickedUnit.faction === 'enemy')) {
+          const effectiveSkill = activeSkill || undefined;
+          const preview = getDamagePreview(selectedUnit, clickedUnit, effectiveSkill);
+
+          if (effectiveSkill && effectiveSkill.aoeRadius > 0) {
+            const matchFaction = effectiveSkill.targetType === 'ally' ? 'player' : 'enemy';
+            preview.aoeTargetsCount = units.filter(
+              (u) =>
+                u.faction === matchFaction &&
+                !u.isDead &&
+                Math.abs(u.x - clickedUnit.x) <= effectiveSkill.aoeRadius &&
+                Math.abs(u.y - clickedUnit.y) <= effectiveSkill.aoeRadius
+            ).length;
+          }
+
+          setDamagePreview(preview);
+          setTargetUnitId(clickedUnit.id);
+          soundManager.playSelect();
+          return;
+        }
+      }
+    }
+
     // Select / Deselect unit
     if (clickedUnit) {
       setSelectedUnitId(clickedUnit.id);
       setSelectedAction('none');
       setActiveSkill(null);
+      setDamagePreview(null);
+      setTargetUnitId(null);
       soundManager.playSelect();
     } else {
       setSelectedUnitId(null);
       setSelectedAction('none');
       setActiveSkill(null);
+      setDamagePreview(null);
+      setTargetUnitId(null);
     }
   };
 
@@ -997,7 +1046,10 @@ export function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (currentView !== 'battle' || isAnimatingAction) return;
-      if (e.code === 'Space' && phase === 'player_turn') {
+      if (e.code === 'Enter' && damagePreview) {
+        e.preventDefault();
+        handleConfirmAttack();
+      } else if (e.code === 'Space' && phase === 'player_turn') {
         e.preventDefault();
         handleEndPlayerTurn();
       } else if (e.code === 'Escape') {
@@ -1005,6 +1057,7 @@ export function App() {
         setSelectedAction('none');
         setActiveSkill(null);
         setDamagePreview(null);
+        setTargetUnitId(null);
       } else if (selectedUnit && selectedUnit.faction === 'player' && phase === 'player_turn') {
         if (e.code === 'KeyM' && !selectedUnit.hasMoved) setSelectedAction('move');
         else if (e.code === 'KeyA' && !selectedUnit.hasAttacked) setSelectedAction('attack');
@@ -1017,7 +1070,7 @@ export function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, phase, selectedUnit, handleEndPlayerTurn, isAnimatingAction]);
+  }, [currentView, phase, selectedUnit, handleEndPlayerTurn, isAnimatingAction, damagePreview, handleConfirmAttack]);
 
   // Auth gate
   if (!authChecked) {
@@ -1135,9 +1188,16 @@ export function App() {
           onSelectSkill={(sk) => {
             setActiveSkill(sk);
             setSelectedAction('none');
+            if (sk.targetType === 'self' && selectedUnit) {
+              const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
+              setDamagePreview(preview);
+              setTargetUnitId(selectedUnit.id);
+            }
           }}
           onClearSkill={() => {
             setActiveSkill(null);
+            setDamagePreview(null);
+            setTargetUnitId(null);
           }}
           isPlayerTurn={phase === 'player_turn'}
         />
@@ -1189,7 +1249,14 @@ export function App() {
       </div>
 
       {damagePreview && (
-        <ActionPreviewModal preview={damagePreview} onConfirm={handleConfirmAttack} onCancel={() => setDamagePreview(null)} />
+        <ActionPreviewModal
+          preview={damagePreview}
+          onConfirm={handleConfirmAttack}
+          onCancel={() => {
+            setDamagePreview(null);
+            setTargetUnitId(null);
+          }}
+        />
       )}
       {showObjectives && currentLevel && <ObjectivesModal level={currentLevel} onClose={() => setShowObjectives(false)} />}
       {showSettings && (
