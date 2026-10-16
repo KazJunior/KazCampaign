@@ -51,7 +51,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { BestiaryModal } from './components/BestiaryModal';
 import { AdventureHistoryModal } from './components/AdventureHistoryModal';
-import { fetchCurrentUser, logout, submitScore } from './utils/api';
+import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
 import type { AuthUser } from './utils/api';
 import { LogOut, Trophy, User as UserIcon, Loader2 } from 'lucide-react';
 
@@ -72,9 +72,37 @@ export function App() {
   const authUserRef = useRef<AuthUser | null>(null);
   authUserRef.current = authUser;
 
+  const syncUserCloudProgress = async (user: AuthUser) => {
+    setAuthUser(user);
+    try {
+      const cloudP = await fetchCloudProgress();
+      if (cloudP) {
+        setProgress((prev) => {
+          const merged: PlayerProgress = {
+            ...prev,
+            gold: Math.max(prev.gold, cloudP.gold || 0),
+            unlockedClasses: Array.from(new Set([...(prev.unlockedClasses || []), ...(cloudP.unlockedClasses || [])])),
+            discoveredMonsterIds: Array.from(new Set([...(prev.discoveredMonsterIds || []), ...(cloudP.discoveredMonsterIds || [])])),
+            activeAdventure: cloudP.activeAdventure ?? prev.activeAdventure,
+            adventureHistory: cloudP.adventureHistory && cloudP.adventureHistory.length > 0 ? cloudP.adventureHistory : prev.adventureHistory,
+            combatSpeed: cloudP.combatSpeed || prev.combatSpeed,
+          };
+          savePlayerProgress(merged);
+          return merged;
+        });
+      } else {
+        saveCloudProgress(progress);
+      }
+    } catch (err) {
+      console.warn('Erro ao sincronizar progresso em nuvem:', err);
+    }
+  };
+
   useEffect(() => {
-    fetchCurrentUser().then((user) => {
-      setAuthUser(user);
+    fetchCurrentUser().then(async (user) => {
+      if (user) {
+        await syncUserCloudProgress(user);
+      }
       setAuthChecked(true);
     });
   }, []);
@@ -1002,7 +1030,7 @@ export function App() {
   if (!authUser) {
     return (
       <>
-        <AuthScreen onAuthenticated={setAuthUser} onOpenLeaderboard={() => setShowLeaderboard(true)} />
+        <AuthScreen onAuthenticated={syncUserCloudProgress} onOpenLeaderboard={() => setShowLeaderboard(true)} />
         {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
       </>
     );

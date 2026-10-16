@@ -1,5 +1,6 @@
 import type { AudioSettings, PlayerProgress } from '../types/game';
 import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS } from '../data/units';
+import { saveCloudProgress } from './api';
 
 const PROGRESS_KEY = 'rpg_tactics_progress_v4';
 const AUDIO_KEY = 'rpg_tactics_audio_v1';
@@ -119,6 +120,7 @@ export function loadPlayerProgress(): PlayerProgress {
 export function savePlayerProgress(progress: PlayerProgress): void {
   try {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+    saveCloudProgress(progress);
   } catch (err) {
     console.error('Failed to save progress to localStorage:', err);
   }

@@ -81,6 +81,27 @@ export async function fetchCurrentUser(): Promise<AuthUser | null> {
   }
 }
 
+/** Carrega progresso salvo no Neon Database para o usuário autenticado */
+export async function fetchCloudProgress(): Promise<any | null> {
+  if (!getToken()) return null;
+  try {
+    const data = await request<{ progress: any | null }>('/api/progress', { auth: true });
+    return data.progress;
+  } catch {
+    return null;
+  }
+}
+
+/** Sincroniza progresso com o Neon Database */
+export async function saveCloudProgress(progress: any): Promise<void> {
+  if (!getToken()) return;
+  try {
+    await request('/api/progress', { method: 'POST', body: progress, auth: true });
+  } catch (err) {
+    console.warn('Sincronização em nuvem indisponível:', err);
+  }
+}
+
 const LOCAL_LEADERBOARD_KEY = 'kazcampaign_local_leaderboard';
 
 function getLocalLeaderboard(): LeaderboardEntry[] {
