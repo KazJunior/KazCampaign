@@ -1,0 +1,172 @@
+export interface Point {
+  x: number;
+  y: number;
+}
+
+export type TerrainType = 'grass' | 'stone' | 'sand' | 'dirt' | 'water' | 'swamp' | 'void';
+export type ObstacleType = 'none' | 'tree' | 'rock' | 'ruins' | 'shrine' | 'wall' | 'pillar' | 'thorns' | 'tombstone';
+
+export interface TileData {
+  x: number;
+  y: number;
+  terrain: TerrainType;
+  obstacle: ObstacleType;
+  isWalkable: boolean;
+  blocksVision: boolean;
+  isTelegraphedHazard?: boolean; // Danger warning tile for boss AoE
+}
+
+export type UnitFaction = 'player' | 'enemy';
+
+export type DamageType = 'physical' | 'magical' | 'healing';
+
+export type SkillCategory = 'attack' | 'defense' | 'support' | 'passive';
+
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  damageType: DamageType;
+  category?: SkillCategory;
+  power: number;
+  rangeMin: number;
+  rangeMax: number;
+  aoeRadius: number;
+  cooldownMax: number;
+  currentCooldown: number;
+  targetType: 'enemy' | 'ally' | 'any' | 'self';
+  defenseIgnoreRatio?: number;
+  requiredLevel?: number;
+  statusEffect?: {
+    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk';
+    duration: number;
+    value: number;
+  };
+  iconName: string;
+  isPassive?: boolean;
+}
+
+export interface Unit {
+  id: string;
+  name: string;
+  className: string;
+  faction: UnitFaction;
+  level: number;
+  xp: number;
+  maxXp: number;
+  
+  maxHp: number;
+  currentHp: number;
+  atk: number;
+  mag: number;
+  def: number;
+  res: number;
+  mov: number;
+  range: number;
+  
+  x: number;
+  y: number;
+  hasMoved: boolean;
+  hasAttacked: boolean;
+  isDead: boolean;
+  
+  color: string;
+  avatarKey: string;
+  
+  skills: Skill[];
+  learnedSkillIds: string[]; // List of IDs learned via level up choices
+  
+  statusEffects: {
+    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk';
+    duration: number;
+    value: number;
+  }[];
+
+  // Boss specific
+  isBoss?: boolean;
+  isMiniBoss?: boolean;
+  bossPhase?: number; // 1, 2, 3
+
+  damageDealt: number;
+  kills: number;
+}
+
+export interface DamagePreview {
+  attacker: Unit;
+  target: Unit;
+  skill?: Skill;
+  minDamage: number;
+  maxDamage: number;
+  avgDamage: number;
+  targetCurrentHp: number;
+  targetHpAfterMin: number;
+  targetHpAfterMax: number;
+  isKillLikely: boolean;
+  damageType: DamageType;
+}
+
+export interface FloatingNumber {
+  id: string;
+  x: number;
+  y: number;
+  value: string | number;
+  type: DamageType | 'miss' | 'status' | 'shield';
+  color: string;
+}
+
+export interface LevelConfig {
+  id: number;
+  name: string;
+  subtitle: string;
+  environment: 'forest' | 'ruins' | 'cave' | 'fortress' | 'swamp' | 'tomb' | 'citadel' | 'abyss' | 'shrine';
+  width: number;
+  height: number;
+  description: string;
+  objectives: string[];
+  grid: { terrain: TerrainType; obstacle: ObstacleType }[][];
+  deploymentZone: { x: number; y: number }[];
+  enemySpawns: {
+    monsterTypeId: string;
+    x: number;
+    y: number;
+    levelOffset?: number;
+    isBoss?: boolean;
+    isMiniBoss?: boolean;
+  }[];
+  rewards: {
+    gold: number;
+    xpPerUnit: number;
+  };
+  hasMiniBoss?: boolean;
+  hasFinalBoss?: boolean;
+}
+
+export interface PlayerProgress {
+  version: number; // Save schema version (v2)
+  unlockedLevel: number;
+  completedLevels: number[];
+  gold: number;
+  selectedPartyClasses: string[]; // Array of 4 class names selected by player
+  unitsState: Record<string, {
+    className: string;
+    level: number;
+    xp: number;
+    bonusAtk: number;
+    bonusDef: number;
+    bonusHp: number;
+    learnedSkillIds: string[];
+  }>;
+  combatSpeed: 'normal' | 'fast';
+  highScore: number;
+}
+
+export interface AudioSettings {
+  muted: boolean;
+  masterVolume: number;
+  sfxVolume: number;
+  bgmVolume: number;
+}
+
+export type BattlePhase = 'deployment' | 'player_turn' | 'ai_turn' | 'boss_transition' | 'victory' | 'defeat';
+
+export type SelectedAction = 'none' | 'move' | 'attack' | 'skill';

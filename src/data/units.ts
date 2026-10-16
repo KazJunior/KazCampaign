@@ -1,0 +1,238 @@
+import type { Unit } from '../types/game';
+import { SKILLS } from './skills';
+
+export interface ClassDefinition {
+  className: string;
+  name: string;
+  role: string;
+  maxHp: number;
+  atk: number;
+  mag: number;
+  def: number;
+  res: number;
+  mov: number;
+  range: number;
+  color: string;
+  avatarKey: string;
+  baseSkillId: string;
+  description: string;
+}
+
+export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
+  guerreiro: {
+    className: 'guerreiro',
+    name: 'Guerreiro',
+    role: 'Tanque & Linha de Frente',
+    maxHp: 120,
+    atk: 25,
+    mag: 5,
+    def: 12,
+    res: 6,
+    mov: 3,
+    range: 1,
+    color: '#4C8DFF',
+    avatarKey: 'warrior',
+    baseSkillId: 'golpe_poderoso',
+    description: 'Especialista em combate corpo a corpo com alta resistência e proteção de aliados.',
+  },
+  arqueiro: {
+    className: 'arqueiro',
+    name: 'Arqueiro',
+    role: 'Dano Físico à Distância',
+    maxHp: 75,
+    atk: 22,
+    mag: 8,
+    def: 5,
+    res: 5,
+    mov: 3,
+    range: 3,
+    color: '#43C878',
+    avatarKey: 'archer',
+    baseSkillId: 'flecha_perfurante',
+    description: 'Especialista em disparos precisos à distância e eliminação de alvos estratégicos.',
+  },
+  mago: {
+    className: 'mago',
+    name: 'Mago',
+    role: 'Dano Mágico em Área',
+    maxHp: 65,
+    atk: 10,
+    mag: 30,
+    def: 4,
+    res: 12,
+    mov: 2,
+    range: 3,
+    color: '#B58AFF',
+    avatarKey: 'mage',
+    baseSkillId: 'explosao_arcana',
+    description: 'Especialista em feitiços devastadores em área e manipulação elemental.',
+  },
+  curandeiro: {
+    className: 'curandeiro',
+    name: 'Curandeiro',
+    role: 'Suporte & Restauração',
+    maxHp: 85,
+    atk: 12,
+    mag: 24,
+    def: 7,
+    res: 10,
+    mov: 3,
+    range: 1,
+    color: '#56E59A',
+    avatarKey: 'cleric',
+    baseSkillId: 'cura',
+    description: 'Especialista em suporte divino, curando aliados e purificando maldições.',
+  },
+  assassino: {
+    className: 'assassino',
+    name: 'Assassino',
+    role: 'Dano Explosivo & Agilidade',
+    maxHp: 70,
+    atk: 28,
+    mag: 6,
+    def: 5,
+    res: 4,
+    mov: 4,
+    range: 1,
+    color: '#E65353',
+    avatarKey: 'assassin',
+    baseSkillId: 'golpe_sombrio',
+    description: 'Mestre da mobilidade e do dano crítico brutal a alvos vulneráveis.',
+  },
+  cavaleiro_arcano: {
+    className: 'cavaleiro_arcano',
+    name: 'Cavaleiro Arcano',
+    role: 'Combatente Híbrido Rúnico',
+    maxHp: 100,
+    atk: 22,
+    mag: 20,
+    def: 9,
+    res: 8,
+    mov: 3,
+    range: 1,
+    color: '#00BCD4',
+    avatarKey: 'arcane_knight',
+    baseSkillId: 'lamina_runica',
+    description: 'Guerreiro místico que combina força física com encantamentos rúnicos.',
+  },
+  necromante: {
+    className: 'necromante',
+    name: 'Necromante',
+    role: 'Magia Sombria & Debuffs',
+    maxHp: 65,
+    atk: 8,
+    mag: 28,
+    def: 6,
+    res: 14,
+    mov: 2,
+    range: 3,
+    color: '#8B008B',
+    avatarKey: 'necromancer',
+    baseSkillId: 'dreno_de_vida',
+    description: 'Especialista em magias das trevas, drenando a vida dos inimigos e aplicando maldições.',
+  },
+  engenheiro: {
+    className: 'engenheiro',
+    name: 'Engenheiro',
+    role: 'Engenharia & Utilidade',
+    maxHp: 80,
+    atk: 22,
+    mag: 15,
+    def: 10,
+    res: 8,
+    mov: 3,
+    range: 3,
+    color: '#F4A460',
+    avatarKey: 'engineer',
+    baseSkillId: 'tiro_de_cobre',
+    description: 'Usa invenções explosivas e disparos à distância para controlar o campo de batalha.',
+  },
+  mago_runico: {
+    className: 'mago_runico',
+    name: 'Mago Rúnico',
+    role: 'Magia Ancestral & Selos',
+    maxHp: 75,
+    atk: 12,
+    mag: 26,
+    def: 8,
+    res: 12,
+    mov: 2,
+    range: 3,
+    color: '#4169E1',
+    avatarKey: 'rune_mage',
+    baseSkillId: 'runa_de_choque',
+    description: 'Especialista em evocar runas poderosas no campo que beneficiam aliados ou causam destruição.',
+  },
+  berserker: {
+    className: 'berserker',
+    name: 'Berserker',
+    role: 'Dano Físico Extremo',
+    maxHp: 130,
+    atk: 32,
+    mag: 2,
+    def: 8,
+    res: 4,
+    mov: 4,
+    range: 1,
+    color: '#8B0000',
+    avatarKey: 'berserker',
+    baseSkillId: 'golpe_selvagem',
+    description: 'Guerreiro implacável com altíssimos danos físicos, muitas vezes sacrificando a própria segurança.',
+  },
+};
+
+export function createPlayerUnit(
+  className: keyof typeof CLASS_DEFINITIONS,
+  id: string,
+  x: number,
+  y: number,
+  level = 1,
+  xp = 0,
+  bonusHp = 0,
+  bonusAtk = 0,
+  bonusDef = 0,
+  learnedSkillIds: string[] = []
+): Unit {
+  const def = CLASS_DEFINITIONS[className];
+  const hpBonus = (level - 1) * 12 + bonusHp;
+  const maxHp = def.maxHp + hpBonus;
+  const atk = def.atk + (level - 1) * 3 + bonusAtk;
+  const unitDef = def.def + (level - 1) * 2 + bonusDef;
+
+  // Build active skill list from baseSkill + learnedSkillIds
+  const skillListIds = Array.from(new Set([def.baseSkillId, ...learnedSkillIds]));
+  const skills = skillListIds
+    .map((skId) => SKILLS[skId])
+    .filter(Boolean)
+    .map((sk) => JSON.parse(JSON.stringify(sk)));
+
+  return {
+    id,
+    name: def.name,
+    className: def.className,
+    faction: 'player',
+    level,
+    xp,
+    maxXp: level * 100,
+    maxHp,
+    currentHp: maxHp,
+    atk,
+    mag: def.mag + (level - 1) * 3,
+    def: unitDef,
+    res: def.res + (level - 1) * 1,
+    mov: def.mov,
+    range: def.range,
+    x,
+    y,
+    hasMoved: false,
+    hasAttacked: false,
+    isDead: false,
+    color: def.color,
+    avatarKey: def.avatarKey,
+    skills,
+    learnedSkillIds,
+    statusEffects: [],
+    damageDealt: 0,
+    kills: 0,
+  };
+}
