@@ -298,7 +298,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                     : 'bg-[#10131C] hover:bg-[#4C8DFF]/20 text-[#4C8DFF] border border-[#4C8DFF]/40 hover:border-[#4C8DFF]'
                 }`}
               >
-                <Footprints size={15} /> Mover (M)
+                <Footprints size={15} /> Mover (W)
               </button>
 
               <button
@@ -321,7 +321,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 onClick={onWaitUnit}
                 className="py-2.5 px-3 rounded-xl font-bold text-xs uppercase flex items-center justify-center gap-1.5 bg-[#10131C] hover:bg-[#F0B44D]/20 text-[#F0B44D] border border-[#F0B44D]/40 hover:border-[#F0B44D] transition-all shadow-sm active:scale-95"
               >
-                <Check size={15} /> Esperar (W)
+                <Check size={15} /> Esperar (T)
               </button>
 
               <button

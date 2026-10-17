@@ -77,11 +77,11 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     def: 7,
     res: 10,
     mov: 3,
-    range: 1,
+    range: 3,
     color: '#56E59A',
     avatarKey: 'cleric',
     baseSkillId: 'cura',
-    description: 'Especialista em suporte divino, curando aliados e purificando maldições.',
+    description: 'Especialista em suporte divino à distância, curando aliados e purificando maldições.',
   },
   assassino: {
     className: 'assassino',

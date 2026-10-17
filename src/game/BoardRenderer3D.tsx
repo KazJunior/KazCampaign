@@ -615,7 +615,12 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           aoeRad, 520
         );
       } else if (damageType === 'magical') {
-        const color = className.includes('mage') || className.includes('mago') ? 0xb58aff : 0x06b6d4;
+        const color =
+          className.includes('curandeiro') || className.includes('cleric')
+            ? 0x56e59a
+            : className.includes('mage') || className.includes('mago')
+            ? 0xb58aff
+            : 0x06b6d4;
         await engine.playMagicAttackAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
           targetUnit.x, targetUnit.y,

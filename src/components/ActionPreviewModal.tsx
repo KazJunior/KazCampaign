@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DamagePreview } from '../types/game';
-import { Swords, HeartPulse, AlertTriangle } from 'lucide-react';
+import { Swords, HeartPulse, AlertTriangle, Wand2 } from 'lucide-react';
 
 interface ActionPreviewModalProps {
   preview: DamagePreview;
@@ -14,15 +14,30 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
   onCancel,
 }) => {
   const isHeal = preview.damageType === 'healing';
+  const isMagic = preview.damageType === 'magical';
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1B2030] border-2 border-[#D4AD65] p-4 rounded-2xl shadow-2xl text-[#F3F4F8] max-w-md w-full animate-bounce-short select-none">
       <div className="flex items-center justify-between border-b border-[#343B50] pb-2 mb-3">
         <span className="text-xs font-bold text-[#D4AD65] uppercase tracking-wider flex items-center gap-1.5">
-          {isHeal ? <HeartPulse size={16} className="text-[#56E59A]" /> : <Swords size={16} className="text-[#FF5252]" />}
-          Prévia de {preview.skill ? preview.skill.name : isHeal ? 'Cura' : 'Ataque'}
+          {isHeal ? (
+            <HeartPulse size={16} className="text-[#56E59A]" />
+          ) : isMagic ? (
+            <Wand2 size={16} className="text-[#B58AFF]" />
+          ) : (
+            <Swords size={16} className="text-[#FF5252]" />
+          )}
+          Prévia de {preview.skill ? preview.skill.name : isHeal ? 'Cura' : isMagic ? 'Ataque Mágico' : 'Ataque Físico'}
         </span>
-        <span className="text-[11px] bg-[#10131C] text-[#A7B0C4] px-2 py-0.5 rounded border border-[#343B50]">
+        <span
+          className={`text-[11px] px-2 py-0.5 rounded border font-bold ${
+            isHeal
+              ? 'bg-[#56E59A]/15 text-[#56E59A] border-[#56E59A]/30'
+              : isMagic
+              ? 'bg-[#B58AFF]/15 text-[#B58AFF] border-[#B58AFF]/30'
+              : 'bg-[#FF5252]/15 text-[#FF5252] border-[#FF5252]/30'
+          }`}
+        >
           {preview.damageType.toUpperCase()}
         </span>
       </div>

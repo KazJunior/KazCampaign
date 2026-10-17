@@ -1137,34 +1137,136 @@ export function App() {
     setPendingSkillChoices((prev) => prev.slice(1));
   };
 
+  // Select skill action handler
+  const handleSelectSkill = useCallback(
+    (sk: Skill) => {
+      if (!selectedUnit || selectedUnit.faction !== 'player' || selectedUnit.hasAttacked || phase !== 'player_turn') {
+        return;
+      }
+      if (sk.currentCooldown > 0) return;
+
+      if (activeSkill?.id === sk.id) {
+        // Toggle off
+        setActiveSkill(null);
+        setDamagePreview(null);
+        setTargetUnitId(null);
+        return;
+      }
+
+      setActiveSkill(sk);
+      setSelectedAction('none');
+      if (sk.targetType === 'self') {
+        const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
+        setDamagePreview(preview);
+        setTargetUnitId(selectedUnit.id);
+      } else {
+        setDamagePreview(null);
+        setTargetUnitId(null);
+      }
+    },
+    [selectedUnit, phase, activeSkill]
+  );
+
+  // Wait / Pass unit turn handler
+  const handleWaitUnit = useCallback(() => {
+    if (!selectedUnit || selectedUnit.faction !== 'player' || phase !== 'player_turn') return;
+    setUnits((prev) =>
+      prev.map((u) => (u.id === selectedUnit.id ? { ...u, hasMoved: true, hasAttacked: true } : u))
+    );
+    setSelectedUnitId(null);
+    setSelectedAction('none');
+    setActiveSkill(null);
+    setDamagePreview(null);
+    setTargetUnitId(null);
+  }, [selectedUnit, phase]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in text inputs
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
       if (currentView !== 'battle' || isAnimatingAction) return;
+
       if (e.code === 'Enter' && damagePreview) {
         e.preventDefault();
         handleConfirmAttack();
-      } else if (e.code === 'Space' && phase === 'player_turn') {
+        return;
+      }
+
+      if (e.code === 'Space' && phase === 'player_turn') {
         e.preventDefault();
+        if (damagePreview) return;
         handleEndPlayerTurn();
-      } else if (e.code === 'Escape') {
+        return;
+      }
+
+      if (e.code === 'Escape') {
+        e.preventDefault();
         setSelectedUnitId(null);
         setSelectedAction('none');
         setActiveSkill(null);
         setDamagePreview(null);
         setTargetUnitId(null);
-      } else if (selectedUnit && selectedUnit.faction === 'player' && phase === 'player_turn') {
-        if (e.code === 'KeyM' && !selectedUnit.hasMoved) setSelectedAction('move');
-        else if (e.code === 'KeyA' && !selectedUnit.hasAttacked) setSelectedAction('attack');
-        else if (e.code === 'KeyW') {
-          setUnits((prev) => prev.map((u) => (u.id === selectedUnit.id ? { ...u, hasMoved: true, hasAttacked: true } : u)));
-          setSelectedUnitId(null);
-          setSelectedAction('none');
+        return;
+      }
+
+      if (selectedUnit && selectedUnit.faction === 'player' && phase === 'player_turn') {
+        const code = e.code;
+        const key = e.key ? e.key.toLowerCase() : '';
+
+        // 1 2 3 4 5 6 7 8 9 - Atalhos para habilidades
+        const digitMatch = code.match(/^(?:Digit|Numpad)([1-9])$/) || (key >= '1' && key <= '9' ? [, key] : null);
+        if (digitMatch && !selectedUnit.hasAttacked) {
+          const index = parseInt(digitMatch[1], 10) - 1;
+          const skill = selectedUnit.skills?.[index];
+          if (skill && skill.currentCooldown === 0) {
+            e.preventDefault();
+            handleSelectSkill(skill);
+            return;
+          }
+        }
+
+        // A - Atacar
+        if ((code === 'KeyA' || key === 'a') && !selectedUnit.hasAttacked) {
+          e.preventDefault();
+          setSelectedAction('attack');
+          setActiveSkill(null);
+          setDamagePreview(null);
+          setTargetUnitId(null);
+          return;
+        }
+
+        // W - Mover
+        if ((code === 'KeyW' || key === 'w') && !selectedUnit.hasMoved) {
+          e.preventDefault();
+          setSelectedAction('move');
+          setActiveSkill(null);
+          setDamagePreview(null);
+          setTargetUnitId(null);
+          return;
+        }
+
+        // T - Esperar
+        if (code === 'KeyT' || key === 't') {
+          e.preventDefault();
+          handleWaitUnit();
+          return;
         }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentView, phase, selectedUnit, handleEndPlayerTurn, isAnimatingAction, damagePreview, handleConfirmAttack]);
+  }, [
+    currentView,
+    phase,
+    selectedUnit,
+    handleEndPlayerTurn,
+    isAnimatingAction,
+    damagePreview,
+    handleConfirmAttack,
+    handleSelectSkill,
+    handleWaitUnit,
+  ]);
 
   // Auth gate
   if (!authChecked) {
@@ -1286,15 +1388,7 @@ export function App() {
         <SkillsPanel
           selectedUnit={selectedUnit}
           activeSkill={activeSkill}
-          onSelectSkill={(sk) => {
-            setActiveSkill(sk);
-            setSelectedAction('none');
-            if (sk.targetType === 'self' && selectedUnit) {
-              const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
-              setDamagePreview(preview);
-              setTargetUnitId(selectedUnit.id);
-            }
-          }}
+          onSelectSkill={handleSelectSkill}
           onClearSkill={() => {
             setActiveSkill(null);
             setDamagePreview(null);
@@ -1330,20 +1424,16 @@ export function App() {
           onSelectAction={(act) => {
             setSelectedAction(act);
             setActiveSkill(null);
+            setDamagePreview(null);
+            setTargetUnitId(null);
           }}
-          onWaitUnit={() => {
-            if (selectedUnit) {
-              setUnits((prev) =>
-                prev.map((u) => (u.id === selectedUnit.id ? { ...u, hasMoved: true, hasAttacked: true } : u))
-              );
-              setSelectedUnitId(null);
-              setSelectedAction('none');
-            }
-          }}
+          onWaitUnit={handleWaitUnit}
           onCancelSelection={() => {
             setSelectedUnitId(null);
             setSelectedAction('none');
             setActiveSkill(null);
+            setDamagePreview(null);
+            setTargetUnitId(null);
           }}
           isPlayerTurn={phase === 'player_turn'}
         />

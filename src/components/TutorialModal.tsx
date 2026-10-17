@@ -19,13 +19,13 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({ onClose }) => {
       title: '2. Movimentação & Alcance',
       icon: <Footprints className="text-[#43C878]" size={28} />,
       content:
-        'Ao selecionar uma unidade no seu turno, o sistema destaca em AZUL todas as casas alcançáveis baseadas no valor de MOV da classe. Obstáculos e inimigos bloqueiam a passagem.',
+        'Ao selecionar uma unidade no seu turno, pressione [W] ou clique em Mover para destacar em AZUL todas as casas alcançáveis baseadas no valor de MOV. Obstáculos e inimigos bloqueiam a passagem.',
     },
     {
-      title: '3. Sistema de Combate & Danos',
+      title: '3. Sistema de Combate & Atalhos',
       icon: <Swords className="text-[#FF5252]" size={28} />,
       content:
-        'Ao clicar em Atacar (A), as casas em VERMELHO mostram os alvos válidos. Ataques físicos são mitigados pela DEF do alvo, enquanto magias usam a RES do alvo. Veja sempre a prévia de dano antes de confirmar!',
+        'Pressione [A] para Atacar ou [1 a 9] para Habilidades. Use [T] para Esperar e [Espaço] para Finalizar Turno! Ataques físicos usam DEF do alvo e mágicos usam RES.',
     },
     {
       title: '4. Habilidades Especiais',

@@ -109,7 +109,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
             Esta unidade não possui habilidades especiais ativas.
           </div>
         ) : (
-          skills.map((skill) => {
+          skills.map((skill, index) => {
             const isSelected = activeSkill?.id === skill.id;
             const isOnCd = skill.currentCooldown > 0;
             const disabled = !isAlly || !canAct || isOnCd;
@@ -152,9 +152,23 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-1">
-                      <h4 className="font-bold text-xs truncate text-[#F3F4F8]">
-                        {skill.name}
-                      </h4>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {index < 9 && (
+                          <span
+                            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${
+                              isSelected
+                                ? 'bg-[#D4AD65] text-[#10131C] border-[#D4AD65]'
+                                : 'bg-[#161A26] text-[#D4AD65] border-[#343B50]'
+                            }`}
+                            title={`Atalho: tecla ${index + 1}`}
+                          >
+                            {index + 1}
+                          </span>
+                        )}
+                        <h4 className="font-bold text-xs truncate text-[#F3F4F8]">
+                          {skill.name}
+                        </h4>
+                      </div>
                       {isOnCd ? (
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#E65353]/20 border border-[#E65353]/40 text-[#E65353] shrink-0">
                           {skill.currentCooldown}T CD

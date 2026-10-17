@@ -119,7 +119,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             onClick={onEndTurn}
             className="bg-gradient-to-r from-[#4C8DFF] to-[#3B72D9] hover:from-[#3B72D9] hover:to-[#2B56A6] text-white px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md transition-all active:scale-95 border border-[#6BA0FF]/40"
           >
-            <Play size={14} fill="currentColor" /> Encerrar Turno (Espaço)
+            <Play size={14} fill="currentColor" /> Finalizar Turno (Espaço)
           </button>
         )}
       </div>
