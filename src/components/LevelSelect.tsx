@@ -120,10 +120,20 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
 
             <button
               onClick={onChangeParty}
-              className="px-3.5 py-2 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#43C878] text-[#43C878] font-bold text-xs flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+              disabled={!!activeAdv}
+              title={
+                activeAdv
+                  ? 'A equipe está travada durante a aventura. Conclua as 50 fases ou abandone a expedição para trocar de equipe.'
+                  : 'Alterar composição da equipe de 4 heróis'
+              }
+              className={`px-3.5 py-2 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all ${
+                activeAdv
+                  ? 'bg-[#10131C]/60 border-[#343B50]/40 text-[#A7B0C4]/40 cursor-not-allowed'
+                  : 'bg-[#10131C] border-[#343B50] hover:border-[#43C878] text-[#43C878] hover:scale-105 active:scale-95 cursor-pointer'
+              }`}
             >
-              <Users size={16} />
-              <span>Alterar Equipe</span>
+              {activeAdv ? <Lock size={16} /> : <Users size={16} />}
+              <span>{activeAdv ? 'Equipe Travada' : 'Alterar Equipe'}</span>
             </button>
           </div>
         </div>
@@ -189,11 +199,16 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
 
             {/* Active Heroes in this Adventure */}
             <div className="border-t border-[#343B50] pt-4">
-              <div className="text-xs font-bold text-[#A7B0C4] uppercase tracking-wider mb-2 flex items-center gap-2">
-                <Shield size={14} /> Heróis Nesta Jornada
+              <div className="text-xs font-bold text-[#A7B0C4] uppercase tracking-wider mb-2 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Shield size={14} /> Heróis Desta Expedição
+                </div>
+                <span className="text-[10px] text-[#D4AD65] bg-[#D4AD65]/10 border border-[#D4AD65]/30 px-2.5 py-0.5 rounded-full flex items-center gap-1 font-bold normal-case">
+                  <Lock size={11} /> Equipe travada na aventura em andamento
+                </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {progress.selectedPartyClasses.map((cKey) => {
+                {(activeAdv.partyClasses || progress.selectedPartyClasses).map((cKey) => {
                   const classDef = CLASS_DEFINITIONS[cKey];
                   const uState = activeAdv.unitsState[cKey] || progress.unitsState[cKey];
                   if (!classDef || !uState) return null;

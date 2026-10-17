@@ -207,7 +207,8 @@ export function App() {
     const effectiveUnitsState =
       customUnitsState || progress.activeAdventure?.unitsState || progress.unitsState;
 
-    const playerUnits: Unit[] = progress.selectedPartyClasses.map((cKey, idx) => {
+    const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
+    const playerUnits: Unit[] = activeParty.map((cKey, idx) => {
       const uState = effectiveUnitsState[cKey];
       const spawnPt = lvlConfig.deploymentZone[idx] || { x: 3 + idx, y: 6 };
       return createPlayerUnit(
@@ -324,6 +325,10 @@ export function App() {
   };
 
   const handleConfirmParty = (selectedPartyClasses: string[]) => {
+    if (progress.activeAdventure) {
+      setCurrentView('level_select');
+      return;
+    }
     const updatedProgress = { ...progress, selectedPartyClasses };
     setProgress(updatedProgress);
     savePlayerProgress(updatedProgress);
@@ -997,6 +1002,8 @@ export function App() {
     let updatedActiveAdventure: ActiveAdventure | null = null;
     let nextUnitsState = updatedUnitsState;
 
+    const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
+
     if (isFinalCampaignLevel) {
       // Supreme victory! Archive finished run
       const record: AdventureRecord = {
@@ -1006,7 +1013,7 @@ export function App() {
         farthestLevel: 50,
         farthestLevelName: currentLevel.name,
         result: 'victory',
-        partyClasses: progress.selectedPartyClasses,
+        partyClasses: activeParty,
         goldEarned: totalRunGold,
       };
       updatedHistory = [record, ...updatedHistory].slice(0, 10);
@@ -1018,7 +1025,7 @@ export function App() {
         currentLevelId: currentLevel.id + 1,
         startedAt: progress.activeAdventure?.startedAt || new Date().toISOString(),
         unitsState: updatedUnitsState,
-        partyClasses: progress.selectedPartyClasses,
+        partyClasses: activeParty,
         goldEarnedInRun: totalRunGold,
       };
     }
@@ -1037,7 +1044,7 @@ export function App() {
     savePlayerProgress(newProgress);
 
     if (authUserRef.current) {
-      submitScore(currentLevel.id, progress.selectedPartyClasses).catch((err) =>
+      submitScore(currentLevel.id, activeParty).catch((err) =>
         console.error('Falha ao registrar no ranking:', err)
       );
     }
@@ -1205,7 +1212,10 @@ export function App() {
           onStartAdventure={handleStartNewAdventure}
           onContinueAdventure={handleContinueAdventure}
           onAbandonAdventure={handleAbandonAdventure}
-          onChangeParty={() => setCurrentView('party_select')}
+          onChangeParty={() => {
+            if (progress.activeAdventure) return;
+            setCurrentView('party_select');
+          }}
           onResetProgress={handleResetProgress}
           onOpenBestiary={() => setShowBestiary(true)}
           onOpenHistory={() => setShowHistory(true)}
@@ -1231,6 +1241,10 @@ export function App() {
   }
 
   if (currentView === 'party_select') {
+    if (progress.activeAdventure) {
+      setCurrentView('level_select');
+      return null;
+    }
     return (
       <PartySelectionModal
         initialSelected={progress.selectedPartyClasses}
