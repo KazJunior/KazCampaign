@@ -256,7 +256,13 @@ export function createPlayerUnit(
   const skills = skillListIds
     .map((skId) => SKILLS[skId])
     .filter(Boolean)
-    .map((sk) => JSON.parse(JSON.stringify(sk)));
+    .map((sk) => {
+      const clone = JSON.parse(JSON.stringify(sk));
+      if (clone.damageType === 'healing' || clone.statusEffect?.type === 'shield') {
+        clone.cooldownMax = Math.max(3, clone.cooldownMax);
+      }
+      return clone;
+    });
 
   return {
     id,

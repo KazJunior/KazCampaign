@@ -148,8 +148,19 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                           <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
                             MINI BOSS
                           </span>
-                        ) : (
-                          <span className="text-[9px] text-[#A7B0C4]">Monstro Comum</span>
+                        ) : null}
+                        {monster.role && (
+                          <span
+                            className={`text-[8px] font-bold px-1.5 py-0.2 rounded border ${
+                              monster.role === 'support'
+                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                                : monster.role === 'tank'
+                                ? 'bg-blue-500/15 text-blue-400 border-blue-500/30'
+                                : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                            }`}
+                          >
+                            {monster.role === 'support' ? '🌿 Suporte' : monster.role === 'tank' ? '🛡️ Tanque' : '⚔️ Atacante'}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -176,19 +187,30 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-black text-lg text-[#F3F4F8]">{selectedMonster.name}</h3>
-                      {selectedMonster.isBoss ? (
-                        <span className="text-xs font-black px-2.5 py-1 rounded-full bg-purple-500/25 text-purple-300 border border-purple-500/50 flex items-center gap-1">
-                          <Crown size={12} /> CHEFE SUPREMO
-                        </span>
-                      ) : selectedMonster.isMiniBoss ? (
-                        <span className="text-xs font-black px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 border border-amber-500/50">
-                          MINI BOSS
-                        </span>
-                      ) : (
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
-                          MONSTRO
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1.5">
+                        {selectedMonster.role && (
+                          <span
+                            className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+                              selectedMonster.role === 'support'
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                : selectedMonster.role === 'tank'
+                                ? 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                                : 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            }`}
+                          >
+                            {selectedMonster.role === 'support' ? '🌿 Suporte' : selectedMonster.role === 'tank' ? '🛡️ Tanque' : '⚔️ Atacante'}
+                          </span>
+                        )}
+                        {selectedMonster.isBoss ? (
+                          <span className="text-xs font-black px-2.5 py-1 rounded-full bg-purple-500/25 text-purple-300 border border-purple-500/50 flex items-center gap-1">
+                            <Crown size={12} /> CHEFE
+                          </span>
+                        ) : selectedMonster.isMiniBoss ? (
+                          <span className="text-xs font-black px-2.5 py-1 rounded-full bg-amber-500/25 text-amber-300 border border-amber-500/50">
+                            MINI BOSS
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                     <p className="text-xs text-[#A7B0C4] mt-1.5 leading-relaxed">
                       {selectedMonster.description}

@@ -102,7 +102,26 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#A7B0C4] truncate mt-0.5">{selectedUnit.className}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-xs text-[#A7B0C4] truncate">{selectedUnit.className}</p>
+              {!isAlly && selectedUnit.monsterRole && (
+                <span
+                  className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${
+                    selectedUnit.monsterRole === 'support'
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : selectedUnit.monsterRole === 'tank'
+                      ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                      : 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                  }`}
+                >
+                  {selectedUnit.monsterRole === 'support'
+                    ? '🌿 Suporte'
+                    : selectedUnit.monsterRole === 'tank'
+                    ? '🛡️ Tanque'
+                    : '⚔️ Atacante'}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

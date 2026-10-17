@@ -46,11 +46,14 @@ export interface Skill {
   isPassive?: boolean;
 }
 
+export type MonsterRole = 'attacker' | 'support' | 'tank';
+
 export interface Unit {
   id: string;
   name: string;
   className: string;
   faction: UnitFaction;
+  monsterRole?: MonsterRole;
   level: number;
   xp: number;
   maxXp: number;

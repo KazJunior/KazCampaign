@@ -1,9 +1,10 @@
-import type { Unit } from '../types/game';
+import type { Unit, MonsterRole } from '../types/game';
 import { SKILLS } from './skills';
 
 export interface MonsterDefinition {
   typeId: string;
   name: string;
+  role: MonsterRole;
   maxHp: number;
   atk: number;
   mag: number;
@@ -25,6 +26,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   goblin: {
     typeId: 'goblin',
     name: 'Goblin Solteiro',
+    role: 'attacker',
     maxHp: 55,
     atk: 14,
     mag: 4,
@@ -41,6 +43,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   orc: {
     typeId: 'orc',
     name: 'Orc Guerreiro',
+    role: 'attacker',
     maxHp: 110,
     atk: 23,
     mag: 3,
@@ -57,6 +60,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   aranha: {
     typeId: 'aranha',
     name: 'Aranha Sombria',
+    role: 'attacker',
     maxHp: 65,
     atk: 17,
     mag: 6,
@@ -73,6 +77,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   mago_trevas: {
     typeId: 'mago_trevas',
     name: 'Mago das Trevas',
+    role: 'attacker',
     maxHp: 70,
     atk: 8,
     mag: 24,
@@ -89,6 +94,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   lobo_espectral: {
     typeId: 'lobo_espectral',
     name: 'Lobo Espectral',
+    role: 'attacker',
     maxHp: 80,
     atk: 20,
     mag: 10,
@@ -105,6 +111,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   golem_basalto: {
     typeId: 'golem_basalto',
     name: 'Golem de Basalto',
+    role: 'tank',
     maxHp: 160,
     atk: 26,
     mag: 5,
@@ -121,6 +128,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   bruxa_espinhos: {
     typeId: 'bruxa_espinhos',
     name: 'Bruxa dos Espinhos',
+    role: 'support',
     maxHp: 85,
     atk: 10,
     mag: 26,
@@ -131,12 +139,13 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#66BB6A',
     avatarKey: 'thorn_witch',
     skillId: 'espinhos_envenenados',
-    skillIds: ['espinhos_envenenados', 'raiz_espinhosa', 'dreno_de_seiva'],
-    description: 'Feiticeira das matas que atordoa com raízes, dispara espinhos tóxicos e drena vida.',
+    skillIds: ['espinhos_envenenados', 'raiz_espinhosa', 'bencao_dos_espinhos', 'dreno_de_seiva'],
+    description: 'Feiticeira suporte que concede escudos espinhosos aos aliados, atordoa com raízes e dispara espinhos.',
   },
   cavaleiro_caido: {
     typeId: 'cavaleiro_caido',
     name: 'Cavaleiro Caído',
+    role: 'tank',
     maxHp: 130,
     atk: 25,
     mag: 8,
@@ -153,6 +162,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   mimico: {
     typeId: 'mimico',
     name: 'Mímico Carniceiro',
+    role: 'attacker',
     maxHp: 95,
     atk: 27,
     mag: 4,
@@ -169,6 +179,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   draco_volcanico: {
     typeId: 'draco_volcanico',
     name: 'Draco Vulcânico',
+    role: 'attacker',
     maxHp: 150,
     atk: 29,
     mag: 22,
@@ -187,6 +198,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   devorador: {
     typeId: 'devorador',
     name: 'Devorador das Profundezas',
+    role: 'tank',
     maxHp: 380,
     atk: 34,
     mag: 18,
@@ -204,6 +216,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   astaroth: {
     typeId: 'astaroth',
     name: 'Astaroth, Soberano do Abismo',
+    role: 'attacker',
     maxHp: 650,
     atk: 42,
     mag: 40,
@@ -221,6 +234,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   arauto_espectral: {
     typeId: 'arauto_espectral',
     name: 'Arauto dos Espectros',
+    role: 'support',
     maxHp: 580,
     atk: 38,
     mag: 40,
@@ -238,6 +252,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   tita_forjador: {
     typeId: 'tita_forjador',
     name: 'Vulcanus, Titã das Forjas',
+    role: 'tank',
     maxHp: 950,
     atk: 50,
     mag: 34,
@@ -255,6 +270,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   mestre_runico: {
     typeId: 'mestre_runico',
     name: 'Arquimago das Runas',
+    role: 'support',
     maxHp: 780,
     atk: 32,
     mag: 52,
@@ -265,13 +281,14 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#7C4DFF',
     avatarKey: 'dark_mage',
     skillId: 'runa_de_choque',
-    skillIds: ['runa_de_choque', 'glifo_incandescente', 'apocalipse_runico', 'vortice_obscuro'],
+    skillIds: ['runa_de_choque', 'glifo_incandescente', 'runa_de_protecao', 'vortice_obscuro'],
     description: 'MINI BOSS (FASE 25): Guardião ancestral de segredos e magias rúnicas proibidas.',
     isMiniBoss: true,
   },
   valgar_sanguinario: {
     typeId: 'valgar_sanguinario',
     name: 'Valgar, o Carniceiro Imortal',
+    role: 'attacker',
     maxHp: 1300,
     atk: 62,
     mag: 28,
@@ -289,6 +306,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   quimera_venenosa: {
     typeId: 'quimera_venenosa',
     name: 'Quimera das Sombras Antigas',
+    role: 'attacker',
     maxHp: 1050,
     atk: 52,
     mag: 46,
@@ -306,6 +324,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   leviata_vazio: {
     typeId: 'leviata_vazio',
     name: 'Leviatã do Vazio Primordial',
+    role: 'attacker',
     maxHp: 1800,
     atk: 66,
     mag: 66,
@@ -323,6 +342,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   cavaleiro_apocalipse: {
     typeId: 'cavaleiro_apocalipse',
     name: 'Cavaleiro do Eclipse Eterno',
+    role: 'tank',
     maxHp: 1400,
     atk: 62,
     mag: 50,
@@ -340,6 +360,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   cronos_abissal: {
     typeId: 'cronos_abissal',
     name: 'Malakor, O Fim de Todas as Eras',
+    role: 'attacker',
     maxHp: 2800,
     atk: 78,
     mag: 82,
@@ -400,13 +421,20 @@ export function createMonsterUnit(
   const skillList: any[] = skillIds
     .map((sId) => SKILLS[sId])
     .filter(Boolean)
-    .map((s) => JSON.parse(JSON.stringify(s)));
+    .map((s) => {
+      const clone = JSON.parse(JSON.stringify(s));
+      if (clone.damageType === 'healing' || clone.statusEffect?.type === 'shield') {
+        clone.cooldownMax = Math.max(3, clone.cooldownMax);
+      }
+      return clone;
+    });
 
   return {
     id,
     name: def.name,
     className: def.name,
     faction: 'enemy',
+    monsterRole: def.role || 'attacker',
     level,
     xp: 0,
     maxXp: 100 * level,

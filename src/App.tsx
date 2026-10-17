@@ -718,74 +718,138 @@ export function App() {
 
           if (freshAttacker && freshTarget && !freshTarget.isDead) {
             const skill = choice.skillToUse;
-            const dmgType = skill?.damageType || (freshAttacker.mag > freshAttacker.atk ? 'magical' : 'physical');
+            const isSupportAction =
+              skill &&
+              (skill.targetType === 'self' ||
+                skill.targetType === 'ally' ||
+                freshTarget.faction === 'enemy');
 
-            if (dmgType === 'magical') soundManager.playMagicSpell();
-            else soundManager.playPhysicalAttack();
-
-            if (boardRef.current) {
-              await boardRef.current.playAttackAnimation(freshAttacker.id, freshTarget.id, dmgType, skill?.aoeRadius, skill);
-            }
-
-            const aoeRad = skill?.aoeRadius || 0;
-            let enemyTargets: Unit[] = [];
-            if (aoeRad > 0) {
-              enemyTargets = currentUnits.filter(
-                (u) =>
-                  u.faction === 'player' &&
-                  !u.isDead &&
-                  Math.abs(u.x - freshTarget.x) <= aoeRad &&
-                  Math.abs(u.y - freshTarget.y) <= aoeRad
-              );
-            } else {
-              enemyTargets = [freshTarget];
-            }
-
-            for (const t of enemyTargets) {
-              const res = rollActualDamage(freshAttacker, t, skill);
-              let actualDmg = res.finalDamage;
-              const damageType = res.damageType;
-
-              let currentEffects = [...(t.statusEffects || [])];
-              const sIdx = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
-              if (sIdx !== -1) {
-                const sh = currentEffects[sIdx];
-                if (sh.value >= actualDmg) {
-                  addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
-                  sh.value -= actualDmg;
-                  actualDmg = 0;
-                } else {
-                  addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
-                  actualDmg -= sh.value;
-                  sh.value = 0;
-                }
-                if (sh.value <= 0) {
-                  currentEffects = currentEffects.filter((_, idx) => idx !== sIdx);
-                }
+            if (isSupportAction) {
+              // --- MONSTER SUPPORT ACTION (HEAL / SHIELD / BUFF ON SELF OR ALLY) ---
+              if (skill.damageType === 'healing' && skill.power > 0) {
+                soundManager.playHeal();
+              } else {
+                soundManager.playMagicSpell();
               }
 
-              const newHp = Math.max(0, t.currentHp - actualDmg);
-              if (actualDmg > 0) {
-                const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
-                addFloatingNumber(t.x, t.y, `-${actualDmg}`, damageType, color);
+              if (boardRef.current) {
+                await boardRef.current.playAttackAnimation(
+                  freshAttacker.id,
+                  freshTarget.id,
+                  'healing',
+                  0,
+                  skill
+                );
               }
 
-              if (newHp === 0) {
-                soundManager.playDeath();
-                if (boardRef.current) {
-                  await boardRef.current.playDeathAnimation(t.id);
-                }
-              } else if (choice.skillToUse?.statusEffect) {
-                const eff = choice.skillToUse.statusEffect;
+              let currentEffects = [...(freshTarget.statusEffects || [])];
+              let newHp = freshTarget.currentHp;
+
+              if (skill.damageType === 'healing' && skill.power > 0) {
+                const healAmount = Math.max(1, Math.round(freshAttacker.mag * skill.power));
+                newHp = Math.min(freshTarget.maxHp, freshTarget.currentHp + healAmount);
+                addFloatingNumber(freshTarget.x, freshTarget.y, `+${healAmount}`, 'healing', '#56E59A');
+              }
+
+              if (skill.statusEffect) {
+                const eff = skill.statusEffect;
                 currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-                if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-                else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
-                else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+                if (eff.type === 'shield') {
+                  addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+                } else if (eff.type === 'buff_atk') {
+                  addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value}% Dano`, 'status', '#F97316');
+                }
               }
 
               currentUnits = currentUnits.map((u) =>
-                u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+                u.id === freshTarget.id ? { ...u, currentHp: newHp, statusEffects: currentEffects } : u
               );
+            } else {
+              // --- MONSTER ATTACK / OFFENSIVE ACTION ON PLAYER UNITS ---
+              const dmgType = skill?.damageType || (freshAttacker.mag > freshAttacker.atk ? 'magical' : 'physical');
+
+              if (dmgType === 'magical') soundManager.playMagicSpell();
+              else soundManager.playPhysicalAttack();
+
+              if (boardRef.current) {
+                await boardRef.current.playAttackAnimation(freshAttacker.id, freshTarget.id, dmgType, skill?.aoeRadius, skill);
+              }
+
+              const aoeRad = skill?.aoeRadius || 0;
+              let enemyTargets: Unit[] = [];
+              if (aoeRad > 0) {
+                enemyTargets = currentUnits.filter(
+                  (u) =>
+                    u.faction === 'player' &&
+                    !u.isDead &&
+                    Math.abs(u.x - freshTarget.x) <= aoeRad &&
+                    Math.abs(u.y - freshTarget.y) <= aoeRad
+                );
+              } else {
+                enemyTargets = [freshTarget];
+              }
+
+              for (const t of enemyTargets) {
+                const res = rollActualDamage(freshAttacker, t, skill);
+                let actualDmg = res.finalDamage;
+                const damageType = res.damageType;
+
+                let currentEffects = [...(t.statusEffects || [])];
+                const sIdx = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+                if (sIdx !== -1) {
+                  const sh = currentEffects[sIdx];
+                  if (sh.value >= actualDmg) {
+                    addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
+                    sh.value -= actualDmg;
+                    actualDmg = 0;
+                  } else {
+                    addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
+                    actualDmg -= sh.value;
+                    sh.value = 0;
+                  }
+                  if (sh.value <= 0) {
+                    currentEffects = currentEffects.filter((_, idx) => idx !== sIdx);
+                  }
+                }
+
+                const newHp = Math.max(0, t.currentHp - actualDmg);
+                if (actualDmg > 0) {
+                  const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
+                  addFloatingNumber(t.x, t.y, `-${actualDmg}`, damageType, color);
+                }
+
+                if (newHp === 0) {
+                  soundManager.playDeath();
+                  if (boardRef.current) {
+                    await boardRef.current.playDeathAnimation(t.id);
+                  }
+                } else if (choice.skillToUse?.statusEffect) {
+                  const eff = choice.skillToUse.statusEffect;
+                  currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+                  if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+                  else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+                  else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+                }
+
+                currentUnits = currentUnits.map((u) =>
+                  u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+                );
+              }
+            }
+
+            // Put used skill on cooldown on the monster!
+            if (skill) {
+              currentUnits = currentUnits.map((u) => {
+                if (u.id === freshAttacker.id) {
+                  return {
+                    ...u,
+                    skills: u.skills.map((s) =>
+                      s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+                    ),
+                  };
+                }
+                return u;
+              });
             }
 
             setUnits([...currentUnits]);
