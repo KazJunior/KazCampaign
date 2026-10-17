@@ -18,6 +18,7 @@ import {
   History,
   AlertTriangle,
   Swords,
+  Package,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 
@@ -30,6 +31,8 @@ interface LevelSelectProps {
   onResetProgress: () => void;
   onOpenBestiary: () => void;
   onOpenHistory: () => void;
+  onOpenEquipment?: () => void;
+  onOpenItemBestiary?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -41,6 +44,8 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onResetProgress,
   onOpenBestiary,
   onOpenHistory,
+  onOpenEquipment,
+  onOpenItemBestiary,
 }) => {
   const activeAdv = progress.activeAdventure;
   const currentStageNum = activeAdv ? activeAdv.currentLevelId : 1;
@@ -48,6 +53,9 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   // Default act based on active adventure or act 1
   const defaultAct = Math.min(5, Math.max(1, Math.ceil(currentStageNum / 10)));
   const [selectedAct, setSelectedAct] = useState<number | 'all'>(defaultAct);
+
+  const adventureInventoryCount = activeAdv?.inventory?.length || 0;
+  const discoveredItemsCount = progress.discoveredItemIds?.length || 0;
 
   const actTabs = [
     { id: 1, label: 'Ato I (1-10)', boss: 'Astaroth', range: [1, 10] },
@@ -109,6 +117,34 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 {progress.adventureHistory ? progress.adventureHistory.length : 0}/10
               </span>
             </button>
+
+            {onOpenEquipment && (
+              <button
+                onClick={onOpenEquipment}
+                className="px-3.5 py-2 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#F0B44D] text-[#F0B44D] font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                title="Ver e equipar itens nos heróis da aventura"
+              >
+                <Package size={16} />
+                <span>Equipamentos</span>
+                <span className="bg-[#F0B44D]/20 text-[#F0B44D] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#F0B44D]/30">
+                  {adventureInventoryCount}
+                </span>
+              </button>
+            )}
+
+            {onOpenItemBestiary && (
+              <button
+                onClick={onOpenItemBestiary}
+                className="px-3.5 py-2 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#B58AFF] text-[#B58AFF] font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                title="Catálogo de itens já vistos e colecionados"
+              >
+                <Sparkles size={16} />
+                <span>Bestiário de Itens</span>
+                <span className="bg-[#B58AFF]/20 text-[#B58AFF] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#B58AFF]/30">
+                  {discoveredItemsCount}/60
+                </span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

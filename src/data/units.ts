@@ -1,5 +1,14 @@
 import type { Unit } from '../types/game';
 import { SKILLS, getEvolvedSkill } from './skills';
+import { getItemById } from './items';
+
+export interface StatGrowth {
+  hp: number;
+  atk: number;
+  mag: number;
+  def: number;
+  res: number;
+}
 
 export interface ClassDefinition {
   className: string;
@@ -16,6 +25,7 @@ export interface ClassDefinition {
   avatarKey: string;
   baseSkillId: string;
   description: string;
+  statGrowth: StatGrowth;
 }
 
 export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
@@ -34,6 +44,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'warrior',
     baseSkillId: 'golpe_poderoso',
     description: 'Especialista em combate corpo a corpo com alta resistência e proteção de aliados.',
+    statGrowth: { hp: 16, atk: 3, mag: 1, def: 3, res: 2 },
   },
   arqueiro: {
     className: 'arqueiro',
@@ -50,6 +61,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'archer',
     baseSkillId: 'flecha_perfurante',
     description: 'Especialista em disparos precisos à distância e eliminação de alvos estratégicos.',
+    statGrowth: { hp: 10, atk: 4, mag: 1, def: 2, res: 2 },
   },
   mago: {
     className: 'mago',
@@ -66,6 +78,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'mage',
     baseSkillId: 'explosao_arcana',
     description: 'Especialista em feitiços devastadores em área e manipulação elemental.',
+    statGrowth: { hp: 8, atk: 1, mag: 5, def: 1, res: 3 },
   },
   curandeiro: {
     className: 'curandeiro',
@@ -82,6 +95,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'cleric',
     baseSkillId: 'cura',
     description: 'Especialista em suporte divino à distância, curando aliados e purificando maldições.',
+    statGrowth: { hp: 11, atk: 1, mag: 3, def: 2, res: 3 },
   },
   assassino: {
     className: 'assassino',
@@ -98,6 +112,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'assassin',
     baseSkillId: 'golpe_sombrio',
     description: 'Mestre da mobilidade e do dano crítico brutal a alvos vulneráveis.',
+    statGrowth: { hp: 9, atk: 5, mag: 1, def: 1, res: 1 },
   },
   cavaleiro_arcano: {
     className: 'cavaleiro_arcano',
@@ -114,6 +129,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'arcane_knight',
     baseSkillId: 'lamina_runica',
     description: 'Guerreiro místico que combina força física com encantamentos rúnicos.',
+    statGrowth: { hp: 13, atk: 3, mag: 3, def: 2, res: 2 },
   },
   necromante: {
     className: 'necromante',
@@ -130,6 +146,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'necromancer',
     baseSkillId: 'dreno_de_vida',
     description: 'Especialista em magias das trevas, drenando a vida dos inimigos e aplicando maldições.',
+    statGrowth: { hp: 9, atk: 1, mag: 4, def: 1, res: 3 },
   },
   engenheiro: {
     className: 'engenheiro',
@@ -146,6 +163,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'engineer',
     baseSkillId: 'tiro_de_cobre',
     description: 'Usa invenções explosivas e disparos à distância para controlar o campo de batalha.',
+    statGrowth: { hp: 11, atk: 3, mag: 2, def: 2, res: 2 },
   },
   mago_runico: {
     className: 'mago_runico',
@@ -162,6 +180,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'rune_mage',
     baseSkillId: 'runa_de_choque',
     description: 'Especialista em evocar runas poderosas no campo que beneficiam aliados ou causam destruição.',
+    statGrowth: { hp: 10, atk: 2, mag: 4, def: 2, res: 3 },
   },
   berserker: {
     className: 'berserker',
@@ -178,6 +197,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     avatarKey: 'berserker',
     baseSkillId: 'golpe_selvagem',
     description: 'Guerreiro implacável com altíssimos danos físicos, muitas vezes sacrificando a própria segurança.',
+    statGrowth: { hp: 15, atk: 5, mag: 1, def: 2, res: 1 },
   },
 };
 
@@ -307,15 +327,43 @@ export function createPlayerUnit(
   bonusMag = 0,
   bonusRes = 0,
   learnedSkillIds: string[] = [],
-  skillLevels: Record<string, number> = {}
+  skillLevels: Record<string, number> = {},
+  equippedItemIds: string[] = []
 ): Unit {
   const def = CLASS_DEFINITIONS[className];
-  const hpBonus = (level - 1) * 12 + bonusHp;
+  const growth = def.statGrowth || { hp: 12, atk: 3, mag: 3, def: 2, res: 1 };
+  const levelOffsets = Math.max(0, level - 1);
+
+  // Somatório dos atributos concedidos pelos itens equipados
+  let itemHp = 0;
+  let itemAtk = 0;
+  let itemMag = 0;
+  let itemDef = 0;
+  let itemRes = 0;
+  let itemMov = 0;
+  let itemRange = 0;
+
+  for (const itemId of equippedItemIds) {
+    const item = getItemById(itemId);
+    if (item && item.stats) {
+      itemHp += item.stats.hp || 0;
+      itemAtk += item.stats.atk || 0;
+      itemMag += item.stats.mag || 0;
+      itemDef += item.stats.def || 0;
+      itemRes += item.stats.res || 0;
+      itemMov += item.stats.mov || 0;
+      itemRange += item.stats.range || 0;
+    }
+  }
+
+  const hpBonus = levelOffsets * growth.hp + bonusHp + itemHp;
   const maxHp = def.maxHp + hpBonus;
-  const atk = def.atk + (level - 1) * 3 + bonusAtk;
-  const mag = def.mag + (level - 1) * 3 + bonusMag;
-  const unitDef = def.def + (level - 1) * 2 + bonusDef;
-  const res = def.res + (level - 1) * 1 + bonusRes;
+  const atk = def.atk + levelOffsets * growth.atk + bonusAtk + itemAtk;
+  const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag;
+  const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef;
+  const res = def.res + levelOffsets * growth.res + bonusRes + itemRes;
+  const mov = def.mov + itemMov;
+  const range = def.range + itemRange;
 
   // Max 5 skills total: baseSkill + up to 4 learnedSkillIds
   const skillListIds = Array.from(new Set([def.baseSkillId, ...learnedSkillIds])).slice(0, 5);
@@ -345,8 +393,8 @@ export function createPlayerUnit(
     mag,
     def: unitDef,
     res,
-    mov: def.mov,
-    range: def.range,
+    mov,
+    range,
     x,
     y,
     hasMoved: false,
@@ -357,6 +405,7 @@ export function createPlayerUnit(
     skills,
     learnedSkillIds: skillListIds.filter((id) => id !== def.baseSkillId),
     skillLevels,
+    equippedItemIds,
     statusEffects: [],
     damageDealt: 0,
     kills: 0,

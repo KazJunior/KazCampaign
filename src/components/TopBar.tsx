@@ -11,6 +11,7 @@ import {
   BookOpen,
   History,
   Home,
+  Package,
 } from 'lucide-react';
 import type { BattlePhase, Unit } from '../types/game';
 
@@ -31,6 +32,7 @@ interface TopBarProps {
   onEndTurn: () => void;
   onOpenBestiary?: () => void;
   onOpenHistory?: () => void;
+  onOpenEquipment?: () => void;
   onSaveAndExit?: () => void;
 }
 
@@ -51,6 +53,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onEndTurn,
   onOpenBestiary,
   onOpenHistory,
+  onOpenEquipment,
   onSaveAndExit,
 }) => {
   const isPlayerTurn = phase === 'player_turn';
@@ -159,6 +162,17 @@ export const TopBar: React.FC<TopBarProps> = ({
             title="Histórico de Aventuras"
           >
             <History size={16} />
+          </button>
+        )}
+
+        {/* Equipment shortcut */}
+        {onOpenEquipment && (
+          <button
+            onClick={onOpenEquipment}
+            className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#F0B44D] text-[#A7B0C4] hover:text-[#F0B44D] transition-colors"
+            title="Equipamentos da Equipe"
+          >
+            <Package size={16} />
           </button>
         )}
 

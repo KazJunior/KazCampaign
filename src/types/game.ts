@@ -94,6 +94,42 @@ export interface Unit {
 
   damageDealt: number;
   kills: number;
+  equippedItemIds?: string[];
+}
+
+export type ItemCategory = 'helmet' | 'chestplate' | 'leggings' | 'boots' | 'weapon' | 'accessory';
+
+export type ItemRarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface ItemStats {
+  hp?: number;
+  atk?: number;
+  mag?: number;
+  def?: number;
+  res?: number;
+  mov?: number;
+  range?: number;
+}
+
+export interface ItemDefinition {
+  id: string;
+  name: string;
+  category: ItemCategory;
+  rarity: ItemRarity;
+  description: string;
+  iconName: string;
+  color: string;
+  stats: ItemStats;
+  droppedByMonsterTypeIds: string[];
+}
+
+export interface EquipmentSlots {
+  helmet?: string | null;
+  chestplate?: string | null;
+  leggings?: string | null;
+  boots?: string | null;
+  weapon?: string | null;
+  accessory?: string | null;
 }
 
 export interface DamagePreview {
@@ -179,6 +215,8 @@ export interface ActiveAdventure {
   startedAt: string;
   goldEarnedInRun: number;
   unitsState: Record<string, UnitProgression>;
+  inventory?: string[]; // Item IDs currently held in this run
+  equipment?: Record<string, EquipmentSlots>; // ClassName -> EquipmentSlots
 }
 
 export interface PlayerProgress {
@@ -206,6 +244,7 @@ export interface PlayerProgress {
   // Roguelike & Collection systems:
   activeAdventure: ActiveAdventure | null; // Null if no run is currently underway
   discoveredMonsterIds: string[]; // Discovered monsters for bestiary
+  discoveredItemIds?: string[]; // Discovered items for item bestiary
   adventureHistory: AdventureRecord[]; // Up to 10 last finished adventures
 }
 

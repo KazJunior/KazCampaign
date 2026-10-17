@@ -4,7 +4,10 @@ import type {
   AdventureRecord,
   BattlePhase,
   DamagePreview,
+  EquipmentSlots,
   FloatingNumber,
+  ItemCategory,
+  ItemDefinition,
   LevelConfig,
   PlayerProgress,
   Point,
@@ -18,6 +21,7 @@ import type {
 import { LEVELS } from './data/levels';
 import { createPlayerUnit, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
 import { createMonsterUnit } from './data/monsters';
+import { getItemById, rollStageItemDrops } from './data/items';
 import {
   DEFAULT_PROGRESS,
   createInitialUnitsState,
@@ -52,6 +56,9 @@ import { AuthScreen } from './components/AuthScreen';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { BestiaryModal } from './components/BestiaryModal';
 import { AdventureHistoryModal } from './components/AdventureHistoryModal';
+import { ItemLootModal } from './components/ItemLootModal';
+import { EquipmentModal } from './components/EquipmentModal';
+import { ItemBestiaryModal } from './components/ItemBestiaryModal';
 import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
 import type { AuthUser } from './utils/api';
 import { LogOut, Trophy, User as UserIcon, Loader2 } from 'lucide-react';
@@ -69,6 +76,9 @@ export function App() {
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showBestiary, setShowBestiary] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showEquipment, setShowEquipment] = useState(false);
+  const [showItemBestiary, setShowItemBestiary] = useState(false);
+  const [pendingLootItems, setPendingLootItems] = useState<ItemDefinition[] | null>(null);
 
   const authUserRef = useRef<AuthUser | null>(null);
   authUserRef.current = authUser;
@@ -95,6 +105,9 @@ export function App() {
           discoveredMonsterIds: Array.isArray(cloudP.discoveredMonsterIds) && cloudP.discoveredMonsterIds.length > 0
             ? Array.from(new Set(cloudP.discoveredMonsterIds))
             : ['goblin'],
+          discoveredItemIds: Array.isArray(cloudP.discoveredItemIds)
+            ? Array.from(new Set(cloudP.discoveredItemIds))
+            : [],
           activeAdventure: cloudP.activeAdventure ?? null,
           adventureHistory: Array.isArray(cloudP.adventureHistory) ? cloudP.adventureHistory : [],
           combatSpeed: cloudP.combatSpeed || 'normal',
@@ -211,6 +224,13 @@ export function App() {
     const playerUnits: Unit[] = activeParty.map((cKey, idx) => {
       const uState = effectiveUnitsState[cKey];
       const spawnPt = lvlConfig.deploymentZone[idx] || { x: 3 + idx, y: 6 };
+      const equippedItemIds: string[] = [];
+      const charEquipment = progress.activeAdventure?.equipment?.[cKey];
+      if (charEquipment) {
+        Object.values(charEquipment).forEach((itemId) => {
+          if (itemId) equippedItemIds.push(itemId);
+        });
+      }
       return createPlayerUnit(
         cKey as any,
         `player_${cKey}`,
@@ -224,7 +244,8 @@ export function App() {
         uState ? uState.bonusMag || 0 : 0,
         uState ? uState.bonusRes || 0 : 0,
         uState ? uState.learnedSkillIds || [] : [],
-        uState ? uState.skillLevels || {} : {}
+        uState ? uState.skillLevels || {} : {},
+        equippedItemIds
       );
     });
 
@@ -272,6 +293,8 @@ export function App() {
       unitsState: initialUnits,
       partyClasses: progress.selectedPartyClasses,
       goldEarnedInRun: 0,
+      inventory: [],
+      equipment: {},
     };
     const updated: PlayerProgress = {
       ...progress,
@@ -346,6 +369,154 @@ export function App() {
     const fresh = resetPlayerProgress();
     setProgress(fresh);
     setCurrentView('level_select');
+  };
+
+  const handleSelectLootItem = (item: ItemDefinition | null) => {
+    if (item) {
+      setProgress((prev) => {
+        if (!prev.activeAdventure) return prev;
+        const currentInv = prev.activeAdventure.inventory || [];
+        const updatedAdv: ActiveAdventure = {
+          ...prev.activeAdventure,
+          inventory: [...currentInv, item.id],
+        };
+        const next: PlayerProgress = { ...prev, activeAdventure: updatedAdv };
+        savePlayerProgress(next);
+        return next;
+      });
+    }
+    setPendingLootItems(null);
+  };
+
+  const handleEquipItem = (heroClass: string, itemId: string) => {
+    const item = getItemById(itemId);
+    if (!item) return;
+    const category = item.category;
+    let nextHeroEquip: EquipmentSlots = {};
+    setProgress((prev) => {
+      if (!prev.activeAdventure) return prev;
+      const currentAdv = prev.activeAdventure;
+      const currentEquipment = { ...(currentAdv.equipment || {}) };
+      const heroEquip = { ...(currentEquipment[heroClass] || {}) };
+      const currentInventory = [...(currentAdv.inventory || [])];
+
+      const oldItemId = heroEquip[category];
+      if (oldItemId) {
+        currentInventory.push(oldItemId);
+      }
+
+      const itemIdx = currentInventory.indexOf(itemId);
+      if (itemIdx >= 0) {
+        currentInventory.splice(itemIdx, 1);
+      }
+
+      heroEquip[category] = itemId;
+      nextHeroEquip = heroEquip;
+      currentEquipment[heroClass] = heroEquip;
+
+      const updatedAdv: ActiveAdventure = {
+        ...currentAdv,
+        inventory: currentInventory,
+        equipment: currentEquipment,
+      };
+      const nextP: PlayerProgress = {
+        ...prev,
+        activeAdventure: updatedAdv,
+      };
+      savePlayerProgress(nextP);
+      return nextP;
+    });
+
+    setUnits((prevUnits) =>
+      prevUnits.map((u) => {
+        if (u.className !== heroClass || u.faction !== 'player') return u;
+        const uState = progress.activeAdventure?.unitsState[heroClass] || progress.unitsState[heroClass];
+        const equippedIds: string[] = Object.values(nextHeroEquip).filter((id): id is string => Boolean(id));
+        const recomputed = createPlayerUnit(
+          heroClass as any,
+          u.id,
+          u.x,
+          u.y,
+          uState ? uState.level : 1,
+          uState ? uState.xp : 0,
+          uState ? uState.bonusHp : 0,
+          uState ? uState.bonusAtk : 0,
+          uState ? uState.bonusDef : 0,
+          uState ? uState.bonusMag || 0 : 0,
+          uState ? uState.bonusRes || 0 : 0,
+          uState ? uState.learnedSkillIds || [] : [],
+          uState ? uState.skillLevels || {} : {},
+          equippedIds
+        );
+        const hpDiff = recomputed.maxHp - u.maxHp;
+        return {
+          ...recomputed,
+          currentHp: Math.min(recomputed.maxHp, Math.max(1, u.currentHp + hpDiff)),
+          hasMoved: u.hasMoved,
+          hasAttacked: u.hasAttacked,
+        };
+      })
+    );
+  };
+
+  const handleUnequipItem = (heroClass: string, category: ItemCategory) => {
+    let nextHeroEquip: EquipmentSlots = {};
+    setProgress((prev) => {
+      if (!prev.activeAdventure) return prev;
+      const currentAdv = prev.activeAdventure;
+      const currentEquipment = { ...(currentAdv.equipment || {}) };
+      const heroEquip = { ...(currentEquipment[heroClass] || {}) };
+      const oldItemId = heroEquip[category];
+      if (!oldItemId) return prev;
+
+      delete heroEquip[category];
+      nextHeroEquip = heroEquip;
+      currentEquipment[heroClass] = heroEquip;
+
+      const currentInventory = [...(currentAdv.inventory || []), oldItemId];
+
+      const updatedAdv: ActiveAdventure = {
+        ...currentAdv,
+        inventory: currentInventory,
+        equipment: currentEquipment,
+      };
+      const nextP: PlayerProgress = {
+        ...prev,
+        activeAdventure: updatedAdv,
+      };
+      savePlayerProgress(nextP);
+      return nextP;
+    });
+
+    setUnits((prevUnits) =>
+      prevUnits.map((u) => {
+        if (u.className !== heroClass || u.faction !== 'player') return u;
+        const uState = progress.activeAdventure?.unitsState[heroClass] || progress.unitsState[heroClass];
+        const equippedIds: string[] = Object.values(nextHeroEquip).filter((id): id is string => Boolean(id));
+        const recomputed = createPlayerUnit(
+          heroClass as any,
+          u.id,
+          u.x,
+          u.y,
+          uState ? uState.level : 1,
+          uState ? uState.xp : 0,
+          uState ? uState.bonusHp : 0,
+          uState ? uState.bonusAtk : 0,
+          uState ? uState.bonusDef : 0,
+          uState ? uState.bonusMag || 0 : 0,
+          uState ? uState.bonusRes || 0 : 0,
+          uState ? uState.learnedSkillIds || [] : [],
+          uState ? uState.skillLevels || {} : {},
+          equippedIds
+        );
+        return {
+          ...recomputed,
+          currentHp: Math.min(recomputed.maxHp, u.currentHp),
+          hasMoved: u.hasMoved,
+          hasAttacked: u.hasAttacked,
+        };
+      })
+    );
   };
 
   const handleToggleSpeed = () => {
@@ -1000,6 +1171,13 @@ export function App() {
     const totalGold = progress.gold + goldReward;
     const totalRunGold = (progress.activeAdventure?.goldEarnedInRun || 0) + goldReward;
 
+    // Drop de itens ao final da fase com base nos monstros presentes
+    const enemyMonsterTypeIds = currentLevel.enemySpawns.map((s) => s.monsterTypeId);
+    const droppedItems = rollStageItemDrops(enemyMonsterTypeIds);
+
+    const prevDiscoveredItems = progress.discoveredItemIds || [];
+    const newDiscoveredItems = Array.from(new Set([...prevDiscoveredItems, ...droppedItems.map((it) => it.id)]));
+
     const isFinalCampaignLevel = currentLevel.id >= LEVELS.length;
 
     let updatedHistory = progress.adventureHistory || [];
@@ -1031,6 +1209,8 @@ export function App() {
         unitsState: updatedUnitsState,
         partyClasses: activeParty,
         goldEarnedInRun: totalRunGold,
+        inventory: progress.activeAdventure?.inventory || [],
+        equipment: progress.activeAdventure?.equipment || {},
       };
     }
 
@@ -1043,6 +1223,7 @@ export function App() {
       unitsState: nextUnitsState,
       activeAdventure: updatedActiveAdventure,
       adventureHistory: updatedHistory,
+      discoveredItemIds: newDiscoveredItems,
     };
     setProgress(newProgress);
     savePlayerProgress(newProgress);
@@ -1056,6 +1237,7 @@ export function App() {
     setVictorySummary({ xpGained: xpReward, goldGained: goldReward, survivingUnits: partyUnits, levelUps });
     if (statChoiceQueue.length > 0) setPendingStatChoices(statChoiceQueue);
     if (newlyUnlocked.length > 0) setPendingUnlockClasses(newlyUnlocked);
+    if (droppedItems.length > 0) setPendingLootItems(droppedItems);
   };
 
   const handleChooseStat = (chosenStat: StatType) => {
@@ -1081,11 +1263,11 @@ export function App() {
     let bonusDef = uState.bonusDef || 0;
     let bonusRes = uState.bonusRes || 0;
 
-    if (chosenStat === 'hp') bonusHp += 25;
-    else if (chosenStat === 'atk') bonusAtk += 5;
-    else if (chosenStat === 'mag') bonusMag += 5;
-    else if (chosenStat === 'def') bonusDef += 4;
-    else if (chosenStat === 'res') bonusRes += 4;
+    if (chosenStat === 'hp') bonusHp += 15;
+    else if (chosenStat === 'atk') bonusAtk += 3;
+    else if (chosenStat === 'mag') bonusMag += 3;
+    else if (chosenStat === 'def') bonusDef += 3;
+    else if (chosenStat === 'res') bonusRes += 3;
 
     const updatedUnitsState = {
       ...progress.unitsState,
@@ -1120,6 +1302,13 @@ export function App() {
     const pendingUnit = pendingSkillChoices[0];
     const uState = progress.unitsState[pendingUnit.className];
     if (!uState) return pendingUnit;
+    const equippedItemIds: string[] = [];
+    const charEquipment = progress.activeAdventure?.equipment?.[pendingUnit.className];
+    if (charEquipment) {
+      Object.values(charEquipment).forEach((itemId) => {
+        if (itemId) equippedItemIds.push(itemId);
+      });
+    }
     return createPlayerUnit(
       pendingUnit.className as any,
       pendingUnit.id,
@@ -1133,9 +1322,10 @@ export function App() {
       uState.bonusMag || 0,
       uState.bonusRes || 0,
       uState.learnedSkillIds || [],
-      uState.skillLevels || {}
+      uState.skillLevels || {},
+      equippedItemIds
     );
-  }, [pendingSkillChoices, progress.unitsState]);
+  }, [pendingSkillChoices, progress.unitsState, progress.activeAdventure?.equipment]);
 
   const handleLearnOrEvolveSkill = (chosenSkill: Skill, isEvolution: boolean) => {
     if (pendingSkillChoices.length === 0) return;
@@ -1363,6 +1553,8 @@ export function App() {
           onResetProgress={handleResetProgress}
           onOpenBestiary={() => setShowBestiary(true)}
           onOpenHistory={() => setShowHistory(true)}
+          onOpenEquipment={() => setShowEquipment(true)}
+          onOpenItemBestiary={() => setShowItemBestiary(true)}
         />
 
         {showLeaderboard && (
@@ -1378,6 +1570,23 @@ export function App() {
           <AdventureHistoryModal
             history={progress.adventureHistory || []}
             onClose={() => setShowHistory(false)}
+          />
+        )}
+        {showEquipment && (
+          <EquipmentModal
+            partyClasses={progress.activeAdventure?.partyClasses || progress.selectedPartyClasses}
+            unitsState={progress.activeAdventure?.unitsState || progress.unitsState}
+            equipment={progress.activeAdventure?.equipment || {}}
+            inventory={progress.activeAdventure?.inventory || []}
+            onEquipItem={handleEquipItem}
+            onUnequipItem={handleUnequipItem}
+            onClose={() => setShowEquipment(false)}
+          />
+        )}
+        {showItemBestiary && (
+          <ItemBestiaryModal
+            discoveredItemIds={progress.discoveredItemIds || []}
+            onClose={() => setShowItemBestiary(false)}
           />
         )}
       </>
@@ -1420,11 +1629,17 @@ export function App() {
         onEndTurn={handleEndPlayerTurn}
         onOpenBestiary={() => setShowBestiary(true)}
         onOpenHistory={() => setShowHistory(true)}
+        onOpenEquipment={() => setShowEquipment(true)}
         onSaveAndExit={() => setCurrentView('level_select')}
       />
 
       <div className="flex-1 flex overflow-hidden relative">
-        {phase === 'deployment' && <DeploymentBanner onStartBattle={handleConfirmDeployment} />}
+        {phase === 'deployment' && (
+          <DeploymentBanner
+            onStartBattle={handleConfirmDeployment}
+            onOpenEquipment={() => setShowEquipment(true)}
+          />
+        )}
 
         {/* LEFT: Skills List Panel */}
         <SkillsPanel
@@ -1532,11 +1747,24 @@ export function App() {
         />
       )}
 
+      {pendingStatChoices.length === 0 &&
+        pendingSkillChoices.length === 0 &&
+        pendingUnlockClasses.length === 0 &&
+        pendingLootItems &&
+        pendingLootItems.length > 0 && (
+          <ItemLootModal
+            items={pendingLootItems}
+            levelNumber={currentLevel?.id || 1}
+            onSelectItem={handleSelectLootItem}
+          />
+        )}
+
       {(phase === 'victory' || phase === 'defeat') &&
         currentLevel &&
         pendingStatChoices.length === 0 &&
         pendingSkillChoices.length === 0 &&
-        pendingUnlockClasses.length === 0 && (
+        pendingUnlockClasses.length === 0 &&
+        !pendingLootItems && (
           <VictoryDefeatModal
             isVictory={phase === 'victory'}
             levelNumber={currentLevel.id}
@@ -1568,6 +1796,23 @@ export function App() {
         <AdventureHistoryModal
           history={progress.adventureHistory || []}
           onClose={() => setShowHistory(false)}
+        />
+      )}
+      {showEquipment && (
+        <EquipmentModal
+          partyClasses={progress.activeAdventure?.partyClasses || progress.selectedPartyClasses}
+          unitsState={progress.activeAdventure?.unitsState || progress.unitsState}
+          equipment={progress.activeAdventure?.equipment || {}}
+          inventory={progress.activeAdventure?.inventory || []}
+          onEquipItem={handleEquipItem}
+          onUnequipItem={handleUnequipItem}
+          onClose={() => setShowEquipment(false)}
+        />
+      )}
+      {showItemBestiary && (
+        <ItemBestiaryModal
+          discoveredItemIds={progress.discoveredItemIds || []}
+          onClose={() => setShowItemBestiary(false)}
         />
       )}
     </div>

@@ -32,6 +32,7 @@ export const DEFAULT_PROGRESS: PlayerProgress = {
   highScore: 0,
   activeAdventure: null,
   discoveredMonsterIds: ['goblin'],
+  discoveredItemIds: [],
   adventureHistory: [],
 };
 
@@ -94,6 +95,21 @@ export function loadPlayerProgress(): PlayerProgress {
       : ['goblin'];
     if (!discoveredMonsterIds.includes('goblin')) discoveredMonsterIds.push('goblin');
 
+    // Ensure discoveredItemIds is an array
+    let discoveredItemIds: string[] = Array.isArray(parsed.discoveredItemIds)
+      ? Array.from(new Set(parsed.discoveredItemIds))
+      : [];
+
+    // Ensure activeAdventure has inventory and equipment
+    let activeAdventure = parsed.activeAdventure || null;
+    if (activeAdventure) {
+      activeAdventure = {
+        ...activeAdventure,
+        inventory: Array.isArray(activeAdventure.inventory) ? activeAdventure.inventory : [],
+        equipment: activeAdventure.equipment || {},
+      };
+    }
+
     return {
       ...DEFAULT_PROGRESS,
       ...parsed,
@@ -106,8 +122,9 @@ export function loadPlayerProgress(): PlayerProgress {
         ...createInitialUnitsState(),
         ...(parsed.unitsState || {}),
       },
-      activeAdventure: parsed.activeAdventure || null,
+      activeAdventure,
       discoveredMonsterIds,
+      discoveredItemIds,
       adventureHistory,
     };
   } catch (err) {
