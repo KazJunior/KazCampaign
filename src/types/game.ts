@@ -44,6 +44,7 @@ export interface Skill {
   };
   iconName: string;
   isPassive?: boolean;
+  level?: number; // Skill evolution level (1, 2, 3...)
 }
 
 export type MonsterRole = 'attacker' | 'support' | 'tank';
@@ -78,6 +79,7 @@ export interface Unit {
   
   skills: Skill[];
   learnedSkillIds: string[]; // List of IDs learned via level up choices
+  skillLevels?: Record<string, number>; // Evolution levels per skill ID (1, 2, 3...)
   
   statusEffects: {
     type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk';
@@ -157,6 +159,7 @@ export type UnitProgression = {
   bonusMag?: number;
   bonusRes?: number;
   learnedSkillIds: string[];
+  skillLevels?: Record<string, number>;
 };
 
 export interface AdventureRecord {
@@ -195,6 +198,7 @@ export interface PlayerProgress {
     bonusMag?: number;
     bonusRes?: number;
     learnedSkillIds: string[];
+    skillLevels?: Record<string, number>;
   }>;
   combatSpeed: 'normal' | 'fast';
   highScore: number;

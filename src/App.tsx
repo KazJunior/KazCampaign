@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type {
   ActiveAdventure,
   AdventureRecord,
@@ -223,7 +223,8 @@ export function App() {
         uState ? uState.bonusDef : 0,
         uState ? uState.bonusMag || 0 : 0,
         uState ? uState.bonusRes || 0 : 0,
-        uState ? uState.learnedSkillIds : []
+        uState ? uState.learnedSkillIds || [] : [],
+        uState ? uState.skillLevels || {} : {}
       );
     });
 
@@ -1111,29 +1112,67 @@ export function App() {
     setPendingStatChoices((prev) => prev.slice(1));
   };
 
-  const handleLearnSkillChoice = (chosenSkill: Skill) => {
+  const currentSkillChoiceUnit = useMemo(() => {
+    if (pendingSkillChoices.length === 0) return null;
+    const pendingUnit = pendingSkillChoices[0];
+    const uState = progress.unitsState[pendingUnit.className];
+    if (!uState) return pendingUnit;
+    return createPlayerUnit(
+      pendingUnit.className as any,
+      pendingUnit.id,
+      pendingUnit.x,
+      pendingUnit.y,
+      uState.level,
+      uState.xp,
+      uState.bonusHp,
+      uState.bonusAtk,
+      uState.bonusDef,
+      uState.bonusMag || 0,
+      uState.bonusRes || 0,
+      uState.learnedSkillIds || [],
+      uState.skillLevels || {}
+    );
+  }, [pendingSkillChoices, progress.unitsState]);
+
+  const handleLearnOrEvolveSkill = (chosenSkill: Skill, isEvolution: boolean) => {
     if (pendingSkillChoices.length === 0) return;
     const currentUnitToUpgrade = pendingSkillChoices[0];
     const className = currentUnitToUpgrade.className;
     const uState = progress.unitsState[className];
-    const learnedList = uState ? uState.learnedSkillIds : [];
-    if (!learnedList.includes(chosenSkill.id)) {
-      const updatedLearned = [...learnedList, chosenSkill.id];
-      const updatedUnitsState = {
-        ...progress.unitsState,
-        [className]: { ...uState, learnedSkillIds: updatedLearned },
-      };
-      const updatedActiveAdv = progress.activeAdventure
-        ? { ...progress.activeAdventure, unitsState: updatedUnitsState }
-        : null;
-      const updatedProgress = {
-        ...progress,
-        unitsState: updatedUnitsState,
-        activeAdventure: updatedActiveAdv,
-      };
-      setProgress(updatedProgress);
-      savePlayerProgress(updatedProgress);
+    const learnedList = uState ? [...(uState.learnedSkillIds || [])] : [];
+    const skillLevels = uState?.skillLevels ? { ...uState.skillLevels } : {};
+
+    if (isEvolution) {
+      const currentLvl = skillLevels[chosenSkill.id] || 1;
+      skillLevels[chosenSkill.id] = currentLvl + 1;
+    } else {
+      if (!learnedList.includes(chosenSkill.id) && learnedList.length < 4) {
+        learnedList.push(chosenSkill.id);
+      }
+      if (!skillLevels[chosenSkill.id]) {
+        skillLevels[chosenSkill.id] = 1;
+      }
     }
+
+    const updatedUnitsState = {
+      ...progress.unitsState,
+      [className]: {
+        ...uState,
+        learnedSkillIds: learnedList,
+        skillLevels,
+      },
+    };
+    const updatedActiveAdv = progress.activeAdventure
+      ? { ...progress.activeAdventure, unitsState: updatedUnitsState }
+      : null;
+    const updatedProgress = {
+      ...progress,
+      unitsState: updatedUnitsState,
+      activeAdventure: updatedActiveAdv,
+    };
+    setProgress(updatedProgress);
+    savePlayerProgress(updatedProgress);
+
     setPendingSkillChoices((prev) => prev.slice(1));
   };
 
@@ -1476,10 +1515,10 @@ export function App() {
         />
       )}
 
-      {pendingStatChoices.length === 0 && pendingSkillChoices.length > 0 && (
+      {pendingStatChoices.length === 0 && currentSkillChoiceUnit && (
         <SkillChoiceModal
-          unit={pendingSkillChoices[0]}
-          onChooseSkill={handleLearnSkillChoice}
+          unit={currentSkillChoiceUnit}
+          onChooseSkill={handleLearnOrEvolveSkill}
         />
       )}
 

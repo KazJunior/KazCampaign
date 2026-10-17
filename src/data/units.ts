@@ -1,5 +1,5 @@
 import type { Unit } from '../types/game';
-import { SKILLS } from './skills';
+import { SKILLS, getEvolvedSkill } from './skills';
 
 export interface ClassDefinition {
   className: string;
@@ -306,7 +306,8 @@ export function createPlayerUnit(
   bonusDef = 0,
   bonusMag = 0,
   bonusRes = 0,
-  learnedSkillIds: string[] = []
+  learnedSkillIds: string[] = [],
+  skillLevels: Record<string, number> = {}
 ): Unit {
   const def = CLASS_DEFINITIONS[className];
   const hpBonus = (level - 1) * 12 + bonusHp;
@@ -316,17 +317,18 @@ export function createPlayerUnit(
   const unitDef = def.def + (level - 1) * 2 + bonusDef;
   const res = def.res + (level - 1) * 1 + bonusRes;
 
-  // Build active skill list from baseSkill + learnedSkillIds
-  const skillListIds = Array.from(new Set([def.baseSkillId, ...learnedSkillIds]));
+  // Max 5 skills total: baseSkill + up to 4 learnedSkillIds
+  const skillListIds = Array.from(new Set([def.baseSkillId, ...learnedSkillIds])).slice(0, 5);
   const skills = skillListIds
     .map((skId) => SKILLS[skId])
     .filter(Boolean)
     .map((sk) => {
-      const clone = JSON.parse(JSON.stringify(sk));
-      if (clone.damageType === 'healing' || clone.statusEffect?.type === 'shield') {
-        clone.cooldownMax = Math.max(3, clone.cooldownMax);
+      const skLevel = skillLevels[sk.id] || 1;
+      const evolved = getEvolvedSkill(sk, skLevel);
+      if (evolved.damageType === 'healing' || evolved.statusEffect?.type === 'shield') {
+        evolved.cooldownMax = Math.max(2, evolved.cooldownMax);
       }
-      return clone;
+      return evolved;
     });
 
   return {
@@ -353,7 +355,8 @@ export function createPlayerUnit(
     color: def.color,
     avatarKey: def.avatarKey,
     skills,
-    learnedSkillIds,
+    learnedSkillIds: skillListIds.filter((id) => id !== def.baseSkillId),
+    skillLevels,
     statusEffects: [],
     damageDealt: 0,
     kills: 0,

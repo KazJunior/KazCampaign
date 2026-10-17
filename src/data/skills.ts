@@ -1945,3 +1945,76 @@ export const SKILLS: Record<string, Skill> = {
     iconName: 'RotateCcw',
   },
 };
+
+export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
+  guerreiro: [
+    'golpe_demolidor', 'postura_defensiva', 'provocacao', 'escudo_inquebrantavel',
+    'corte_circular', 'investida_pesada', 'grito_de_guerra', 'contra_ataque_furioso', 'resistencia_suprema'
+  ],
+  arqueiro: [
+    'disparo_triplo', 'tiro_de_precisao', 'recuo_tatico', 'flecha_venenosa',
+    'chuva_de_flechas', 'tiro_paralisante', 'armadilha_de_caca', 'tiro_mortal', 'olho_de_aguia'
+  ],
+  mago: [
+    'projetil_elemental', 'campo_de_energia', 'tempestade_magica', 'raio_glacial',
+    'barreira_elemental', 'orbe_do_vazio', 'teleporte_mistico', 'cometa_arcano', 'mente_arcana'
+  ],
+  curandeiro: [
+    'cura_em_area', 'escudo_sagrado', 'purificacao', 'luz_restauradora',
+    'martelo_sagrado', 'bencao_divina', 'aura_de_protecao', 'ressurreicao_mistica', 'paz_espiritual'
+  ],
+  assassino: [
+    'passo_das_sombras', 'veneno_mortal', 'execucao', 'laminas_duplas',
+    'mortalha_das_sombras', 'corte_traicoeiro', 'danca_das_laminas', 'assassinato', 'agilidade_sombria'
+  ],
+  cavaleiro_arcano: [
+    'barreira_arcana', 'ruptura_mistica', 'marca_do_cacador', 'golpe_flamejante',
+    'estocada_eletrica', 'aura_runica', 'sedenta_de_runas', 'lamina_do_destino', 'armadura_runica'
+  ],
+  necromante: [
+    'maldicao_fraqueza', 'explosao_corpse', 'pacto_de_sangue', 'toque_apodrecedor', 'profanar_solo'
+  ],
+  engenheiro: [
+    'lanca_granada', 'barreira_tecnologica', 'choque_estatico', 'injecao_de_adrenalina', 'sobrecarga_nuclear'
+  ],
+  mago_runico: [
+    'runa_de_protecao', 'glifo_incandescente', 'marca_do_destino', 'campo_runico', 'apocalipse_runico'
+  ],
+  berserker: [
+    'frenesi_sanguinario', 'salto_destrutivo', 'rugido_intimidante', 'corte_temerario', 'ira_incontrolavel'
+  ],
+};
+
+export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
+  if (level <= 1) {
+    return { ...baseSkill, level: 1 };
+  }
+
+  const clone: Skill = JSON.parse(JSON.stringify(baseSkill));
+  clone.level = level;
+
+  // Power boost: +30% power per level above 1
+  if (clone.power > 0) {
+    clone.power = Math.round((clone.power * (1 + 0.3 * (level - 1))) * 10) / 10;
+  }
+
+  // Cooldown reduction: -1 turn cooldown (min 2 turns) at level >= 2
+  if (clone.cooldownMax >= 3) {
+    clone.cooldownMax = Math.max(2, clone.cooldownMax - 1);
+  }
+
+  // Status effect boost (+25% value per level)
+  if (clone.statusEffect) {
+    clone.statusEffect = {
+      ...clone.statusEffect,
+      value: Math.round(clone.statusEffect.value * (1 + 0.25 * (level - 1))),
+    };
+  }
+
+  // Defense ignore boost (+10% per level)
+  if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0) {
+    clone.defenseIgnoreRatio = Math.min(0.8, Math.round((clone.defenseIgnoreRatio + 0.1 * (level - 1)) * 10) / 10);
+  }
+
+  return clone;
+}

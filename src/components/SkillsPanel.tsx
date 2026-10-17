@@ -168,6 +168,14 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                         <h4 className="font-bold text-xs truncate text-[#F3F4F8]">
                           {skill.name}
                         </h4>
+                        {skill.level && skill.level > 1 && (
+                          <span
+                            className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/50 shrink-0"
+                            title={`Nível de Evolução: ${skill.level}`}
+                          >
+                            Nv. {skill.level}
+                          </span>
+                        )}
                       </div>
                       {isOnCd ? (
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#E65353]/20 border border-[#E65353]/40 text-[#E65353] shrink-0">
