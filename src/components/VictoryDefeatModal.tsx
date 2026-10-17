@@ -89,7 +89,7 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
               <div className="bg-[#10131C] p-3 rounded-xl border border-[#343B50] flex items-center gap-2">
                 <Sparkles className="text-[#B58AFF]" size={20} />
                 <div>
-                  <div className="text-[10px] text-[#A7B0C4]">XP por Sobrevivente</div>
+                  <div className="text-[10px] text-[#A7B0C4]">XP por Herói</div>
                   <div className="font-bold text-sm text-[#B58AFF]">+{summary.xpGained} XP</div>
                 </div>
               </div>

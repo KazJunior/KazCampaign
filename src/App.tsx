@@ -951,12 +951,13 @@ export function App() {
 
     const xpReward = currentLevel.rewards.xpPerUnit;
     const goldReward = currentLevel.rewards.gold;
-    const surviving = finalUnitsState.filter((u) => u.faction === 'player' && !u.isDead);
+    // Todos os heróis da equipe recebem o XP e evoluem de nível, mesmo que tenham caído em combate
+    const partyUnits = finalUnitsState.filter((u) => u.faction === 'player');
     const levelUps: { unitName: string; oldLevel: number; newLevel: number }[] = [];
     const statChoiceQueue: { unit: Unit; newLevel: number }[] = [];
     const updatedUnitsState = { ...progress.unitsState };
 
-    surviving.forEach((match) => {
+    partyUnits.forEach((match) => {
       const uState = updatedUnitsState[match.className] || {
         className: match.className,
         level: 1,
@@ -974,6 +975,8 @@ export function App() {
       const updatedUnitObj = {
         ...match,
         level: newLevel,
+        isDead: false,
+        currentHp: match.maxHp,
       };
       statChoiceQueue.push({ unit: updatedUnitObj, newLevel });
       updatedUnitsState[match.className] = {
@@ -1050,7 +1053,7 @@ export function App() {
       );
     }
 
-    setVictorySummary({ xpGained: xpReward, goldGained: goldReward, survivingUnits: surviving, levelUps });
+    setVictorySummary({ xpGained: xpReward, goldGained: goldReward, survivingUnits: partyUnits, levelUps });
     if (statChoiceQueue.length > 0) setPendingStatChoices(statChoiceQueue);
     if (newlyUnlocked.length > 0) setPendingUnlockClasses(newlyUnlocked);
   };

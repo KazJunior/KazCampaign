@@ -157,7 +157,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 <div className="flex items-center gap-3 text-xs text-[#A7B0C4] mt-2">
                   <span>Recompensa: <strong className="text-[#F0B44D]">+{currentLevelInfo.rewards.gold} Ouro</strong></span>
                   <span>•</span>
-                  <span>XP: <strong className="text-[#B58AFF]">+{currentLevelInfo.rewards.xpPerUnit} por sobrevivente</strong></span>
+                  <span>XP: <strong className="text-[#B58AFF]">+{currentLevelInfo.rewards.xpPerUnit} por herói</strong></span>
                   {currentLevelInfo.hasFinalBoss && (
                     <span className="text-[#FF5252] font-black uppercase flex items-center gap-1 bg-[#FF5252]/15 px-2 py-0.5 rounded-full border border-[#FF5252]/30">
                       <Flame size={12} /> Confronto com Boss!
