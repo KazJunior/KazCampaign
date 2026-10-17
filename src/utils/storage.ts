@@ -1,5 +1,5 @@
 import type { AudioSettings, PlayerProgress } from '../types/game';
-import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS } from '../data/units';
+import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
 import { saveCloudProgress } from './api';
 
 const PROGRESS_KEY = 'rpg_tactics_progress_v4';
@@ -59,41 +59,40 @@ export function loadPlayerProgress(): PlayerProgress {
     const parsed = JSON.parse(raw);
     const completedLevels: number[] = Array.isArray(parsed.completedLevels) ? parsed.completedLevels : [];
     
-    // Ensure unlockedClasses is properly populated
-    let unlockedClasses: string[] = Array.isArray(parsed.unlockedClasses) && parsed.unlockedClasses.length > 0
-      ? parsed.unlockedClasses
-      : [...INITIAL_CLASSES];
+    // Ensure adventureHistory is an array of max 10
+    const adventureHistory = Array.isArray(parsed.adventureHistory)
+      ? parsed.adventureHistory.slice(0, 10)
+      : [];
+
+    const maxCompleted = getMaxCompletedLevel({
+      activeAdventure: parsed.activeAdventure,
+      adventureHistory,
+      completedLevels,
+    });
+
+    // Sanitize unlocked classes: user can only have classes for stages they legitimately completed
+    let unlockedClasses = sanitizeUnlockedClasses(parsed.unlockedClasses, maxCompleted, completedLevels);
 
     // Retroactively unlock any classes earned by completed boss/mini-boss levels
     Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, info]) => {
-      if (completedLevels.includes(info.requiredLevel) && !unlockedClasses.includes(cName)) {
+      if ((completedLevels.includes(info.requiredLevel) || maxCompleted >= info.requiredLevel) && !unlockedClasses.includes(cName)) {
         unlockedClasses.push(cName);
       }
     });
 
-    // Make sure initial 4 classes are always present
+    // Ensure initial 4 classes are always present
     INITIAL_CLASSES.forEach((c) => {
       if (!unlockedClasses.includes(c)) unlockedClasses.push(c);
     });
 
-    // Ensure selectedPartyClasses only contains unlocked classes
-    let selectedPartyClasses: string[] = Array.isArray(parsed.selectedPartyClasses) && parsed.selectedPartyClasses.length === 4
-      ? parsed.selectedPartyClasses.filter((c: string) => unlockedClasses.includes(c))
-      : [];
-    if (selectedPartyClasses.length !== 4) {
-      selectedPartyClasses = [...INITIAL_CLASSES];
-    }
+    // Ensure selectedPartyClasses only contains valid unlocked classes
+    const selectedPartyClasses = sanitizePartyClasses(parsed.selectedPartyClasses, unlockedClasses);
 
     // Ensure discoveredMonsterIds is an array
     let discoveredMonsterIds: string[] = Array.isArray(parsed.discoveredMonsterIds)
       ? Array.from(new Set(parsed.discoveredMonsterIds))
       : ['goblin'];
     if (!discoveredMonsterIds.includes('goblin')) discoveredMonsterIds.push('goblin');
-
-    // Ensure adventureHistory is an array of max 10
-    const adventureHistory = Array.isArray(parsed.adventureHistory)
-      ? parsed.adventureHistory.slice(0, 10)
-      : [];
 
     return {
       ...DEFAULT_PROGRESS,

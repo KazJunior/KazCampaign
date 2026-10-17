@@ -229,6 +229,71 @@ export const CLASS_UNLOCK_CONDITIONS: Record<string, ClassUnlockInfo> = {
   },
 };
 
+export function getMaxCompletedLevel(progress: {
+  activeAdventure?: { currentLevelId: number } | null;
+  adventureHistory?: { farthestLevel: number; result: string }[] | null;
+  completedLevels?: number[] | null;
+  leaderboardHighestLevel?: number | null;
+}): number {
+  let max = 0;
+  if (typeof progress.leaderboardHighestLevel === 'number') {
+    max = Math.max(max, progress.leaderboardHighestLevel);
+  }
+  if (progress.activeAdventure && progress.activeAdventure.currentLevelId > 1) {
+    max = Math.max(max, progress.activeAdventure.currentLevelId - 1);
+  }
+  if (Array.isArray(progress.adventureHistory)) {
+    for (const rec of progress.adventureHistory) {
+      if (rec.result === 'victory') {
+        max = Math.max(max, 50);
+      } else if (rec.farthestLevel && rec.farthestLevel > 1) {
+        max = Math.max(max, rec.farthestLevel - 1);
+      }
+    }
+  }
+  if (Array.isArray(progress.completedLevels) && progress.completedLevels.length > 0) {
+    max = Math.max(max, ...progress.completedLevels);
+  }
+  return max;
+}
+
+export function sanitizeUnlockedClasses(
+  rawUnlocked: string[] | undefined,
+  maxLevelCompleted: number,
+  completedLevels: number[] = []
+): string[] {
+  const allowed = new Set<string>(INITIAL_CLASSES);
+  if (Array.isArray(rawUnlocked)) {
+    Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
+      if (maxLevelCompleted >= cond.requiredLevel || completedLevels.includes(cond.requiredLevel)) {
+        if (rawUnlocked.includes(cName)) {
+          allowed.add(cName);
+        }
+      }
+    });
+  }
+  return Array.from(allowed);
+}
+
+export function sanitizePartyClasses(party: string[] | undefined, unlockedClasses: string[]): string[] {
+  const validUnlocked = new Set(unlockedClasses);
+  const result: string[] = [];
+  if (Array.isArray(party)) {
+    for (const c of party) {
+      if (validUnlocked.has(c) && !result.includes(c)) {
+        result.push(c);
+      }
+    }
+  }
+  for (const c of INITIAL_CLASSES) {
+    if (result.length >= 4) break;
+    if (!result.includes(c)) {
+      result.push(c);
+    }
+  }
+  return result.slice(0, 4);
+}
+
 export function createPlayerUnit(
   className: keyof typeof CLASS_DEFINITIONS,
   id: string,

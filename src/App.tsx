@@ -16,9 +16,10 @@ import type {
   UnitProgression,
 } from './types/game';
 import { LEVELS } from './data/levels';
-import { createPlayerUnit, CLASS_UNLOCK_CONDITIONS } from './data/units';
+import { createPlayerUnit, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
 import { createMonsterUnit } from './data/monsters';
 import {
+  DEFAULT_PROGRESS,
   createInitialUnitsState,
   loadAudioSettings,
   loadPlayerProgress,
@@ -77,21 +78,41 @@ export function App() {
     try {
       const cloudP = await fetchCloudProgress();
       if (cloudP) {
-        setProgress((prev) => {
-          const merged: PlayerProgress = {
-            ...prev,
-            gold: Math.max(prev.gold, cloudP.gold || 0),
-            unlockedClasses: Array.from(new Set([...(prev.unlockedClasses || []), ...(cloudP.unlockedClasses || [])])),
-            discoveredMonsterIds: Array.from(new Set([...(prev.discoveredMonsterIds || []), ...(cloudP.discoveredMonsterIds || [])])),
-            activeAdventure: cloudP.activeAdventure ?? prev.activeAdventure,
-            adventureHistory: cloudP.adventureHistory && cloudP.adventureHistory.length > 0 ? cloudP.adventureHistory : prev.adventureHistory,
-            combatSpeed: cloudP.combatSpeed || prev.combatSpeed,
-          };
-          savePlayerProgress(merged);
-          return merged;
+        const maxCompleted = getMaxCompletedLevel({
+          activeAdventure: cloudP.activeAdventure,
+          adventureHistory: cloudP.adventureHistory,
         });
+
+        const safeUnlocked = sanitizeUnlockedClasses(cloudP.unlockedClasses, maxCompleted);
+        const safeParty = sanitizePartyClasses(cloudP.selectedPartyClasses, safeUnlocked);
+
+        const merged: PlayerProgress = {
+          ...DEFAULT_PROGRESS,
+          gold: typeof cloudP.gold === 'number' ? cloudP.gold : 0,
+          unlockedClasses: safeUnlocked,
+          selectedPartyClasses: safeParty,
+          unitsState: cloudP.unitsState || createInitialUnitsState(),
+          discoveredMonsterIds: Array.isArray(cloudP.discoveredMonsterIds) && cloudP.discoveredMonsterIds.length > 0
+            ? Array.from(new Set(cloudP.discoveredMonsterIds))
+            : ['goblin'],
+          activeAdventure: cloudP.activeAdventure ?? null,
+          adventureHistory: Array.isArray(cloudP.adventureHistory) ? cloudP.adventureHistory : [],
+          combatSpeed: cloudP.combatSpeed || 'normal',
+        };
+
+        setProgress(merged);
+        savePlayerProgress(merged);
       } else {
-        saveCloudProgress(progress);
+        // Nova conta: inicia limpa sem herdar classes indevidas de sessões anteriores
+        const freshProgress: PlayerProgress = {
+          ...DEFAULT_PROGRESS,
+          unlockedClasses: [...INITIAL_CLASSES],
+          selectedPartyClasses: [...INITIAL_CLASSES],
+          unitsState: createInitialUnitsState(),
+        };
+        setProgress(freshProgress);
+        savePlayerProgress(freshProgress);
+        await saveCloudProgress(freshProgress);
       }
     } catch (err) {
       console.warn('Erro ao sincronizar progresso em nuvem:', err);
@@ -110,6 +131,8 @@ export function App() {
   const handleLogout = () => {
     logout();
     setAuthUser(null);
+    const cleanProgress = resetPlayerProgress();
+    setProgress(cleanProgress);
     setCurrentView('level_select');
   };
 
