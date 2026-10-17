@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
 import * as THREE from 'three';
-import type { BattlePhase, FloatingNumber, ObstacleType, Point, Skill, TerrainType, TileData, Unit } from '../types/game';
+import type { BattlePhase, FloatingNumber, Point, Skill, TileData, Unit } from '../types/game';
 import { AnimationEngine } from './AnimationEngine';
+import {
+  createRichTile,
+  createRichObstacle,
+  createDioramaPerimeter,
+  createAmbientMotes,
+  updateEnvironmentAnimations,
+} from './EnvironmentBuilder3D';
 
 // --- Public API exposed via ref ---
 export interface BoardRenderer3DHandle {
@@ -111,10 +118,13 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     rendererRef.current = renderer;
 
     // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0xfffaed, 1.3);
+    const hemiLight = new THREE.HemisphereLight(0xe0f2fe, 0x1e293b, 0.55);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xfffaed, 1.35);
     dirLight.position.set(centerX + 10, 18, centerZ + 12);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
@@ -128,9 +138,13 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     dirLight.shadow.camera.bottom = -d;
     scene.add(dirLight);
 
-    const accentLight = new THREE.PointLight(0xd4ad65, 0.6, 25);
+    const accentLight = new THREE.PointLight(0xd4ad65, 0.65, 25);
     accentLight.position.set(centerX, 7, centerZ);
     scene.add(accentLight);
+
+    // Ambient floating atmospheric particles
+    const ambientMotes = createAmbientMotes(gridWidth, gridHeight, 50);
+    scene.add(ambientMotes);
 
     // Groups
     const gridGroup = new THREE.Group();
@@ -156,6 +170,9 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
       // Update animation engine (tweens + particles)
       animEngine.update();
+
+      // Animate environment assets (wind sway, shrine crystals, torches, water, motes)
+      updateEnvironmentAnimations(scene, time);
 
       // Idle breathing for units NOT currently being animated
       if (!animEngine.isAnimating) {
@@ -246,7 +263,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     }
   }, [cameraMode, gridWidth, gridHeight]);
 
-  // Rebuild Grid & Obstacles
+  // Rebuild Grid, Diorama Base & High-Detail 3D Obstacles
   useEffect(() => {
     const group = gridGroupRef.current;
     if (!group) return;
@@ -254,21 +271,24 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const child = group.children.pop()!;
       if (child instanceof THREE.Mesh) child.geometry.dispose();
     }
-    const tileGeo = new THREE.BoxGeometry(0.96, 0.22, 0.96);
+
+    // Add Tabletop Floating Diorama Perimeter Base
+    const diorama = createDioramaPerimeter(gridWidth, gridHeight);
+    group.add(diorama);
+
+    // Build each rich tile & 3D obstacle
     for (let y = 0; y < gridHeight; y++) {
       for (let x = 0; x < gridWidth; x++) {
         const tile = grid[y][x];
-        const mat = new THREE.MeshStandardMaterial({
-          color: getTerrain3DColor(tile.terrain),
-          roughness: 0.75,
-          metalness: 0.1,
-        });
-        const mesh = new THREE.Mesh(tileGeo, mat);
-        mesh.position.set(x + 0.5, -0.11, y + 0.5);
-        mesh.receiveShadow = true;
-        group.add(mesh);
+
+        // 1. Layered Biome Tile with Micro-Props
+        const tileMesh = createRichTile(tile, x, y);
+        tileMesh.position.set(x + 0.5, 0, y + 0.5);
+        group.add(tileMesh);
+
+        // 2. High-Detail Low-Poly Stylized Obstacle
         if (tile.obstacle !== 'none') {
-          const obsMesh = createLowPolyObstacle(tile.obstacle);
+          const obsMesh = createRichObstacle(tile.obstacle, x, y);
           obsMesh.position.set(x + 0.5, 0, y + 0.5);
           group.add(obsMesh);
         }
@@ -637,86 +657,6 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 });
 
 BoardRenderer3D.displayName = 'BoardRenderer3D';
-
-// --- Terrain Colors ---
-function getTerrain3DColor(terrain: TerrainType): number {
-  switch (terrain) {
-    case 'grass': return 0x223a27;
-    case 'stone': return 0x293142;
-    case 'sand': return 0x3d3424;
-    case 'dirt': return 0x30241e;
-    case 'water': return 0x1d3a54;
-    case 'swamp': return 0x22382e;
-    case 'void': return 0x171326;
-  }
-}
-
-// --- Obstacles ---
-function createLowPolyObstacle(type: ObstacleType): THREE.Group {
-  const group = new THREE.Group();
-  if (type === 'tree') {
-    const trunkGeo = new THREE.CylinderGeometry(0.08, 0.12, 0.6, 6);
-    const trunkMat = new THREE.MeshStandardMaterial({ color: 0x422818, roughness: 0.9 });
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.position.y = 0.3;
-    trunk.castShadow = true;
-    group.add(trunk);
-    const leavesGeo = new THREE.ConeGeometry(0.42, 0.95, 6);
-    const leavesMat = new THREE.MeshStandardMaterial({ color: 0x2d6a4f, roughness: 0.6 });
-    const leaves = new THREE.Mesh(leavesGeo, leavesMat);
-    leaves.position.y = 0.85;
-    leaves.castShadow = true;
-    group.add(leaves);
-  } else if (type === 'rock') {
-    const rockGeo = new THREE.DodecahedronGeometry(0.35, 0);
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x5a6578, roughness: 0.8 });
-    const rock = new THREE.Mesh(rockGeo, rockMat);
-    rock.position.y = 0.25;
-    rock.castShadow = true;
-    group.add(rock);
-  } else if (type === 'ruins' || type === 'pillar') {
-    const pillarGeo = new THREE.CylinderGeometry(0.2, 0.22, 1.2, 8);
-    const pillarMat = new THREE.MeshStandardMaterial({ color: 0x718096, roughness: 0.5 });
-    const pillar = new THREE.Mesh(pillarGeo, pillarMat);
-    pillar.position.y = 0.6;
-    pillar.castShadow = true;
-    group.add(pillar);
-  } else if (type === 'shrine') {
-    const baseGeo = new THREE.BoxGeometry(0.6, 0.35, 0.6);
-    const baseMat = new THREE.MeshStandardMaterial({ color: 0x4c1d95, roughness: 0.3 });
-    const base = new THREE.Mesh(baseGeo, baseMat);
-    base.position.y = 0.18;
-    base.castShadow = true;
-    group.add(base);
-    const orbGeo = new THREE.OctahedronGeometry(0.18, 0);
-    const orbMat = new THREE.MeshStandardMaterial({ color: 0xa78bfa, emissive: 0xa78bfa, emissiveIntensity: 0.8 });
-    const orb = new THREE.Mesh(orbGeo, orbMat);
-    orb.position.y = 0.65;
-    group.add(orb);
-  } else if (type === 'wall') {
-    const wallGeo = new THREE.BoxGeometry(0.92, 0.9, 0.92);
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.7 });
-    const wall = new THREE.Mesh(wallGeo, wallMat);
-    wall.position.y = 0.45;
-    wall.castShadow = true;
-    group.add(wall);
-  } else if (type === 'thorns') {
-    const thornGeo = new THREE.ConeGeometry(0.25, 0.5, 5);
-    const thornMat = new THREE.MeshStandardMaterial({ color: 0x15803d });
-    const thorn = new THREE.Mesh(thornGeo, thornMat);
-    thorn.position.y = 0.25;
-    thorn.castShadow = true;
-    group.add(thorn);
-  } else if (type === 'tombstone') {
-    const tombGeo = new THREE.BoxGeometry(0.35, 0.7, 0.15);
-    const tombMat = new THREE.MeshStandardMaterial({ color: 0x64748b });
-    const tomb = new THREE.Mesh(tombGeo, tombMat);
-    tomb.position.y = 0.35;
-    tomb.castShadow = true;
-    group.add(tomb);
-  }
-  return group;
-}
 
 // --- 3D Floating Health Bar (Billboard facing camera) ---
 function createUnitHpBar(unit: Unit): THREE.Group {
