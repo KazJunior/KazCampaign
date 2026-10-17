@@ -388,7 +388,7 @@ export function App() {
     setPendingLootItems(null);
   };
 
-  const handleEquipItem = (heroClass: string, itemId: string) => {
+  const handleEquipItem = (heroClass: string, itemId: string, inventoryIndex?: number) => {
     const item = getItemById(itemId);
     if (!item) return;
     const category = item.category;
@@ -405,7 +405,14 @@ export function App() {
         currentInventory.push(oldItemId);
       }
 
-      const itemIdx = currentInventory.indexOf(itemId);
+      const itemIdx =
+        inventoryIndex !== undefined &&
+        inventoryIndex >= 0 &&
+        inventoryIndex < currentInventory.length &&
+        currentInventory[inventoryIndex] === itemId
+          ? inventoryIndex
+          : currentInventory.indexOf(itemId);
+
       if (itemIdx >= 0) {
         currentInventory.splice(itemIdx, 1);
       }

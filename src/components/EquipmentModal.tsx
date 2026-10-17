@@ -21,9 +21,14 @@ interface EquipmentModalProps {
   unitsState: Record<string, UnitProgression>;
   inventory: string[]; // List of item IDs held in the current run
   equipment: Record<string, EquipmentSlots>;
-  onEquipItem: (className: string, itemId: string) => void;
+  onEquipItem: (className: string, itemId: string, inventoryIndex?: number) => void;
   onUnequipItem: (className: string, category: ItemCategory) => void;
   onClose: () => void;
+}
+
+interface InventoryEntry {
+  item: ItemDefinition;
+  inventoryIndex: number;
 }
 
 export const EquipmentModal: React.FC<EquipmentModalProps> = ({
@@ -36,7 +41,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
   onClose,
 }) => {
   const [activeClass, setActiveClass] = useState<string>(partyClasses[0] || 'guerreiro');
-  const [selectedInventoryItem, setSelectedInventoryItem] = useState<ItemDefinition | null>(null);
+  const [selectedInventoryIndex, setSelectedInventoryIndex] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<'all' | ItemCategory>('all');
 
   useEffect(() => {
@@ -60,26 +65,17 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
 
   const currentHeroEquipment = equipment[activeClass] || {};
 
-  // Find all items currently equipped across ANY hero in the party
-  const allEquippedItemIds = new Set<string>();
-  Object.values(equipment).forEach((heroSlots) => {
-    if (heroSlots.helmet) allEquippedItemIds.add(heroSlots.helmet);
-    if (heroSlots.chestplate) allEquippedItemIds.add(heroSlots.chestplate);
-    if (heroSlots.leggings) allEquippedItemIds.add(heroSlots.leggings);
-    if (heroSlots.boots) allEquippedItemIds.add(heroSlots.boots);
-    if (heroSlots.weapon) allEquippedItemIds.add(heroSlots.weapon);
-    if (heroSlots.accessory) allEquippedItemIds.add(heroSlots.accessory);
-  });
+  // Itens desequipados no inventário da aventura (suporta múltiplos itens idênticos)
+  const unequippedItems: InventoryEntry[] = inventory
+    .map((id, index) => {
+      const item = getItemById(id);
+      return item ? { item, inventoryIndex: index } : null;
+    })
+    .filter((entry): entry is InventoryEntry => Boolean(entry));
 
-  // Unequipped items in inventory
-  const unequippedItems = inventory
-    .filter((id) => !allEquippedItemIds.has(id))
-    .map((id) => getItemById(id))
-    .filter((it): it is ItemDefinition => Boolean(it));
-
-  const filteredInventory = unequippedItems.filter((it) => {
+  const filteredInventory = unequippedItems.filter(({ item }) => {
     if (categoryFilter === 'all') return true;
-    return it.category === categoryFilter;
+    return item.category === categoryFilter;
   });
 
   const slotsList: { category: ItemCategory; label: string; icon: React.ReactNode }[] = [
@@ -113,10 +109,10 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
     { hp: 0, atk: 0, mag: 0, def: 0, res: 0, mov: 0, range: 0 }
   );
 
-  const handleEquip = (item: ItemDefinition) => {
+  const handleEquip = (item: ItemDefinition, inventoryIndex: number) => {
     soundManager.playSelect();
-    onEquipItem(activeClass, item.id);
-    setSelectedInventoryItem(null);
+    onEquipItem(activeClass, item.id, inventoryIndex);
+    setSelectedInventoryIndex(null);
   };
 
   const handleUnequip = (category: ItemCategory) => {
@@ -174,7 +170,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                 onClick={() => {
                   soundManager.playSelect();
                   setActiveClass(cKey);
-                  setSelectedInventoryItem(null);
+                  setSelectedInventoryIndex(null);
                 }}
                 className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 transition-all shrink-0 ${
                   isSelected
@@ -376,27 +372,38 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                   Nenhum item desequipado nesta categoria. Vença fases para encontrar novos drops!
                 </div>
               ) : (
-                filteredInventory.map((item) => {
-                  const isSelected = selectedInventoryItem?.id === item.id;
+                filteredInventory.map(({ item, inventoryIndex }) => {
+                  const isSelected = selectedInventoryIndex === inventoryIndex;
                   const rInfo = RARITY_INFO[item.rarity];
                   const cInfo = CATEGORY_INFO[item.category];
+                  const currentlyEquippedId = currentHeroEquipment[item.category];
+                  const currentlyEquippedItem = currentlyEquippedId ? getItemById(currentlyEquippedId) : null;
+                  const isReplacing = Boolean(currentlyEquippedItem);
 
                   return (
                     <div
-                      key={item.id}
-                      className={`p-3 rounded-xl border transition-all ${
+                      key={`${item.id}_${inventoryIndex}`}
+                      onClick={() => setSelectedInventoryIndex(inventoryIndex)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
                         isSelected
                           ? `${rInfo.border} bg-[#1B2030] shadow-md`
                           : 'border-[#343B50] bg-[#10131C] hover:border-[#A7B0C4]/40'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-1">
-                        <span
-                          className="font-bold text-xs"
-                          style={{ color: rInfo.color }}
-                        >
-                          {item.name}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className="font-bold text-xs"
+                            style={{ color: rInfo.color }}
+                          >
+                            {item.name}
+                          </span>
+                          {isReplacing && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                              Substitui {cInfo.label}
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[10px] text-[#A7B0C4] bg-[#141824] px-1.5 py-0.5 rounded border border-[#343B50]">
                           {cInfo.label}
                         </span>
@@ -404,7 +411,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
 
                       <p className="text-[10px] text-[#A7B0C4] mb-2">{item.description}</p>
 
-                      <div className="flex items-center justify-between pt-1 border-t border-[#343B50]/60">
+                      <div className="flex items-center justify-between pt-1 border-t border-[#343B50]/60 gap-2">
                         {/* Stats */}
                         <div className="flex flex-wrap gap-1 text-[9px] font-bold">
                           {item.stats.hp && <span className="text-[#FF5252]">+{item.stats.hp} HP</span>}
@@ -418,10 +425,17 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                         {/* Equip Button */}
                         <button
                           type="button"
-                          onClick={() => handleEquip(item)}
-                          className="py-1 px-3 rounded-lg bg-[#D4AD65] hover:bg-[#E5C27E] text-[#10131C] font-black text-[11px] uppercase tracking-wider flex items-center gap-1 transition-transform active:scale-95 shadow"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEquip(item, inventoryIndex);
+                          }}
+                          className="py-1 px-3 rounded-lg bg-[#D4AD65] hover:bg-[#E5C27E] text-[#10131C] font-black text-[11px] uppercase tracking-wider flex items-center gap-1 transition-transform active:scale-95 shadow shrink-0"
+                          title={isReplacing ? `Substituir ${currentlyEquippedItem?.name} e equipar ${item.name}` : `Equipar em ${currentHeroDef.name}`}
                         >
-                          <CheckCircle2 size={12} /> Equipar em {currentHeroDef.name}
+                          <CheckCircle2 size={12} />
+                          {isReplacing
+                            ? `Substituir ${cInfo.label}`
+                            : `Equipar em ${currentHeroDef.name}`}
                         </button>
                       </div>
                     </div>

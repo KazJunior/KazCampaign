@@ -1986,34 +1986,39 @@ export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
 };
 
 export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
+  if (!baseSkill) return baseSkill;
   if (level <= 1) {
     return { ...baseSkill, level: 1 };
   }
 
-  const clone: Skill = JSON.parse(JSON.stringify(baseSkill));
+  const canonicalBase = (baseSkill.id && SKILLS[baseSkill.id]) ? SKILLS[baseSkill.id] : baseSkill;
+  const clone: Skill = JSON.parse(JSON.stringify(canonicalBase));
   clone.level = level;
 
-  // Power boost: +30% power per level above 1
-  if (clone.power > 0) {
-    clone.power = Math.round((clone.power * (1 + 0.3 * (level - 1))) * 10) / 10;
+  // Aumento de escalonamento baixo: +0.2 de poder por nível acima de 1
+  if (canonicalBase.power > 0) {
+    clone.power = Math.round((canonicalBase.power + 0.2 * (level - 1)) * 100) / 100;
   }
 
-  // Cooldown reduction: -1 turn cooldown (min 2 turns) at level >= 2
-  if (clone.cooldownMax >= 3) {
-    clone.cooldownMax = Math.max(2, clone.cooldownMax - 1);
-  }
+  // Melhorias de recarga (cooldown) NÃO devem ser fornecidas
+  clone.cooldownMax = canonicalBase.cooldownMax;
 
-  // Status effect boost (+25% value per level)
+  // Aumento de efeito de status baixo (+5% no valor por nível; nunca altera duração de stun/slow)
   if (clone.statusEffect) {
+    const isDurationEffect = clone.statusEffect.type === 'stun' || clone.statusEffect.type === 'slow';
+    const bonus = isDurationEffect ? 0 : Math.round(canonicalBase.statusEffect!.value * 0.05 * (level - 1));
     clone.statusEffect = {
       ...clone.statusEffect,
-      value: Math.round(clone.statusEffect.value * (1 + 0.25 * (level - 1))),
+      value: canonicalBase.statusEffect!.value + bonus,
     };
   }
 
-  // Defense ignore boost (+10% per level)
-  if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0) {
-    clone.defenseIgnoreRatio = Math.min(0.8, Math.round((clone.defenseIgnoreRatio + 0.1 * (level - 1)) * 10) / 10);
+  // Penetração de armadura/defesa baixa (+3% por nível, limite 50%)
+  if (canonicalBase.defenseIgnoreRatio && canonicalBase.defenseIgnoreRatio > 0) {
+    clone.defenseIgnoreRatio = Math.min(
+      0.5,
+      Math.round((canonicalBase.defenseIgnoreRatio + 0.03 * (level - 1)) * 100) / 100
+    );
   }
 
   return clone;
