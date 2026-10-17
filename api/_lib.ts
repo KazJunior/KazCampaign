@@ -15,7 +15,13 @@ export function getSql() {
 }
 
 function getSecret(): string {
-  const secret = process.env.AUTH_SECRET || 'kazcampaign_secret_auth_token_key_sa89d71b3';
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+      throw new Error('AUTH_SECRET não configurada no painel da Vercel.');
+    }
+    return 'kazcampaign_local_dev_only_secret';
+  }
   return secret;
 }
 
