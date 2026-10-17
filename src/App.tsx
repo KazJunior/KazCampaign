@@ -1303,11 +1303,27 @@ export function App() {
           addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
         }
 
-        // Shield for allies in healing skills like Campo Rúnico / Escudo Sagrado
-        if (skill?.statusEffect?.type === 'shield') {
-          const sh = skill.statusEffect;
-          currentEffects = [...currentEffects.filter((e) => e.type !== 'shield'), { ...sh }];
-          addFloatingNumber(t.x, t.y, `+${sh.value} Escudo`, 'shield', '#38BDF8');
+        // Support status effects for allies in healing/support skills (Shield, Buff Atk, Invisible, etc.)
+        if (skill?.statusEffect) {
+          const eff = skill.statusEffect;
+          currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+          if (eff.type === 'shield') {
+            addFloatingNumber(t.x, t.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+          } else if (eff.type === 'buff_atk') {
+            addFloatingNumber(t.x, t.y, `+${eff.value}% Dano`, 'status', '#F97316');
+          } else if (eff.type === 'invisible') {
+            addFloatingNumber(t.x, t.y, 'Invisível!', 'status', '#8B5CF6');
+          }
+        }
+
+        if (skill?.secondaryStatusEffect) {
+          const eff2 = skill.secondaryStatusEffect;
+          currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+          if (eff2.type === 'shield') {
+            addFloatingNumber(t.x, t.y, `+${eff2.value} Escudo`, 'shield', '#38BDF8');
+          } else if (eff2.type === 'buff_atk') {
+            addFloatingNumber(t.x, t.y, `+${eff2.value}% Dano`, 'status', '#F97316');
+          }
         }
       } else {
         newHp = Math.max(0, t.currentHp - actualDmg);
@@ -2013,12 +2029,23 @@ export function App() {
         const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
         setDamagePreview(preview);
         setTargetUnitId(selectedUnit.id);
+      } else if (sk.targetType === 'ally' && sk.rangeMin === 0 && sk.aoeRadius > 0) {
+        const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
+        preview.aoeTargetsCount = units.filter(
+          (u) =>
+            u.faction === 'player' &&
+            !u.isDead &&
+            Math.abs(u.x - selectedUnit.x) <= sk.aoeRadius &&
+            Math.abs(u.y - selectedUnit.y) <= sk.aoeRadius
+        ).length;
+        setDamagePreview(preview);
+        setTargetUnitId(selectedUnit.id);
       } else {
         setDamagePreview(null);
         setTargetUnitId(null);
       }
     },
-    [selectedUnit, phase, activeSkill]
+    [selectedUnit, phase, activeSkill, units]
   );
 
   // Wait / Pass unit turn handler
