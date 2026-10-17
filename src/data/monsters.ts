@@ -394,17 +394,18 @@ export function createMonsterUnit(
   let res: number;
 
   if (def.isBoss) {
-    // Boss scaling: matches endgame player level 10 to 50
+    // Boss scaling: escalonamento de dano balanceado para evitar 1-hit KO
     maxHp = def.maxHp + levelOffset * 90;
-    atk = def.atk + Math.round(levelOffset * 8.0);
-    mag = def.mag + Math.round(levelOffset * 8.0);
+    atk = def.atk + Math.round(levelOffset * 1.8);
+    mag = def.mag + Math.round(levelOffset * 1.8);
     unitDef = def.def + Math.round(levelOffset * 4.0);
     res = def.res + Math.round(levelOffset * 4.0);
   } else if (def.isMiniBoss) {
-    // Mini-boss scaling: stages 5, 15, 25, 35, 45
+    // Mini-boss scaling: o primeiro (Devorador) mantém escalonamento original 6.0; os demais usam 2.0
     maxHp = def.maxHp + levelOffset * 55;
-    atk = def.atk + Math.round(levelOffset * 6.0);
-    mag = def.mag + Math.round(levelOffset * 6.0);
+    const scaling = typeId === 'devorador' ? 6.0 : 2.0;
+    atk = def.atk + Math.round(levelOffset * scaling);
+    mag = def.mag + Math.round(levelOffset * scaling);
     unitDef = def.def + Math.round(levelOffset * 3.2);
     res = def.res + Math.round(levelOffset * 3.0);
   } else {
