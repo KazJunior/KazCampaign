@@ -34,14 +34,23 @@ export interface Skill {
   aoeRadius: number;
   cooldownMax: number;
   currentCooldown: number;
-  targetType: 'enemy' | 'ally' | 'any' | 'self';
+  targetType: 'enemy' | 'ally' | 'any' | 'self' | 'empty_tile';
   defenseIgnoreRatio?: number;
   requiredLevel?: number;
   statusEffect?: {
-    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk';
+    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
     duration: number;
     value: number;
   };
+  secondaryStatusEffect?: {
+    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
+    duration: number;
+    value: number;
+  };
+  lifestealPercent?: number; // % of damage dealt converted to healing on caster (e.g. 100% for Dreno de Vida)
+  isTeleport?: boolean; // Skill teleports caster to an empty tile
+  teleportToTarget?: boolean; // Moves caster to adjacent tile next to target
+  cleansesDebuffs?: boolean; // Removes debuffs from target ally
   iconName: string;
   isPassive?: boolean;
   level?: number; // Skill evolution level (1, 2, 3...)
@@ -82,7 +91,7 @@ export interface Unit {
   skillLevels?: Record<string, number>; // Evolution levels per skill ID (1, 2, 3...)
   
   statusEffects: {
-    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk';
+    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
     duration: number;
     value: number;
   }[];
@@ -244,8 +253,13 @@ export interface PlayerProgress {
   // Roguelike & Collection systems:
   activeAdventure: ActiveAdventure | null; // Null if no run is currently underway
   discoveredMonsterIds: string[]; // Discovered monsters for bestiary
-  discoveredItemIds?: string[]; // Discovered items for item bestiary
+  discoveredItemIds?: string[]; // Discovered items for item catalog
   adventureHistory: AdventureRecord[]; // Up to 10 last finished adventures
+
+  // Base & Meta-progression systems:
+  classUpgrades?: Record<string, number>; // className -> level (0..5)
+  generalUpgrades?: Record<string, number>; // upgradeId -> level (0..3)
+  itemUpgrades?: Record<string, number>; // itemId -> level (0..3, +5% stat per level)
 }
 
 export interface AudioSettings {

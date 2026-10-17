@@ -10,10 +10,6 @@ import {
   updateEnvironmentAnimations,
 } from './EnvironmentBuilder3D';
 import {
-  createStandeeModel,
-  updateStandeeOrientations,
-} from './StandeeBuilder3D';
-import {
   createOrganicMiniatureModel,
 } from './MiniatureBuilder3D';
 
@@ -63,18 +59,12 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 }, ref) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [cameraMode, setCameraMode] = useState<'isometric' | 'topdown'>('isometric');
-  const [characterStyle, setCharacterStyle] = useState<'standee' | 'miniature'>('miniature');
 
   const cameraModeRef = useRef<'isometric' | 'topdown'>('isometric');
-  const characterStyleRef = useRef<'standee' | 'miniature'>('miniature');
 
   useEffect(() => {
     cameraModeRef.current = cameraMode;
   }, [cameraMode]);
-
-  useEffect(() => {
-    characterStyleRef.current = characterStyle;
-  }, [characterStyle]);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -201,10 +191,6 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         });
       }
 
-      // Update standees orientation and tilt towards camera (HD-2D Standee)
-      if (characterStyleRef.current === 'standee') {
-        updateStandeeOrientations(unitsGroup, cameraModeRef.current);
-      }
 
       // Billboard alignment for 3D HP bars & rotation for status auras
       if (cameraRef.current) {
@@ -449,7 +435,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     }
   }, [reachableTiles, attackableTiles, aoeTiles, deploymentZone, phase, selectedUnit, hoveredTile, grid, gridWidth, gridHeight]);
 
-  // Rebuild 3D Unit Models / Standees & maintain mesh map
+  // Rebuild 3D Unit Models & maintain mesh map
   useEffect(() => {
     const group = unitsGroupRef.current;
     if (!group) return;
@@ -460,18 +446,40 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
     units.forEach((unit) => {
       if (unit.isDead) return;
-      const figure =
-        characterStyle === 'standee'
-          ? createStandeeModel(unit, createUnitHpBar, createStatusAuras)
-          : createOrganicMiniatureModel(unit, createUnitHpBar, createStatusAuras);
+      const figure = createOrganicMiniatureModel(unit, createUnitHpBar, createStatusAuras);
       figure.position.set(unit.x + 0.5, 0, unit.y + 0.5);
       figure.name = `unit_${unit.id}`;
+
+      // Stealth / Invisibility Visual: make unit meshes translucent ghostly
+      const isInvisible = unit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
+      if (isInvisible) {
+        figure.traverse((child) => {
+          if (child instanceof THREE.Mesh && child.name !== 'auraRing' && !child.name.includes('hpBarBillboard')) {
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material = child.material.map((m) => {
+                  const cloned = m.clone();
+                  cloned.transparent = true;
+                  cloned.opacity = 0.35;
+                  return cloned;
+                });
+              } else {
+                const cloned = child.material.clone();
+                cloned.transparent = true;
+                cloned.opacity = 0.35;
+                child.material = cloned;
+              }
+            }
+          }
+        });
+      }
+
       group.add(figure);
       newMap.set(unit.id, figure);
     });
 
     unitMeshMapRef.current = newMap;
-  }, [units, characterStyle]);
+  }, [units]);
 
   // --- Imperative Animation API ---
   const getUnitObj = useCallback((unitId: string): THREE.Group | undefined => {
@@ -726,27 +734,6 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         </button>
       </div>
 
-      {/* Visual Style Controls (Standee HD-2D vs 3D) */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-[#1B2030]/90 border border-[#343B50] p-1.5 rounded-xl shadow-lg backdrop-blur">
-        <button
-          onClick={() => setCharacterStyle('standee')}
-          className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-            characterStyle === 'standee' ? 'bg-[#4C8DFF] text-white shadow' : 'text-[#A7B0C4] hover:text-white'
-          }`}
-          title="Miniaturas ilustradas em Standees HD-2D recortados com base redonda"
-        >
-          <span>🃏</span> Standee HD-2D
-        </button>
-        <button
-          onClick={() => setCharacterStyle('miniature')}
-          className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-            characterStyle === 'miniature' ? 'bg-[#4C8DFF] text-white shadow' : 'text-[#A7B0C4] hover:text-white'
-          }`}
-          title="Modelos 3D clássicos"
-        >
-          <span>🗿</span> Miniatura 3D
-        </button>
-      </div>
 
       {/* WebGL Canvas */}
       <div
@@ -894,6 +881,40 @@ function createStatusAuras(unit: Unit): THREE.Group {
     poisonMesh.position.y = 0.06;
     poisonMesh.name = 'auraRing';
     auraGroup.add(poisonMesh);
+  }
+
+  // 5. Invisibility / Stealth (Ghostly dark violet ring & shadow particles)
+  const hasInvis = unit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
+  if (hasInvis) {
+    const invisGeo = new THREE.RingGeometry(0.32, 0.46, 16);
+    invisGeo.rotateX(-Math.PI / 2);
+    const invisMat = new THREE.MeshBasicMaterial({
+      color: 0x8b5cf6,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+    });
+    const invisMesh = new THREE.Mesh(invisGeo, invisMat);
+    invisMesh.position.y = 0.07;
+    invisMesh.name = 'auraRing';
+    auraGroup.add(invisMesh);
+  }
+
+  // 6. Def Debuff (Cracked crimson ring at base)
+  const hasDefDebuff = unit.statusEffects?.some((e) => e.type === 'debuff_def' && e.duration > 0);
+  if (hasDefDebuff) {
+    const debuffGeo = new THREE.RingGeometry(0.36, 0.44, 8);
+    debuffGeo.rotateX(-Math.PI / 2);
+    const debuffMat = new THREE.MeshBasicMaterial({
+      color: 0xef4444,
+      transparent: true,
+      opacity: 0.8,
+      side: THREE.DoubleSide,
+    });
+    const debuffMesh = new THREE.Mesh(debuffGeo, debuffMat);
+    debuffMesh.position.y = 0.04;
+    debuffMesh.name = 'auraRing';
+    auraGroup.add(debuffMesh);
   }
 
   return auraGroup;

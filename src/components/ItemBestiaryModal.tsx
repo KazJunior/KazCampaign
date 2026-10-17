@@ -13,15 +13,27 @@ import {
   Footprints,
   Gem,
   HardHat,
+  Star,
+  Coins,
+  Check,
 } from 'lucide-react';
+import { ItemIcon } from './ItemIcon';
+import { getItemEffectiveStats, getItemUpgradeCost, MAX_ITEM_ENHANCEMENT_LEVEL } from '../data/baseUpgrades';
+import { soundManager } from '../utils/audio';
 
 interface ItemBestiaryModalProps {
   discoveredItemIds: string[];
+  itemUpgrades?: Record<string, number>;
+  gold?: number;
+  onUpgradeItem?: (itemId: string) => void;
   onClose: () => void;
 }
 
 export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
   discoveredItemIds = [],
+  itemUpgrades = {},
+  gold = 0,
+  onUpgradeItem,
   onClose,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<'all' | ItemCategory>('all');
@@ -89,22 +101,30 @@ export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
             </div>
             <div>
               <h2 className="font-black text-lg text-[#F3F4F8] flex items-center gap-2">
-                Compêndio de Itens
+                Catálogo de Itens
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40">
                   {discoveredCount} / {totalCount} Catalogados ({progressPercent}%)
                 </span>
               </h2>
               <p className="text-xs text-[#A7B0C4]">
-                Bestiário e catálogo de todos os armamentos, proteções e artefatos já encontrados nas suas campanhas.
+                Catálogo permanente de todos os armamentos, proteções e artefatos já encontrados nas suas aventuras.
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
-          >
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-3">
+            {gold !== undefined && (
+              <div className="flex items-center gap-2 bg-[#10131C] border border-[#D4AD65]/60 px-3 py-1.5 rounded-xl shadow-md">
+                <Coins size={16} className="text-[#FFD700]" />
+                <span className="text-xs font-black text-[#FFD700]">{gold.toLocaleString()} G</span>
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
+            >
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Filter Bar */}
@@ -193,19 +213,25 @@ export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
                     {rInfo.label} • {cInfo.label}
                   </span>
                   <p className="text-[10px] text-[#71788E]">
-                    Derrote monstros do abismo para descobrir este item.
+                    Derrote monstros do abismo para catalogar este item.
                   </p>
                 </div>
               );
             }
 
+            const currentLvl = itemUpgrades[item.id] || 0;
+            const effectiveStats = getItemEffectiveStats(item.stats, currentLvl);
+            const isMax = currentLvl >= MAX_ITEM_ENHANCEMENT_LEVEL;
+            const nextCost = getItemUpgradeCost(item.rarity, currentLvl);
+            const canAfford = nextCost !== null && gold >= nextCost;
+
             return (
               <div
                 key={item.id}
-                className="p-4 rounded-xl border-2 bg-[#10131C] flex flex-col justify-between transition-all hover:scale-[1.02] shadow-md"
+                className="p-4 rounded-xl border-2 bg-[#10131C] flex flex-col justify-between transition-all hover:scale-[1.01] shadow-md"
                 style={{
-                  borderColor: `${rInfo.color}66`,
-                  boxShadow: `0 4px 14px ${rInfo.color}15`,
+                  borderColor: currentLvl > 0 ? `${rInfo.color}` : `${rInfo.color}66`,
+                  boxShadow: currentLvl > 0 ? `0 4px 16px ${rInfo.color}30` : `0 4px 14px ${rInfo.color}15`,
                 }}
               >
                 <div>
@@ -220,18 +246,52 @@ export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
                     >
                       {rInfo.label}
                     </span>
-                    <span className="text-[10px] text-[#A7B0C4] flex items-center gap-1 bg-[#141824] px-1.5 py-0.5 rounded border border-[#343B50]">
-                      {getCategoryIcon(item.category)}
-                      {cInfo.label}
-                    </span>
+
+                    {/* Star Level Badge */}
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3].map((starIdx) => (
+                        <Star
+                          key={starIdx}
+                          size={12}
+                          className={
+                            starIdx <= currentLvl
+                              ? 'text-[#FFD700] fill-[#FFD700]'
+                              : 'text-[#343B50]'
+                          }
+                        />
+                      ))}
+                      <span
+                        className={`text-[10px] font-black ml-1 ${
+                          currentLvl > 0 ? 'text-[#FFD700]' : 'text-[#71788E]'
+                        }`}
+                      >
+                        {currentLvl === 0 ? '+0%' : `+${currentLvl * 5}%`}
+                      </span>
+                    </div>
                   </div>
 
-                  <h3
-                    className="font-bold text-xs mb-1 line-clamp-1"
-                    style={{ color: rInfo.color }}
-                  >
-                    {item.name}
-                  </h3>
+                  <div className="flex items-center gap-3 mb-2.5">
+                    <ItemIcon
+                      iconName={item.iconName}
+                      category={item.category}
+                      rarity={item.rarity}
+                      color={item.color}
+                      badge
+                      badgeSize="md"
+                      showGlow
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        className="font-bold text-xs line-clamp-1"
+                        style={{ color: rInfo.color }}
+                      >
+                        {item.name}
+                      </h3>
+                      <div className="text-[10px] text-[#A7B0C4] truncate">
+                        {cInfo.label}
+                      </div>
+                    </div>
+                  </div>
 
                   <p className="text-[10px] text-[#A7B0C4] line-clamp-2 mb-3">
                     {item.description}
@@ -239,44 +299,79 @@ export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
                 </div>
 
                 <div>
-                  {/* Stats Tag */}
+                  {/* Effective Stats Tag */}
                   <div className="flex flex-wrap gap-1 mb-2 pt-2 border-t border-[#343B50]">
-                    {item.stats.hp && (
-                      <span className="text-[9px] font-bold px-1 rounded bg-[#FF5252]/15 text-[#FF5252]">
-                        +{item.stats.hp} HP
+                    {effectiveStats.hp && (
+                      <span className={`text-[9px] font-bold px-1 rounded ${currentLvl > 0 ? 'bg-[#FF5252]/25 text-[#FF8585] ring-1 ring-[#FF5252]/40' : 'bg-[#FF5252]/15 text-[#FF5252]'}`}>
+                        +{effectiveStats.hp} HP
                       </span>
                     )}
-                    {item.stats.atk && (
-                      <span className="text-[9px] font-bold px-1 rounded bg-[#FF8A00]/15 text-[#FF8A00]">
-                        +{item.stats.atk} ATK
+                    {effectiveStats.atk && (
+                      <span className={`text-[9px] font-bold px-1 rounded ${currentLvl > 0 ? 'bg-[#FF8A00]/25 text-[#FFA84D] ring-1 ring-[#FF8A00]/40' : 'bg-[#FF8A00]/15 text-[#FF8A00]'}`}>
+                        +{effectiveStats.atk} ATK
                       </span>
                     )}
-                    {item.stats.mag && (
-                      <span className="text-[9px] font-bold px-1 rounded bg-[#B58AFF]/15 text-[#B58AFF]">
-                        +{item.stats.mag} MAG
+                    {effectiveStats.mag && (
+                      <span className={`text-[9px] font-bold px-1 rounded ${currentLvl > 0 ? 'bg-[#B58AFF]/25 text-[#D0B8FF] ring-1 ring-[#B58AFF]/40' : 'bg-[#B58AFF]/15 text-[#B58AFF]'}`}>
+                        +{effectiveStats.mag} MAG
                       </span>
                     )}
-                    {item.stats.def && (
-                      <span className="text-[9px] font-bold px-1 rounded bg-[#4C8DFF]/15 text-[#4C8DFF]">
-                        +{item.stats.def} DEF
+                    {effectiveStats.def && (
+                      <span className={`text-[9px] font-bold px-1 rounded ${currentLvl > 0 ? 'bg-[#4C8DFF]/25 text-[#85B0FF] ring-1 ring-[#4C8DFF]/40' : 'bg-[#4C8DFF]/15 text-[#4C8DFF]'}`}>
+                        +{effectiveStats.def} DEF
                       </span>
                     )}
-                    {item.stats.res && (
-                      <span className="text-[9px] font-bold px-1 rounded bg-[#00E5FF]/15 text-[#00E5FF]">
-                        +{item.stats.res} RES
+                    {effectiveStats.res && (
+                      <span className={`text-[9px] font-bold px-1 rounded ${currentLvl > 0 ? 'bg-[#00E5FF]/25 text-[#6BEEFF] ring-1 ring-[#00E5FF]/40' : 'bg-[#00E5FF]/15 text-[#00E5FF]'}`}>
+                        +{effectiveStats.res} RES
                       </span>
                     )}
-                    {item.stats.mov && (
+                    {effectiveStats.mov && (
                       <span className="text-[9px] font-bold px-1 rounded bg-[#69F0AE]/15 text-[#69F0AE]">
-                        +{item.stats.mov} MOV
+                        +{effectiveStats.mov} MOV
                       </span>
                     )}
-                    {item.stats.range && (
+                    {effectiveStats.range && (
                       <span className="text-[9px] font-bold px-1 rounded bg-[#FFD700]/15 text-[#FFD700]">
-                        +{item.stats.range} ALC
+                        +{effectiveStats.range} ALC
                       </span>
                     )}
                   </div>
+
+                  {/* Enhancement Button */}
+                  {onUpgradeItem && (
+                    <div className="mb-2">
+                      {isMax ? (
+                        <div className="w-full py-1.5 rounded-lg bg-[#43C878]/10 border border-[#43C878]/30 text-[#43C878] font-bold text-[10px] text-center flex items-center justify-center gap-1">
+                          <Check size={12} /> Aprimoramento Máximo (★★★)
+                        </div>
+                      ) : nextCost !== null ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!canAfford) {
+                              soundManager.playError();
+                              return;
+                            }
+                            soundManager.playUpgrade();
+                            onUpgradeItem(item.id);
+                          }}
+                          disabled={!canAfford}
+                          className={`w-full py-1.5 rounded-lg font-black text-[11px] flex items-center justify-center gap-1.5 transition-all ${
+                            canAfford
+                              ? 'bg-gradient-to-r from-[#D4AD65] to-[#F0B44D] text-[#10131C] hover:scale-105 active:scale-95 shadow-sm shadow-[#D4AD65]/20 cursor-pointer'
+                              : 'bg-[#141824] border border-[#343B50] text-[#71788E] cursor-not-allowed opacity-80'
+                          }`}
+                        >
+                          <Coins size={12} />
+                          <span>{nextCost.toLocaleString()} G</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider ml-0.5">
+                            {canAfford ? 'Melhorar (+5%)' : 'Insuficiente'}
+                          </span>
+                        </button>
+                      ) : null}
+                    </div>
+                  )}
 
                   {/* Monster Source */}
                   <div className="text-[9px] text-[#71788E] truncate">
@@ -294,3 +389,6 @@ export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
     </div>
   );
 };
+
+export const ItemCatalogModal = ItemBestiaryModal;
+export type ItemCatalogModalProps = ItemBestiaryModalProps;

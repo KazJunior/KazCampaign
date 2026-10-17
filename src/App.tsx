@@ -21,7 +21,19 @@ import type {
 import { LEVELS } from './data/levels';
 import { createPlayerUnit, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
 import { createMonsterUnit } from './data/monsters';
-import { getItemById, rollStageItemDrops } from './data/items';
+import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
+import {
+  getClassCumulativeBonus,
+  getGeneralBonusHp,
+  getGeneralGoldMultiplier,
+  getGeneralXpMultiplier,
+  getGeneralDropBonus,
+  CLASS_UPGRADE_COSTS,
+  MAX_CLASS_UPGRADE_LEVEL,
+  MAX_ITEM_ENHANCEMENT_LEVEL,
+  GENERAL_UPGRADES,
+  getItemUpgradeCost,
+} from './data/baseUpgrades';
 import {
   DEFAULT_PROGRESS,
   createInitialUnitsState,
@@ -59,9 +71,35 @@ import { AdventureHistoryModal } from './components/AdventureHistoryModal';
 import { ItemLootModal } from './components/ItemLootModal';
 import { EquipmentModal } from './components/EquipmentModal';
 import { ItemBestiaryModal } from './components/ItemBestiaryModal';
+import { BaseUpgradeModal } from './components/BaseUpgradeModal';
 import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
 import type { AuthUser } from './utils/api';
 import { LogOut, Trophy, User as UserIcon, Loader2 } from 'lucide-react';
+
+function consolidateDiscoveredItems(
+  existingDiscovered: string[] = [],
+  activeAdventure?: ActiveAdventure | null,
+  additionalItemIds: string[] = []
+): string[] {
+  const set = new Set<string>(existingDiscovered);
+  additionalItemIds.forEach((id) => id && set.add(id));
+
+  if (activeAdventure?.inventory && Array.isArray(activeAdventure.inventory)) {
+    activeAdventure.inventory.forEach((id) => id && set.add(id));
+  }
+
+  if (activeAdventure?.equipment && typeof activeAdventure.equipment === 'object') {
+    Object.values(activeAdventure.equipment).forEach((heroEquip) => {
+      if (heroEquip && typeof heroEquip === 'object') {
+        Object.values(heroEquip).forEach((id) => {
+          if (typeof id === 'string' && id) set.add(id);
+        });
+      }
+    });
+  }
+
+  return Array.from(set);
+}
 
 export function App() {
   const boardRef = useRef<BoardRenderer3DHandle>(null);
@@ -78,6 +116,7 @@ export function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showEquipment, setShowEquipment] = useState(false);
   const [showItemBestiary, setShowItemBestiary] = useState(false);
+  const [showBaseUpgrades, setShowBaseUpgrades] = useState(false);
   const [pendingLootItems, setPendingLootItems] = useState<ItemDefinition[] | null>(null);
 
   const authUserRef = useRef<AuthUser | null>(null);
@@ -105,12 +144,17 @@ export function App() {
           discoveredMonsterIds: Array.isArray(cloudP.discoveredMonsterIds) && cloudP.discoveredMonsterIds.length > 0
             ? Array.from(new Set(cloudP.discoveredMonsterIds))
             : ['goblin'],
-          discoveredItemIds: Array.isArray(cloudP.discoveredItemIds)
-            ? Array.from(new Set(cloudP.discoveredItemIds))
-            : [],
+          discoveredItemIds: consolidateDiscoveredItems(
+            Array.isArray(cloudP.discoveredItemIds) ? cloudP.discoveredItemIds : [],
+            cloudP.activeAdventure ?? progress.activeAdventure,
+            progress.discoveredItemIds || []
+          ),
           activeAdventure: cloudP.activeAdventure ?? null,
           adventureHistory: Array.isArray(cloudP.adventureHistory) ? cloudP.adventureHistory : [],
           combatSpeed: cloudP.combatSpeed || 'normal',
+          classUpgrades: cloudP.classUpgrades && typeof cloudP.classUpgrades === 'object' ? cloudP.classUpgrades : (progress.classUpgrades || {}),
+          generalUpgrades: cloudP.generalUpgrades && typeof cloudP.generalUpgrades === 'object' ? cloudP.generalUpgrades : (progress.generalUpgrades || {}),
+          itemUpgrades: cloudP.itemUpgrades && typeof cloudP.itemUpgrades === 'object' ? cloudP.itemUpgrades : (progress.itemUpgrades || {}),
         };
 
         setProgress(merged);
@@ -161,6 +205,7 @@ export function App() {
   const [targetUnitId, setTargetUnitId] = useState<string | null>(null);
   const [hoveredTile, setHoveredTile] = useState<Point | null>(null);
   const [damagePreview, setDamagePreview] = useState<DamagePreview | null>(null);
+  const [targetTeleportPoint, setTargetTeleportPoint] = useState<Point | null>(null);
 
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNumber[]>([]);
 
@@ -245,7 +290,10 @@ export function App() {
         uState ? uState.bonusRes || 0 : 0,
         uState ? uState.learnedSkillIds || [] : [],
         uState ? uState.skillLevels || {} : {},
-        equippedItemIds
+        equippedItemIds,
+        progress.itemUpgrades,
+        getClassCumulativeBonus(cKey, progress.classUpgrades?.[cKey] || 0),
+        { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
       );
     });
 
@@ -287,19 +335,38 @@ export function App() {
   // Start a fresh Adventure Run from Level 1
   const handleStartNewAdventure = () => {
     const initialUnits = createInitialUnitsState();
+    const preservedDiscoveredItems = consolidateDiscoveredItems(
+      progress.discoveredItemIds,
+      progress.activeAdventure
+    );
+    // Starter Item meta-upgrade (Provisões de Expedição)
+    const starterLvl = progress.generalUpgrades?.starterItem || 0;
+    const initialInventory: string[] = [];
+    if (starterLvl > 0) {
+      const targetRarity = starterLvl === 1 ? 'common' : starterLvl === 2 ? 'rare' : 'epic';
+      const bonusItem = getRandomItemByRarity(targetRarity);
+      if (bonusItem) {
+        initialInventory.push(bonusItem.id);
+        if (!preservedDiscoveredItems.includes(bonusItem.id)) {
+          preservedDiscoveredItems.push(bonusItem.id);
+        }
+      }
+    }
+
     const newActiveAdv: ActiveAdventure = {
       currentLevelId: 1,
       startedAt: new Date().toISOString(),
       unitsState: initialUnits,
       partyClasses: progress.selectedPartyClasses,
       goldEarnedInRun: 0,
-      inventory: [],
+      inventory: initialInventory,
       equipment: {},
     };
     const updated: PlayerProgress = {
       ...progress,
       activeAdventure: newActiveAdv,
       unitsState: initialUnits,
+      discoveredItemIds: preservedDiscoveredItems,
     };
     setProgress(updated);
     savePlayerProgress(updated);
@@ -333,11 +400,16 @@ export function App() {
     };
     const updatedHistory = [record, ...(progress.adventureHistory || [])].slice(0, 10);
     const initialUnits = createInitialUnitsState();
+    const preservedDiscoveredItems = consolidateDiscoveredItems(
+      progress.discoveredItemIds,
+      currentAdv
+    );
     const updated: PlayerProgress = {
       ...progress,
       activeAdventure: null,
       unitsState: initialUnits,
       adventureHistory: updatedHistory,
+      discoveredItemIds: preservedDiscoveredItems,
     };
     setProgress(updated);
     savePlayerProgress(updated);
@@ -374,13 +446,27 @@ export function App() {
   const handleSelectLootItem = (item: ItemDefinition | null) => {
     if (item) {
       setProgress((prev) => {
-        if (!prev.activeAdventure) return prev;
+        const prevDiscovered = prev.discoveredItemIds || [];
+        const nextDiscovered = prevDiscovered.includes(item.id)
+          ? prevDiscovered
+          : [...prevDiscovered, item.id];
+
+        if (!prev.activeAdventure) {
+          const next: PlayerProgress = { ...prev, discoveredItemIds: nextDiscovered };
+          savePlayerProgress(next);
+          return next;
+        }
+
         const currentInv = prev.activeAdventure.inventory || [];
         const updatedAdv: ActiveAdventure = {
           ...prev.activeAdventure,
           inventory: [...currentInv, item.id],
         };
-        const next: PlayerProgress = { ...prev, activeAdventure: updatedAdv };
+        const next: PlayerProgress = {
+          ...prev,
+          activeAdventure: updatedAdv,
+          discoveredItemIds: nextDiscovered,
+        };
         savePlayerProgress(next);
         return next;
       });
@@ -394,7 +480,16 @@ export function App() {
     const category = item.category;
     let nextHeroEquip: EquipmentSlots = {};
     setProgress((prev) => {
-      if (!prev.activeAdventure) return prev;
+      const prevDiscovered = prev.discoveredItemIds || [];
+      const nextDiscovered = prevDiscovered.includes(itemId)
+        ? prevDiscovered
+        : [...prevDiscovered, itemId];
+
+      if (!prev.activeAdventure) {
+        const nextP: PlayerProgress = { ...prev, discoveredItemIds: nextDiscovered };
+        savePlayerProgress(nextP);
+        return nextP;
+      }
       const currentAdv = prev.activeAdventure;
       const currentEquipment = { ...(currentAdv.equipment || {}) };
       const heroEquip = { ...(currentEquipment[heroClass] || {}) };
@@ -429,6 +524,7 @@ export function App() {
       const nextP: PlayerProgress = {
         ...prev,
         activeAdventure: updatedAdv,
+        discoveredItemIds: nextDiscovered,
       };
       savePlayerProgress(nextP);
       return nextP;
@@ -453,7 +549,10 @@ export function App() {
           uState ? uState.bonusRes || 0 : 0,
           uState ? uState.learnedSkillIds || [] : [],
           uState ? uState.skillLevels || {} : {},
-          equippedIds
+          equippedIds,
+          progress.itemUpgrades,
+          getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
+          { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -514,7 +613,10 @@ export function App() {
           uState ? uState.bonusRes || 0 : 0,
           uState ? uState.learnedSkillIds || [] : [],
           uState ? uState.skillLevels || {} : {},
-          equippedIds
+          equippedIds,
+          progress.itemUpgrades,
+          getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
+          { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
         );
         return {
           ...recomputed,
@@ -533,6 +635,186 @@ export function App() {
     savePlayerProgress(updated);
   };
 
+  const handleUpgradeClass = (className: string) => {
+    const currentLvl = progress.classUpgrades?.[className] || 0;
+    if (currentLvl >= MAX_CLASS_UPGRADE_LEVEL) return;
+    const cost = CLASS_UPGRADE_COSTS[currentLvl];
+    if (progress.gold < cost) return;
+
+    const nextLvl = currentLvl + 1;
+    const updatedClassUpgrades = {
+      ...(progress.classUpgrades || {}),
+      [className]: nextLvl,
+    };
+    const nextP: PlayerProgress = {
+      ...progress,
+      gold: progress.gold - cost,
+      classUpgrades: updatedClassUpgrades,
+    };
+    setProgress(nextP);
+    savePlayerProgress(nextP);
+
+    // Update in-battle player units for this class if any
+    setUnits((prevUnits) =>
+      prevUnits.map((u) => {
+        if (u.className !== className || u.faction !== 'player') return u;
+        const uState = progress.activeAdventure?.unitsState[className] || progress.unitsState[className];
+        const charEquipment = progress.activeAdventure?.equipment?.[className];
+        const equippedIds: string[] = charEquipment
+          ? Object.values(charEquipment).filter((id): id is string => Boolean(id))
+          : [];
+        const recomputed = createPlayerUnit(
+          className as any,
+          u.id,
+          u.x,
+          u.y,
+          uState ? uState.level : 1,
+          uState ? uState.xp : 0,
+          uState ? uState.bonusHp : 0,
+          uState ? uState.bonusAtk : 0,
+          uState ? uState.bonusDef : 0,
+          uState ? uState.bonusMag || 0 : 0,
+          uState ? uState.bonusRes || 0 : 0,
+          uState ? uState.learnedSkillIds || [] : [],
+          uState ? uState.skillLevels || {} : {},
+          equippedIds,
+          nextP.itemUpgrades,
+          getClassCumulativeBonus(className, nextLvl),
+          { hp: getGeneralBonusHp(nextP.generalUpgrades?.globalHp || 0) }
+        );
+        const hpDiff = recomputed.maxHp - u.maxHp;
+        return {
+          ...recomputed,
+          currentHp: Math.min(recomputed.maxHp, Math.max(1, u.currentHp + hpDiff)),
+          hasMoved: u.hasMoved,
+          hasAttacked: u.hasAttacked,
+        };
+      })
+    );
+  };
+
+  const handleUpgradeGeneral = (upgradeId: string) => {
+    const upgradeDef = GENERAL_UPGRADES[upgradeId];
+    if (!upgradeDef) return;
+    const currentLvl = progress.generalUpgrades?.[upgradeId] || 0;
+    if (currentLvl >= upgradeDef.maxLevel) return;
+    const nextTier = upgradeDef.tiers[currentLvl];
+    if (!nextTier || progress.gold < nextTier.cost) return;
+
+    const nextLvl = currentLvl + 1;
+    const updatedGeneralUpgrades = {
+      ...(progress.generalUpgrades || {}),
+      [upgradeId]: nextLvl,
+    };
+    const nextP: PlayerProgress = {
+      ...progress,
+      gold: progress.gold - nextTier.cost,
+      generalUpgrades: updatedGeneralUpgrades,
+    };
+    setProgress(nextP);
+    savePlayerProgress(nextP);
+
+    if (upgradeId === 'globalHp') {
+      setUnits((prevUnits) =>
+        prevUnits.map((u) => {
+          if (u.faction !== 'player') return u;
+          const uState = progress.activeAdventure?.unitsState[u.className] || progress.unitsState[u.className];
+          const charEquipment = progress.activeAdventure?.equipment?.[u.className];
+          const equippedIds: string[] = charEquipment
+            ? Object.values(charEquipment).filter((id): id is string => Boolean(id))
+            : [];
+          const recomputed = createPlayerUnit(
+            u.className as any,
+            u.id,
+            u.x,
+            u.y,
+            uState ? uState.level : 1,
+            uState ? uState.xp : 0,
+            uState ? uState.bonusHp : 0,
+            uState ? uState.bonusAtk : 0,
+            uState ? uState.bonusDef : 0,
+            uState ? uState.bonusMag || 0 : 0,
+            uState ? uState.bonusRes || 0 : 0,
+            uState ? uState.learnedSkillIds || [] : [],
+            uState ? uState.skillLevels || {} : {},
+            equippedIds,
+            nextP.itemUpgrades,
+            getClassCumulativeBonus(u.className, nextP.classUpgrades?.[u.className] || 0),
+            { hp: getGeneralBonusHp(nextLvl) }
+          );
+          const hpDiff = recomputed.maxHp - u.maxHp;
+          return {
+            ...recomputed,
+            currentHp: Math.min(recomputed.maxHp, Math.max(1, u.currentHp + hpDiff)),
+            hasMoved: u.hasMoved,
+            hasAttacked: u.hasAttacked,
+          };
+        })
+      );
+    }
+  };
+
+  const handleUpgradeItem = (itemId: string) => {
+    const item = getItemById(itemId);
+    if (!item) return;
+    const currentLvl = progress.itemUpgrades?.[itemId] || 0;
+    if (currentLvl >= MAX_ITEM_ENHANCEMENT_LEVEL) return;
+    const cost = getItemUpgradeCost(item.rarity, currentLvl);
+    if (cost === null || progress.gold < cost) return;
+
+    const nextLvl = currentLvl + 1;
+    const updatedItemUpgrades = {
+      ...(progress.itemUpgrades || {}),
+      [itemId]: nextLvl,
+    };
+    const nextP: PlayerProgress = {
+      ...progress,
+      gold: progress.gold - cost,
+      itemUpgrades: updatedItemUpgrades,
+    };
+    setProgress(nextP);
+    savePlayerProgress(nextP);
+
+    setUnits((prevUnits) =>
+      prevUnits.map((u) => {
+        if (u.faction !== 'player') return u;
+        const charEquipment = progress.activeAdventure?.equipment?.[u.className];
+        const equippedIds: string[] = charEquipment
+          ? Object.values(charEquipment).filter((id): id is string => Boolean(id))
+          : [];
+        if (!equippedIds.includes(itemId)) return u;
+
+        const uState = progress.activeAdventure?.unitsState[u.className] || progress.unitsState[u.className];
+        const recomputed = createPlayerUnit(
+          u.className as any,
+          u.id,
+          u.x,
+          u.y,
+          uState ? uState.level : 1,
+          uState ? uState.xp : 0,
+          uState ? uState.bonusHp : 0,
+          uState ? uState.bonusAtk : 0,
+          uState ? uState.bonusDef : 0,
+          uState ? uState.bonusMag || 0 : 0,
+          uState ? uState.bonusRes || 0 : 0,
+          uState ? uState.learnedSkillIds || [] : [],
+          uState ? uState.skillLevels || {} : {},
+          equippedIds,
+          updatedItemUpgrades,
+          getClassCumulativeBonus(u.className, nextP.classUpgrades?.[u.className] || 0),
+          { hp: getGeneralBonusHp(nextP.generalUpgrades?.globalHp || 0) }
+        );
+        const hpDiff = recomputed.maxHp - u.maxHp;
+        return {
+          ...recomputed,
+          currentHp: Math.min(recomputed.maxHp, Math.max(1, u.currentHp + hpDiff)),
+          hasMoved: u.hasMoved,
+          hasAttacked: u.hasAttacked,
+        };
+      })
+    );
+  };
+
   const addFloatingNumber = (x: number, y: number, value: string | number, type: FloatingNumber['type'], color: string) => {
     const newFn: FloatingNumber = { id: `fn_${Date.now()}_${Math.random()}`, x, y, value, type, color };
     setFloatingNumbers((prev) => [...prev, newFn]);
@@ -547,13 +829,23 @@ export function App() {
 
   const attackableTiles: Point[] = React.useMemo(() => {
     if (!selectedUnit || phase !== 'player_turn' || selectedUnit.faction !== 'player' || selectedUnit.hasAttacked || isAnimatingAction) return [];
+    if (activeSkill && (activeSkill.isTeleport || activeSkill.targetType === 'empty_tile')) {
+      const rangeMin = activeSkill.rangeMin;
+      const rangeMax = activeSkill.rangeMax;
+      const candidates = getAttackableTiles({ x: selectedUnit.x, y: selectedUnit.y }, rangeMin, rangeMax, grid[0]?.length || 0, grid.length);
+      return candidates.filter((pt) => {
+        const isWalkable = grid[pt.y]?.[pt.x]?.isWalkable;
+        const isOccupied = units.some((u) => !u.isDead && u.x === pt.x && u.y === pt.y);
+        return isWalkable && !isOccupied;
+      });
+    }
     if (selectedAction === 'attack' || activeSkill) {
       const rangeMin = activeSkill ? activeSkill.rangeMin : 1;
       const rangeMax = activeSkill ? activeSkill.rangeMax : selectedUnit.range;
       return getAttackableTiles({ x: selectedUnit.x, y: selectedUnit.y }, rangeMin, rangeMax, grid[0].length, grid.length);
     }
     return [];
-  }, [selectedUnit, phase, selectedAction, activeSkill, grid, isAnimatingAction]);
+  }, [selectedUnit, phase, selectedAction, activeSkill, grid, units, isAnimatingAction]);
 
   const aoeTiles: Point[] = React.useMemo(() => {
     if (!activeSkill || activeSkill.aoeRadius === 0) return [];
@@ -585,12 +877,17 @@ export function App() {
 
     const updatedHistory = [record, ...(progress.adventureHistory || [])].slice(0, 10);
     const initialUnits = createInitialUnitsState();
+    const preservedDiscoveredItems = consolidateDiscoveredItems(
+      progress.discoveredItemIds,
+      progress.activeAdventure
+    );
 
     const updatedProgress: PlayerProgress = {
       ...progress,
       activeAdventure: null,
       unitsState: initialUnits,
       adventureHistory: updatedHistory,
+      discoveredItemIds: preservedDiscoveredItems,
     };
     setProgress(updatedProgress);
     savePlayerProgress(updatedProgress);
@@ -668,11 +965,37 @@ export function App() {
 
     // Attack / Skill targeting execution
     if (selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasAttacked) {
+      // Empty-tile targeting (e.g. Teleporte Místico)
+      if (activeSkill && (activeSkill.isTeleport || activeSkill.targetType === 'empty_tile')) {
+        const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
+        if (isTargetTileValid && !clickedUnit) {
+          setTargetTeleportPoint({ x, y });
+          const preview: DamagePreview = {
+            attacker: selectedUnit,
+            target: selectedUnit,
+            skill: activeSkill,
+            minDamage: 0,
+            maxDamage: 0,
+            avgDamage: 0,
+            targetCurrentHp: selectedUnit.currentHp,
+            targetHpAfterMin: selectedUnit.currentHp,
+            targetHpAfterMax: selectedUnit.currentHp,
+            isKillLikely: false,
+            damageType: 'healing',
+          };
+          setDamagePreview(preview);
+          setTargetUnitId(selectedUnit.id);
+          soundManager.playSelect();
+          return;
+        }
+      }
+
       const isTargeting = selectedAction === 'attack' || !!activeSkill;
       const targetType = activeSkill ? activeSkill.targetType : 'enemy';
 
       // Self-targeting skill
       if (activeSkill && targetType === 'self' && x === selectedUnit.x && y === selectedUnit.y) {
+        setTargetTeleportPoint(null);
         const preview = getDamagePreview(selectedUnit, selectedUnit, activeSkill);
         setDamagePreview(preview);
         setTargetUnitId(selectedUnit.id);
@@ -689,6 +1012,7 @@ export function App() {
           targetType === 'any';
 
         if (isTargetTileValid && (isTargeting ? isFactionValid : clickedUnit.faction === 'enemy')) {
+          setTargetTeleportPoint(null);
           const effectiveSkill = activeSkill || undefined;
           const preview = getDamagePreview(selectedUnit, clickedUnit, effectiveSkill);
 
@@ -717,6 +1041,7 @@ export function App() {
       setSelectedAction('none');
       setActiveSkill(null);
       setDamagePreview(null);
+      setTargetTeleportPoint(null);
       setTargetUnitId(null);
       soundManager.playSelect();
     } else {
@@ -724,16 +1049,14 @@ export function App() {
       setSelectedAction('none');
       setActiveSkill(null);
       setDamagePreview(null);
+      setTargetTeleportPoint(null);
       setTargetUnitId(null);
     }
   };
 
-  // ANIMATED Attack Confirm
+  // ANIMATED Attack / Skill Confirm
   const handleConfirmAttack = async () => {
-    if (!selectedUnit || !targetUnitId || !damagePreview) return;
-
-    const target = units.find((u) => u.id === targetUnitId);
-    if (!target) return;
+    if (!selectedUnit || !damagePreview) return;
 
     if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
       addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
@@ -745,12 +1068,75 @@ export function App() {
 
     const skill = activeSkill || undefined;
 
-    // Self-targeting skill
+    // 1. Teleport skill to empty tile (e.g. Teleporte Místico)
+    if (skill && (skill.isTeleport || skill.targetType === 'empty_tile') && targetTeleportPoint) {
+      soundManager.playMagicSpell();
+      const destX = targetTeleportPoint.x;
+      const destY = targetTeleportPoint.y;
+
+      if (boardRef.current) {
+        await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, destX, destY);
+      }
+
+      addFloatingNumber(destX, destY, 'Teleporte Místico!', 'status', '#8B5CF6');
+
+      let updatedEffects = [...(selectedUnit.statusEffects || [])];
+      if (skill.statusEffect) {
+        const eff = skill.statusEffect;
+        if (eff.type === 'buff_atk') {
+          addFloatingNumber(destX, destY, `+${eff.value}% Poder Mágico`, 'status', '#F97316');
+        }
+        updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), { ...eff }];
+      }
+
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+      );
+
+      const updatedUnits = units.map((u) =>
+        u.id === selectedUnit.id
+          ? { ...u, x: destX, y: destY, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects }
+          : u
+      );
+
+      setUnits(updatedUnits);
+      setTargetTeleportPoint(null);
+      setTargetUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
+    const target = units.find((u) => u.id === targetUnitId);
+    if (!target) {
+      setIsAnimatingAction(false);
+      return;
+    }
+
+    // 2. Self-targeting skill (e.g. Buffs, Escudos, Pacto de Sangue, Resistência Suprema)
     if (skill && skill.targetType === 'self') {
       soundManager.playHeal();
       if (boardRef.current) {
         await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', 0, skill);
       }
+
+      let currentUnitHp = selectedUnit.currentHp;
+
+      // Special: Pacto de Sangue sacrifices 20% HP (down to at least 1 HP)
+      if (skill.id === 'pacto_de_sangue') {
+        const hpCost = Math.max(1, Math.round(selectedUnit.currentHp * 0.2));
+        currentUnitHp = Math.max(1, currentUnitHp - hpCost);
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, `-${hpCost} (Sacrifício)`, 'status', '#E65353');
+      }
+
+      // Special: Resistência Suprema recovers 50% max HP
+      if (skill.id === 'resistencia_suprema') {
+        const healAmt = Math.round(selectedUnit.maxHp * 0.5);
+        currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt} (50% HP)`, 'healing', '#56E59A');
+      }
+
       const effect = skill.statusEffect;
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
       if (effect) {
@@ -758,23 +1144,82 @@ export function App() {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${effect.value} Escudo`, 'shield', '#38BDF8');
         } else if (effect.type === 'buff_atk') {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${effect.value}% Dano`, 'status', '#F97316');
+        } else if (effect.type === 'invisible') {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Invisível!', 'status', '#8B5CF6');
         }
         updatedEffects = [...updatedEffects.filter((e) => e.type !== effect.type), { ...effect }];
       }
+
       const updatedSkills = selectedUnit.skills.map((s) =>
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
       );
+
       const updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
-          ? { ...u, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects }
+          ? { ...u, currentHp: currentUnitHp, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects }
           : u
       );
+
       setUnits(updatedUnits);
       setTargetUnitId(null);
       setSelectedAction('none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
       return;
+    }
+
+    // 3. Offensive / Targeted Combat Actions
+    let attackerEffects = [...(selectedUnit.statusEffects || [])];
+
+    // Attacking breaks invisibility (surprise sneak attack!)
+    const wasInvisible = attackerEffects.some((e) => e.type === 'invisible' && e.duration > 0);
+    if (wasInvisible) {
+      attackerEffects = attackerEffects.filter((e) => e.type !== 'invisible');
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Emboscada!', 'status', '#F59E0B');
+    }
+
+    // Teleport / Blink to target (e.g. Passo das Sombras, Investida Pesada)
+    let finalAttackerX = selectedUnit.x;
+    let finalAttackerY = selectedUnit.y;
+
+    if (skill?.teleportToTarget || skill?.id === 'passo_das_sombras' || skill?.id === 'investida_pesada') {
+      const candidateAdjacent = [
+        { x: target.x + 1, y: target.y },
+        { x: target.x - 1, y: target.y },
+        { x: target.x, y: target.y + 1 },
+        { x: target.x, y: target.y - 1 },
+      ].filter(
+        (pt) =>
+          pt.x >= 0 &&
+          pt.x < grid[0].length &&
+          pt.y >= 0 &&
+          pt.y < grid.length &&
+          grid[pt.y][pt.x].isWalkable &&
+          !units.some((u) => !u.isDead && u.id !== selectedUnit.id && u.x === pt.x && u.y === pt.y)
+      );
+
+      if (candidateAdjacent.length > 0) {
+        candidateAdjacent.sort(
+          (a, b) =>
+            Math.abs(a.x - selectedUnit.x) + Math.abs(a.y - selectedUnit.y) -
+            (Math.abs(b.x - selectedUnit.x) + Math.abs(b.y - selectedUnit.y))
+        );
+        const dest = candidateAdjacent[0];
+        if (dest.x !== selectedUnit.x || dest.y !== selectedUnit.y) {
+          if (boardRef.current) {
+            await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, dest.x, dest.y);
+          }
+          finalAttackerX = dest.x;
+          finalAttackerY = dest.y;
+          addFloatingNumber(
+            dest.x,
+            dest.y,
+            skill.id === 'passo_das_sombras' ? 'Passo Sombrio!' : 'Avanço!',
+            'status',
+            '#A855F7'
+          );
+        }
+      }
     }
 
     const { finalDamage, isKill, damageType } = rollActualDamage(selectedUnit, target, skill);
@@ -812,6 +1257,18 @@ export function App() {
       let actualDmg = dmgResult.finalDamage;
 
       let currentEffects = [...(t.statusEffects || [])];
+
+      // Cleansing of debuffs (e.g. Purificação Sagrada)
+      if (skill?.cleansesDebuffs) {
+        const beforeCount = currentEffects.length;
+        currentEffects = currentEffects.filter(
+          (e) => e.type !== 'poison' && e.type !== 'stun' && e.type !== 'slow' && e.type !== 'debuff_def'
+        );
+        if (currentEffects.length < beforeCount) {
+          addFloatingNumber(t.x, t.y, 'Purificado!', 'status', '#38BDF8');
+        }
+      }
+
       if (dmgResult.damageType !== 'healing') {
         const sIdx = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
         if (sIdx !== -1) {
@@ -835,6 +1292,13 @@ export function App() {
       if (dmgResult.damageType === 'healing') {
         newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
         addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
+
+        // Shield for allies in healing skills like Campo Rúnico
+        if (skill?.statusEffect?.type === 'shield') {
+          const sh = skill.statusEffect;
+          currentEffects = [...currentEffects.filter((e) => e.type !== 'shield'), { ...sh }];
+          addFloatingNumber(t.x, t.y, `+${sh.value} Escudo`, 'shield', '#38BDF8');
+        }
       } else {
         newHp = Math.max(0, t.currentHp - actualDmg);
         if (actualDmg > 0) {
@@ -850,17 +1314,57 @@ export function App() {
         if (boardRef.current) {
           await boardRef.current.playDeathAnimation(t.id);
         }
-      } else if (skill?.statusEffect) {
-        const eff = skill.statusEffect;
-        currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-        if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-        else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
-        else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+      } else {
+        // Primary status effect
+        if (skill?.statusEffect && dmgResult.damageType !== 'healing') {
+          const eff = skill.statusEffect;
+          currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+          if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+          else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+          else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+          else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+        }
+
+        // Secondary status effect
+        if (skill?.secondaryStatusEffect && dmgResult.damageType !== 'healing') {
+          const eff2 = skill.secondaryStatusEffect;
+          currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+          if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+          else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
+          else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+        }
       }
 
       updatedUnits = updatedUnits.map((u) =>
         u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
       );
+    }
+
+    // LIFESTEAL (Dreno de Vida / Dreno de Seiva / Sedenta de Runas)
+    let finalAttackerHp = selectedUnit.currentHp;
+    const lifestealPct =
+      skill?.lifestealPercent ??
+      (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
+        ? 100
+        : skill?.id === 'sedenta_de_runas'
+        ? 60
+        : 0);
+
+    if (lifestealPct > 0 && totalDmgDone > 0) {
+      const healAmt = Math.max(1, Math.round(totalDmgDone * (lifestealPct / 100)));
+      const newHp = Math.min(selectedUnit.maxHp, finalAttackerHp + healAmt);
+      const actualHealed = newHp - finalAttackerHp;
+      if (actualHealed > 0) {
+        finalAttackerHp = newHp;
+        addFloatingNumber(finalAttackerX, finalAttackerY, `+${actualHealed} (Dreno)`, 'healing', '#56E59A');
+        soundManager.playHeal();
+      }
+    }
+
+    // Recuo Tático: grants extra repositioning / movement after shooting
+    const canMoveAgain = skill?.id === 'recuo_tatico';
+    if (canMoveAgain) {
+      addFloatingNumber(finalAttackerX, finalAttackerY, 'Recuo Disponível!', 'status', '#60A5FA');
     }
 
     updatedUnits = updatedUnits.map((u) => {
@@ -870,8 +1374,13 @@ export function App() {
         );
         return {
           ...u,
+          x: finalAttackerX,
+          y: finalAttackerY,
+          currentHp: finalAttackerHp,
+          hasMoved: canMoveAgain ? false : u.hasMoved,
           hasAttacked: true,
           skills: updatedSkills,
+          statusEffects: attackerEffects,
           damageDealt: u.damageDealt + totalDmgDone,
           kills: u.kills + totalKills,
         };
@@ -880,6 +1389,7 @@ export function App() {
     });
 
     setUnits(updatedUnits);
+    setTargetTeleportPoint(null);
     setTargetUnitId(null);
     setSelectedAction('none');
     setActiveSkill(null);
@@ -973,6 +1483,44 @@ export function App() {
               );
             } else {
               // --- MONSTER ATTACK / OFFENSIVE ACTION ON PLAYER UNITS ---
+              let finalMonsterX = freshAttacker.x;
+              let finalMonsterY = freshAttacker.y;
+
+              // Monster Teleport / Dash to target (e.g. Passo das Sombras, Investida Pesada)
+              if (skill?.teleportToTarget || skill?.id === 'passo_das_sombras' || skill?.id === 'investida_pesada') {
+                const candidateAdjacent = [
+                  { x: freshTarget.x + 1, y: freshTarget.y },
+                  { x: freshTarget.x - 1, y: freshTarget.y },
+                  { x: freshTarget.x, y: freshTarget.y + 1 },
+                  { x: freshTarget.x, y: freshTarget.y - 1 },
+                ].filter(
+                  (pt) =>
+                    pt.x >= 0 &&
+                    pt.x < grid[0].length &&
+                    pt.y >= 0 &&
+                    pt.y < grid.length &&
+                    grid[pt.y][pt.x].isWalkable &&
+                    !currentUnits.some((u) => !u.isDead && u.id !== freshAttacker.id && u.x === pt.x && u.y === pt.y)
+                );
+
+                if (candidateAdjacent.length > 0) {
+                  candidateAdjacent.sort(
+                    (a, b) =>
+                      Math.abs(a.x - freshAttacker.x) + Math.abs(a.y - freshAttacker.y) -
+                      (Math.abs(b.x - freshAttacker.x) + Math.abs(b.y - freshAttacker.y))
+                  );
+                  const dest = candidateAdjacent[0];
+                  if (dest.x !== freshAttacker.x || dest.y !== freshAttacker.y) {
+                    if (boardRef.current) {
+                      await boardRef.current.playMoveAnimation(freshAttacker.id, freshAttacker.x, freshAttacker.y, dest.x, dest.y);
+                    }
+                    finalMonsterX = dest.x;
+                    finalMonsterY = dest.y;
+                    addFloatingNumber(dest.x, dest.y, 'Bote/Teleporte!', 'status', '#A855F7');
+                  }
+                }
+              }
+
               const dmgType = skill?.damageType || (freshAttacker.mag > freshAttacker.atk ? 'magical' : 'physical');
 
               if (dmgType === 'magical') soundManager.playMagicSpell();
@@ -995,6 +1543,8 @@ export function App() {
               } else {
                 enemyTargets = [freshTarget];
               }
+
+              let totalAiDmgDone = 0;
 
               for (const t of enemyTargets) {
                 const res = rollActualDamage(freshAttacker, t, skill);
@@ -1023,6 +1573,7 @@ export function App() {
                 if (actualDmg > 0) {
                   const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
                   addFloatingNumber(t.x, t.y, `-${actualDmg}`, damageType, color);
+                  totalAiDmgDone += actualDmg;
                 }
 
                 if (newHp === 0) {
@@ -1030,18 +1581,53 @@ export function App() {
                   if (boardRef.current) {
                     await boardRef.current.playDeathAnimation(t.id);
                   }
-                } else if (choice.skillToUse?.statusEffect) {
-                  const eff = choice.skillToUse.statusEffect;
-                  currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-                  if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-                  else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
-                  else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+                } else {
+                  if (choice.skillToUse?.statusEffect) {
+                    const eff = choice.skillToUse.statusEffect;
+                    currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+                    if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+                    else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+                    else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+                    else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+                  }
+
+                  if (choice.skillToUse?.secondaryStatusEffect) {
+                    const eff2 = choice.skillToUse.secondaryStatusEffect;
+                    currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+                    if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+                    else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
+                    else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+                  }
                 }
 
                 currentUnits = currentUnits.map((u) =>
                   u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
                 );
               }
+
+              // Monster Lifesteal (Dreno de Seiva / Dreno de Vida)
+              let finalMonsterHp = freshAttacker.currentHp;
+              const aiLifestealPct =
+                skill?.lifestealPercent ??
+                (skill?.id === 'dreno_de_seiva' || skill?.id === 'dreno_de_vida' ? 100 : 0);
+
+              if (aiLifestealPct > 0 && totalAiDmgDone > 0) {
+                const healAmt = Math.max(1, Math.round(totalAiDmgDone * (aiLifestealPct / 100)));
+                const newHp = Math.min(freshAttacker.maxHp, finalMonsterHp + healAmt);
+                const actualHealed = newHp - finalMonsterHp;
+                if (actualHealed > 0) {
+                  finalMonsterHp = newHp;
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `+${actualHealed} (Dreno)`, 'healing', '#56E59A');
+                  soundManager.playHeal();
+                }
+              }
+
+              // Update freshAttacker position and HP
+              currentUnits = currentUnits.map((u) =>
+                u.id === freshAttacker.id
+                  ? { ...u, x: finalMonsterX, y: finalMonsterY, currentHp: finalMonsterHp }
+                  : u
+              );
             }
 
             // Put used skill on cooldown on the monster!
@@ -1127,8 +1713,12 @@ export function App() {
     soundManager.playVictory();
     setPhase('victory');
 
-    const xpReward = currentLevel.rewards.xpPerUnit;
-    const goldReward = currentLevel.rewards.gold;
+    const xpMultiplier = 1 + getGeneralXpMultiplier(progress.generalUpgrades?.xpBoost || 0);
+    const xpReward = Math.round(currentLevel.rewards.xpPerUnit * xpMultiplier);
+
+    const goldMultiplier = 1 + getGeneralGoldMultiplier(progress.generalUpgrades?.goldBoost || 0);
+    const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);
+
     // Todos os heróis da equipe recebem o XP e evoluem de nível, mesmo que tenham caído em combate
     const partyUnits = finalUnitsState.filter((u) => u.faction === 'player');
     const levelUps: { unitName: string; oldLevel: number; newLevel: number }[] = [];
@@ -1178,12 +1768,18 @@ export function App() {
     const totalGold = progress.gold + goldReward;
     const totalRunGold = (progress.activeAdventure?.goldEarnedInRun || 0) + goldReward;
 
-    // Drop de itens ao final da fase com base nos monstros presentes
+    // Drop de itens ao final da fase com base nos monstros presentes e no bônus de drop
+    const dropBonusLvl = getGeneralDropBonus(progress.generalUpgrades?.dropRate || 0);
+    const isBossStage = Boolean(currentLevel.hasFinalBoss || currentLevel.hasMiniBoss);
     const enemyMonsterTypeIds = currentLevel.enemySpawns.map((s) => s.monsterTypeId);
-    const droppedItems = rollStageItemDrops(enemyMonsterTypeIds);
+    const droppedItems = rollStageItemDrops(enemyMonsterTypeIds, 3, isBossStage, dropBonusLvl);
 
     const prevDiscoveredItems = progress.discoveredItemIds || [];
-    const newDiscoveredItems = Array.from(new Set([...prevDiscoveredItems, ...droppedItems.map((it) => it.id)]));
+    const newDiscoveredItems = consolidateDiscoveredItems(
+      prevDiscoveredItems,
+      progress.activeAdventure,
+      droppedItems.map((it) => it.id)
+    );
 
     const isFinalCampaignLevel = currentLevel.id >= LEVELS.length;
 
@@ -1330,9 +1926,12 @@ export function App() {
       uState.bonusRes || 0,
       uState.learnedSkillIds || [],
       uState.skillLevels || {},
-      equippedItemIds
+      equippedItemIds,
+      progress.itemUpgrades,
+      getClassCumulativeBonus(pendingUnit.className, progress.classUpgrades?.[pendingUnit.className] || 0),
+      { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
     );
-  }, [pendingSkillChoices, progress.unitsState, progress.activeAdventure?.equipment]);
+  }, [pendingSkillChoices, progress.unitsState, progress.activeAdventure?.equipment, progress.itemUpgrades, progress.classUpgrades, progress.generalUpgrades]);
 
   const handleLearnOrEvolveSkill = (chosenSkill: Skill, isEvolution: boolean) => {
     if (pendingSkillChoices.length === 0) return;
@@ -1562,6 +2161,7 @@ export function App() {
           onOpenHistory={() => setShowHistory(true)}
           onOpenEquipment={() => setShowEquipment(true)}
           onOpenItemBestiary={() => setShowItemBestiary(true)}
+          onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
         />
 
         {showLeaderboard && (
@@ -1586,6 +2186,7 @@ export function App() {
             unitsState={progress.activeAdventure?.unitsState || progress.unitsState}
             equipment={progress.activeAdventure?.equipment || {}}
             inventory={progress.activeAdventure?.inventory || []}
+            itemUpgrades={progress.itemUpgrades || {}}
             onEquipItem={handleEquipItem}
             onUnequipItem={handleUnequipItem}
             onClose={() => setShowEquipment(false)}
@@ -1594,7 +2195,23 @@ export function App() {
         {showItemBestiary && (
           <ItemBestiaryModal
             discoveredItemIds={progress.discoveredItemIds || []}
+            itemUpgrades={progress.itemUpgrades || {}}
+            gold={progress.gold}
+            onUpgradeItem={handleUpgradeItem}
             onClose={() => setShowItemBestiary(false)}
+          />
+        )}
+        {showBaseUpgrades && (
+          <BaseUpgradeModal
+            gold={progress.gold}
+            classUpgrades={progress.classUpgrades || {}}
+            generalUpgrades={progress.generalUpgrades || {}}
+            itemUpgrades={progress.itemUpgrades || {}}
+            discoveredItemIds={progress.discoveredItemIds || []}
+            onUpgradeClass={handleUpgradeClass}
+            onUpgradeGeneral={handleUpgradeGeneral}
+            onUpgradeItem={handleUpgradeItem}
+            onClose={() => setShowBaseUpgrades(false)}
           />
         )}
       </>
@@ -1638,6 +2255,8 @@ export function App() {
         onOpenBestiary={() => setShowBestiary(true)}
         onOpenHistory={() => setShowHistory(true)}
         onOpenEquipment={() => setShowEquipment(true)}
+        onOpenItemCatalog={() => setShowItemBestiary(true)}
+        onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
         onSaveAndExit={() => setCurrentView('level_select')}
       />
 
@@ -1813,6 +2432,7 @@ export function App() {
           unitsState={progress.activeAdventure?.unitsState || progress.unitsState}
           equipment={progress.activeAdventure?.equipment || {}}
           inventory={progress.activeAdventure?.inventory || []}
+          itemUpgrades={progress.itemUpgrades || {}}
           onEquipItem={handleEquipItem}
           onUnequipItem={handleUnequipItem}
           onClose={() => setShowEquipment(false)}
@@ -1821,7 +2441,23 @@ export function App() {
       {showItemBestiary && (
         <ItemBestiaryModal
           discoveredItemIds={progress.discoveredItemIds || []}
+          itemUpgrades={progress.itemUpgrades || {}}
+          gold={progress.gold}
+          onUpgradeItem={handleUpgradeItem}
           onClose={() => setShowItemBestiary(false)}
+        />
+      )}
+      {showBaseUpgrades && (
+        <BaseUpgradeModal
+          gold={progress.gold}
+          classUpgrades={progress.classUpgrades || {}}
+          generalUpgrades={progress.generalUpgrades || {}}
+          itemUpgrades={progress.itemUpgrades || {}}
+          discoveredItemIds={progress.discoveredItemIds || []}
+          onUpgradeClass={handleUpgradeClass}
+          onUpgradeGeneral={handleUpgradeGeneral}
+          onUpgradeItem={handleUpgradeItem}
+          onClose={() => setShowBaseUpgrades(false)}
         />
       )}
     </div>

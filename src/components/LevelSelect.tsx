@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   Swords,
   Package,
+  Building2,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 
@@ -33,6 +34,8 @@ interface LevelSelectProps {
   onOpenHistory: () => void;
   onOpenEquipment?: () => void;
   onOpenItemBestiary?: () => void;
+  onOpenItemCatalog?: () => void;
+  onOpenBaseUpgrades?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -46,7 +49,10 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onOpenHistory,
   onOpenEquipment,
   onOpenItemBestiary,
+  onOpenItemCatalog,
+  onOpenBaseUpgrades,
 }) => {
+  const openCatalogHandler = onOpenItemCatalog || onOpenItemBestiary;
   const activeAdv = progress.activeAdventure;
   const currentStageNum = activeAdv ? activeAdv.currentLevelId : 1;
 
@@ -87,7 +93,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
             Centro de Expedição
           </h1>
           <p className="text-xs sm:text-sm text-[#A7B0C4] max-w-2xl mx-auto">
-            Vença as 50 fases em uma única aventura! Se sua equipe cair, você reiniciará da Fase 1, mantendo para sempre todo o seu <strong className="text-[#F0B44D]">Ouro</strong> e todas as <strong className="text-[#4C8DFF]">Classes Desbloqueadas</strong>.
+            Vença as 50 fases em uma única aventura! Se sua equipe cair, você reiniciará da Fase 1, mantendo para sempre todo o seu <strong className="text-[#F0B44D]">Ouro</strong>, todas as <strong className="text-[#4C8DFF]">Classes Desbloqueadas</strong>, seu <strong className="text-[#D4AD65]">Bestiário</strong> e seu <strong className="text-[#B58AFF]">Catálogo de Itens</strong>.
           </p>
         </div>
 
@@ -132,16 +138,30 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
               </button>
             )}
 
-            {onOpenItemBestiary && (
+            {openCatalogHandler && (
               <button
-                onClick={onOpenItemBestiary}
+                onClick={openCatalogHandler}
                 className="px-3.5 py-2 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#B58AFF] text-[#B58AFF] font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm"
-                title="Catálogo de itens já vistos e colecionados"
+                title="Catálogo permanente de todos os itens já descobertos"
               >
                 <Sparkles size={16} />
-                <span>Bestiário de Itens</span>
+                <span>Catálogo de Itens</span>
                 <span className="bg-[#B58AFF]/20 text-[#B58AFF] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#B58AFF]/30">
                   {discoveredItemsCount}/60
+                </span>
+              </button>
+            )}
+
+            {onOpenBaseUpgrades && (
+              <button
+                onClick={onOpenBaseUpgrades}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#D4AD65]/20 to-[#F0B44D]/25 border-2 border-[#D4AD65] hover:border-[#FFF0B3] text-[#F3F4F8] hover:text-white font-black text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-md shadow-[#D4AD65]/15"
+                title="Acessar Upgrades de Classe, Melhorias Gerais e Forja do Catálogo"
+              >
+                <Building2 size={16} className="text-[#FFD700]" />
+                <span>Base & Upgrades</span>
+                <span className="bg-[#FFD700] text-[#10131C] px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  Base
                 </span>
               </button>
             )}

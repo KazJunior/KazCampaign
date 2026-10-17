@@ -19,8 +19,14 @@ export function decideMonsterAction(
 ): AIActionChoice | null {
   if (monster.isDead) return null;
 
-  const playerUnits = allUnits.filter((u) => u.faction === 'player' && !u.isDead);
-  if (playerUnits.length === 0) return null;
+  const allAlivePlayers = allUnits.filter((u) => u.faction === 'player' && !u.isDead);
+  if (allAlivePlayers.length === 0) return null;
+
+  // Invisible units cannot be targeted by AI unless every alive player is invisible
+  const visiblePlayers = allAlivePlayers.filter(
+    (u) => !u.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0)
+  );
+  const playerUnits = visiblePlayers.length > 0 ? visiblePlayers : allAlivePlayers;
 
   const allyMonsters = allUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
   const role = monster.monsterRole || 'attacker';

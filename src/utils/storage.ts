@@ -34,6 +34,9 @@ export const DEFAULT_PROGRESS: PlayerProgress = {
   discoveredMonsterIds: ['goblin'],
   discoveredItemIds: [],
   adventureHistory: [],
+  classUpgrades: {},
+  generalUpgrades: {},
+  itemUpgrades: {},
 };
 
 export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -95,10 +98,28 @@ export function loadPlayerProgress(): PlayerProgress {
       : ['goblin'];
     if (!discoveredMonsterIds.includes('goblin')) discoveredMonsterIds.push('goblin');
 
-    // Ensure discoveredItemIds is an array
+    // Ensure discoveredItemIds is an array and permanently retains all items
     let discoveredItemIds: string[] = Array.isArray(parsed.discoveredItemIds)
       ? Array.from(new Set(parsed.discoveredItemIds))
       : [];
+
+    if (parsed.activeAdventure?.inventory && Array.isArray(parsed.activeAdventure.inventory)) {
+      parsed.activeAdventure.inventory.forEach((id: string) => {
+        if (id && !discoveredItemIds.includes(id)) discoveredItemIds.push(id);
+      });
+    }
+
+    if (parsed.activeAdventure?.equipment && typeof parsed.activeAdventure.equipment === 'object') {
+      Object.values(parsed.activeAdventure.equipment).forEach((heroEquip: any) => {
+        if (heroEquip && typeof heroEquip === 'object') {
+          Object.values(heroEquip).forEach((id: any) => {
+            if (typeof id === 'string' && id && !discoveredItemIds.includes(id)) {
+              discoveredItemIds.push(id);
+            }
+          });
+        }
+      });
+    }
 
     // Ensure activeAdventure has inventory and equipment
     let activeAdventure = parsed.activeAdventure || null;
@@ -126,6 +147,9 @@ export function loadPlayerProgress(): PlayerProgress {
       discoveredMonsterIds,
       discoveredItemIds,
       adventureHistory,
+      classUpgrades: parsed.classUpgrades && typeof parsed.classUpgrades === 'object' ? parsed.classUpgrades : {},
+      generalUpgrades: parsed.generalUpgrades && typeof parsed.generalUpgrades === 'object' ? parsed.generalUpgrades : {},
+      itemUpgrades: parsed.itemUpgrades && typeof parsed.itemUpgrades === 'object' ? parsed.itemUpgrades : {},
     };
   } catch (err) {
     console.error('Failed to load progress from localStorage:', err);

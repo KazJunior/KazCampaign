@@ -12,6 +12,8 @@ import {
   History,
   Home,
   Package,
+  Sparkles,
+  Building2,
 } from 'lucide-react';
 import type { BattlePhase, Unit } from '../types/game';
 
@@ -33,6 +35,8 @@ interface TopBarProps {
   onOpenBestiary?: () => void;
   onOpenHistory?: () => void;
   onOpenEquipment?: () => void;
+  onOpenItemCatalog?: () => void;
+  onOpenBaseUpgrades?: () => void;
   onSaveAndExit?: () => void;
 }
 
@@ -54,6 +58,8 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenBestiary,
   onOpenHistory,
   onOpenEquipment,
+  onOpenItemCatalog,
+  onOpenBaseUpgrades,
   onSaveAndExit,
 }) => {
   const isPlayerTurn = phase === 'player_turn';
@@ -173,6 +179,28 @@ export const TopBar: React.FC<TopBarProps> = ({
             title="Equipamentos da Equipe"
           >
             <Package size={16} />
+          </button>
+        )}
+
+        {/* Item Catalog shortcut */}
+        {onOpenItemCatalog && (
+          <button
+            onClick={onOpenItemCatalog}
+            className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#B58AFF] text-[#A7B0C4] hover:text-[#B58AFF] transition-colors"
+            title="Catálogo de Itens"
+          >
+            <Sparkles size={16} />
+          </button>
+        )}
+
+        {/* Base & Upgrades shortcut */}
+        {onOpenBaseUpgrades && (
+          <button
+            onClick={onOpenBaseUpgrades}
+            className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#A7B0C4] hover:text-[#D4AD65] transition-colors"
+            title="Base de Operações & Upgrades"
+          >
+            <Building2 size={16} />
           </button>
         )}
 

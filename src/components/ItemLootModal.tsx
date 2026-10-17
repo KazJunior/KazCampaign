@@ -18,6 +18,7 @@ import {
   Compass,
   Check,
 } from 'lucide-react';
+import { ItemIcon } from './ItemIcon';
 
 interface ItemLootModalProps {
   items: ItemDefinition[];
@@ -116,14 +117,27 @@ export const ItemLootModal: React.FC<ItemLootModalProps> = ({
                     </span>
                   </div>
 
-                  <h3
-                    className="font-bold text-sm mb-1 leading-snug"
-                    style={{ color: rInfo.color }}
-                  >
-                    {item.name}
-                  </h3>
+                  {/* Item Icon & Title */}
+                  <div className="flex flex-col items-center justify-center my-2 text-center">
+                    <ItemIcon
+                      iconName={item.iconName}
+                      category={item.category}
+                      rarity={item.rarity}
+                      color={item.color}
+                      badge
+                      badgeSize="lg"
+                      showGlow={isSelected}
+                      className="mb-2"
+                    />
+                    <h3
+                      className="font-bold text-sm mb-1 leading-snug"
+                      style={{ color: rInfo.color }}
+                    >
+                      {item.name}
+                    </h3>
+                  </div>
 
-                  <p className="text-[11px] text-[#A7B0C4] line-clamp-2 mb-3">
+                  <p className="text-[11px] text-[#A7B0C4] line-clamp-2 mb-3 text-center">
                     {item.description}
                   </p>
                 </div>

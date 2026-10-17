@@ -15,12 +15,15 @@ import {
   Trash2,
   Package,
 } from 'lucide-react';
+import { ItemIcon } from './ItemIcon';
+import { getItemEffectiveStats } from '../data/baseUpgrades';
 
 interface EquipmentModalProps {
   partyClasses: string[];
   unitsState: Record<string, UnitProgression>;
   inventory: string[]; // List of item IDs held in the current run
   equipment: Record<string, EquipmentSlots>;
+  itemUpgrades?: Record<string, number>;
   onEquipItem: (className: string, itemId: string, inventoryIndex?: number) => void;
   onUnequipItem: (className: string, category: ItemCategory) => void;
   onClose: () => void;
@@ -36,6 +39,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
   unitsState,
   inventory,
   equipment,
+  itemUpgrades = {},
   onEquipItem,
   onUnequipItem,
   onClose,
@@ -87,7 +91,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
     { category: 'accessory', label: 'Acessório', icon: <Gem size={18} /> },
   ];
 
-  // Calculate total stats from equipped items for current hero
+  // Calculate total stats from equipped items for current hero (with item upgrades applied)
   const equippedItemsForCurrentHero = slotsList
     .map((slot) => {
       const itemId = currentHeroEquipment[slot.category];
@@ -97,13 +101,14 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
 
   const gearStats = equippedItemsForCurrentHero.reduce(
     (acc, it) => {
-      acc.hp += it.stats.hp || 0;
-      acc.atk += it.stats.atk || 0;
-      acc.mag += it.stats.mag || 0;
-      acc.def += it.stats.def || 0;
-      acc.res += it.stats.res || 0;
-      acc.mov += it.stats.mov || 0;
-      acc.range += it.stats.range || 0;
+      const eff = getItemEffectiveStats(it.stats, itemUpgrades[it.id] || 0);
+      acc.hp += eff.hp || 0;
+      acc.atk += eff.atk || 0;
+      acc.mag += eff.mag || 0;
+      acc.def += eff.def || 0;
+      acc.res += eff.res || 0;
+      acc.mov += eff.mov || 0;
+      acc.range += eff.range || 0;
       return acc;
     },
     { hp: 0, atk: 0, mag: 0, def: 0, res: 0, mov: 0, range: 0 }
@@ -264,57 +269,81 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                       </div>
 
                       {/* Slot Content */}
-                      {item && rInfo ? (
-                        <div>
-                          <div
-                            className="font-bold text-xs mb-1"
-                            style={{ color: rInfo.color }}
-                          >
-                            {item.name}
-                          </div>
-                          <p className="text-[10px] text-[#A7B0C4] line-clamp-1 mb-2">
-                            {item.description}
-                          </p>
+                      {item && rInfo ? (() => {
+                        const upgradeLvl = itemUpgrades[item.id] || 0;
+                        const effStats = getItemEffectiveStats(item.stats, upgradeLvl);
+                        return (
+                          <div>
+                            <div className="flex items-start gap-2 mb-1.5">
+                              <ItemIcon
+                                iconName={item.iconName}
+                                category={item.category}
+                                rarity={item.rarity}
+                                color={item.color}
+                                badge
+                                badgeSize="sm"
+                                showGlow
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span
+                                    className="font-bold text-xs truncate"
+                                    style={{ color: rInfo.color }}
+                                  >
+                                    {item.name}
+                                  </span>
+                                  {upgradeLvl > 0 && (
+                                    <span className="text-[9px] font-black text-[#FFD700] bg-[#FFD700]/15 px-1 rounded border border-[#FFD700]/30">
+                                      ★ +{upgradeLvl * 5}%
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-[#A7B0C4] line-clamp-1">
+                                  {item.description}
+                                </p>
+                              </div>
+                            </div>
 
-                          <div className="flex flex-wrap gap-1">
-                            {item.stats.hp && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[#FF5252]/15 text-[#FF5252]">
-                                +{item.stats.hp} HP
-                              </span>
-                            )}
-                            {item.stats.atk && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[#FF8A00]/15 text-[#FF8A00]">
-                                +{item.stats.atk} ATK
-                              </span>
-                            )}
-                            {item.stats.mag && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[#B58AFF]/15 text-[#B58AFF]">
-                                +{item.stats.mag} MAG
-                              </span>
-                            )}
-                            {item.stats.def && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[#4C8DFF]/15 text-[#4C8DFF]">
-                                +{item.stats.def} DEF
-                              </span>
-                            )}
-                            {item.stats.res && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[#00E5FF]/15 text-[#00E5FF]">
-                                +{item.stats.res} RES
-                              </span>
-                            )}
-                            {item.stats.mov && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[#69F0AE]/15 text-[#69F0AE]">
-                                +{item.stats.mov} MOV
-                              </span>
-                            )}
-                            {item.stats.range && (
-                              <span className="text-[9px] font-bold px-1 rounded bg-[#FFD700]/15 text-[#FFD700]">
-                                +{item.stats.range} ALC
-                              </span>
-                            )}
+                            <div className="flex flex-wrap gap-1">
+                              {effStats.hp && (
+                                <span className={`text-[9px] font-bold px-1 rounded ${upgradeLvl > 0 ? 'bg-[#FF5252]/25 text-[#FF8585]' : 'bg-[#FF5252]/15 text-[#FF5252]'}`}>
+                                  +{effStats.hp} HP
+                                </span>
+                              )}
+                              {effStats.atk && (
+                                <span className={`text-[9px] font-bold px-1 rounded ${upgradeLvl > 0 ? 'bg-[#FF8A00]/25 text-[#FFA84D]' : 'bg-[#FF8A00]/15 text-[#FF8A00]'}`}>
+                                  +{effStats.atk} ATK
+                                </span>
+                              )}
+                              {effStats.mag && (
+                                <span className={`text-[9px] font-bold px-1 rounded ${upgradeLvl > 0 ? 'bg-[#B58AFF]/25 text-[#D0B8FF]' : 'bg-[#B58AFF]/15 text-[#B58AFF]'}`}>
+                                  +{effStats.mag} MAG
+                                </span>
+                              )}
+                              {effStats.def && (
+                                <span className={`text-[9px] font-bold px-1 rounded ${upgradeLvl > 0 ? 'bg-[#4C8DFF]/25 text-[#85B0FF]' : 'bg-[#4C8DFF]/15 text-[#4C8DFF]'}`}>
+                                  +{effStats.def} DEF
+                                </span>
+                              )}
+                              {effStats.res && (
+                                <span className={`text-[9px] font-bold px-1 rounded ${upgradeLvl > 0 ? 'bg-[#00E5FF]/25 text-[#6BEEFF]' : 'bg-[#00E5FF]/15 text-[#00E5FF]'}`}>
+                                  +{effStats.res} RES
+                                </span>
+                              )}
+                              {effStats.mov && (
+                                <span className="text-[9px] font-bold px-1 rounded bg-[#69F0AE]/15 text-[#69F0AE]">
+                                  +{effStats.mov} MOV
+                                </span>
+                              )}
+                              {effStats.range && (
+                                <span className="text-[9px] font-bold px-1 rounded bg-[#FFD700]/15 text-[#FFD700]">
+                                  +{effStats.range} ALC
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      ) : (
+                        );
+                      })() : (
                         <div className="py-4 text-center text-[#71788E] text-[11px]">
                           Vazio
                         </div>
@@ -379,64 +408,82 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                   const currentlyEquippedId = currentHeroEquipment[item.category];
                   const currentlyEquippedItem = currentlyEquippedId ? getItemById(currentlyEquippedId) : null;
                   const isReplacing = Boolean(currentlyEquippedItem);
+                  const upgradeLvl = itemUpgrades[item.id] || 0;
+                  const effStats = getItemEffectiveStats(item.stats, upgradeLvl);
 
                   return (
                     <div
                       key={`${item.id}_${inventoryIndex}`}
                       onClick={() => setSelectedInventoryIndex(inventoryIndex)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                      className={`p-3 rounded-xl border transition-all cursor-pointer flex gap-3 items-start ${
                         isSelected
                           ? `${rInfo.border} bg-[#1B2030] shadow-md`
                           : 'border-[#343B50] bg-[#10131C] hover:border-[#A7B0C4]/40'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span
-                            className="font-bold text-xs"
-                            style={{ color: rInfo.color }}
-                          >
-                            {item.name}
-                          </span>
-                          {isReplacing && (
-                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
-                              Substitui {cInfo.label}
+                      <ItemIcon
+                        iconName={item.iconName}
+                        category={item.category}
+                        rarity={item.rarity}
+                        color={item.color}
+                        badge
+                        badgeSize="md"
+                        showGlow={isSelected}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span
+                              className="font-bold text-xs truncate"
+                              style={{ color: rInfo.color }}
+                            >
+                              {item.name}
                             </span>
-                          )}
-                        </div>
-                        <span className="text-[10px] text-[#A7B0C4] bg-[#141824] px-1.5 py-0.5 rounded border border-[#343B50]">
-                          {cInfo.label}
-                        </span>
-                      </div>
-
-                      <p className="text-[10px] text-[#A7B0C4] mb-2">{item.description}</p>
-
-                      <div className="flex items-center justify-between pt-1 border-t border-[#343B50]/60 gap-2">
-                        {/* Stats */}
-                        <div className="flex flex-wrap gap-1 text-[9px] font-bold">
-                          {item.stats.hp && <span className="text-[#FF5252]">+{item.stats.hp} HP</span>}
-                          {item.stats.atk && <span className="text-[#FF8A00]">+{item.stats.atk} ATK</span>}
-                          {item.stats.mag && <span className="text-[#B58AFF]">+{item.stats.mag} MAG</span>}
-                          {item.stats.def && <span className="text-[#4C8DFF]">+{item.stats.def} DEF</span>}
-                          {item.stats.res && <span className="text-[#00E5FF]">+{item.stats.res} RES</span>}
-                          {item.stats.mov && <span className="text-[#69F0AE]">+{item.stats.mov} MOV</span>}
+                            {upgradeLvl > 0 && (
+                              <span className="text-[9px] font-black text-[#FFD700] bg-[#FFD700]/15 px-1 rounded border border-[#FFD700]/30">
+                                ★ +{upgradeLvl * 5}%
+                              </span>
+                            )}
+                            {isReplacing && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                                Substitui {cInfo.label}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-[#A7B0C4] bg-[#141824] px-1.5 py-0.5 rounded border border-[#343B50] shrink-0">
+                            {cInfo.label}
+                          </span>
                         </div>
 
-                        {/* Equip Button */}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEquip(item, inventoryIndex);
-                          }}
-                          className="py-1 px-3 rounded-lg bg-[#D4AD65] hover:bg-[#E5C27E] text-[#10131C] font-black text-[11px] uppercase tracking-wider flex items-center gap-1 transition-transform active:scale-95 shadow shrink-0"
-                          title={isReplacing ? `Substituir ${currentlyEquippedItem?.name} e equipar ${item.name}` : `Equipar em ${currentHeroDef.name}`}
-                        >
-                          <CheckCircle2 size={12} />
-                          {isReplacing
-                            ? `Substituir ${cInfo.label}`
-                            : `Equipar em ${currentHeroDef.name}`}
-                        </button>
+                        <p className="text-[10px] text-[#A7B0C4] mb-2 line-clamp-1">{item.description}</p>
+
+                        <div className="flex items-center justify-between pt-1 border-t border-[#343B50]/60 gap-2">
+                          {/* Stats */}
+                          <div className="flex flex-wrap gap-1 text-[9px] font-bold">
+                            {effStats.hp && <span className={upgradeLvl > 0 ? 'text-[#FF8585]' : 'text-[#FF5252]'}>+{effStats.hp} HP</span>}
+                            {effStats.atk && <span className={upgradeLvl > 0 ? 'text-[#FFA84D]' : 'text-[#FF8A00]'}>+{effStats.atk} ATK</span>}
+                            {effStats.mag && <span className={upgradeLvl > 0 ? 'text-[#D0B8FF]' : 'text-[#B58AFF]'}>+{effStats.mag} MAG</span>}
+                            {effStats.def && <span className={upgradeLvl > 0 ? 'text-[#85B0FF]' : 'text-[#4C8DFF]'}>+{effStats.def} DEF</span>}
+                            {effStats.res && <span className={upgradeLvl > 0 ? 'text-[#6BEEFF]' : 'text-[#00E5FF]'}>+{effStats.res} RES</span>}
+                            {effStats.mov && <span className="text-[#69F0AE]">+{effStats.mov} MOV</span>}
+                          </div>
+
+                          {/* Equip Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEquip(item, inventoryIndex);
+                            }}
+                            className="py-1 px-3 rounded-lg bg-[#D4AD65] hover:bg-[#E5C27E] text-[#10131C] font-black text-[11px] uppercase tracking-wider flex items-center gap-1 transition-transform active:scale-95 shadow shrink-0"
+                            title={isReplacing ? `Substituir ${currentlyEquippedItem?.name} e equipar ${item.name}` : `Equipar em ${currentHeroDef.name}`}
+                          >
+                            <CheckCircle2 size={12} />
+                            {isReplacing
+                              ? `Substituir ${cInfo.label}`
+                              : `Equipar em ${currentHeroDef.name}`}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );

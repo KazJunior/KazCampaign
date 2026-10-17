@@ -1,6 +1,7 @@
 import type { Unit } from '../types/game';
 import { SKILLS, getEvolvedSkill } from './skills';
 import { getItemById } from './items';
+import { getItemEffectiveStats } from './baseUpgrades';
 
 export interface StatGrowth {
   hp: number;
@@ -328,13 +329,16 @@ export function createPlayerUnit(
   bonusRes = 0,
   learnedSkillIds: string[] = [],
   skillLevels: Record<string, number> = {},
-  equippedItemIds: string[] = []
+  equippedItemIds: string[] = [],
+  itemUpgrades?: Record<string, number>,
+  classUpgradeBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number },
+  globalBonus?: { hp?: number }
 ): Unit {
   const def = CLASS_DEFINITIONS[className];
   const growth = def.statGrowth || { hp: 12, atk: 3, mag: 3, def: 2, res: 1 };
   const levelOffsets = Math.max(0, level - 1);
 
-  // Somatório dos atributos concedidos pelos itens equipados
+  // Somatório dos atributos concedidos pelos itens equipados (com bônus de aprimoramento se houver)
   let itemHp = 0;
   let itemAtk = 0;
   let itemMag = 0;
@@ -346,22 +350,27 @@ export function createPlayerUnit(
   for (const itemId of equippedItemIds) {
     const item = getItemById(itemId);
     if (item && item.stats) {
-      itemHp += item.stats.hp || 0;
-      itemAtk += item.stats.atk || 0;
-      itemMag += item.stats.mag || 0;
-      itemDef += item.stats.def || 0;
-      itemRes += item.stats.res || 0;
-      itemMov += item.stats.mov || 0;
-      itemRange += item.stats.range || 0;
+      const upgradeLvl = itemUpgrades?.[itemId] || 0;
+      const effectiveStats = getItemEffectiveStats(item.stats, upgradeLvl);
+      itemHp += effectiveStats.hp || 0;
+      itemAtk += effectiveStats.atk || 0;
+      itemMag += effectiveStats.mag || 0;
+      itemDef += effectiveStats.def || 0;
+      itemRes += effectiveStats.res || 0;
+      itemMov += effectiveStats.mov || 0;
+      itemRange += effectiveStats.range || 0;
     }
   }
 
-  const hpBonus = levelOffsets * growth.hp + bonusHp + itemHp;
+  const cBonus = classUpgradeBonus || { hp: 0, atk: 0, mag: 0, def: 0, res: 0 };
+  const gHp = globalBonus?.hp || 0;
+
+  const hpBonus = levelOffsets * growth.hp + bonusHp + itemHp + (cBonus.hp || 0) + gHp;
   const maxHp = def.maxHp + hpBonus;
-  const atk = def.atk + levelOffsets * growth.atk + bonusAtk + itemAtk;
-  const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag;
-  const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef;
-  const res = def.res + levelOffsets * growth.res + bonusRes + itemRes;
+  const atk = def.atk + levelOffsets * growth.atk + bonusAtk + itemAtk + (cBonus.atk || 0);
+  const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag + (cBonus.mag || 0);
+  const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef + (cBonus.def || 0);
+  const res = def.res + levelOffsets * growth.res + bonusRes + itemRes + (cBonus.res || 0);
   const mov = def.mov + itemMov;
   const range = def.range + itemRange;
 

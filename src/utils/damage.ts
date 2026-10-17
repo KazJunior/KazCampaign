@@ -43,6 +43,14 @@ export function calculateBaseDamage(
     const damageType: DamageType = skill.damageType;
 
     if (damageType === 'healing') {
+      if (skill.id === 'resistencia_suprema') {
+        const healAmount = Math.max(1, Math.round(attacker.maxHp * 0.5));
+        return { base: healAmount, damageType: 'healing' };
+      }
+      if (skill.id === 'ressurreicao_mistica') {
+        const healAmount = Math.max(1, target.maxHp - target.currentHp);
+        return { base: healAmount, damageType: 'healing' };
+      }
       const power = skill.power ?? 1.0;
       const healAmount = Math.round(attacker.mag * power);
       return { base: healAmount, damageType: 'healing' };
@@ -53,10 +61,25 @@ export function calculateBaseDamage(
     if (atkBuff) {
       attackStat = Math.round(attackStat * (1 + atkBuff.value / 100));
     }
+    const invisBuff = attacker.statusEffects?.find((e) => e.type === 'invisible' && e.duration > 0);
+    if (invisBuff) {
+      attackStat = Math.round(attackStat * (1 + invisBuff.value / 100));
+    }
+
+    // Special scaling for Contra-Ataque Furioso (deals more damage the lower the warrior's HP)
+    if (skill.id === 'contra_ataque_furioso') {
+      const lostHpRatio = Math.max(0, 1 - attacker.currentHp / attacker.maxHp);
+      attackStat = Math.round(attackStat * (1 + lostHpRatio * 1.0));
+    }
 
     attackStat *= skill.power;
 
     let targetDef = damageType === 'physical' ? target.def : target.res;
+    const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+    if (defDebuff) {
+      targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
+    }
+
     if (skill.defenseIgnoreRatio) {
       targetDef = Math.round(targetDef * (1 - skill.defenseIgnoreRatio));
     }
@@ -69,7 +92,6 @@ export function calculateBaseDamage(
   const isMagical = isMagicalClass(attacker);
   const damageType: DamageType = isMagical ? 'magical' : 'physical';
 
-  // Classes mágicas aumentam com base no MAG, mas com escalonamento menor (0.7x do MAG vs 1.0x do ATK físico)
   let attackStat = isMagical
     ? Math.max(attacker.atk, Math.round(attacker.mag * 0.7))
     : attacker.atk;
@@ -78,8 +100,17 @@ export function calculateBaseDamage(
   if (atkBuff) {
     attackStat = Math.round(attackStat * (1 + atkBuff.value / 100));
   }
+  const invisBuff = attacker.statusEffects?.find((e) => e.type === 'invisible' && e.duration > 0);
+  if (invisBuff) {
+    attackStat = Math.round(attackStat * (1 + invisBuff.value / 100));
+  }
 
-  const targetDef = damageType === 'physical' ? target.def : target.res;
+  let targetDef = damageType === 'physical' ? target.def : target.res;
+  const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+  if (defDebuff) {
+    targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
+  }
+
   const base = Math.max(1, Math.round(attackStat - targetDef));
   return { base, damageType };
 }

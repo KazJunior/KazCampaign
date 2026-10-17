@@ -374,7 +374,7 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                                 {isDiscovered && (
                                   <span
                                     className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5"
-                                    title="Item já descoberto no Compêndio"
+                                    title="Item já descoberto no Catálogo de Itens"
                                   >
                                     <CheckCircle2 size={10} /> Coletado
                                   </span>

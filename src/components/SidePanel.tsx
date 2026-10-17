@@ -65,6 +65,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
   const isSlowed = selectedUnit.statusEffects?.some((e) => e.type === 'slow' && e.duration > 0);
   const isPoisoned = selectedUnit.statusEffects?.some((e) => e.type === 'poison' && e.duration > 0);
+  const isStealthed = selectedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
+  const isDefDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
 
   return (
     <aside className="w-80 bg-[#1B2030] border-l border-[#343B50] p-4 flex flex-col justify-between shadow-2xl text-[#F3F4F8] select-none h-full z-10 overflow-y-auto">
@@ -151,12 +153,22 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk) && (
+        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
             </div>
             <div className="flex flex-wrap gap-1.5">
+              {isStealthed && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 text-[#A78BFA] flex items-center gap-1">
+                  👁️‍🗨️ Invisível
+                </span>
+              )}
+              {isDefDebuffed && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#EF4444]/20 border border-[#EF4444]/40 text-[#F87171] flex items-center gap-1">
+                  🛡️ Defesa -{isDefDebuffed.value}%
+                </span>
+              )}
               {isPoisoned && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#A855F7] flex items-center gap-1">
                   ☠️ Veneno

@@ -50,7 +50,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'common',
     description: 'Lâmina serrilhada e enferrujada que corta com agilidade desajeitada.',
-    iconName: 'Sword',
+    iconName: 'PocketKnife',
     color: '#E65353',
     stats: { atk: 4, hp: 10 },
     droppedByMonsterTypeIds: ['goblin'],
@@ -61,7 +61,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'common',
     description: 'Capuz de couro puído com penas que concedem camuflagem na vegetação.',
-    iconName: 'HardHat',
+    iconName: 'Feather',
     color: '#4CAF50',
     stats: { hp: 15, def: 1, res: 1 },
     droppedByMonsterTypeIds: ['goblin'],
@@ -72,7 +72,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'rare',
     description: 'Colar de presas amarradas em corda rústica que desperta instintos predatórios.',
-    iconName: 'Gem',
+    iconName: 'Bone',
     color: '#FF9800',
     stats: { atk: 3, mov: 1 },
     droppedByMonsterTypeIds: ['goblin'],
@@ -135,7 +135,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'rare',
     description: 'Visor macabro que amplia a percepção sensorial mágica no escuro.',
-    iconName: 'HardHat',
+    iconName: 'Eye',
     color: '#BA68C8',
     stats: { hp: 20, mag: 3, res: 2 },
     droppedByMonsterTypeIds: ['aranha'],
@@ -146,7 +146,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'rare',
     description: 'Jóia esverdeada gotejando veneno que banha os ataques com toxina.',
-    iconName: 'Gem',
+    iconName: 'CircleDot',
     color: '#00E676',
     stats: { atk: 3, mag: 3, hp: 15 },
     droppedByMonsterTypeIds: ['aranha'],
@@ -172,7 +172,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'rare',
     description: 'Tecido etéreo que absorve feitiços e dissipa o impacto mágico.',
-    iconName: 'Shield',
+    iconName: 'Shirt',
     color: '#5E35B1',
     stats: { hp: 25, mag: 3, res: 4 },
     droppedByMonsterTypeIds: ['mago_trevas'],
@@ -183,7 +183,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'epic',
     description: 'Capuz envolto em névoa negra pulsante que amplifica magias em área.',
-    iconName: 'HardHat',
+    iconName: 'Moon',
     color: '#9575CD',
     stats: { hp: 30, mag: 6, res: 3 },
     droppedByMonsterTypeIds: ['mago_trevas'],
@@ -209,7 +209,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'boots',
     rarity: 'rare',
     description: 'Sapatos que quase não tocam o chão, permitindo passadas fantasmagóricas.',
-    iconName: 'Footprints',
+    iconName: 'Compass',
     color: '#00E5FF',
     stats: { hp: 20, res: 2, mov: 1 },
     droppedByMonsterTypeIds: ['lobo_espectral'],
@@ -220,7 +220,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'common',
     description: 'Pele grossa e gélida que resguarda o guerreiro contra ataques surpresa.',
-    iconName: 'Shield',
+    iconName: 'ShieldHalf',
     color: '#4FC3F7',
     stats: { hp: 30, def: 2, res: 2 },
     droppedByMonsterTypeIds: ['lobo_espectral'],
@@ -246,7 +246,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'epic',
     description: 'Armadura pesada esculpida em rocha viva que torna o portador uma fortaleza.',
-    iconName: 'Shield',
+    iconName: 'ShieldCheck',
     color: '#546E7A',
     stats: { hp: 60, def: 6 },
     droppedByMonsterTypeIds: ['golem_basalto'],
@@ -272,7 +272,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'rare',
     description: 'Círculo de vinhas espinhosas que canaliza a vitalidade da natureza profana.',
-    iconName: 'HardHat',
+    iconName: 'Crown',
     color: '#66BB6A',
     stats: { hp: 25, mag: 4, res: 3 },
     droppedByMonsterTypeIds: ['bruxa_espinhos'],
@@ -294,7 +294,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'epic',
     description: 'Broche que pulsa seiva mística, restaurando forças e fortalecendo magias.',
-    iconName: 'Gem',
+    iconName: 'Heart',
     color: '#81C784',
     stats: { hp: 45, mag: 5, res: 3 },
     droppedByMonsterTypeIds: ['bruxa_espinhos'],
@@ -346,7 +346,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'rare',
     description: 'Arma orgânica flexível recoberta de dentes afiados que sangram os inimigos.',
-    iconName: 'Swords',
+    iconName: 'Crosshair',
     color: '#FFA726',
     stats: { atk: 6, mag: 3, hp: 20 },
     droppedByMonsterTypeIds: ['mimico'],
@@ -357,7 +357,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'leggings',
     rarity: 'epic',
     description: 'Tecido encantado que cintila como moedas de ouro e amortece impactos.',
-    iconName: 'Layers',
+    iconName: 'Coins',
     color: '#FFB74D',
     stats: { hp: 40, def: 3, res: 3 },
     droppedByMonsterTypeIds: ['mimico'],
@@ -368,7 +368,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'epic',
     description: 'Jóia dourada hipnótica que concede poder destrutivo e tenacidade.',
-    iconName: 'Gem',
+    iconName: 'Trophy',
     color: '#FF9800',
     stats: { hp: 25, atk: 4, mag: 4 },
     droppedByMonsterTypeIds: ['mimico'],
@@ -394,7 +394,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'epic',
     description: 'Armadura tecida com escamas impenetráveis endurecidas em lava.',
-    iconName: 'Shield',
+    iconName: 'ShieldAlert',
     color: '#E64A19',
     stats: { hp: 55, def: 5, res: 5 },
     droppedByMonsterTypeIds: ['draco_volcanico'],
@@ -405,7 +405,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'legendary',
     description: 'Diadema ardente que brilha com a intensidade de um vulcão em erupção.',
-    iconName: 'HardHat',
+    iconName: 'Crown',
     color: '#FF3D00',
     stats: { hp: 50, mag: 7, res: 5, def: 3 },
     droppedByMonsterTypeIds: ['draco_volcanico'],
@@ -420,7 +420,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'epic',
     description: 'Dentes colossais do monstro das profundezas forjados como lâminas duplas.',
-    iconName: 'Swords',
+    iconName: 'Skull',
     color: '#FF6F00',
     stats: { atk: 8, hp: 35, def: 2 },
     droppedByMonsterTypeIds: ['devorador'],
@@ -442,7 +442,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'rare',
     description: 'Globo ocular mineralizado que revela pontos fracos na armadura do alvo.',
-    iconName: 'Gem',
+    iconName: 'ScanEye',
     color: '#FF8F00',
     stats: { hp: 30, atk: 3, mag: 3 },
     droppedByMonsterTypeIds: ['devorador'],
@@ -457,7 +457,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'legendary',
     description: 'A foice cósmica que rege as legiões das profundezas. Distorce o espaço ao golpear.',
-    iconName: 'Wand2',
+    iconName: 'Sparkles',
     color: '#4A148C',
     stats: { mag: 11, atk: 6, hp: 40, range: 1 },
     droppedByMonsterTypeIds: ['astaroth'],
@@ -468,7 +468,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'epic',
     description: 'Coroa de chifres obsidiana pertencente ao soberano das trevas.',
-    iconName: 'HardHat',
+    iconName: 'Crown',
     color: '#7B1FA2',
     stats: { hp: 45, mag: 7, res: 4 },
     droppedByMonsterTypeIds: ['astaroth'],
@@ -479,7 +479,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'legendary',
     description: 'Vestimenta forjada com a própria essência do abismo, conferindo proteção suprema.',
-    iconName: 'Shield',
+    iconName: 'Shirt',
     color: '#311B92',
     stats: { hp: 65, def: 6, res: 7 },
     droppedByMonsterTypeIds: ['astaroth'],
@@ -494,7 +494,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'epic',
     description: 'Esfera translúcida habitada por espectros que drenam a energia dos inimigos.',
-    iconName: 'Gem',
+    iconName: 'Orbit',
     color: '#00E5FF',
     stats: { hp: 35, mag: 7, res: 3 },
     droppedByMonsterTypeIds: ['arauto_espectral'],
@@ -531,7 +531,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'legendary',
     description: 'Martelo forjado no magma puro do núcleo vulcânico com poder devastador.',
-    iconName: 'Hammer',
+    iconName: 'Anvil',
     color: '#FF3D00',
     stats: { atk: 13, hp: 50, def: 4 },
     droppedByMonsterTypeIds: ['tita_forjador'],
@@ -542,7 +542,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'legendary',
     description: 'Blindagem pesada que converte impactos em calor inextinguível.',
-    iconName: 'Shield',
+    iconName: 'ShieldCheck',
     color: '#DD2C00',
     stats: { hp: 85, def: 9, res: 4 },
     droppedByMonsterTypeIds: ['tita_forjador'],
@@ -553,7 +553,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'leggings',
     rarity: 'epic',
     description: 'Placas vulcânicas fundidas que tornam o guerreiro inamovível.',
-    iconName: 'Layers',
+    iconName: 'Flame',
     color: '#FF6E40',
     stats: { hp: 50, def: 6, res: 3 },
     droppedByMonsterTypeIds: ['tita_forjador'],
@@ -568,7 +568,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'epic',
     description: 'Tomo ancestral com fórmulas arcanas capazes de quebrar barreiras mágicas.',
-    iconName: 'Wand2',
+    iconName: 'BookOpen',
     color: '#7C4DFF',
     stats: { mag: 10, res: 4, hp: 35 },
     droppedByMonsterTypeIds: ['mestre_runico'],
@@ -579,7 +579,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'epic',
     description: 'Capuz bordado com fios de mana pura que potencializam conjurações.',
-    iconName: 'HardHat',
+    iconName: 'GraduationCap',
     color: '#651FFF',
     stats: { hp: 40, mag: 8, res: 4 },
     droppedByMonsterTypeIds: ['mestre_runico'],
@@ -590,7 +590,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'rare',
     description: 'Aliança com glifo esculpido que estabiliza o fluxo de mana e protege aliados.',
-    iconName: 'Gem',
+    iconName: 'Sparkle',
     color: '#B388FF',
     stats: { mag: 6, res: 4, hp: 20 },
     droppedByMonsterTypeIds: ['mestre_runico'],
@@ -616,7 +616,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'legendary',
     description: 'Peitoral decorado com crânios de campeões vencidos. Intimida qualquer oponente.',
-    iconName: 'Shield',
+    iconName: 'Bone',
     color: '#880E4F',
     stats: { hp: 80, def: 8, atk: 4 },
     droppedByMonsterTypeIds: ['valgar_sanguinario'],
@@ -642,7 +642,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'epic',
     description: 'Ferrão curvado de quitina negra e peçonha pura com alto dano híbrido.',
-    iconName: 'Swords',
+    iconName: 'PocketKnife',
     color: '#00C853',
     stats: { atk: 9, mag: 6, hp: 30 },
     droppedByMonsterTypeIds: ['quimera_venenosa'],
@@ -653,7 +653,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'rare',
     description: 'Crânio bestial esculpido com dentes curvados que protege cabeça e pescoço.',
-    iconName: 'HardHat',
+    iconName: 'VenetianMask',
     color: '#00E676',
     stats: { hp: 40, def: 4, res: 4 },
     droppedByMonsterTypeIds: ['quimera_venenosa'],
@@ -664,7 +664,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'epic',
     description: 'Órgão preservado em líquido corrosivo que aumenta tanto dano físico quanto mágico.',
-    iconName: 'Gem',
+    iconName: 'HeartPulse',
     color: '#69F0AE',
     stats: { hp: 35, atk: 6, mag: 5 },
     droppedByMonsterTypeIds: ['quimera_venenosa'],
@@ -679,7 +679,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'legendary',
     description: 'Arma forjada com fragmentos de uma estrela colapsada no coração do vazio.',
-    iconName: 'Wand2',
+    iconName: 'Zap',
     color: '#311B92',
     stats: { atk: 12, mag: 12, hp: 50 },
     droppedByMonsterTypeIds: ['leviata_vazio'],
@@ -690,7 +690,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'legendary',
     description: 'Tecido que reflete as constelações do cosmos, absorvendo magias e golpes.',
-    iconName: 'Shield',
+    iconName: 'Shirt',
     color: '#1A237E',
     stats: { hp: 90, def: 7, res: 9 },
     droppedByMonsterTypeIds: ['leviata_vazio'],
@@ -701,7 +701,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'helmet',
     rarity: 'legendary',
     description: 'Diadema que conecta a mente do portador à força primordial das trevas.',
-    iconName: 'HardHat',
+    iconName: 'Crown',
     color: '#4A148C',
     stats: { hp: 60, mag: 9, res: 6 },
     droppedByMonsterTypeIds: ['leviata_vazio'],
@@ -716,7 +716,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'legendary',
     description: 'Lâmina sagrada mergulhada no eclipse eterno. Seu corte divide a luz da escuridão.',
-    iconName: 'Sword',
+    iconName: 'Sun',
     color: '#FFD600',
     stats: { atk: 13, mag: 7, def: 5, hp: 45 },
     droppedByMonsterTypeIds: ['cavaleiro_apocalipse'],
@@ -753,7 +753,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'weapon',
     rarity: 'legendary',
     description: 'O cetro que selou o destino de deuses e civilizações inteiras.',
-    iconName: 'Wand2',
+    iconName: 'WandSparkles',
     color: '#D50000',
     stats: { atk: 16, mag: 16, hp: 60, range: 1 },
     droppedByMonsterTypeIds: ['cronos_abissal'],
@@ -764,7 +764,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'chestplate',
     rarity: 'legendary',
     description: 'A vestimenta definitiva tecida pelo próprio criador do caos abissal.',
-    iconName: 'Shield',
+    iconName: 'ShieldAlert',
     color: '#B71C1C',
     stats: { hp: 120, def: 10, res: 10 },
     droppedByMonsterTypeIds: ['cronos_abissal'],
@@ -775,7 +775,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     category: 'accessory',
     rarity: 'legendary',
     description: 'Artefato que aprisiona a areia de todas as eras, dobrando tempo e espaço.',
-    iconName: 'Gem',
+    iconName: 'Hourglass',
     color: '#FF1744',
     stats: { hp: 70, atk: 8, mag: 8, mov: 1 },
     droppedByMonsterTypeIds: ['cronos_abissal'],
@@ -798,7 +798,8 @@ export function getItemsDroppedByMonsters(monsterTypeIds: string[]): ItemDefinit
 export function rollStageItemDrops(
   monsterTypeIds: string[],
   maxChoices = 3,
-  isBossStage = false
+  isBossStage = false,
+  dropBonusLevel = 0
 ): ItemDefinition[] {
   let pool = getItemsDroppedByMonsters(monsterTypeIds);
 
@@ -812,11 +813,30 @@ export function rollStageItemDrops(
     ? { common: 20, rare: 45, epic: 25, legendary: 10 }
     : { common: 60, rare: 26, epic: 11, legendary: 3 };
 
+  // Bônus do Upgrade Geral "Caçador de Espólios"
+  if (dropBonusLevel === 1) {
+    weights.common = Math.max(10, weights.common - 15);
+    weights.rare += 8;
+    weights.epic += 5;
+    weights.legendary += 2;
+  } else if (dropBonusLevel === 2) {
+    weights.common = Math.max(5, weights.common - 25);
+    weights.rare += 12;
+    weights.epic += 9;
+    weights.legendary += 4;
+  } else if (dropBonusLevel >= 3) {
+    weights.common = Math.max(0, weights.common - 35);
+    weights.rare += 14;
+    weights.epic += 14;
+    weights.legendary += 7;
+  }
+
   const selected: ItemDefinition[] = [];
   const available = [...pool];
 
-  // Determina número de escolhas (entre 1 e maxChoices, dependendo do tamanho da fase)
-  const targetCount = Math.min(maxChoices, Math.max(1, available.length));
+  // Determina número de escolhas (garante 3 se dropBonusLevel >= 2)
+  const effectiveMaxChoices = dropBonusLevel >= 2 ? Math.max(3, maxChoices) : maxChoices;
+  const targetCount = Math.min(effectiveMaxChoices, Math.max(1, available.length));
 
   for (let i = 0; i < targetCount; i++) {
     if (available.length === 0) break;
@@ -840,6 +860,13 @@ export function rollStageItemDrops(
   }
 
   return selected;
+}
+
+export function getRandomItemByRarity(rarity: ItemRarity): ItemDefinition | null {
+  const items = Object.values(ITEMS).filter((it) => it.rarity === rarity);
+  if (items.length === 0) return null;
+  const idx = Math.floor(Math.random() * items.length);
+  return items[idx];
 }
 
 export function getItemById(id: string): ItemDefinition | undefined {
