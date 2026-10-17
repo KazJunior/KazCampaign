@@ -379,7 +379,9 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     // 2. Deployment Zone
     if (phase === 'deployment') {
       deploymentZone.forEach((pt) => {
-        addTileHighlight(pt.x, pt.y, 0xd4ad65, 0.35, 0xfbbf24, false, 0.053);
+        if (!grid[pt.y] || grid[pt.y][pt.x]?.obstacle === 'none') {
+          addTileHighlight(pt.x, pt.y, 0xd4ad65, 0.35, 0xfbbf24, false, 0.053);
+        }
       });
     }
 

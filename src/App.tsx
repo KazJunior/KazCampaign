@@ -918,7 +918,9 @@ export function App() {
     // Deployment swap
     if (phase === 'deployment') {
       if (selectedUnit && selectedUnit.faction === 'player') {
-        const isDepTile = currentLevel?.deploymentZone.some((z) => z.x === x && z.y === y);
+        const isDepTile =
+          currentLevel?.deploymentZone.some((z) => z.x === x && z.y === y) &&
+          (!grid[y] || grid[y][x]?.obstacle === 'none');
         if (isDepTile) {
           if (clickedUnit && clickedUnit.faction === 'player') {
             setUnits((prev) =>
@@ -2289,7 +2291,13 @@ export function App() {
             reachableTiles={reachableTiles}
             attackableTiles={attackableTiles}
             aoeTiles={aoeTiles}
-            deploymentZone={currentLevel?.deploymentZone || []}
+            deploymentZone={
+              currentLevel?.deploymentZone
+                ? currentLevel.deploymentZone.filter(
+                    (pt) => !grid[pt.y] || grid[pt.y][pt.x]?.obstacle === 'none'
+                  )
+                : []
+            }
             phase={phase}
             floatingNumbers={floatingNumbers}
             onTileClick={handleTileClick}
