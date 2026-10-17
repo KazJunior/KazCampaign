@@ -199,7 +199,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'devorador',
     name: 'Devorador das Profundezas',
     role: 'tank',
-    maxHp: 380,
+    maxHp: 475,
     atk: 34,
     mag: 18,
     def: 16,
@@ -217,7 +217,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'astaroth',
     name: 'Astaroth, Soberano do Abismo',
     role: 'attacker',
-    maxHp: 650,
+    maxHp: 813,
     atk: 42,
     mag: 40,
     def: 20,
@@ -235,7 +235,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'arauto_espectral',
     name: 'Arauto dos Espectros',
     role: 'support',
-    maxHp: 580,
+    maxHp: 725,
     atk: 38,
     mag: 40,
     def: 20,
@@ -253,7 +253,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'tita_forjador',
     name: 'Vulcanus, Titã das Forjas',
     role: 'tank',
-    maxHp: 950,
+    maxHp: 1188,
     atk: 50,
     mag: 34,
     def: 30,
@@ -271,7 +271,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'mestre_runico',
     name: 'Arquimago das Runas',
     role: 'support',
-    maxHp: 780,
+    maxHp: 975,
     atk: 32,
     mag: 52,
     def: 22,
@@ -289,7 +289,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'valgar_sanguinario',
     name: 'Valgar, o Carniceiro Imortal',
     role: 'attacker',
-    maxHp: 1300,
+    maxHp: 1625,
     atk: 62,
     mag: 28,
     def: 28,
@@ -307,7 +307,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'quimera_venenosa',
     name: 'Quimera das Sombras Antigas',
     role: 'attacker',
-    maxHp: 1050,
+    maxHp: 1313,
     atk: 52,
     mag: 46,
     def: 26,
@@ -325,7 +325,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'leviata_vazio',
     name: 'Leviatã do Vazio Primordial',
     role: 'attacker',
-    maxHp: 1800,
+    maxHp: 2250,
     atk: 66,
     mag: 66,
     def: 34,
@@ -343,7 +343,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'cavaleiro_apocalipse',
     name: 'Cavaleiro do Eclipse Eterno',
     role: 'tank',
-    maxHp: 1400,
+    maxHp: 1750,
     atk: 62,
     mag: 50,
     def: 32,
@@ -361,7 +361,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'cronos_abissal',
     name: 'Malakor, O Fim de Todas as Eras',
     role: 'attacker',
-    maxHp: 2800,
+    maxHp: 3500,
     atk: 78,
     mag: 82,
     def: 38,
@@ -394,15 +394,15 @@ export function createMonsterUnit(
   let res: number;
 
   if (def.isBoss) {
-    // Boss scaling: 50% do nerf de dano (4.9 por nível)
-    maxHp = def.maxHp + levelOffset * 90;
+    // Boss scaling: 50% do nerf de dano (4.9 por nível) e vida aumentada em +25% (+112 por nível)
+    maxHp = def.maxHp + Math.round(levelOffset * 112);
     atk = def.atk + Math.round(levelOffset * 4.9);
     mag = def.mag + Math.round(levelOffset * 4.9);
     unitDef = def.def + Math.round(levelOffset * 4.0);
     res = def.res + Math.round(levelOffset * 4.0);
   } else if (def.isMiniBoss) {
-    // Mini-boss scaling: 50% do nerf de dano (Devorador 6.0; demais 4.0)
-    maxHp = def.maxHp + levelOffset * 55;
+    // Mini-boss scaling: 50% do nerf de dano (Devorador 6.0; demais 4.0) e vida aumentada em +25% (+69 por nível)
+    maxHp = def.maxHp + Math.round(levelOffset * 69);
     const scaling = typeId === 'devorador' ? 6.0 : 4.0;
     atk = def.atk + Math.round(levelOffset * scaling);
     mag = def.mag + Math.round(levelOffset * scaling);
