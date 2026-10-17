@@ -22,16 +22,16 @@ export interface MonsterDefinition {
 }
 
 export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
-  // --- 10 NORMAL MONSTER ARCHETYPES (+15% em todos os status) ---
+  // --- 10 NORMAL MONSTER ARCHETYPES (+10% em todos os status) ---
   goblin: {
     typeId: 'goblin',
     name: 'Goblin Solteiro',
     role: 'attacker',
-    maxHp: 63,
-    atk: 16,
-    mag: 5,
-    def: 4,
-    res: 3,
+    maxHp: 61,
+    atk: 15,
+    mag: 4,
+    def: 3,
+    res: 2,
     mov: 3,
     range: 1,
     color: '#E65353',
@@ -44,11 +44,11 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'orc',
     name: 'Orc Guerreiro',
     role: 'attacker',
-    maxHp: 127,
-    atk: 26,
+    maxHp: 121,
+    atk: 25,
     mag: 3,
     def: 10,
-    res: 5,
+    res: 4,
     mov: 2,
     range: 1,
     color: '#D93838',
@@ -61,10 +61,10 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'aranha',
     name: 'Aranha Sombria',
     role: 'attacker',
-    maxHp: 75,
-    atk: 20,
+    maxHp: 72,
+    atk: 19,
     mag: 7,
-    def: 5,
+    def: 4,
     res: 6,
     mov: 4,
     range: 1,
@@ -78,11 +78,11 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'mago_trevas',
     name: 'Mago das Trevas',
     role: 'attacker',
-    maxHp: 81,
+    maxHp: 77,
     atk: 9,
-    mag: 28,
-    def: 4,
-    res: 12,
+    mag: 26,
+    def: 3,
+    res: 11,
     mov: 2,
     range: 3,
     color: '#7E57C2',
@@ -95,9 +95,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'lobo_espectral',
     name: 'Lobo Espectral',
     role: 'attacker',
-    maxHp: 92,
-    atk: 23,
-    mag: 12,
+    maxHp: 88,
+    atk: 22,
+    mag: 11,
     def: 6,
     res: 9,
     mov: 4,
@@ -112,8 +112,8 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'golem_basalto',
     name: 'Golem de Basalto',
     role: 'tank',
-    maxHp: 184,
-    atk: 30,
+    maxHp: 176,
+    atk: 29,
     mag: 6,
     def: 18,
     res: 9,
@@ -129,11 +129,11 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'bruxa_espinhos',
     name: 'Bruxa dos Espinhos',
     role: 'support',
-    maxHp: 98,
-    atk: 12,
-    mag: 30,
+    maxHp: 94,
+    atk: 11,
+    mag: 29,
     def: 6,
-    res: 16,
+    res: 15,
     mov: 2,
     range: 3,
     color: '#66BB6A',
@@ -146,11 +146,11 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'cavaleiro_caido',
     name: 'Cavaleiro Caído',
     role: 'tank',
-    maxHp: 150,
-    atk: 29,
+    maxHp: 143,
+    atk: 28,
     mag: 9,
-    def: 14,
-    res: 12,
+    def: 13,
+    res: 11,
     mov: 3,
     range: 1,
     color: '#8D6E63',
@@ -163,9 +163,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'mimico',
     name: 'Mímico Carniceiro',
     role: 'attacker',
-    maxHp: 109,
-    atk: 31,
-    mag: 5,
+    maxHp: 105,
+    atk: 30,
+    mag: 4,
     def: 8,
     res: 7,
     mov: 3,
@@ -180,11 +180,11 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     typeId: 'draco_volcanico',
     name: 'Draco Vulcânico',
     role: 'attacker',
-    maxHp: 173,
-    atk: 33,
-    mag: 25,
-    def: 13,
-    res: 13,
+    maxHp: 165,
+    atk: 32,
+    mag: 24,
+    def: 12,
+    res: 12,
     mov: 3,
     range: 2,
     color: '#FF5722',
@@ -409,12 +409,12 @@ export function createMonsterUnit(
     unitDef = def.def + Math.round(levelOffset * 3.4);
     res = def.res + Math.round(levelOffset * 3.2);
   } else {
-    // Normal monster progressive scaling (+15% em todos os status)
-    maxHp = def.maxHp + Math.round(levelOffset * 32);
-    atk = def.atk + Math.round(levelOffset * 5.2);
-    mag = def.mag + Math.round(levelOffset * 5.2);
-    unitDef = def.def + Math.round(levelOffset * 2.5);
-    res = def.res + Math.round(levelOffset * 2.3);
+    // Normal monster progressive scaling (+10% em todos os status)
+    maxHp = def.maxHp + Math.round(levelOffset * 31);
+    atk = def.atk + Math.round(levelOffset * 5.0);
+    mag = def.mag + Math.round(levelOffset * 5.0);
+    unitDef = def.def + Math.round(levelOffset * 2.4);
+    res = def.res + Math.round(levelOffset * 2.2);
   }
 
   // Load active skill list
