@@ -385,6 +385,14 @@ export function createPlayerUnit(
       if (evolved.damageType === 'healing' || evolved.statusEffect?.type === 'shield') {
         evolved.cooldownMax = Math.max(2, evolved.cooldownMax);
       }
+      if (
+        (evolved.lifestealPercent && evolved.lifestealPercent > 0) ||
+        evolved.id === 'dreno_de_vida' ||
+        evolved.id === 'dreno_de_seiva' ||
+        evolved.id === 'sedenta_de_runas'
+      ) {
+        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
+      }
       return evolved;
     });
 

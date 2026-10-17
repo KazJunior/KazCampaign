@@ -202,8 +202,8 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     maxHp: 499,
     atk: 36,
     mag: 19,
-    def: 38,
-    res: 36,
+    def: 28,
+    res: 26,
     mov: 3,
     range: 1,
     color: '#FF6F00',
@@ -425,6 +425,14 @@ export function createMonsterUnit(
     .map((s) => {
       const clone = JSON.parse(JSON.stringify(s));
       if (clone.damageType === 'healing' || clone.statusEffect?.type === 'shield') {
+        clone.cooldownMax = Math.max(3, clone.cooldownMax);
+      }
+      if (
+        (clone.lifestealPercent && clone.lifestealPercent > 0) ||
+        clone.id === 'dreno_de_vida' ||
+        clone.id === 'dreno_de_seiva' ||
+        clone.id === 'sedenta_de_runas'
+      ) {
         clone.cooldownMax = Math.max(3, clone.cooldownMax);
       }
       return clone;

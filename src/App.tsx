@@ -1109,7 +1109,9 @@ export function App() {
       return;
     }
 
-    const target = units.find((u) => u.id === targetUnitId);
+    const target = (skill && skill.targetType === 'self')
+      ? selectedUnit
+      : units.find((u) => u.id === targetUnitId);
     if (!target) {
       setIsAnimatingAction(false);
       return;
@@ -1131,11 +1133,16 @@ export function App() {
         addFloatingNumber(selectedUnit.x, selectedUnit.y, `-${hpCost} (Sacrifício)`, 'status', '#E65353');
       }
 
-      // Special: Resistência Suprema recovers 50% max HP
+      // Special: Resistência Suprema recovers 50% max HP (or scaled if evolved)
       if (skill.id === 'resistencia_suprema') {
-        const healAmt = Math.round(selectedUnit.maxHp * 0.5);
+        const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
+        const healAmt = Math.max(1, Math.round(selectedUnit.maxHp * ratio));
         currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
-        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt} (50% HP)`, 'healing', '#56E59A');
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt} (${Math.round(ratio * 100)}% HP)`, 'healing', '#56E59A');
+      } else if (skill.damageType === 'healing' && skill.power && skill.power > 0) {
+        const healAmt = Math.max(1, Math.round(selectedUnit.mag * skill.power));
+        currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt}`, 'healing', '#56E59A');
       }
 
       const effect = skill.statusEffect;
@@ -1291,10 +1298,12 @@ export function App() {
 
       let newHp = t.currentHp;
       if (dmgResult.damageType === 'healing') {
-        newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
-        addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
+        if (actualDmg > 0) {
+          newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
+          addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
+        }
 
-        // Shield for allies in healing skills like Campo Rúnico
+        // Shield for allies in healing skills like Campo Rúnico / Escudo Sagrado
         if (skill?.statusEffect?.type === 'shield') {
           const sh = skill.statusEffect;
           currentEffects = [...currentEffects.filter((e) => e.type !== 'shield'), { ...sh }];
@@ -1341,8 +1350,15 @@ export function App() {
       );
     }
 
+    // Retrieve attacker's updated state from the loop (in case attacker healed or shielded themselves)
+    const attackerAfterLoop = updatedUnits.find((u) => u.id === selectedUnit.id);
+    let finalAttackerHp = attackerAfterLoop ? attackerAfterLoop.currentHp : selectedUnit.currentHp;
+    let finalAttackerEffects = attackerAfterLoop ? attackerAfterLoop.statusEffects : attackerEffects;
+    if (wasInvisible) {
+      finalAttackerEffects = finalAttackerEffects.filter((e) => e.type !== 'invisible');
+    }
+
     // LIFESTEAL (Dreno de Vida / Dreno de Seiva / Sedenta de Runas)
-    let finalAttackerHp = selectedUnit.currentHp;
     const lifestealPct =
       skill?.lifestealPercent ??
       (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
@@ -1381,7 +1397,7 @@ export function App() {
           hasMoved: canMoveAgain ? false : u.hasMoved,
           hasAttacked: true,
           skills: updatedSkills,
-          statusEffects: attackerEffects,
+          statusEffects: finalAttackerEffects,
           damageDealt: u.damageDealt + totalDmgDone,
           kills: u.kills + totalKills,
         };

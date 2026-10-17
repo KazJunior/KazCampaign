@@ -44,14 +44,15 @@ export function calculateBaseDamage(
 
     if (damageType === 'healing') {
       if (skill.id === 'resistencia_suprema') {
-        const healAmount = Math.max(1, Math.round(attacker.maxHp * 0.5));
+        const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
+        const healAmount = Math.max(1, Math.round(attacker.maxHp * ratio));
         return { base: healAmount, damageType: 'healing' };
       }
       if (skill.id === 'ressurreicao_mistica') {
         const healAmount = Math.max(1, target.maxHp - target.currentHp);
         return { base: healAmount, damageType: 'healing' };
       }
-      const power = skill.power ?? 1.0;
+      const power = skill.power ?? 0;
       const healAmount = Math.round(attacker.mag * power);
       return { base: healAmount, damageType: 'healing' };
     }

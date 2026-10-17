@@ -40,10 +40,10 @@ export const SKILLS: Record<string, Skill> = {
   postura_defensiva: {
     id: 'postura_defensiva',
     name: 'Postura Defensiva',
-    description: 'Concede um escudo protetor equivalente a 40% da vida máxima do Guerreiro.',
+    description: 'Concede um escudo protetor equivalente a 40 de absorção.',
     damageType: 'healing',
     category: 'defense',
-    power: 1.2,
+    power: 0,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
@@ -77,8 +77,8 @@ export const SKILLS: Record<string, Skill> = {
     description: 'Cria uma barreira sagrada em um aliado, absorvendo grande quantidade de dano.',
     damageType: 'healing',
     category: 'defense',
-    power: 1.8,
-    rangeMin: 1,
+    power: 0,
+    rangeMin: 0,
     rangeMax: 2,
     aoeRadius: 0,
     cooldownMax: 4,
@@ -157,11 +157,11 @@ export const SKILLS: Record<string, Skill> = {
   },
   resistencia_suprema: {
     id: 'resistencia_suprema',
-    name: 'Resistência Suprema',
+    name: 'Resistência Suprema (Suprema)',
     description: 'Habilidade suprema: Regenera 50% da vida máxima instantaneamente.',
     damageType: 'healing',
     category: 'defense',
-    power: 2.5,
+    power: 0.5,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
@@ -381,7 +381,7 @@ export const SKILLS: Record<string, Skill> = {
     description: 'Cria uma barreira mágica ao seu redor, absorvendo dano por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
-    power: 1.5,
+    power: 0,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
@@ -431,8 +431,8 @@ export const SKILLS: Record<string, Skill> = {
     description: 'Concede um escudo mágico para um aliado.',
     damageType: 'healing',
     category: 'defense',
-    power: 1.5,
-    rangeMin: 1,
+    power: 0,
+    rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
     cooldownMax: 3,
@@ -548,11 +548,11 @@ export const SKILLS: Record<string, Skill> = {
   escudo_sagrado: {
     id: 'escudo_sagrado',
     name: 'Escudo Sagrado',
-    description: 'Protege um aliado com uma barreira luminosa por 2 turnos.',
+    description: 'Protege um aliado ou a si mesmo com uma barreira luminosa por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
-    power: 1.4,
-    rangeMin: 1,
+    power: 0,
+    rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
     cooldownMax: 3,
@@ -565,11 +565,11 @@ export const SKILLS: Record<string, Skill> = {
   purificacao: {
     id: 'purificacao',
     name: 'Purificação Sagrada',
-    description: 'Cura um aliado e remove todos os efeitos de veneno, atordoamento e debuffs.',
+    description: 'Cura um aliado ou a si mesmo e remove todos os efeitos de veneno, atordoamento e debuffs.',
     damageType: 'healing',
     category: 'support',
     power: 1.4,
-    rangeMin: 1,
+    rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
     cooldownMax: 3,
@@ -582,11 +582,11 @@ export const SKILLS: Record<string, Skill> = {
   luz_restauradora: {
     id: 'luz_restauradora',
     name: 'Luz Restauradora',
-    description: 'Aplica cura contínua intensa em um aliado.',
+    description: 'Aplica cura contínua intensa em um aliado ou a si mesmo.',
     damageType: 'healing',
     category: 'support',
     power: 2.0,
-    rangeMin: 1,
+    rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
     cooldownMax: 3,
@@ -634,7 +634,7 @@ export const SKILLS: Record<string, Skill> = {
     description: 'Concede escudos para todos os aliados próximos.',
     damageType: 'healing',
     category: 'defense',
-    power: 1.2,
+    power: 0,
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 1,
@@ -1558,7 +1558,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 1,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 100,
@@ -2001,20 +2001,43 @@ export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
 export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
   if (!baseSkill) return baseSkill;
   if (level <= 1) {
-    return { ...baseSkill, level: 1 };
+    const clone = { ...baseSkill, level: 1 };
+    if (
+      (clone.lifestealPercent && clone.lifestealPercent > 0) ||
+      clone.id === 'dreno_de_vida' ||
+      clone.id === 'dreno_de_seiva' ||
+      clone.id === 'sedenta_de_runas'
+    ) {
+      clone.cooldownMax = Math.max(3, clone.cooldownMax);
+    }
+    return clone;
   }
 
   const canonicalBase = (baseSkill.id && SKILLS[baseSkill.id]) ? SKILLS[baseSkill.id] : baseSkill;
   const clone: Skill = JSON.parse(JSON.stringify(canonicalBase));
   clone.level = level;
 
-  // Aumento de escalonamento baixo: +0.2 de poder por nível acima de 1
+  // Aumento de escalonamento baixo: +0.2 de poder por nível acima de 1 (+0.1 para cura de vida máxima)
   if (canonicalBase.power > 0) {
-    clone.power = Math.round((canonicalBase.power + 0.2 * (level - 1)) * 100) / 100;
+    const powerStep = canonicalBase.id === 'resistencia_suprema' ? 0.1 : 0.2;
+    clone.power = Math.round((canonicalBase.power + powerStep * (level - 1)) * 100) / 100;
+    if (canonicalBase.id === 'resistencia_suprema') {
+      clone.description = `Habilidade suprema: Regenera ${Math.round(clone.power * 100)}% da vida máxima instantaneamente.`;
+    }
   }
 
   // Melhorias de recarga (cooldown) NÃO devem ser fornecidas
   clone.cooldownMax = canonicalBase.cooldownMax;
+
+  // Habilidades de roubo de vida (lifesteal) possuem cooldown mínimo de 3
+  if (
+    (clone.lifestealPercent && clone.lifestealPercent > 0) ||
+    clone.id === 'dreno_de_vida' ||
+    clone.id === 'dreno_de_seiva' ||
+    clone.id === 'sedenta_de_runas'
+  ) {
+    clone.cooldownMax = Math.max(3, clone.cooldownMax);
+  }
 
   // Aumento de efeito de status baixo (+5% no valor por nível; nunca altera duração de stun/slow)
   if (clone.statusEffect) {
