@@ -845,3 +845,33 @@ export function rollStageItemDrops(
 export function getItemById(id: string): ItemDefinition | undefined {
   return ITEMS[id];
 }
+
+export interface MonsterDropChance {
+  item: ItemDefinition;
+  chancePercent: number;
+}
+
+/**
+ * Retorna os itens dropados por um monstro específico e a respectiva chance em porcentagem (%).
+ */
+export function getMonsterDropTable(monsterTypeId: string, isBoss = false): MonsterDropChance[] {
+  const monsterItems = Object.values(ITEMS).filter((item) =>
+    item.droppedByMonsterTypeIds.includes(monsterTypeId)
+  );
+
+  if (monsterItems.length === 0) return [];
+
+  const weights: Record<ItemRarity, number> = isBoss
+    ? { common: 20, rare: 45, epic: 25, legendary: 10 }
+    : { common: 60, rare: 26, epic: 11, legendary: 3 };
+
+  const totalWeight = monsterItems.reduce((acc, it) => acc + (weights[it.rarity] || 10), 0);
+
+  return monsterItems
+    .map((item) => {
+      const w = weights[item.rarity] || 10;
+      const chancePercent = Math.round((w / totalWeight) * 1000) / 10;
+      return { item, chancePercent };
+    })
+    .sort((a, b) => b.chancePercent - a.chancePercent);
+}

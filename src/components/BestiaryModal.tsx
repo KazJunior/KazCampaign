@@ -1,16 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { X, BookOpen, Skull, Swords, Shield, Sparkles, Footprints, Crown, Flame, Zap, Hammer } from 'lucide-react';
+import {
+  X,
+  BookOpen,
+  Skull,
+  Swords,
+  Shield,
+  Sparkles,
+  Footprints,
+  Crown,
+  Flame,
+  Zap,
+  Hammer,
+  Package,
+  HardHat,
+  Layers,
+  Gem,
+  Dice5,
+  CheckCircle2,
+} from 'lucide-react';
 import { MONSTER_DEFINITIONS } from '../data/monsters';
 import type { MonsterDefinition } from '../data/monsters';
 import { SKILLS } from '../data/skills';
+import { getMonsterDropTable, RARITY_INFO, CATEGORY_INFO } from '../data/items';
+import type { ItemCategory } from '../types/game';
 
 interface BestiaryModalProps {
   discoveredMonsterIds: string[];
+  discoveredItemIds?: string[];
   onClose: () => void;
 }
 
 export const BestiaryModal: React.FC<BestiaryModalProps> = ({
   discoveredMonsterIds,
+  discoveredItemIds = [],
   onClose,
 }) => {
   // Apenas os monstros já encontrados pelo jogador
@@ -34,6 +56,12 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
     if (filter === 'bosses') return m.isBoss || m.isMiniBoss;
     return true;
   });
+
+  const isBossMonster = Boolean(selectedMonster?.isBoss || selectedMonster?.isMiniBoss);
+  const monsterDrops = selectedMonster
+    ? getMonsterDropTable(selectedMonster.typeId, isBossMonster)
+    : [];
+  const discoveredItemSet = new Set(discoveredItemIds);
 
   return (
     <div
@@ -307,6 +335,96 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                     })}
                   </div>
                 </div>
+
+                {/* Item Drops Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-bold text-[#D4AD65] uppercase tracking-wider flex items-center gap-1.5">
+                      <Package size={14} /> Possíveis Drops de Itens ({monsterDrops.length})
+                    </h4>
+                    <span className="text-[10px] text-[#A7B0C4] flex items-center gap-1">
+                      <Dice5 size={12} className="text-[#D4AD65]" /> Chance de drop ponderada
+                    </span>
+                  </div>
+
+                  {monsterDrops.length === 0 ? (
+                    <div className="p-4 rounded-xl bg-[#10131C] border border-[#343B50] text-center text-xs text-[#A7B0C4]">
+                      Nenhum item catalogado para este monstro.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                      {monsterDrops.map(({ item, chancePercent }) => {
+                        const rarity = RARITY_INFO[item.rarity];
+                        const category = CATEGORY_INFO[item.category];
+                        const isDiscovered = discoveredItemSet.has(item.id);
+
+                        return (
+                          <div
+                            key={item.id}
+                            className={`p-3 rounded-xl border flex flex-col justify-between gap-2.5 transition-all relative overflow-hidden ${rarity.bg} ${rarity.border} hover:border-[#D4AD65]/50 group`}
+                          >
+                            {/* Header: Categoria e Badge de Chance em % */}
+                            <div className="flex items-center justify-between gap-1">
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#10131C]/80 text-[#A7B0C4] border border-[#343B50] flex items-center gap-1">
+                                {getCategoryIcon(item.category, 10)}
+                                {category.label}
+                              </span>
+
+                              <div className="flex items-center gap-1">
+                                {isDiscovered && (
+                                  <span
+                                    className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-0.5"
+                                    title="Item já descoberto no Compêndio"
+                                  >
+                                    <CheckCircle2 size={10} /> Coletado
+                                  </span>
+                                )}
+                                <span
+                                  className="text-[10px] font-black px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1"
+                                  style={{
+                                    backgroundColor: `${rarity.color}25`,
+                                    color: rarity.color,
+                                    border: `1px solid ${rarity.color}60`,
+                                  }}
+                                >
+                                  <Dice5 size={10} />
+                                  {chancePercent}%
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Informações do Item */}
+                            <div>
+                              <h5 className="font-bold text-xs text-[#F3F4F8] leading-tight flex items-center gap-1">
+                                {item.name}
+                              </h5>
+                              <span
+                                className="text-[9px] font-black uppercase tracking-wider mt-0.5 inline-block"
+                                style={{ color: rarity.color }}
+                              >
+                                {rarity.label}
+                              </span>
+                              <p className="text-[10px] text-[#A7B0C4] mt-1 line-clamp-2 leading-relaxed">
+                                {item.description}
+                              </p>
+                            </div>
+
+                            {/* Atributos do Item */}
+                            <div className="flex flex-wrap items-center gap-1.5 pt-1.5 border-t border-white/5 text-[10px]">
+                              {item.stats.hp && <span className="text-[#56E59A] font-bold">+{item.stats.hp} HP</span>}
+                              {item.stats.atk && <span className="text-[#FF5252] font-bold">+{item.stats.atk} ATK</span>}
+                              {item.stats.mag && <span className="text-[#B58AFF] font-bold">+{item.stats.mag} MAG</span>}
+                              {item.stats.def && <span className="text-[#43C878] font-bold">+{item.stats.def} DEF</span>}
+                              {item.stats.res && <span className="text-[#F0B44D] font-bold">+{item.stats.res} RES</span>}
+                              {item.stats.mov && <span className="text-[#4C8DFF] font-bold">+{item.stats.mov} MOV</span>}
+                              {item.stats.range && <span className="text-[#FFB300] font-bold">+{item.stats.range} ALC</span>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -315,6 +433,25 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
     </div>
   );
 };
+
+function getCategoryIcon(category: ItemCategory, size = 12) {
+  switch (category) {
+    case 'helmet':
+      return <HardHat size={size} />;
+    case 'chestplate':
+      return <Shield size={size} />;
+    case 'leggings':
+      return <Layers size={size} />;
+    case 'boots':
+      return <Footprints size={size} />;
+    case 'weapon':
+      return <Swords size={size} />;
+    case 'accessory':
+      return <Gem size={size} />;
+    default:
+      return <Package size={size} />;
+  }
+}
 
 function getAvatarIcon(key: string, size = 20) {
   switch (key) {

@@ -1563,6 +1563,7 @@ export function App() {
         {showBestiary && (
           <BestiaryModal
             discoveredMonsterIds={progress.discoveredMonsterIds || []}
+            discoveredItemIds={progress.discoveredItemIds || []}
             onClose={() => setShowBestiary(false)}
           />
         )}
@@ -1789,6 +1790,7 @@ export function App() {
       {showBestiary && (
         <BestiaryModal
           discoveredMonsterIds={progress.discoveredMonsterIds || []}
+          discoveredItemIds={progress.discoveredItemIds || []}
           onClose={() => setShowBestiary(false)}
         />
       )}
