@@ -141,9 +141,9 @@ export const GENERAL_UPGRADES: Record<string, GeneralUpgradeDefinition> = {
     description: 'Comece cada nova aventura com 1 equipamento bônus sorteado no inventário.',
     maxLevel: 3,
     tiers: [
-      { level: 1, cost: 15000, title: 'Item Comum Inicial', description: 'Inicia a aventura com 1 item Comum aleatório.' },
-      { level: 2, cost: 45000, title: 'Item Raro Inicial', description: 'Inicia a aventura com 1 item Raro aleatório.' },
-      { level: 3, cost: 100000, title: 'Item Épico Inicial', description: 'Inicia a aventura com 1 item Épico aleatório (limite máximo).' },
+      { level: 1, cost: 30000, title: 'Item Comum Inicial', description: 'Inicia a aventura com 1 item Comum aleatório.' },
+      { level: 2, cost: 90000, title: 'Item Raro Inicial', description: 'Inicia a aventura com 1 item Raro aleatório.' },
+      { level: 3, cost: 200000, title: 'Item Épico Inicial', description: 'Inicia a aventura com 1 item Épico aleatório (limite máximo).' },
     ],
   },
   dropRate: {
@@ -154,9 +154,9 @@ export const GENERAL_UPGRADES: Record<string, GeneralUpgradeDefinition> = {
     description: 'Aumenta as chances e o peso de raridade de novos itens ao vencer fases.',
     maxLevel: 3,
     tiers: [
-      { level: 1, cost: 20000, title: 'Sorte do Explorador I', description: '+15% de peso para itens Raros e Épicos nos drops.' },
-      { level: 2, cost: 50000, title: 'Sorte do Explorador II', description: '+30% de peso de raridade e 3 escolhas garantidas.' },
-      { level: 3, cost: 90000, title: 'Mestre Saqueador', description: '+50% de peso de raridade, ampliando drops Lendários.' },
+      { level: 1, cost: 40000, title: 'Sorte do Explorador I', description: '+15% de peso para itens Raros e Épicos nos drops.' },
+      { level: 2, cost: 100000, title: 'Sorte do Explorador II', description: '+30% de peso de raridade e 3 escolhas garantidas.' },
+      { level: 3, cost: 180000, title: 'Mestre Saqueador', description: '+50% de peso de raridade, ampliando drops Lendários.' },
     ],
   },
   goldBoost: {
@@ -167,9 +167,9 @@ export const GENERAL_UPGRADES: Record<string, GeneralUpgradeDefinition> = {
     description: 'Amplia permanentemente todo o ouro obtido ao vencer combates.',
     maxLevel: 3,
     tiers: [
-      { level: 1, cost: 20000, title: 'Tributo Próspero I', description: '+15% de ouro recebido em todas as vitórias.' },
-      { level: 2, cost: 50000, title: 'Tributo Próspero II', description: '+30% de ouro recebido em todas as vitórias.' },
-      { level: 3, cost: 90000, title: 'Mina do Abismo', description: '+50% de ouro recebido em todas as vitórias.' },
+      { level: 1, cost: 40000, title: 'Tributo Próspero I', description: '+15% de ouro recebido em todas as vitórias.' },
+      { level: 2, cost: 100000, title: 'Tributo Próspero II', description: '+30% de ouro recebido em todas as vitórias.' },
+      { level: 3, cost: 180000, title: 'Mina do Abismo', description: '+50% de ouro recebido em todas as vitórias.' },
     ],
   },
   globalHp: {
@@ -180,22 +180,9 @@ export const GENERAL_UPGRADES: Record<string, GeneralUpgradeDefinition> = {
     description: 'Concede vida máxima adicional para todos os heróis da sua expedição.',
     maxLevel: 3,
     tiers: [
-      { level: 1, cost: 15000, title: 'Vitalidade I', description: '+15 HP Máximo para todos os heróis aliados.' },
-      { level: 2, cost: 40000, title: 'Vitalidade II', description: '+30 HP Máximo para todos os heróis aliados.' },
-      { level: 3, cost: 80000, title: 'Coração de Titã', description: '+50 HP Máximo para todos os heróis aliados.' },
-    ],
-  },
-  xpBoost: {
-    id: 'xpBoost',
-    name: 'Erudição de Batalha',
-    icon: 'BookOpen',
-    color: '#B58AFF',
-    description: 'Acelera os pontos de experiência ganhos pelos heróis após cada batalha.',
-    maxLevel: 3,
-    tiers: [
-      { level: 1, cost: 15000, title: 'Treinamento I', description: '+15% de XP recebida pela equipe após a vitória.' },
-      { level: 2, cost: 45000, title: 'Treinamento II', description: '+30% de XP recebida pela equipe após a vitória.' },
-      { level: 3, cost: 85000, title: 'Maestria Tática', description: '+50% de XP recebida pela equipe após a vitória.' },
+      { level: 1, cost: 30000, title: 'Vitalidade I', description: '+15 HP Máximo para todos os heróis aliados.' },
+      { level: 2, cost: 80000, title: 'Vitalidade II', description: '+30 HP Máximo para todos os heróis aliados.' },
+      { level: 3, cost: 160000, title: 'Coração de Titã', description: '+50 HP Máximo para todos os heróis aliados.' },
     ],
   },
 };
@@ -257,12 +244,6 @@ export function getGeneralGoldMultiplier(level = 0): number {
   return 0;
 }
 
-export function getGeneralXpMultiplier(level = 0): number {
-  if (level === 1) return 0.15;
-  if (level === 2) return 0.30;
-  if (level >= 3) return 0.50;
-  return 0;
-}
 
 export function getGeneralDropBonus(level = 0): number {
   return Math.min(3, Math.max(0, level));

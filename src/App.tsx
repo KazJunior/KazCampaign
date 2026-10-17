@@ -26,7 +26,6 @@ import {
   getClassCumulativeBonus,
   getGeneralBonusHp,
   getGeneralGoldMultiplier,
-  getGeneralXpMultiplier,
   getGeneralDropBonus,
   CLASS_UPGRADE_COSTS,
   MAX_CLASS_UPGRADE_LEVEL,
@@ -1713,8 +1712,7 @@ export function App() {
     soundManager.playVictory();
     setPhase('victory');
 
-    const xpMultiplier = 1 + getGeneralXpMultiplier(progress.generalUpgrades?.xpBoost || 0);
-    const xpReward = Math.round(currentLevel.rewards.xpPerUnit * xpMultiplier);
+    const xpReward = Math.round(currentLevel.rewards.xpPerUnit);
 
     const goldMultiplier = 1 + getGeneralGoldMultiplier(progress.generalUpgrades?.goldBoost || 0);
     const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);

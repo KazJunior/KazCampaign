@@ -26,7 +26,6 @@ import {
   Star,
   Search,
   Package,
-  BookOpen,
   ArrowRight,
 } from 'lucide-react';
 
@@ -490,7 +489,6 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                               {upgrade.id === 'dropRate' && <Sparkles size={20} />}
                               {upgrade.id === 'goldBoost' && <Coins size={20} />}
                               {upgrade.id === 'globalHp' && <Heart size={20} />}
-                              {upgrade.id === 'xpBoost' && <BookOpen size={20} />}
                             </div>
                             <div>
                               <h3 className="font-black text-sm text-[#F3F4F8]">{upgrade.name}</h3>
