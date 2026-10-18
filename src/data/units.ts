@@ -413,27 +413,27 @@ export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: strin
 
 export function sanitizeUnlockedClasses(
   rawUnlocked: string[] | undefined,
-  maxLevelCompleted: number,
+  maxLevelCompleted: number = 0,
   completedLevels: number[] = []
 ): string[] {
   const allowed = new Set<string>(INITIAL_CLASSES);
+
+  // 1. Preserve any valid class the user has already unlocked (meta-progression is permanent)
   if (Array.isArray(rawUnlocked)) {
-    if (rawUnlocked.includes('carrasco_vazio')) {
-      allowed.add('carrasco_vazio');
+    for (const c of rawUnlocked) {
+      if (typeof c === 'string' && CLASS_DEFINITIONS[c]) {
+        allowed.add(c);
+      }
     }
-    Object.keys(PURCHASABLE_CLASSES).forEach((pKey) => {
-      if (rawUnlocked.includes(pKey)) {
-        allowed.add(pKey);
-      }
-    });
-    Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
-      if (maxLevelCompleted >= cond.requiredLevel || completedLevels.includes(cond.requiredLevel)) {
-        if (rawUnlocked.includes(cName)) {
-          allowed.add(cName);
-        }
-      }
-    });
   }
+
+  // 2. Automatically grant any boss unlocks earned by level progression or completed levels
+  Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
+    if (maxLevelCompleted >= cond.requiredLevel || completedLevels.includes(cond.requiredLevel)) {
+      allowed.add(cName);
+    }
+  });
+
   return Array.from(allowed);
 }
 

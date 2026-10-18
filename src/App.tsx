@@ -141,9 +141,14 @@ export function App() {
         const maxCompleted = getMaxCompletedLevel({
           activeAdventure: cloudP.activeAdventure,
           adventureHistory: cloudP.adventureHistory,
+          leaderboardHighestLevel: cloudP.highestLevel || progress.highScore,
         });
 
-        const safeUnlocked = sanitizeUnlockedClasses(cloudP.unlockedClasses, maxCompleted);
+        // Merge local unlocked classes and cloud unlocked classes so no class is lost
+        const combinedUnlocked = Array.from(
+          new Set([...(progress.unlockedClasses || []), ...(cloudP.unlockedClasses || [])])
+        );
+        const safeUnlocked = sanitizeUnlockedClasses(combinedUnlocked, maxCompleted);
         const safeParty = sanitizePartyClasses(cloudP.selectedPartyClasses, safeUnlocked);
 
         const merged: PlayerProgress = {

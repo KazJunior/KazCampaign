@@ -78,9 +78,10 @@ export function loadPlayerProgress(): PlayerProgress {
       activeAdventure: parsed.activeAdventure,
       adventureHistory,
       completedLevels,
+      leaderboardHighestLevel: parsed.highScore,
     });
 
-    // Sanitize unlocked classes: user can only have classes for stages they legitimately completed
+    // Sanitize unlocked classes: user retains all valid unlocked classes and gets boss classes
     let unlockedClasses = sanitizeUnlockedClasses(parsed.unlockedClasses, maxCompleted, completedLevels);
 
     // Retroactively unlock any classes earned by completed boss/mini-boss levels

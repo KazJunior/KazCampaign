@@ -11,6 +11,24 @@ const CLASS_UNLOCK_LEVELS: Record<string, number> = {
   berserker: 30,
 };
 
+const ALL_VALID_CLASSES = new Set<string>([
+  'guerreiro',
+  'arqueiro',
+  'mago',
+  'curandeiro',
+  'assassino',
+  'cavaleiro_arcano',
+  'necromante',
+  'engenheiro',
+  'mago_runico',
+  'berserker',
+  'carrasco_vazio',
+  'paladino',
+  'lanceiro',
+  'bardo',
+  'mago_gelo',
+]);
+
 function calculateMaxCompleted(
   leaderboardHighest: number,
   activeAdv: any,
@@ -24,23 +42,56 @@ function calculateMaxCompleted(
     for (const rec of advHistory) {
       if (rec.result === 'victory') {
         max = Math.max(max, 50);
-      } else if (typeof rec.farthestLevel === 'number' && rec.farthestLevel > 1) {
-        max = Math.max(max, rec.farthestLevel - 1);
+      } else if (typeof rec.farthestLevel === 'number' && rec.farthestLevel > 0) {
+        max = Math.max(max, rec.farthestLevel);
       }
     }
   }
   return max;
 }
 
-function sanitizeUnlocked(rawList: unknown, maxCompleted: number): string[] {
+function resolveUnlockedClasses(
+  existingDbClasses: unknown,
+  incomingClasses: unknown,
+  maxCompleted: number,
+  leaderboardParty?: unknown
+): string[] {
   const allowed = new Set<string>(INITIAL_CLASSES);
-  if (Array.isArray(rawList)) {
-    for (const [cName, reqLvl] of Object.entries(CLASS_UNLOCK_LEVELS)) {
-      if (maxCompleted >= reqLvl && rawList.includes(cName)) {
-        allowed.add(cName);
+
+  // 1. Preserve any valid class previously unlocked in the database
+  if (Array.isArray(existingDbClasses)) {
+    for (const c of existingDbClasses) {
+      if (typeof c === 'string' && ALL_VALID_CLASSES.has(c)) {
+        allowed.add(c);
       }
     }
   }
+
+  // 2. Preserve any valid class sent by the client (purchases, secret unlocks)
+  if (Array.isArray(incomingClasses)) {
+    for (const c of incomingClasses) {
+      if (typeof c === 'string' && ALL_VALID_CLASSES.has(c)) {
+        allowed.add(c);
+      }
+    }
+  }
+
+  // 3. Automatically grant any boss unlocks earned by ranking or max level completed
+  for (const [cName, reqLvl] of Object.entries(CLASS_UNLOCK_LEVELS)) {
+    if (maxCompleted >= reqLvl) {
+      allowed.add(cName);
+    }
+  }
+
+  // 4. Preserve any valid class found in leaderboard party
+  if (Array.isArray(leaderboardParty)) {
+    for (const c of leaderboardParty) {
+      if (typeof c === 'string' && ALL_VALID_CLASSES.has(c)) {
+        allowed.add(c);
+      }
+    }
+  }
+
   return Array.from(allowed);
 }
 
@@ -89,11 +140,24 @@ export async function GET(req: Request): Promise<Response> {
       combat_speed: string;
     };
 
-    const lbRows = await sql`SELECT highest_level FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
+    const lbRows = await sql`SELECT highest_level, party FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
     const lbHighest = (lbRows[0]?.highest_level as number) || 0;
+    const lbParty = lbRows[0]?.party;
+
     const maxCompleted = calculateMaxCompleted(lbHighest, row.active_adventure, row.adventure_history);
-    const safeUnlocked = sanitizeUnlocked(row.unlocked_classes, maxCompleted);
+    const safeUnlocked = resolveUnlockedClasses(row.unlocked_classes, null, maxCompleted, lbParty);
     const safeParty = sanitizeParty(row.selected_party_classes, safeUnlocked);
+
+    // If new classes were granted that weren't in row.unlocked_classes, persist them to DB
+    const prevCount = Array.isArray(row.unlocked_classes) ? row.unlocked_classes.length : 0;
+    if (safeUnlocked.length > prevCount) {
+      const unlockedJson = JSON.stringify(safeUnlocked);
+      await sql`
+        UPDATE player_progress 
+        SET unlocked_classes = ${unlockedJson}::jsonb, updated_at = NOW() 
+        WHERE user_id = ${auth.uid}
+      `;
+    }
 
     return json({
       progress: {
@@ -105,6 +169,7 @@ export async function GET(req: Request): Promise<Response> {
         activeAdventure: row.active_adventure,
         adventureHistory: row.adventure_history,
         combatSpeed: row.combat_speed || 'normal',
+        highestLevel: lbHighest,
       },
     });
   } catch (err) {
@@ -126,15 +191,21 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     const sql = getSql();
-    const lbRows = await sql`SELECT highest_level FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
+    const existingRows = await sql`
+      SELECT unlocked_classes FROM player_progress WHERE user_id = ${auth.uid} LIMIT 1
+    `;
+    const existingDbUnlocked = existingRows[0]?.unlocked_classes;
+
+    const lbRows = await sql`SELECT highest_level, party FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
     const lbHighest = (lbRows[0]?.highest_level as number) || 0;
+    const lbParty = lbRows[0]?.party;
 
     const gold = typeof body.gold === 'number' ? body.gold : 0;
     const activeAdventure = body.activeAdventure && typeof body.activeAdventure === 'object' ? body.activeAdventure : null;
     const adventureHistory = Array.isArray(body.adventureHistory) ? body.adventureHistory : [];
 
     const maxCompleted = calculateMaxCompleted(lbHighest, activeAdventure, adventureHistory);
-    const safeUnlocked = sanitizeUnlocked(body.unlockedClasses, maxCompleted);
+    const safeUnlocked = resolveUnlockedClasses(existingDbUnlocked, body.unlockedClasses, maxCompleted, lbParty);
     const safeParty = sanitizeParty(body.selectedPartyClasses, safeUnlocked);
 
     if (activeAdventure && Array.isArray(activeAdventure.partyClasses)) {
@@ -179,3 +250,4 @@ export async function POST(req: Request): Promise<Response> {
     return json({ error: 'Erro ao salvar progresso' }, 500);
   }
 }
+
