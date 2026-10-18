@@ -72,11 +72,22 @@ export class AnimationEngine {
       const elapsed = now - task.startTime;
       const rawProgress = Math.min(1, elapsed / task.duration);
 
-      task.onUpdate(rawProgress);
+      try {
+        task.onUpdate(rawProgress);
 
-      if (rawProgress >= 1) {
+        if (rawProgress >= 1) {
+          task.isComplete = true;
+          task.onComplete();
+          toRemove.push(task.id);
+        }
+      } catch (err) {
+        console.error(`Error in animation task ${task.id}:`, err);
         task.isComplete = true;
-        task.onComplete();
+        try {
+          task.onComplete();
+        } catch (completeErr) {
+          console.error(`Error in onComplete for animation task ${task.id}:`, completeErr);
+        }
         toRemove.push(task.id);
       }
     }
@@ -575,7 +586,7 @@ export class AnimationEngine {
           halo.scale.setScalar(1 + progress * 0.8);
           haloMat.opacity = Math.max(0, 0.9 * (1 - progress));
 
-          if (targetObj) {
+          if (targetObj?.scale && typeof targetObj.scale.setScalar === 'function') {
             const pulse = 1 + Math.sin(progress * Math.PI) * 0.12;
             targetObj.scale.setScalar(pulse);
           }
@@ -587,7 +598,9 @@ export class AnimationEngine {
           pillarMat.dispose();
           haloGeo.dispose();
           haloMat.dispose();
-          if (targetObj) targetObj.scale.setScalar(1);
+          if (targetObj?.scale && typeof targetObj.scale.setScalar === 'function') {
+            targetObj.scale.setScalar(1);
+          }
           resolve();
         },
       };
@@ -968,6 +981,10 @@ export class AnimationEngine {
     duration: number = 320
   ): Promise<void> {
     return new Promise((resolve) => {
+      if (!targetObj || !targetObj.position) {
+        resolve();
+        return;
+      }
       const origX = targetObj.position.x;
       const origZ = targetObj.position.z;
       const intensity = damageType === 'physical' ? 0.14 : 0.09;
@@ -979,40 +996,48 @@ export class AnimationEngine {
         duration,
         isComplete: false,
         onUpdate: (progress) => {
-          if (progress < 0.65) {
-            const decay = 1 - progress / 0.65;
-            targetObj.position.x = origX + Math.sin(progress * 35) * intensity * decay;
-            targetObj.position.z = origZ + Math.cos(progress * 25) * intensity * decay * 0.5;
-          } else {
-            targetObj.position.x = origX;
-            targetObj.position.z = origZ;
+          if (targetObj.position) {
+            if (progress < 0.65) {
+              const decay = 1 - progress / 0.65;
+              targetObj.position.x = origX + Math.sin(progress * 35) * intensity * decay;
+              targetObj.position.z = origZ + Math.cos(progress * 25) * intensity * decay * 0.5;
+            } else {
+              targetObj.position.x = origX;
+              targetObj.position.z = origZ;
+            }
           }
 
           // High-contrast emissive flash
-          if (progress < 0.35) {
-            const flashVal = (1 - progress / 0.35) * 0.9;
-            targetObj.traverse((child) => {
-              if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-                child.material.emissive.setHex(damageType === 'healing' ? 0x22c55e : 0xffffff);
-                child.material.emissiveIntensity = flashVal;
-              }
-            });
-          } else {
+          if (typeof targetObj.traverse === 'function') {
+            if (progress < 0.35) {
+              const flashVal = (1 - progress / 0.35) * 0.9;
+              targetObj.traverse((child) => {
+                if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+                  child.material.emissive.setHex(damageType === 'healing' ? 0x22c55e : 0xffffff);
+                  child.material.emissiveIntensity = flashVal;
+                }
+              });
+            } else {
+              targetObj.traverse((child) => {
+                if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+                  child.material.emissiveIntensity = 0;
+                }
+              });
+            }
+          }
+        },
+        onComplete: () => {
+          if (targetObj.position) {
+            targetObj.position.x = origX;
+            targetObj.position.z = origZ;
+          }
+          if (typeof targetObj.traverse === 'function') {
             targetObj.traverse((child) => {
               if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
                 child.material.emissiveIntensity = 0;
               }
             });
           }
-        },
-        onComplete: () => {
-          targetObj.position.x = origX;
-          targetObj.position.z = origZ;
-          targetObj.traverse((child) => {
-            if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
-              child.material.emissiveIntensity = 0;
-            }
-          });
           resolve();
         },
       };
@@ -1029,6 +1054,10 @@ export class AnimationEngine {
     duration: number = 750
   ): Promise<void> {
     return new Promise((resolve) => {
+      if (!unitObj || !unitObj.position) {
+        resolve();
+        return;
+      }
       const startY = unitObj.position.y;
 
       const task: AnimationTask = {
@@ -1039,18 +1068,26 @@ export class AnimationEngine {
         isComplete: false,
         onUpdate: (progress) => {
           const t = easeInOutCubic(progress);
-          unitObj.scale.setScalar(Math.max(0.01, 1 - t * 0.9));
-          unitObj.position.y = startY - t * 0.45;
-          unitObj.rotation.z = t * 0.4;
+          if (unitObj.scale && typeof unitObj.scale.setScalar === 'function') {
+            unitObj.scale.setScalar(Math.max(0.01, 1 - t * 0.9));
+          }
+          if (unitObj.position) {
+            unitObj.position.y = startY - t * 0.45;
+          }
+          if (unitObj.rotation) {
+            unitObj.rotation.z = t * 0.4;
+          }
 
-          unitObj.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-              if (child.material instanceof THREE.MeshStandardMaterial || child.material instanceof THREE.MeshBasicMaterial) {
-                child.material.transparent = true;
-                child.material.opacity = 1 - t;
+          if (typeof unitObj.traverse === 'function') {
+            unitObj.traverse((child) => {
+              if (child instanceof THREE.Mesh) {
+                if (child.material instanceof THREE.MeshStandardMaterial || child.material instanceof THREE.MeshBasicMaterial) {
+                  child.material.transparent = true;
+                  child.material.opacity = 1 - t;
+                }
               }
-            }
-          });
+            });
+          }
         },
         onComplete: () => {
           unitObj.visible = false;

@@ -501,22 +501,34 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const engine = animEngineRef.current;
       const attackerObj = getUnitObj(attackerId);
       const isPedestal = targetId === 'pedestal';
-      const targetObj = isPedestal
-        ? ({ position: new THREE.Vector3(0.5, 0.3, 0.5), rotation: new THREE.Euler() } as unknown as THREE.Object3D)
-        : targetPointOverride
-        ? ({ position: new THREE.Vector3(targetPointOverride.x + 0.5, 0.35, targetPointOverride.y + 0.5), rotation: new THREE.Euler() } as unknown as THREE.Object3D)
-        : getUnitObj(targetId);
-      if (!engine || !attackerObj || !targetObj) return;
 
-      const targetUnit = isPedestal
-        ? ({ id: 'pedestal', name: 'Pedestal Ancestral', x: 0, y: 0, faction: 'enemy' as const } as Unit)
-        : targetPointOverride
-        ? ({ id: targetId, name: 'Área Alvo', x: targetPointOverride.x, y: targetPointOverride.y, faction: 'enemy' as const } as Unit)
-        : units.find((u) => u.id === targetId);
+      // 1. Resolve Target Unit (prioritize existing unit from battle units)
+      let targetUnit = units.find((u) => u.id === targetId);
+      if (isPedestal) {
+        targetUnit = { id: 'pedestal', name: 'Pedestal Ancestral', x: 0, y: 0, faction: 'enemy' as const } as Unit;
+      } else if (!targetUnit && targetPointOverride) {
+        targetUnit = { id: targetId || 'ground', name: 'Área Alvo', x: targetPointOverride.x, y: targetPointOverride.y, faction: 'enemy' as const } as Unit;
+      }
+
       const attackerUnit = units.find((u) => u.id === attackerId);
-      if (!targetUnit || !attackerUnit) return;
+      if (!engine || !attackerObj || !targetUnit || !attackerUnit) return;
+
+      // 2. Resolve Target 3D Object (prioritize actual unit miniature mesh)
+      let targetObj: THREE.Object3D | undefined = isPedestal
+        ? (sceneRef.current?.getObjectByName('secretPedestalProp') || undefined)
+        : getUnitObj(targetId);
+
+      if (!targetObj) {
+        const fallbackGroup = new THREE.Group();
+        const fx = targetPointOverride ? targetPointOverride.x : targetUnit.x;
+        const fy = targetPointOverride ? targetPointOverride.y : targetUnit.y;
+        fallbackGroup.position.set(fx + 0.5, 0.35, fy + 0.5);
+        targetObj = fallbackGroup;
+      }
 
       const aoeRad = skillAoeRadius ?? skill?.aoeRadius ?? 0;
+      const targetAnimX = aoeRad > 0 && targetPointOverride ? targetPointOverride.x : targetUnit.x;
+      const targetAnimY = aoeRad > 0 && targetPointOverride ? targetPointOverride.y : targetUnit.y;
       const skillName = (skill?.name || '').toLowerCase();
       const skillId = (skill?.id || '').toLowerCase();
       const className = (attackerUnit.className || '').toLowerCase();
@@ -586,43 +598,43 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       // Execute targeted animation
       if (isHoly) {
         if (targetObj) {
-          await engine.playHolyLightAnimation(targetObj, targetUnit.x, targetUnit.y, aoeRad, 650);
+          await engine.playHolyLightAnimation(targetObj, targetAnimX, targetAnimY, aoeRad, 650);
         }
       } else if (isFire) {
         await engine.playFireballAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           isMeteor, aoeRad, 650
         );
       } else if (isIce) {
         await engine.playIceShardAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           aoeRad > 0, aoeRad, 580
         );
       } else if (isLightning) {
         await engine.playLightningAnimation(
           attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           380
         );
       } else if (isVoid) {
         await engine.playVoidDrainAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           720
         );
       } else if (isCannon) {
         await engine.playCannonBombAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           aoeRad, 620
         );
       } else if (isArrow) {
         const isVolley = aoeRad > 0 || skillId.includes('triplo') || skillName.includes('triplo');
         await engine.playArrowAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           isVolley, 460
         );
       } else if (isWhirlwind) {
@@ -633,13 +645,13 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       } else if (isShadowDash) {
         await engine.playShadowDashAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           520
         );
       } else if (isHeavySlam) {
         await engine.playHeavySlamAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           aoeRad, 520
         );
       } else if (damageType === 'magical') {
@@ -651,13 +663,13 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
             : 0x06b6d4;
         await engine.playMagicAttackAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           color, 650
         );
       } else {
         await engine.playPhysicalAttackAnimation(
           attackerObj, attackerUnit.x, attackerUnit.y,
-          targetUnit.x, targetUnit.y,
+          targetAnimX, targetAnimY,
           450
         );
       }
@@ -670,7 +682,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       // AoE expanding ring if applicable
       if (aoeRad > 0 && !isHoly) {
         const aoeColor = isFire ? 0xff4500 : isIce ? 0x38bdf8 : isLightning ? 0x00f0ff : 0xf59e0b;
-        await engine.playAoEAnimation(targetUnit.x, targetUnit.y, aoeRad, aoeColor, 450);
+        await engine.playAoEAnimation(targetAnimX, targetAnimY, aoeRad, aoeColor, 450);
       }
     },
 
