@@ -80,7 +80,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.statusEffect.type === 'invisible' && `👁️ Invisibilidade (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'stun' && `⚡ Atordoamento (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'poison' && `☠️ Veneno (${preview.skill.statusEffect.duration}T)`}
-              {preview.skill.statusEffect.type === 'slow' && `👣 Lentidão (${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.statusEffect.value || 1} Mov, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.statusEffect.value}% (${preview.skill.statusEffect.duration}T)`}
             </span>
           </div>

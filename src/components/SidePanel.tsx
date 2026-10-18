@@ -15,6 +15,10 @@ import {
   Hammer,
   Skull,
   Crown,
+  Sun,
+  Crosshair,
+  Music,
+  Snowflake,
 } from 'lucide-react';
 
 interface SidePanelProps {
@@ -63,7 +67,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const activeShield = selectedUnit.statusEffects?.find((e) => e.type === 'shield' && e.value > 0);
   const activeBuffAtk = selectedUnit.statusEffects?.find((e) => e.type === 'buff_atk' && e.value > 0);
   const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
-  const isSlowed = selectedUnit.statusEffects?.some((e) => e.type === 'slow' && e.duration > 0);
+  const slowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
+  const isSlowed = !!slowEffect;
+  const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
+  const effectiveMov = isStunned ? 0 : isSlowed ? Math.max(1, selectedUnit.mov - slowPenalty) : selectedUnit.mov;
   const isPoisoned = selectedUnit.statusEffects?.some((e) => e.type === 'poison' && e.duration > 0);
   const isStealthed = selectedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
   const isDefDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
@@ -181,7 +188,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               )}
               {isSlowed && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#60A5FA]/20 border border-[#60A5FA]/40 text-[#60A5FA] flex items-center gap-1">
-                  👣 Lentidão (-1 Mov)
+                  👣 Lentidão (-{slowPenalty} Mov, {slowEffect?.duration}T)
                 </span>
               )}
               {activeShield && (
@@ -246,7 +253,17 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             </div>
             <div>
               <div className="text-[10px] text-[#A7B0C4]">Movimento</div>
-              <div className="font-black text-[#F3F4F8] text-sm">{selectedUnit.mov} casas</div>
+              {isStunned ? (
+                <div className="font-black text-[#FACC15] text-sm flex items-center gap-1">
+                  0 casas <span className="text-[10px] font-normal text-[#FACC15]/80">(Atordoado)</span>
+                </div>
+              ) : isSlowed ? (
+                <div className="font-black text-[#60A5FA] text-sm flex items-center gap-1">
+                  {effectiveMov} casas <span className="text-[10px] font-normal text-[#60A5FA]/80">(-{slowPenalty})</span>
+                </div>
+              ) : (
+                <div className="font-black text-[#F3F4F8] text-sm">{selectedUnit.mov} casas</div>
+              )}
             </div>
           </div>
 
@@ -298,6 +315,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({
       <div className="mt-4 pt-3 border-t border-[#343B50] space-y-2">
         {isAlly && canAct ? (
           <div className="space-y-2">
+            {isStunned && (
+              <div className="p-2 rounded-xl bg-[#FACC15]/10 border border-[#FACC15]/30 text-[11px] text-[#FACC15] flex items-center gap-2">
+                <Zap size={14} className="shrink-0 text-[#FACC15]" />
+                <span>Unidade atordoada! Pressione Esperar (T) ou passe o turno.</span>
+              </div>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <button
                 disabled={selectedUnit.hasMoved || isStunned}
@@ -376,6 +399,14 @@ function getUnitAvatar(key: string, size = 16) {
       return <Skull size={size} />;
     case 'void_executioner':
       return <Swords size={size} />;
+    case 'paladin':
+      return <Sun size={size} />;
+    case 'lancer':
+      return <Crosshair size={size} />;
+    case 'bard':
+      return <Music size={size} />;
+    case 'ice_mage':
+      return <Snowflake size={size} />;
     default:
       return <Sparkles size={size} />;
   }

@@ -1,17 +1,43 @@
 import React, { useState } from 'react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
-import { Shield, Swords, Wand2, HeartPulse, Footprints, Target, Check, Play, Sparkles, Skull, Wrench, BookOpen, Flame, HelpCircle } from 'lucide-react';
+import {
+  Shield,
+  Swords,
+  HeartPulse,
+  Footprints,
+  Target,
+  Check,
+  Play,
+  Sparkles,
+  Skull,
+  Wrench,
+  BookOpen,
+  Flame,
+  HelpCircle,
+  Coins,
+  Music,
+  Snowflake,
+  Sun,
+  Crosshair,
+  X,
+} from 'lucide-react';
 
 interface PartySelectionModalProps {
   initialSelected: string[];
   unlockedClasses: string[];
+  playerGold?: number;
+  onBuyClass?: (className: string, cost: number) => void;
   onConfirmParty: (selectedClasses: string[]) => void;
+  onClose?: () => void;
 }
 
 export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
   initialSelected,
   unlockedClasses,
+  playerGold = 0,
+  onBuyClass,
   onConfirmParty,
+  onClose,
 }) => {
   const [selected, setSelected] = useState<string[]>(
     initialSelected.length === 4
@@ -38,22 +64,37 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-6 max-w-5xl w-full shadow-2xl text-[#F3F4F8] space-y-5 max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-6 max-w-5xl w-full shadow-2xl text-[#F3F4F8] space-y-5 max-h-[90vh] overflow-y-auto relative">
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-5 right-5 p-2 rounded-xl bg-[#10131C] border border-[#343B50] text-[#A7B0C4] hover:text-white hover:border-[#D4AD65] transition-all cursor-pointer"
+            title="Fechar Seleção"
+          >
+            <X size={20} />
+          </button>
+        )}
+
         {/* Header */}
         <div className="text-center space-y-1">
           <div className="inline-flex items-center gap-2 bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
-            <Sparkles size={14} /> Seleção da Equipe de Heróis
+            <Sparkles size={14} /> Seleção da Equipe de Heróis & Recrutamento
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#F3F4F8]">
             Escolha 4 Heróis para a Campanha
           </h2>
           <p className="text-xs text-[#A7B0C4]">
-            Monte seu grupo tático de 4 classes entre as {unlockedClasses.length} opções disponíveis.
+            Monte seu grupo tático ou recrute novos heróis lendários por 100.000 de Ouro cada!
           </p>
         </div>
 
-        {/* Counter Badge */}
+        {/* Counter & Gold Badges */}
         <div className="flex justify-center items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#10131C] border border-[#F0B44D]/50 text-[#F0B44D] font-black text-xs sm:text-sm shadow-inner">
+            <Coins size={16} />
+            <span>Ouro: {playerGold.toLocaleString('pt-BR')}</span>
+          </div>
+
           <span
             className={`px-4 py-1.5 rounded-full font-bold text-xs sm:text-sm border flex items-center gap-2 ${
               isComplete
@@ -63,7 +104,8 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
           >
             <Shield size={16} /> Equipe: {selected.length} / 4 Selecionados
           </span>
-          <span className="px-3 py-1 rounded-full font-bold text-xs bg-[#10131C] border border-[#343B50] text-[#D4AD65]">
+
+          <span className="px-3 py-1.5 rounded-full font-bold text-xs bg-[#10131C] border border-[#343B50] text-[#D4AD65]">
             {unlockedClasses.length} de {allClasses.length} Classes Desbloqueadas
           </span>
         </div>
@@ -76,6 +118,9 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             const isSelected = selected.includes(cKey);
             const unlockCondition = CLASS_UNLOCK_CONDITIONS[cKey];
             const isSecret = !!classDef.isSecret;
+            const goldCost = classDef.goldCost;
+            const isPurchasable = typeof goldCost === 'number';
+            const canAfford = isPurchasable && playerGold >= goldCost;
 
             return (
               <div
@@ -85,6 +130,8 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   !isUnlocked
                     ? isSecret
                       ? 'bg-[#120D1D]/90 border-[#7B2CBF]/40 opacity-75 cursor-not-allowed shadow-inner shadow-[#7B2CBF]/10'
+                      : isPurchasable
+                      ? 'bg-[#161B26]/95 border-[#F0B44D]/40 hover:border-[#F0B44D] shadow-sm shadow-[#F0B44D]/10'
                       : 'bg-[#0B0D13]/90 border-[#343B50]/50 opacity-60 cursor-not-allowed'
                     : isSelected
                     ? isSecret
@@ -97,7 +144,11 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
               >
                 {/* Selected indicator checkmark */}
                 {isSelected && (
-                  <div className={`absolute top-3 right-3 text-white p-1 rounded-full shadow ${isSecret ? 'bg-[#9D4EDD]' : 'bg-[#4C8DFF]'}`}>
+                  <div
+                    className={`absolute top-3 right-3 text-white p-1 rounded-full shadow ${
+                      isSecret ? 'bg-[#9D4EDD]' : 'bg-[#4C8DFF]'
+                    }`}
+                  >
                     <Check size={14} />
                   </div>
                 )}
@@ -108,10 +159,12 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                     className={`absolute top-3 right-3 px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1 ${
                       isSecret
                         ? 'bg-[#7B2CBF]/30 border border-[#9D4EDD]/60 text-[#C77DFF]'
+                        : isPurchasable
+                        ? 'bg-[#F0B44D]/20 border border-[#F0B44D]/60 text-[#F0B44D]'
                         : 'bg-[#E65353]/20 border border-[#E65353]/50 text-[#E65353]'
                     }`}
                   >
-                    {isSecret ? 'Oculta' : 'Bloqueada'}
+                    {isSecret ? 'Oculta' : isPurchasable ? '100.000 🪙' : 'Bloqueada'}
                   </div>
                 )}
 
@@ -126,7 +179,13 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 ${
-                        !isUnlocked ? (isSecret ? 'bg-[#3C096C]/80 text-[#C77DFF]' : 'grayscale brightness-75') : ''
+                        !isUnlocked
+                          ? isSecret
+                            ? 'bg-[#3C096C]/80 text-[#C77DFF]'
+                            : isPurchasable
+                            ? 'brightness-90'
+                            : 'grayscale brightness-75'
+                          : ''
                       }`}
                       style={{ backgroundColor: !isUnlocked && isSecret ? undefined : classDef.color }}
                     >
@@ -136,7 +195,11 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                       <h3 className="font-bold text-sm text-[#F3F4F8]">
                         {!isUnlocked && isSecret ? '??? — Oculta' : classDef.name}
                       </h3>
-                      <span className={`text-[10px] font-bold ${isSecret ? 'text-[#C77DFF]' : 'text-[#D4AD65]'}`}>
+                      <span
+                        className={`text-[10px] font-bold ${
+                          isSecret ? 'text-[#C77DFF]' : isPurchasable ? 'text-[#F0B44D]' : 'text-[#D4AD65]'
+                        }`}
+                      >
                         {!isUnlocked && isSecret ? 'Classe Secreta' : classDef.role}
                       </span>
                     </div>
@@ -149,20 +212,42 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   </p>
                 </div>
 
-                {/* Unlock condition hint if locked */}
+                {/* Unlock condition hint or purchase button */}
                 {!isUnlocked && (
-                  <div
-                    className={`mt-3 p-2 rounded-xl text-[10px] leading-tight ${
-                      isSecret
-                        ? 'bg-[#240046]/40 border border-[#7B2CBF]/40 text-[#E0AAFF]'
-                        : 'bg-[#10131C] border border-[#E65353]/30 text-[#F87171]'
-                    }`}
-                  >
-                    {isSecret
-                      ? '🔮 Condição Secreta: Decifre o pergaminho oculto no Trono do Abismo.'
-                      : unlockCondition
-                      ? `🔒 ${unlockCondition.description}`
-                      : '🔒 Desbloqueio especial'}
+                  <div className="mt-3">
+                    {isPurchasable ? (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (canAfford && onBuyClass) {
+                            onBuyClass(cKey, goldCost);
+                          }
+                        }}
+                        disabled={!canAfford}
+                        className={`w-full py-2 px-2.5 rounded-xl font-black text-[11px] uppercase tracking-wide flex items-center justify-center gap-1.5 shadow-md transition-all ${
+                          canAfford
+                            ? 'bg-gradient-to-r from-[#F0B44D] to-[#D4AD65] hover:from-[#FFF0B3] hover:to-[#F0B44D] text-[#10131C] active:scale-95 cursor-pointer ring-2 ring-[#F0B44D]/50'
+                            : 'bg-[#10131C] border border-[#343B50] text-[#A7B0C4]/40 cursor-not-allowed'
+                        }`}
+                      >
+                        <Coins size={14} />
+                        {canAfford ? 'Comprar (100k 🪙)' : '100.000 Ouro'}
+                      </button>
+                    ) : (
+                      <div
+                        className={`p-2 rounded-xl text-[10px] leading-tight ${
+                          isSecret
+                            ? 'bg-[#240046]/40 border border-[#7B2CBF]/40 text-[#E0AAFF]'
+                            : 'bg-[#10131C] border border-[#E65353]/30 text-[#F87171]'
+                        }`}
+                      >
+                        {isSecret
+                          ? '🔮 Condição Secreta: Decifre o pergaminho oculto no Trono do Abismo.'
+                          : unlockCondition
+                          ? `🔒 ${unlockCondition.description}`
+                          : '🔒 Desbloqueio especial'}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -189,13 +274,22 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
         </div>
 
         {/* Action Button */}
-        <div className="pt-2 flex justify-center">
+        <div className="pt-2 flex justify-center gap-3">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider bg-[#10131C] hover:bg-[#343B50] text-[#A7B0C4] border border-[#343B50] transition-all"
+            >
+              Voltar ao Menu
+            </button>
+          )}
+
           <button
             disabled={!isComplete}
             onClick={() => onConfirmParty(selected)}
             className={`w-full sm:w-auto px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl transition-all ${
               isComplete
-                ? 'bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] active:scale-95'
+                ? 'bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] active:scale-95 cursor-pointer'
                 : 'bg-[#10131C] text-[#A7B0C4]/40 border border-[#343B50] cursor-not-allowed'
             }`}
           >
@@ -214,7 +308,7 @@ function getClassIcon(avatarKey: string, size = 20) {
     case 'archer':
       return <Target size={size} />;
     case 'mage':
-      return <Wand2 size={size} />;
+      return <Flame size={size} className="text-[#FF5722]" />;
     case 'cleric':
       return <HeartPulse size={size} />;
     case 'assassin':
@@ -231,8 +325,15 @@ function getClassIcon(avatarKey: string, size = 20) {
       return <Flame size={size} />;
     case 'void_executioner':
       return <Swords size={size} className="text-[#C77DFF]" />;
+    case 'paladin':
+      return <Sun size={size} className="text-[#F59E0B]" />;
+    case 'lancer':
+      return <Crosshair size={size} className="text-[#0EA5E9]" />;
+    case 'bard':
+      return <Music size={size} className="text-[#EC4899]" />;
+    case 'ice_mage':
+      return <Snowflake size={size} className="text-[#06B6D4]" />;
     default:
       return <Sparkles size={size} />;
   }
 }
-

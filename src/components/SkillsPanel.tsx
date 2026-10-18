@@ -25,6 +25,7 @@ import {
   Wand2,
   X,
   CheckCircle2,
+  Music,
 } from 'lucide-react';
 
 interface SkillsPanelProps {
@@ -57,7 +58,8 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
   }
 
   const isAlly = selectedUnit.faction === 'player';
-  const canAct = isAlly && isPlayerTurn && !selectedUnit.hasAttacked;
+  const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
+  const canAct = isAlly && isPlayerTurn && !selectedUnit.hasAttacked && !isStunned;
   const skills = selectedUnit.skills || [];
 
   return (
@@ -82,6 +84,16 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
             {skills.length} {skills.length === 1 ? 'skill' : 'skills'}
           </span>
         </div>
+
+        {/* Stunned Alert */}
+        {isStunned && (
+          <div className="mt-2 p-2 rounded-lg bg-[#FACC15]/15 border border-[#FACC15]/50 flex items-center gap-2">
+            <Zap size={14} className="text-[#FACC15] shrink-0" />
+            <span className="text-xs font-bold text-[#FACC15]">
+              ⚡ Unidade Atordoada: Incapaz de conjurar habilidades!
+            </span>
+          </div>
+        )}
 
         {/* Active Skill Banner */}
         {activeSkill && (
@@ -225,7 +237,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                     <span className="text-[10px] font-medium text-[#F3F4F8]/80 flex items-center gap-1">
                       {skill.statusEffect.type === 'poison' && '☠️ Aplica Veneno'}
                       {skill.statusEffect.type === 'stun' && '⚡ Atordoa (1 Turno)'}
-                      {skill.statusEffect.type === 'slow' && '👣 Aplica Lentidão'}
+                      {skill.statusEffect.type === 'slow' && `👣 Lentidão (-${skill.statusEffect.value || 1} Mov)`}
                       {skill.statusEffect.type === 'shield' && `🛡️ Concede +${skill.statusEffect.value} Escudo`}
                       {skill.statusEffect.type === 'buff_atk' && `🔥 Aumenta Dano em +${skill.statusEffect.value}%`}
                       <span className="text-[#A7B0C4] text-[9px]">({skill.statusEffect.duration}T)</span>
@@ -314,6 +326,8 @@ function getSkillIcon(iconName: string, size = 16) {
       return <Award size={size} />;
     case 'Eye':
       return <Eye size={size} />;
+    case 'Music':
+      return <Music size={size} />;
     default:
       return <Sparkles size={size} />;
   }

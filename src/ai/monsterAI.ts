@@ -18,6 +18,7 @@ export function decideMonsterAction(
   allUnits: Unit[]
 ): AIActionChoice | null {
   if (monster.isDead) return null;
+  if (monster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) return null;
 
   const allAlivePlayers = allUnits.filter((u) => u.faction === 'player' && !u.isDead);
   if (allAlivePlayers.length === 0) return null;

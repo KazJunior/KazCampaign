@@ -28,6 +28,7 @@ export interface ClassDefinition {
   description: string;
   statGrowth: StatGrowth;
   isSecret?: boolean;
+  goldCost?: number;
 }
 
 export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
@@ -67,8 +68,8 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
   },
   mago: {
     className: 'mago',
-    name: 'Mago',
-    role: 'Dano Mágico em Área',
+    name: 'Mago de Fogo',
+    role: 'Piromancia & Dano Explosivo',
     maxHp: 65,
     atk: 10,
     mag: 30,
@@ -76,10 +77,10 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     res: 12,
     mov: 2,
     range: 3,
-    color: '#B58AFF',
+    color: '#FF5722',
     avatarKey: 'mage',
-    baseSkillId: 'explosao_arcana',
-    description: 'Especialista em feitiços devastadores em área e manipulação elemental.',
+    baseSkillId: 'bola_de_fogo',
+    description: 'Especialista em piromancia e feitiços devastadores de fogo em área, incinerando fileiras inimigas.',
     statGrowth: { hp: 8, atk: 1, mag: 5, def: 1, res: 3 },
   },
   curandeiro: {
@@ -219,6 +220,78 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     statGrowth: { hp: 12, atk: 5, mag: 2, def: 2, res: 2 },
     isSecret: true,
   },
+  paladino: {
+    className: 'paladino',
+    name: 'Paladino',
+    role: 'Tanque Sagrado & Suporte',
+    maxHp: 115,
+    atk: 22,
+    mag: 18,
+    def: 11,
+    res: 9,
+    mov: 3,
+    range: 1,
+    color: '#F59E0B',
+    avatarKey: 'paladin',
+    baseSkillId: 'golpe_sagrado',
+    description: 'Guerreiro sagrado blindado pela fé, suportando castigo pesado enquanto ergue escudos de luz e cura sua equipe.',
+    statGrowth: { hp: 14, atk: 3, mag: 2, def: 3, res: 2 },
+    goldCost: 100000,
+  },
+  lanceiro: {
+    className: 'lanceiro',
+    name: 'Lanceiro',
+    role: 'Perfuração & Longo Alcance',
+    maxHp: 90,
+    atk: 26,
+    mag: 8,
+    def: 8,
+    res: 6,
+    mov: 4,
+    range: 2,
+    color: '#0EA5E9',
+    avatarKey: 'lancer',
+    baseSkillId: 'estocada_perfurante',
+    description: 'Combatente ágil armado com lança de longo alcance (2 casas), capaz de golpear com perfuração de armadura e saltar sobre as defesas inimigas.',
+    statGrowth: { hp: 11, atk: 4, mag: 1, def: 2, res: 2 },
+    goldCost: 100000,
+  },
+  bardo: {
+    className: 'bardo',
+    name: 'Bardo',
+    role: 'Buffs de Equipe & Harmonia',
+    maxHp: 75,
+    atk: 14,
+    mag: 24,
+    def: 6,
+    res: 9,
+    mov: 3,
+    range: 3,
+    color: '#EC4899',
+    avatarKey: 'bard',
+    baseSkillId: 'cancao_da_bravura',
+    description: 'Menestrel arcano que entoa canções e sinfonias de combate, inspirando aliados com bônus de dano, movimento e escudos sônicos.',
+    statGrowth: { hp: 9, atk: 2, mag: 4, def: 2, res: 2 },
+    goldCost: 100000,
+  },
+  mago_gelo: {
+    className: 'mago_gelo',
+    name: 'Mago de Gelo',
+    role: 'Criomancia & Controle',
+    maxHp: 70,
+    atk: 8,
+    mag: 32,
+    def: 5,
+    res: 14,
+    mov: 2,
+    range: 3,
+    color: '#06B6D4',
+    avatarKey: 'ice_mage',
+    baseSkillId: 'raio_congelante',
+    description: 'Mestre da magia glacial e das tempestades de granizo, paralisando e desacelerando adversários enquanto fragmenta suas defesas.',
+    statGrowth: { hp: 8, atk: 1, mag: 5, def: 1, res: 4 },
+    goldCost: 100000,
+  },
 };
 
 export const INITIAL_CLASSES: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
@@ -315,6 +388,29 @@ export function getMaxCompletedLevel(progress: {
   return max;
 }
 
+export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: string; description: string }> = {
+  paladino: {
+    goldCost: 100000,
+    name: 'Paladino',
+    description: 'Compre o Paladino por 100.000 moedas de ouro.',
+  },
+  lanceiro: {
+    goldCost: 100000,
+    name: 'Lanceiro',
+    description: 'Compre o Lanceiro por 100.000 moedas de ouro.',
+  },
+  bardo: {
+    goldCost: 100000,
+    name: 'Bardo',
+    description: 'Compre o Bardo por 100.000 moedas de ouro.',
+  },
+  mago_gelo: {
+    goldCost: 100000,
+    name: 'Mago de Gelo',
+    description: 'Compre o Mago de Gelo por 100.000 moedas de ouro.',
+  },
+};
+
 export function sanitizeUnlockedClasses(
   rawUnlocked: string[] | undefined,
   maxLevelCompleted: number,
@@ -325,6 +421,11 @@ export function sanitizeUnlockedClasses(
     if (rawUnlocked.includes('carrasco_vazio')) {
       allowed.add('carrasco_vazio');
     }
+    Object.keys(PURCHASABLE_CLASSES).forEach((pKey) => {
+      if (rawUnlocked.includes(pKey)) {
+        allowed.add(pKey);
+      }
+    });
     Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
       if (maxLevelCompleted >= cond.requiredLevel || completedLevels.includes(cond.requiredLevel)) {
         if (rawUnlocked.includes(cName)) {

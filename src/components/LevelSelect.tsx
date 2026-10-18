@@ -176,20 +176,15 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
 
             <button
               onClick={onChangeParty}
-              disabled={!!activeAdv}
               title={
                 activeAdv
-                  ? 'A equipe está travada durante a aventura. Conclua as 50 fases ou abandone a expedição para trocar de equipe.'
-                  : 'Alterar composição da equipe de 4 heróis'
+                  ? 'Visualizar equipe e recrutar novas classes com ouro.'
+                  : 'Alterar composição da equipe de 4 heróis ou recrutar novas classes.'
               }
-              className={`px-3.5 py-2 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-all ${
-                activeAdv
-                  ? 'bg-[#10131C]/60 border-[#343B50]/40 text-[#A7B0C4]/40 cursor-not-allowed'
-                  : 'bg-[#10131C] border-[#343B50] hover:border-[#43C878] text-[#43C878] hover:scale-105 active:scale-95 cursor-pointer'
-              }`}
+              className="px-3.5 py-2 rounded-xl border border-[#343B50] hover:border-[#43C878] bg-[#10131C] text-[#43C878] font-bold text-xs flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-sm"
             >
-              {activeAdv ? <Lock size={16} /> : <Users size={16} />}
-              <span>{activeAdv ? 'Equipe Travada' : 'Alterar Equipe'}</span>
+              <Users size={16} />
+              <span>{activeAdv ? 'Recrutar / Ver Equipe' : 'Alterar Equipe'}</span>
             </button>
           </div>
         </div>

@@ -110,6 +110,18 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'void_executioner':
       buildVoidExecutionerMini(char);
       break;
+    case 'paladin':
+      buildPaladinMini(char);
+      break;
+    case 'lancer':
+      buildLancerMini(char);
+      break;
+    case 'bard':
+      buildBardMini(char);
+      break;
+    case 'ice_mage':
+      buildIceMageMini(char);
+      break;
     case 'goblin':
       buildGoblinMini(char);
       break;
@@ -334,11 +346,11 @@ function buildArcherMini(group: THREE.Group) {
 }
 
 // -------------------------------------------------------------
-// 3. MAGE (Pointed Wizard Hat, Flowing Robe, Beard & Staff)
+// 3. MAGO DE FOGO (Pointed Fiery Hat, Crimson Robe, Fire Staff & Blazing Orb)
 // -------------------------------------------------------------
 function buildMageMini(group: THREE.Group) {
-  const robeMat = new THREE.MeshStandardMaterial({ color: 0x6b21a8, roughness: 0.5 });
-  const darkRobe = new THREE.MeshStandardMaterial({ color: 0x4c1d95, roughness: 0.45 });
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.5 });
+  const darkRobe = new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.45 });
   const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 });
   const beardMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.6 });
 
@@ -393,13 +405,13 @@ function buildMageMini(group: THREE.Group) {
   staff.castShadow = true;
   group.add(staff);
 
-  // Floating Glowing Cyan Orb Crystal
+  // Floating Glowing Blazing Fire Crystal Orb
   const orb = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 12, 12),
     new THREE.MeshStandardMaterial({
-      color: 0x22d3ee,
-      emissive: 0x06b6d4,
-      emissiveIntensity: 1.2,
+      color: 0xf97316,
+      emissive: 0xef4444,
+      emissiveIntensity: 1.5,
       roughness: 0.1,
     })
   );
@@ -881,6 +893,266 @@ function buildVoidExecutionerMini(group: THREE.Group) {
   const voidLight = new THREE.PointLight(0xa855f7, 0.7, 1.5);
   voidLight.position.set(0, 0.5, -0.15);
   group.add(voidLight);
+}
+
+// -------------------------------------------------------------
+// PALADIN (Golden-White Plate Armor, Sun Greathelm, Tower Shield & Radiant Warhammer)
+// -------------------------------------------------------------
+function buildPaladinMini(group: THREE.Group) {
+  const goldPlateMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+  const whiteTrimMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, metalness: 0.5, roughness: 0.3 });
+  const radiantMat = new THREE.MeshStandardMaterial({ color: 0xfde047, emissive: 0xf59e0b, emissiveIntensity: 0.9 });
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.9, roughness: 0.2 });
+
+  // Armored Greaves (Legs)
+  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.16, 6, 8), goldPlateMat);
+  legL.position.set(-0.11, 0.14, 0);
+  const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.065, 0.16, 6, 8), goldPlateMat);
+  legR.position.set(0.11, 0.14, 0);
+  group.add(legL, legR);
+
+  // Heavy Cuirass (Torso)
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.15, 0.36, 10), goldPlateMat);
+  torso.position.y = 0.36;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // White Cape on back
+  const cape = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.44, 0.03), new THREE.MeshStandardMaterial({ color: 0xfffbeb, roughness: 0.6 }));
+  cape.position.set(0, 0.34, -0.13);
+  cape.rotation.x = Math.PI / 16;
+  group.add(cape);
+
+  // Radiant Chest Sun Emblem
+  const sunEmblem = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.02, 8), radiantMat);
+  sunEmblem.rotateX(Math.PI / 2);
+  sunEmblem.position.set(0, 0.4, 0.15);
+  group.add(sunEmblem);
+
+  // Domed Greathelm
+  const helm = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), goldPlateMat);
+  helm.position.y = 0.64;
+  group.add(helm);
+
+  // Visor Slit
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.04), radiantMat);
+  visor.position.set(0, 0.64, 0.12);
+  group.add(visor);
+
+  // Golden Sun Halo atop helm
+  const haloGeo = new THREE.TorusGeometry(0.12, 0.016, 6, 16);
+  const halo = new THREE.Mesh(haloGeo, radiantMat);
+  halo.position.set(0, 0.8, -0.02);
+  halo.rotation.x = Math.PI / 5;
+  group.add(halo);
+
+  // Pauldrons (Left & Right)
+  const pL = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), whiteTrimMat);
+  pL.position.set(-0.24, 0.46, 0);
+  const pR = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), whiteTrimMat);
+  pR.position.set(0.24, 0.46, 0);
+  group.add(pL, pR);
+
+  // Towering Kite Shield (Left Arm)
+  const shield = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.52, 0.26), goldPlateMat);
+  shield.position.set(-0.26, 0.38, 0.1);
+  const shieldCross = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.38, 0.08), radiantMat);
+  shieldCross.position.set(-0.27, 0.38, 0.1);
+  group.add(shield, shieldCross);
+
+  // Righteous Warhammer (Right Hand)
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.65, 6), steelMat);
+  shaft.position.set(0.26, 0.42, 0.08);
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.1, 0.18), goldPlateMat);
+  head.position.set(0.26, 0.68, 0.08);
+  group.add(shaft, head);
+}
+
+// -------------------------------------------------------------
+// LANCER (Dragoon Plate, Horned Plume Helm & Long Penetrating Lance)
+// -------------------------------------------------------------
+function buildLancerMini(group: THREE.Group) {
+  const dragoonMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.85, roughness: 0.25 });
+  const cyanGlowMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.9 });
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, metalness: 0.95, roughness: 0.15 });
+
+  // Sleek Legs
+  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.18, 6, 8), dragoonMat);
+  legL.position.set(-0.09, 0.15, 0);
+  const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.18, 6, 8), dragoonMat);
+  legR.position.set(0.09, 0.15, 0);
+  group.add(legL, legR);
+
+  // Dragoon Torso
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.34, 8), dragoonMat);
+  torso.position.y = 0.36;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Winged Helmet
+  const helm = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), dragoonMat);
+  helm.position.y = 0.62;
+  group.add(helm);
+
+  // Dragoon Dorsal Plume / Crest
+  const crest = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.26, 4), cyanGlowMat);
+  crest.position.set(0, 0.78, -0.04);
+  crest.rotation.x = -Math.PI / 8;
+  group.add(crest);
+
+  // Dragoon Visor
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.028, 0.04), cyanGlowMat);
+  visor.position.set(0, 0.62, 0.11);
+  group.add(visor);
+
+  // Sharp Pauldrons
+  const pL = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.16, 4), dragoonMat);
+  pL.position.set(-0.22, 0.48, 0);
+  pL.rotation.z = Math.PI / 4;
+  const pR = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.16, 4), dragoonMat);
+  pR.position.set(0.22, 0.48, 0);
+  pR.rotation.z = -Math.PI / 4;
+  group.add(pL, pR);
+
+  // Long Dragoon Lance (Right Hand, reaching forward)
+  const lanceShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 1.25, 8), steelMat);
+  lanceShaft.position.set(0.26, 0.45, 0.2);
+  lanceShaft.rotation.x = Math.PI / 6;
+  lanceShaft.castShadow = true;
+
+  // Lance Cone Guard & Tip
+  const lanceGuard = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.18, 8), dragoonMat);
+  lanceGuard.position.set(0.26, 0.35, 0.06);
+  lanceGuard.rotation.x = -Math.PI + Math.PI / 6;
+
+  const spearTip = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.32, 4), cyanGlowMat);
+  spearTip.position.set(0.26, 0.98, 0.55);
+  spearTip.rotation.x = Math.PI / 6;
+
+  group.add(lanceShaft, lanceGuard, spearTip);
+}
+
+// -------------------------------------------------------------
+// BARD (Magenta Flamboyant Doublet, Feathered Cap & Acoustic Lute)
+// -------------------------------------------------------------
+function buildBardMini(group: THREE.Group) {
+  const tunicMat = new THREE.MeshStandardMaterial({ color: 0xdb2777, roughness: 0.5 });
+  const darkMagenta = new THREE.MeshStandardMaterial({ color: 0x831843, roughness: 0.6 });
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.4 });
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfed7aa });
+
+  // Legs in dark magenta tights
+  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.18, 6, 8), darkMagenta);
+  legL.position.set(-0.08, 0.15, 0);
+  const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.055, 0.18, 6, 8), darkMagenta);
+  legR.position.set(0.08, 0.15, 0);
+  group.add(legL, legR);
+
+  // Doublet / Tunic
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.32, 8), tunicMat);
+  torso.position.y = 0.35;
+  group.add(torso);
+
+  // Capelet over shoulder
+  const capelet = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.28, 0.04), darkMagenta);
+  capelet.position.set(-0.04, 0.36, -0.12);
+  capelet.rotation.y = Math.PI / 12;
+  group.add(capelet);
+
+  // Head with charming face
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), skinMat);
+  head.position.set(0, 0.58, 0.02);
+  group.add(head);
+
+  // Feathered Beret Cap
+  const beret = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.06, 10), tunicMat);
+  beret.position.set(0.02, 0.68, 0);
+  beret.rotation.z = -Math.PI / 10;
+  group.add(beret);
+
+  // Long Golden Peacock Feather
+  const feather = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.22, 4), goldMat);
+  feather.position.set(-0.12, 0.76, 0.04);
+  feather.rotation.z = Math.PI / 4;
+  group.add(feather);
+
+  // Classical Lute (Held across the chest)
+  const luteBody = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), woodMat);
+  luteBody.scale.set(1, 1.25, 0.65);
+  luteBody.position.set(0.08, 0.38, 0.14);
+  luteBody.rotation.z = -Math.PI / 5;
+
+  const luteNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.34, 6), woodMat);
+  luteNeck.position.set(-0.08, 0.48, 0.16);
+  luteNeck.rotation.z = -Math.PI / 3;
+
+  const soundHole = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 8), goldMat);
+  soundHole.rotateX(Math.PI / 2);
+  soundHole.position.set(0.08, 0.38, 0.2);
+
+  group.add(luteBody, luteNeck, soundHole);
+}
+
+// -------------------------------------------------------------
+// ICE MAGE (Glacial Robe, Frosted Cowl, Icicles & Diamond Ice Crystal)
+// -------------------------------------------------------------
+function buildIceMageMini(group: THREE.Group) {
+  const frostRobeMat = new THREE.MeshStandardMaterial({ color: 0x0891b2, roughness: 0.4 });
+  const darkIceMat = new THREE.MeshStandardMaterial({ color: 0x164e63, roughness: 0.35 });
+  const crystalMat = new THREE.MeshStandardMaterial({
+    color: 0xa5f3fc,
+    emissive: 0x06b6d4,
+    emissiveIntensity: 1.2,
+    roughness: 0.1,
+    metalness: 0.8,
+  });
+  const iceStaffMat = new THREE.MeshStandardMaterial({ color: 0x0e7490, metalness: 0.7, roughness: 0.2 });
+
+  // Flowing Frost Robe
+  const robe = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.58, 12), frostRobeMat);
+  robe.position.y = 0.32;
+  robe.castShadow = true;
+  group.add(robe);
+
+  // Cyan Hem
+  const hemGeo = new THREE.TorusGeometry(0.24, 0.02, 6, 16);
+  hemGeo.rotateX(Math.PI / 2);
+  const hem = new THREE.Mesh(hemGeo, crystalMat);
+  hem.position.y = 0.06;
+  group.add(hem);
+
+  // Head in Frosted Cowl
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshStandardMaterial({ color: 0xcffafe }));
+  head.position.y = 0.58;
+  group.add(head);
+
+  // Glacial Cowl / Hood
+  const cowl = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 8), darkIceMat);
+  cowl.position.set(0, 0.72, -0.04);
+  cowl.rotation.x = -Math.PI / 12;
+  group.add(cowl);
+
+  // Icicle Spikes on Shoulders
+  const spikeL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 4), crystalMat);
+  spikeL.position.set(-0.22, 0.5, 0);
+  spikeL.rotation.z = Math.PI / 4;
+  const spikeR = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 4), crystalMat);
+  spikeR.position.set(0.22, 0.5, 0);
+  spikeR.rotation.z = -Math.PI / 4;
+  group.add(spikeL, spikeR);
+
+  // Glacial Ice Staff (Right Hand)
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.9, 8), iceStaffMat);
+  staff.position.set(0.26, 0.48, 0.08);
+  staff.castShadow = true;
+  group.add(staff);
+
+  // Floating Spinning Diamond Ice Crystal
+  const iceOrb = new THREE.Mesh(new THREE.OctahedronGeometry(0.09, 0), crystalMat);
+  iceOrb.position.set(0.26, 0.98, 0.08);
+  iceOrb.name = 'spinningOrb';
+  group.add(iceOrb);
 }
 
 // -------------------------------------------------------------

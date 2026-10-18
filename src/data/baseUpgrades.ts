@@ -37,11 +37,11 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 5, cost: 100000, bonus: { hp: 50, atk: 7, def: 2, res: 2 }, name: 'Franco-Atirador Lendário', description: '+50 HP, +7 ATK, +2 DEF e +2 RES permanente.' },
   ],
   mago: [
-    { level: 1, cost: 10000, bonus: { hp: 12, mag: 2 }, name: 'Meditação Arcana', description: '+12 HP e +2 MAG permanente.' },
-    { level: 2, cost: 30000, bonus: { hp: 18, mag: 3, res: 1 }, name: 'Canalização Elemental', description: '+18 HP, +3 MAG e +1 RES permanente.' },
+    { level: 1, cost: 10000, bonus: { hp: 12, mag: 2 }, name: 'Meditação Ígnea', description: '+12 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 18, mag: 3, res: 1 }, name: 'Canalização das Chamas', description: '+18 HP, +3 MAG e +1 RES permanente.' },
     { level: 3, cost: 50000, bonus: { hp: 22, mag: 4, res: 1 }, name: 'Chama Interior', description: '+22 HP, +4 MAG e +1 RES permanente.' },
-    { level: 4, cost: 80000, bonus: { hp: 30, mag: 5, res: 2 }, name: 'Vórtice Cósmico', description: '+30 HP, +5 MAG e +2 RES permanente.' },
-    { level: 5, cost: 100000, bonus: { hp: 45, mag: 8, res: 3, def: 2 }, name: 'Arquimago dos Elementos', description: '+45 HP, +8 MAG, +3 RES e +2 DEF permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 30, mag: 5, res: 2 }, name: 'Vórtice de Magma', description: '+30 HP, +5 MAG e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 45, mag: 8, res: 3, def: 2 }, name: 'Arquimago do Fogo', description: '+45 HP, +8 MAG, +3 RES e +2 DEF permanente.' },
   ],
   curandeiro: [
     { level: 1, cost: 10000, bonus: { hp: 20, mag: 2 }, name: 'Bênção Sagrada', description: '+20 HP e +2 MAG permanente.' },
@@ -91,6 +91,41 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 3, cost: 50000, bonus: { hp: 45, atk: 4, def: 1 }, name: 'Músculos de Aço', description: '+45 HP, +4 ATK e +1 DEF permanente.' },
     { level: 4, cost: 80000, bonus: { hp: 55, atk: 5, def: 2 }, name: 'Frenesi Sangrento', description: '+55 HP, +5 ATK e +2 DEF permanente.' },
     { level: 5, cost: 100000, bonus: { hp: 75, atk: 8, def: 3, res: 1 }, name: 'Titã Enfurecido', description: '+75 HP, +8 ATK, +3 DEF e +1 RES permanente.' },
+  ],
+  carrasco_vazio: [
+    { level: 1, cost: 10000, bonus: { hp: 18, atk: 2 }, name: 'Fio Espacial', description: '+18 HP e +2 ATK permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 24, atk: 3, res: 1 }, name: 'Olhar do Abismo', description: '+24 HP, +3 ATK e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 30, atk: 4, def: 1 }, name: 'Vontade do Vazio', description: '+30 HP, +4 ATK e +1 DEF permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 42, atk: 5, res: 2 }, name: 'Lâmina do Julgamento', description: '+42 HP, +5 ATK e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 60, atk: 8, def: 2, res: 2 }, name: 'Samurai Transcendente', description: '+60 HP, +8 ATK, +2 DEF e +2 RES permanente.' },
+  ],
+  paladino: [
+    { level: 1, cost: 10000, bonus: { hp: 25, def: 1, res: 1 }, name: 'Juramento Sagrado', description: '+25 HP, +1 DEF e +1 RES permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 35, atk: 2, def: 1 }, name: 'Placas Banhadas de Ouro', description: '+35 HP, +2 ATK e +1 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 45, def: 2, res: 2 }, name: 'Baluarte dos Céus', description: '+45 HP, +2 DEF e +2 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 60, atk: 3, def: 2, res: 1 }, name: 'Sentinela Radiante', description: '+60 HP, +3 ATK, +2 DEF e +1 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 80, atk: 4, def: 3, res: 3 }, name: 'Grão-Cruzado da Justiça', description: '+80 HP, +4 ATK, +3 DEF e +3 RES permanente.' },
+  ],
+  lanceiro: [
+    { level: 1, cost: 10000, bonus: { hp: 18, atk: 2 }, name: 'Ponta de Aço Temperado', description: '+18 HP e +2 ATK permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 24, atk: 3, def: 1 }, name: 'Postura de Falange', description: '+24 HP, +3 ATK e +1 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 32, atk: 4, def: 1 }, name: 'Agilidade do Dragão', description: '+32 HP, +4 ATK e +1 DEF permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 45, atk: 5, res: 2 }, name: 'Pique Perfurador', description: '+45 HP, +5 ATK e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 65, atk: 7, def: 3, res: 1 }, name: 'Mestre dos Dragões Alados', description: '+65 HP, +7 ATK, +3 DEF e +1 RES permanente.' },
+  ],
+  bardo: [
+    { level: 1, cost: 10000, bonus: { hp: 16, mag: 2 }, name: 'Cordas de Seda Élfica', description: '+16 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 22, mag: 3, res: 1 }, name: 'Inspiração Melódica', description: '+22 HP, +3 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 28, mag: 3, def: 2 }, name: 'Harmonia Sônica', description: '+28 HP, +3 MAG e +2 DEF permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 40, mag: 5, res: 2 }, name: 'Balada Épica', description: '+40 HP, +5 MAG e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 55, mag: 7, res: 3, def: 2 }, name: 'Virtuoso Supremo', description: '+55 HP, +7 MAG, +3 RES e +2 DEF permanente.' },
+  ],
+  mago_gelo: [
+    { level: 1, cost: 10000, bonus: { hp: 14, mag: 2 }, name: 'Coração de Gelo', description: '+14 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 20, mag: 3, res: 1 }, name: 'Geada Eterna', description: '+20 HP, +3 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 26, mag: 4, res: 2 }, name: 'Manto Glacial', description: '+26 HP, +4 MAG e +2 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 36, mag: 5, def: 1, res: 2 }, name: 'Zero Criogênico', description: '+36 HP, +5 MAG, +1 DEF e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 50, mag: 8, res: 4, def: 2 }, name: 'Arquimago do Permafrost', description: '+50 HP, +8 MAG, +4 RES e +2 DEF permanente.' },
   ],
 };
 

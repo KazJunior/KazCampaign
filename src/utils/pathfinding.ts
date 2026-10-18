@@ -43,9 +43,10 @@ export function getReachableTiles(
     return [];
   }
 
-  // Slow reduces movement points by 1 (minimum 1)
-  const isSlowed = unit.statusEffects?.some((e) => e.type === 'slow' && e.duration > 0);
-  const effectiveMov = isSlowed ? Math.max(1, unit.mov - 1) : unit.mov;
+  // Slow reduces movement points by slow penalty value (minimum 1 tile)
+  const slowEffect = unit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
+  const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
+  const effectiveMov = slowEffect ? Math.max(1, unit.mov - slowPenalty) : unit.mov;
 
   while (queue.length > 0) {
     const curr = queue.shift()!;
@@ -199,6 +200,10 @@ export function getValidTargets(
   skill: Skill | undefined,
   allUnits: Unit[]
 ): Unit[] {
+  if (attacker.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+    return [];
+  }
+
   const rangeMin = skill ? skill.rangeMin : 1;
   const rangeMax = skill ? skill.rangeMax : attacker.range;
   const targetType = skill ? skill.targetType : 'enemy';

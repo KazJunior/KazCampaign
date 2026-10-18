@@ -924,6 +924,23 @@ function createStatusAuras(unit: Unit): THREE.Group {
     auraGroup.add(debuffMesh);
   }
 
+  // 7. Slow (Frosty cyan/azure ice ring at base)
+  const hasSlow = unit.statusEffects?.some((e) => e.type === 'slow' && e.duration > 0);
+  if (hasSlow) {
+    const slowGeo = new THREE.RingGeometry(0.34, 0.44, 12);
+    slowGeo.rotateX(-Math.PI / 2);
+    const slowMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide,
+    });
+    const slowMesh = new THREE.Mesh(slowGeo, slowMat);
+    slowMesh.position.y = 0.055;
+    slowMesh.name = 'auraRing';
+    auraGroup.add(slowMesh);
+  }
+
   return auraGroup;
 }
 

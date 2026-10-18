@@ -558,6 +558,24 @@ export function App() {
     }
   };
 
+  const handleBuyClass = (className: string, cost: number) => {
+    if (progress.gold < cost) return;
+    const currentUnlocked = progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
+    if (currentUnlocked.includes(className)) return;
+
+    soundManager.playUpgrade();
+    const updatedUnlocked = [...currentUnlocked, className];
+    const newGold = progress.gold - cost;
+    const updatedProgress: PlayerProgress = {
+      ...progress,
+      gold: newGold,
+      unlockedClasses: updatedUnlocked,
+    };
+    setProgress(updatedProgress);
+    savePlayerProgress(updatedProgress);
+    setPendingUnlockClasses([className]);
+  };
+
   const handleConfirmParty = (selectedPartyClasses: string[]) => {
     if (progress.activeAdventure) {
       setCurrentView('level_select');
@@ -1015,7 +1033,15 @@ export function App() {
   }, [selectedUnit, phase, selectedAction, grid, units, isAnimatingAction]);
 
   const attackableTiles: Point[] = React.useMemo(() => {
-    if (!selectedUnit || phase !== 'player_turn' || selectedUnit.faction !== 'player' || selectedUnit.hasAttacked || isAnimatingAction) return [];
+    if (
+      !selectedUnit ||
+      phase !== 'player_turn' ||
+      selectedUnit.faction !== 'player' ||
+      selectedUnit.hasAttacked ||
+      isAnimatingAction ||
+      selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)
+    )
+      return [];
     if (activeSkill && (activeSkill.isTeleport || activeSkill.targetType === 'empty_tile')) {
       const rangeMin = activeSkill.rangeMin;
       const rangeMax = activeSkill.rangeMax;
@@ -1145,6 +1171,11 @@ export function App() {
 
     // Movement execution
     if (selectedAction === 'move' && selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasMoved) {
+      if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+        setSelectedAction('none');
+        return;
+      }
       const isReachable = reachableTiles.some((t) => t.x === x && t.y === y);
       if (isReachable && !clickedUnit) {
         setIsAnimatingAction(true);
@@ -1165,6 +1196,7 @@ export function App() {
       selectedUnit &&
       selectedUnit.faction === 'player' &&
       !selectedUnit.hasAttacked &&
+      !selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0) &&
       (selectedAction === 'attack' || !!activeSkill)
     ) {
       const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
@@ -1215,6 +1247,12 @@ export function App() {
 
     // Attack / Skill targeting execution
     if (selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasAttacked) {
+      if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+        setSelectedAction('none');
+        setActiveSkill(null);
+        return;
+      }
       // Empty-tile targeting (e.g. Teleporte Místico)
       if (activeSkill && (activeSkill.isTeleport || activeSkill.targetType === 'empty_tile')) {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
@@ -1708,9 +1746,38 @@ export function App() {
   };
 
   // ANIMATED AI Turn
-  const runAiTurn = useCallback(async () => {
-    let currentUnits = [...units];
+  const runAiTurn = useCallback(async (initialUnitsOverride?: Unit[]) => {
+    let currentUnits = initialUnitsOverride ? [...initialUnitsOverride] : [...units];
     const delayMult = progress.combatSpeed === 'fast' ? 0.5 : 1.0;
+
+    // Poison damage tick for monsters at start of AI turn
+    let anyMonsterPoisoned = false;
+    currentUnits = currentUnits.map((u) => {
+      if (u.faction === 'enemy' && !u.isDead) {
+        const poison = u.statusEffects?.find((e) => e.type === 'poison');
+        if (poison) {
+          anyMonsterPoisoned = true;
+          const pDmg = poison.value || 15;
+          const currentHp = Math.max(0, u.currentHp - pDmg);
+          const isDead = currentHp === 0;
+          addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+          return { ...u, currentHp, isDead };
+        }
+      }
+      return u;
+    });
+
+    if (anyMonsterPoisoned) {
+      setUnits([...currentUnits]);
+      await new Promise((r) => setTimeout(r, 300 * delayMult));
+    }
+
+    const aliveEnemiesAtStart = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
+    if (aliveEnemiesAtStart.length === 0) {
+      handleVictory(currentUnits);
+      return;
+    }
+
     const monsters = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
 
     for (const monster of monsters) {
@@ -1974,46 +2041,97 @@ export function App() {
     }
 
     setTurnNumber((t) => t + 1);
-    setUnits((prev) =>
-      prev.map((u) => {
+
+    let anyPlayerDiedFromPoison = false;
+    setUnits((prev) => {
+      return prev.map((u) => {
         let currentHp = u.currentHp;
         let isDead = u.isDead;
-        if (!isDead) {
-          const poison = u.statusEffects?.find((e) => e.type === 'poison');
-          if (poison) {
-            const pDmg = poison.value || 15;
-            currentHp = Math.max(0, currentHp - pDmg);
-            isDead = currentHp === 0;
-            addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
-          }
-        }
-        const updatedEffects = (u.statusEffects || [])
-          .map((e) => ({ ...e, duration: e.duration - 1 }))
-          .filter((e) => e.duration > 0);
 
-        return {
-          ...u,
-          currentHp,
-          isDead,
-          hasMoved: false,
-          hasAttacked: false,
-          statusEffects: updatedEffects,
-          skills: u.skills.map((s) => ({ ...s, currentCooldown: Math.max(0, s.currentCooldown - 1) })),
-        };
-      })
-    );
+        if (u.faction === 'player') {
+          if (!isDead) {
+            const poison = u.statusEffects?.find((e) => e.type === 'poison');
+            if (poison) {
+              const pDmg = poison.value || 15;
+              currentHp = Math.max(0, currentHp - pDmg);
+              isDead = currentHp === 0;
+              if (isDead) anyPlayerDiedFromPoison = true;
+              addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+            }
+          }
+          // Player status effects and cooldowns decrement when player ends their turn
+          return {
+            ...u,
+            currentHp,
+            isDead,
+            hasMoved: false,
+            hasAttacked: false,
+          };
+        } else {
+          // Enemy units: AI turn has ended, decrement status effects & cooldowns
+          const updatedEffects = (u.statusEffects || [])
+            .map((e) => ({ ...e, duration: e.duration - 1 }))
+            .filter((e) => e.duration > 0);
+
+          return {
+            ...u,
+            statusEffects: updatedEffects,
+            skills: u.skills.map((s) => ({
+              ...s,
+              currentCooldown: Math.max(0, s.currentCooldown - 1),
+            })),
+          };
+        }
+      });
+    });
+
+    if (anyPlayerDiedFromPoison) {
+      setTimeout(() => {
+        setUnits((latest) => {
+          const alive = latest.filter((u) => u.faction === 'player' && !u.isDead);
+          if (alive.length === 0) handleDefeat();
+          return latest;
+        });
+      }, 500);
+    }
+
     setPhase('player_turn');
     soundManager.playTurnStart(true);
   }, [units, grid, progress.combatSpeed, handleDefeat]);
 
   const handleEndPlayerTurn = useCallback(() => {
     if (isAnimatingAction) return;
-    setPhase('ai_turn');
+
     setSelectedUnitId(null);
     setSelectedAction('none');
     setActiveSkill(null);
     soundManager.playTurnStart(false);
-    setTimeout(() => runAiTurn(), 500);
+
+    // 1. Decrement player units' status effect durations and skill cooldowns as player turn ends
+    let nextUnitsState: Unit[] = [];
+    setUnits((prev) => {
+      nextUnitsState = prev.map((u) => {
+        if (u.faction === 'player' && !u.isDead) {
+          const updatedEffects = (u.statusEffects || [])
+            .map((e) => ({ ...e, duration: e.duration - 1 }))
+            .filter((e) => e.duration > 0);
+
+          return {
+            ...u,
+            statusEffects: updatedEffects,
+            skills: u.skills.map((s) => ({
+              ...s,
+              currentCooldown: Math.max(0, s.currentCooldown - 1),
+            })),
+          };
+        }
+        return u;
+      });
+      return nextUnitsState;
+    });
+
+    setPhase('ai_turn');
+    setTimeout(() => runAiTurn(nextUnitsState), 500);
   }, [runAiTurn, isAnimatingAction]);
 
   // Handle Victory in current stage
@@ -2307,6 +2425,10 @@ export function App() {
       if (!selectedUnit || selectedUnit.faction !== 'player' || selectedUnit.hasAttacked || phase !== 'player_turn') {
         return;
       }
+      if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+        return;
+      }
       if (sk.currentCooldown > 0) return;
 
       if (activeSkill?.id === sk.id) {
@@ -2386,12 +2508,13 @@ export function App() {
       }
 
       if (selectedUnit && selectedUnit.faction === 'player' && phase === 'player_turn') {
+        const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
         const code = e.code;
         const key = e.key ? e.key.toLowerCase() : '';
 
         // 1 2 3 4 5 6 7 8 9 - Atalhos para habilidades
         const digitMatch = code.match(/^(?:Digit|Numpad)([1-9])$/) || (key >= '1' && key <= '9' ? [, key] : null);
-        if (digitMatch && !selectedUnit.hasAttacked) {
+        if (digitMatch && !selectedUnit.hasAttacked && !isStunned) {
           const index = parseInt(digitMatch[1], 10) - 1;
           const skill = selectedUnit.skills?.[index];
           if (skill && skill.currentCooldown === 0) {
@@ -2402,7 +2525,7 @@ export function App() {
         }
 
         // A - Atacar
-        if ((code === 'KeyA' || key === 'a') && !selectedUnit.hasAttacked) {
+        if ((code === 'KeyA' || key === 'a') && !selectedUnit.hasAttacked && !isStunned) {
           e.preventDefault();
           setSelectedAction('attack');
           setActiveSkill(null);
@@ -2412,7 +2535,7 @@ export function App() {
         }
 
         // W - Mover
-        if ((code === 'KeyW' || key === 'w') && !selectedUnit.hasMoved) {
+        if ((code === 'KeyW' || key === 'w') && !selectedUnit.hasMoved && !isStunned) {
           e.preventDefault();
           setSelectedAction('move');
           setActiveSkill(null);
@@ -2490,7 +2613,6 @@ export function App() {
           onContinueAdventure={handleContinueAdventure}
           onAbandonAdventure={handleAbandonAdventure}
           onChangeParty={() => {
-            if (progress.activeAdventure) return;
             setCurrentView('party_select');
           }}
           onResetProgress={handleResetProgress}
@@ -2556,16 +2678,23 @@ export function App() {
   }
 
   if (currentView === 'party_select') {
-    if (progress.activeAdventure) {
-      setCurrentView('level_select');
-      return null;
-    }
     return (
-      <PartySelectionModal
-        initialSelected={progress.selectedPartyClasses}
-        unlockedClasses={progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro']}
-        onConfirmParty={handleConfirmParty}
-      />
+      <>
+        <PartySelectionModal
+          initialSelected={progress.selectedPartyClasses}
+          unlockedClasses={progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro']}
+          playerGold={progress.gold}
+          onBuyClass={handleBuyClass}
+          onConfirmParty={handleConfirmParty}
+          onClose={() => setCurrentView('level_select')}
+        />
+        {pendingUnlockClasses.length > 0 && (
+          <ClassUnlockModal
+            unlockedClasses={pendingUnlockClasses}
+            onDismiss={() => setPendingUnlockClasses((prev) => prev.slice(1))}
+          />
+        )}
+      </>
     );
   }
 
