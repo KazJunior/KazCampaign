@@ -4,7 +4,6 @@ import {
   Target,
   HelpCircle,
   Settings,
-  RotateCcw,
   Award,
   Play,
   Gauge,
@@ -30,7 +29,6 @@ interface TopBarProps {
   onOpenObjectives: () => void;
   onOpenSettings: () => void;
   onOpenTutorial: () => void;
-  onRestartLevel: () => void;
   onEndTurn: () => void;
   onOpenBestiary?: () => void;
   onOpenHistory?: () => void;
@@ -53,7 +51,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenObjectives,
   onOpenSettings,
   onOpenTutorial,
-  onRestartLevel,
   onEndTurn,
   onOpenBestiary,
   onOpenHistory,
@@ -226,14 +223,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           title="Configurações de Áudio"
         >
           <Settings size={16} />
-        </button>
-
-        <button
-          onClick={onRestartLevel}
-          className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-[#E65353] text-[#A7B0C4] hover:text-[#E65353] transition-colors"
-          title="Reiniciar Esta Batalha"
-        >
-          <RotateCcw size={16} />
         </button>
 
         {/* Save and Exit to Menu */}

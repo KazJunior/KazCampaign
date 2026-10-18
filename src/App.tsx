@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type {
   ActiveAdventure,
+  ActiveBattleState,
   AdventureRecord,
   BattlePhase,
   DamagePreview,
@@ -41,6 +42,9 @@ import {
   resetPlayerProgress,
   saveAudioSettings,
   savePlayerProgress,
+  saveLiveBattleState,
+  loadLiveBattleState,
+  clearLiveBattleState,
 } from './utils/storage';
 import { soundManager } from './utils/audio';
 import { getAttackableTiles, getAoETiles, getReachableTiles } from './utils/pathfinding';
@@ -103,7 +107,14 @@ function consolidateDiscoveredItems(
 export function App() {
   const boardRef = useRef<BoardRenderer3DHandle>(null);
 
-  const [currentView, setCurrentView] = useState<'level_select' | 'party_select' | 'battle'>('level_select');
+  const [currentView, setCurrentView] = useState<'level_select' | 'party_select' | 'battle'>(() => {
+    const loadedProg = loadPlayerProgress();
+    const liveBattle = loadLiveBattleState();
+    if (liveBattle && loadedProg.activeAdventure) {
+      return 'battle';
+    }
+    return 'level_select';
+  });
   const [progress, setProgress] = useState<PlayerProgress>(loadPlayerProgress());
   const [audioSettings, setAudioSettings] = useState(loadAudioSettings());
 
@@ -148,7 +159,21 @@ export function App() {
             cloudP.activeAdventure ?? progress.activeAdventure,
             progress.discoveredItemIds || []
           ),
-          activeAdventure: cloudP.activeAdventure ?? null,
+          activeAdventure: cloudP.activeAdventure
+            ? {
+                ...cloudP.activeAdventure,
+                battleState: loadLiveBattleState() || cloudP.activeAdventure.battleState || progress.activeAdventure?.battleState || null,
+              }
+            : progress.activeAdventure?.battleState || loadLiveBattleState()
+              ? {
+                  currentLevelId: (loadLiveBattleState() || progress.activeAdventure?.battleState)!.levelId,
+                  partyClasses: safeParty,
+                  startedAt: new Date().toISOString(),
+                  goldEarnedInRun: 0,
+                  unitsState: cloudP.unitsState || createInitialUnitsState(),
+                  battleState: loadLiveBattleState() || progress.activeAdventure?.battleState || null,
+                }
+              : null,
           adventureHistory: Array.isArray(cloudP.adventureHistory) ? cloudP.adventureHistory : [],
           combatSpeed: cloudP.combatSpeed || 'normal',
           classUpgrades: cloudP.classUpgrades && typeof cloudP.classUpgrades === 'object' ? cloudP.classUpgrades : (progress.classUpgrades || {}),
@@ -185,6 +210,7 @@ export function App() {
   }, []);
 
   const handleLogout = () => {
+    clearLiveBattleState();
     logout();
     setAuthUser(null);
     const cleanProgress = resetPlayerProgress();
@@ -192,11 +218,56 @@ export function App() {
     setCurrentView('level_select');
   };
 
-  const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(null);
-  const [grid, setGrid] = useState<TileData[][]>([]);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [turnNumber, setTurnNumber] = useState(1);
-  const [phase, setPhase] = useState<BattlePhase>('deployment');
+  const [currentLevel, setCurrentLevel] = useState<LevelConfig | null>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure) {
+      return LEVELS.find((l) => l.id === liveBattle.levelId) || LEVELS[0];
+    }
+    return null;
+  });
+  const [grid, setGrid] = useState<TileData[][]>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure) {
+      const lvlConfig = LEVELS.find((l) => l.id === liveBattle.levelId) || LEVELS[0];
+      return lvlConfig.grid.map((row, y) =>
+        row.map((cell, x) => ({
+          x,
+          y,
+          terrain: cell.terrain,
+          obstacle: cell.obstacle,
+          isWalkable: cell.obstacle === 'none',
+          blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins',
+        }))
+      );
+    }
+    return [];
+  });
+  const [units, setUnits] = useState<Unit[]>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure && Array.isArray(liveBattle.units) && liveBattle.units.length > 0) {
+      return liveBattle.units;
+    }
+    return [];
+  });
+  const [turnNumber, setTurnNumber] = useState<number>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure) {
+      return liveBattle.turnNumber || 1;
+    }
+    return 1;
+  });
+  const [phase, setPhase] = useState<BattlePhase>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure) {
+      return liveBattle.phase === 'ai_turn' ? 'player_turn' : liveBattle.phase;
+    }
+    return 'deployment';
+  });
 
   const [selectedUnitId, setSelectedUnitId] = useState<string | null>(null);
   const [selectedAction, setSelectedAction] = useState<SelectedAction>('none');
@@ -214,7 +285,14 @@ export function App() {
   const [pendingStatChoices, setPendingStatChoices] = useState<{ unit: Unit; newLevel: number }[]>([]);
   const [pendingSkillChoices, setPendingSkillChoices] = useState<Unit[]>([]);
   const [pendingUnlockClasses, setPendingUnlockClasses] = useState<string[]>([]);
-  const [activeBossBanner, setActiveBossBanner] = useState<{ name: string; subtitle: string; phase?: number } | null>(null);
+  const [activeBossBanner, setActiveBossBanner] = useState<{ name: string; subtitle: string; phase?: number } | null>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure) {
+      return liveBattle.activeBossBanner || null;
+    }
+    return null;
+  });
 
   const [victorySummary, setVictorySummary] = useState<{
     xpGained: number;
@@ -306,7 +384,8 @@ export function App() {
       )
     );
 
-    setUnits([...playerUnits, ...enemyUnits]);
+    const initialUnits = [...playerUnits, ...enemyUnits];
+    setUnits(initialUnits);
     setTurnNumber(1);
     setPhase('deployment');
     setSelectedUnitId(null);
@@ -319,20 +398,65 @@ export function App() {
     setCurrentView('battle');
 
     const bossFound = enemyUnits.find((u) => u.isBoss || u.isMiniBoss);
+    let bannerObj: { name: string; subtitle: string; phase?: number } | null = null;
     if (bossFound) {
-      setActiveBossBanner({
+      bannerObj = {
         name: bossFound.name,
         subtitle: bossFound.isBoss
           ? `BOSS PODEROSO (FASE ${lvlConfig.id}) — ${lvlConfig.subtitle}`
           : `MINI BOSS (FASE ${lvlConfig.id}) — ${lvlConfig.subtitle}`,
         phase: 1,
-      });
+      };
+      setActiveBossBanner(bannerObj);
+    } else {
+      setActiveBossBanner(null);
     }
+
+    saveLiveBattleState({
+      levelId: lvlConfig.id,
+      turnNumber: 1,
+      phase: 'deployment',
+      units: initialUnits,
+      activeBossBanner: bannerObj,
+    });
+    soundManager.playSelect();
+  };
+
+  // Resume an active battle from where it was left off
+  const resumeBattle = (savedBattle: ActiveBattleState) => {
+    const lvlConfig = LEVELS.find((l) => l.id === savedBattle.levelId) || LEVELS[0];
+    setCurrentLevel(lvlConfig);
+
+    const tileGrid: TileData[][] = lvlConfig.grid.map((row, y) =>
+      row.map((cell, x) => ({
+        x,
+        y,
+        terrain: cell.terrain,
+        obstacle: cell.obstacle,
+        isWalkable: cell.obstacle === 'none',
+        blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins',
+      }))
+    );
+    setGrid(tileGrid);
+    setUnits(savedBattle.units);
+    setTurnNumber(savedBattle.turnNumber);
+    setPhase(savedBattle.phase === 'ai_turn' ? 'player_turn' : savedBattle.phase);
+    setActiveBossBanner(savedBattle.activeBossBanner || null);
+
+    setSelectedUnitId(null);
+    setSelectedAction('none');
+    setActiveSkill(null);
+    setTargetUnitId(null);
+    setDamagePreview(null);
+    setFloatingNumbers([]);
+    setIsAnimatingAction(false);
+    setCurrentView('battle');
     soundManager.playSelect();
   };
 
   // Start a fresh Adventure Run from Level 1
   const handleStartNewAdventure = () => {
+    clearLiveBattleState();
     const initialUnits = createInitialUnitsState();
     const preservedDiscoveredItems = consolidateDiscoveredItems(
       progress.discoveredItemIds,
@@ -374,16 +498,28 @@ export function App() {
 
   // Continue existing active adventure
   const handleContinueAdventure = () => {
-    if (progress.activeAdventure) {
-      startLevel(progress.activeAdventure.currentLevelId, progress.activeAdventure.unitsState);
-    } else {
+    if (!progress.activeAdventure) {
       handleStartNewAdventure();
+      return;
+    }
+
+    const savedBattle = loadLiveBattleState() || progress.activeAdventure.battleState;
+    if (
+      savedBattle &&
+      savedBattle.levelId === progress.activeAdventure.currentLevelId &&
+      Array.isArray(savedBattle.units) &&
+      savedBattle.units.length > 0
+    ) {
+      resumeBattle(savedBattle);
+    } else {
+      startLevel(progress.activeAdventure.currentLevelId, progress.activeAdventure.unitsState);
     }
   };
 
   // Forfeit/Abandon current adventure
   const handleAbandonAdventure = () => {
     if (!progress.activeAdventure) return;
+    clearLiveBattleState();
     const currentAdv = progress.activeAdventure;
     const record: AdventureRecord = {
       id: `adv_${Date.now()}`,
@@ -436,7 +572,56 @@ export function App() {
     soundManager.playTurnStart(true);
   };
 
+  // Auto-salva continuamente o estado da batalha em andamento sempre que houver qualquer alteração
+  useEffect(() => {
+    if (
+      currentView !== 'battle' ||
+      !currentLevel ||
+      phase === 'victory' ||
+      phase === 'defeat' ||
+      units.length === 0 ||
+      !progress.activeAdventure
+    ) {
+      return;
+    }
+
+    const bState: ActiveBattleState = {
+      levelId: currentLevel.id,
+      turnNumber,
+      phase,
+      units,
+      activeBossBanner,
+    };
+
+    saveLiveBattleState(bState);
+  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure]);
+
+  // Garante persistência síncrona antes do recarregamento da página (F5) ou fechamento de aba
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (
+        currentView === 'battle' &&
+        currentLevel &&
+        phase !== 'victory' &&
+        phase !== 'defeat' &&
+        units.length > 0 &&
+        progress.activeAdventure
+      ) {
+        saveLiveBattleState({
+          levelId: currentLevel.id,
+          turnNumber,
+          phase,
+          units,
+          activeBossBanner,
+        });
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure]);
+
   const handleResetProgress = () => {
+    clearLiveBattleState();
     const fresh = resetPlayerProgress();
     setProgress(fresh);
     setCurrentView('level_select');
@@ -856,6 +1041,7 @@ export function App() {
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
+    clearLiveBattleState();
     setPhase('defeat');
     soundManager.playDefeat();
 
@@ -1743,6 +1929,7 @@ export function App() {
   // Handle Victory in current stage
   const handleVictory = (finalUnitsState: Unit[]) => {
     if (!currentLevel) return;
+    clearLiveBattleState();
     soundManager.playVictory();
     setPhase('victory');
 
@@ -2293,14 +2480,24 @@ export function App() {
         onOpenObjectives={() => setShowObjectives(true)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenTutorial={() => setShowTutorial(true)}
-        onRestartLevel={() => currentLevel && startLevel(currentLevel.id)}
         onEndTurn={handleEndPlayerTurn}
         onOpenBestiary={() => setShowBestiary(true)}
         onOpenHistory={() => setShowHistory(true)}
         onOpenEquipment={() => setShowEquipment(true)}
         onOpenItemCatalog={() => setShowItemBestiary(true)}
         onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
-        onSaveAndExit={() => setCurrentView('level_select')}
+        onSaveAndExit={() => {
+          if (currentLevel && units.length > 0) {
+            saveLiveBattleState({
+              levelId: currentLevel.id,
+              turnNumber,
+              phase,
+              units,
+              activeBossBanner,
+            });
+          }
+          setCurrentView('level_select');
+        }}
       />
 
       <div className="flex-1 flex overflow-hidden relative">

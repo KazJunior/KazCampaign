@@ -202,10 +202,10 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AD65]/20 text-[#D4AD65] text-xs font-black uppercase tracking-wider border border-[#D4AD65]/40 mb-2">
-                  <Swords size={14} /> Aventura em Andamento
+                  <Swords size={14} /> {activeAdv?.battleState ? `Batalha em Andamento (Turno ${activeAdv.battleState.turnNumber})` : 'Aventura em Andamento'}
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black text-white flex items-center gap-2">
-                  Próxima Batalha: Fase {currentStageNum} de 50
+                  {activeAdv?.battleState ? `Retomar Batalha: Fase ${currentStageNum} de 50` : `Próxima Batalha: Fase ${currentStageNum} de 50`}
                 </h2>
                 <p className="text-xs sm:text-sm text-[#A7B0C4] mt-1">
                   {currentLevelInfo.name} — <span className="text-[#D4AD65] font-semibold">{currentLevelInfo.subtitle}</span>
@@ -233,7 +233,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                   onClick={onContinueAdventure}
                   className="px-6 py-4 rounded-2xl bg-gradient-to-r from-[#D4AD65] via-[#E5C27E] to-[#B88E43] hover:from-[#E5C27E] hover:to-[#A77E36] text-[#10131C] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-[#D4AD65]/20 transition-all hover:scale-105 active:scale-95"
                 >
-                  <Play size={18} fill="currentColor" /> Continuar Aventura (Fase {currentStageNum})
+                  <Play size={18} fill="currentColor" /> {activeAdv?.battleState ? `Retomar Batalha (Fase ${currentStageNum})` : `Continuar Aventura (Fase ${currentStageNum})`}
                 </button>
 
                 <button

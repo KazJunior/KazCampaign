@@ -1,9 +1,10 @@
-import type { AudioSettings, PlayerProgress } from '../types/game';
+import type { AudioSettings, PlayerProgress, ActiveBattleState } from '../types/game';
 import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
 import { saveCloudProgress } from './api';
 
 const PROGRESS_KEY = 'rpg_tactics_progress_v4';
 const AUDIO_KEY = 'rpg_tactics_audio_v1';
+export const BATTLE_STATE_KEY = 'rpg_tactics_battle_state_v1';
 
 export function createInitialUnitsState(): PlayerProgress['unitsState'] {
   return {
@@ -121,13 +122,15 @@ export function loadPlayerProgress(): PlayerProgress {
       });
     }
 
-    // Ensure activeAdventure has inventory and equipment
+    // Ensure activeAdventure has inventory, equipment and live battleState
     let activeAdventure = parsed.activeAdventure || null;
     if (activeAdventure) {
+      const liveBattle = loadLiveBattleState();
       activeAdventure = {
         ...activeAdventure,
         inventory: Array.isArray(activeAdventure.inventory) ? activeAdventure.inventory : [],
         equipment: activeAdventure.equipment || {},
+        battleState: liveBattle || activeAdventure.battleState || null,
       };
     }
 
@@ -170,10 +173,74 @@ export function resetPlayerProgress(): PlayerProgress {
   try {
     localStorage.removeItem(PROGRESS_KEY);
     localStorage.removeItem('rpg_tactics_progress_v1');
+    localStorage.removeItem(BATTLE_STATE_KEY);
   } catch (err) {
     console.error('Failed to reset progress in localStorage:', err);
   }
   return DEFAULT_PROGRESS;
+}
+
+export function saveLiveBattleState(battleState: ActiveBattleState | null): void {
+  try {
+    if (!battleState) {
+      clearLiveBattleState();
+      return;
+    }
+    localStorage.setItem(BATTLE_STATE_KEY, JSON.stringify(battleState));
+
+    // Espelha no activeAdventure dentro de PROGRESS_KEY
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.activeAdventure) {
+        parsed.activeAdventure.battleState = battleState;
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to save live battle state:', err);
+  }
+}
+
+export function loadLiveBattleState(): ActiveBattleState | null {
+  try {
+    const raw = localStorage.getItem(BATTLE_STATE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as ActiveBattleState;
+      if (parsed && typeof parsed.levelId === 'number' && Array.isArray(parsed.units) && parsed.units.length > 0) {
+        return parsed;
+      }
+    }
+
+    const rawProgress = localStorage.getItem(PROGRESS_KEY);
+    if (rawProgress) {
+      const parsedProgress = JSON.parse(rawProgress);
+      const bState = parsedProgress?.activeAdventure?.battleState as ActiveBattleState | undefined;
+      if (bState && typeof bState.levelId === 'number' && Array.isArray(bState.units) && bState.units.length > 0) {
+        return bState;
+      }
+    }
+    return null;
+  } catch (err) {
+    console.error('Failed to load live battle state:', err);
+    return null;
+  }
+}
+
+export function clearLiveBattleState(): void {
+  try {
+    localStorage.removeItem(BATTLE_STATE_KEY);
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.activeAdventure) {
+        parsed.activeAdventure.battleState = null;
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
+      }
+    }
+  } catch (err) {
+    console.error('Failed to clear live battle state:', err);
+  }
 }
 
 export function loadAudioSettings(): AudioSettings {

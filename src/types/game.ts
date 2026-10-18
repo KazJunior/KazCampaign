@@ -218,6 +218,14 @@ export interface AdventureRecord {
   goldEarned: number;
 }
 
+export interface ActiveBattleState {
+  levelId: number;
+  turnNumber: number;
+  phase: BattlePhase;
+  units: Unit[];
+  activeBossBanner?: { name: string; subtitle: string; phase?: number } | null;
+}
+
 export interface ActiveAdventure {
   currentLevelId: number;
   partyClasses: string[];
@@ -226,6 +234,7 @@ export interface ActiveAdventure {
   unitsState: Record<string, UnitProgression>;
   inventory?: string[]; // Item IDs currently held in this run
   equipment?: Record<string, EquipmentSlots>; // ClassName -> EquipmentSlots
+  battleState?: ActiveBattleState | null;
 }
 
 export interface PlayerProgress {
