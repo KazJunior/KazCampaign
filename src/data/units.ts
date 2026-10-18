@@ -27,6 +27,7 @@ export interface ClassDefinition {
   baseSkillId: string;
   description: string;
   statGrowth: StatGrowth;
+  isSecret?: boolean;
 }
 
 export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
@@ -200,6 +201,24 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     description: 'Guerreiro implacável com altíssimos danos físicos, muitas vezes sacrificando a própria segurança.',
     statGrowth: { hp: 15, atk: 5, mag: 1, def: 2, res: 1 },
   },
+  carrasco_vazio: {
+    className: 'carrasco_vazio',
+    name: 'Carrasco do Vazio',
+    role: 'Samurai Dimensional & Carrasco',
+    maxHp: 95,
+    atk: 30,
+    mag: 12,
+    def: 7,
+    res: 8,
+    mov: 4,
+    range: 1,
+    color: '#9D4EDD',
+    avatarKey: 'void_executioner',
+    baseSkillId: 'corte_do_vazio',
+    description: 'Samurai implacável que corta as fronteiras do espaço. Sua técnica suprema concede turnos adicionais imediatos ao ceifar alvos.',
+    statGrowth: { hp: 12, atk: 5, mag: 2, def: 2, res: 2 },
+    isSecret: true,
+  },
 };
 
 export const INITIAL_CLASSES: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
@@ -250,6 +269,30 @@ export const CLASS_UNLOCK_CONDITIONS: Record<string, ClassUnlockInfo> = {
   },
 };
 
+export interface SecretClassUnlockInfo {
+  title: string;
+  description: string;
+  riddle: string;
+}
+
+export const SECRET_CLASS_UNLOCK_CONDITIONS: Record<string, SecretClassUnlockInfo> = {
+  carrasco_vazio: {
+    title: 'Carrasco do Vazio',
+    description: 'Derrote Astaroth (Fase 10) utilizando apenas classes de combate corpo a corpo (Alcance 1).',
+    riddle: `Nas sombras mais profundas do Trono, onde a luz jamais alcançou...
+O Carrasco do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
+
+Se desejas empunhar a lâmina proibida que rasga o espaço,
+abandone a covardia das flechas e o refúgio das magias distantes.
+
+Desça ao abismo cercado apenas por guerreiros de aço, fúria e lâmina face a face.
+Traga uma equipe formada exclusivamente por combatentes de combate corpo a corpo.
+
+Derrube o Soberano Astaroth em combate próximo...
+e a Lâmina do Vazio se curvará ao seu comando.`,
+  },
+};
+
 export function getMaxCompletedLevel(progress: {
   activeAdventure?: { currentLevelId: number } | null;
   adventureHistory?: { farthestLevel: number; result: string }[] | null;
@@ -285,6 +328,9 @@ export function sanitizeUnlockedClasses(
 ): string[] {
   const allowed = new Set<string>(INITIAL_CLASSES);
   if (Array.isArray(rawUnlocked)) {
+    if (rawUnlocked.includes('carrasco_vazio')) {
+      allowed.add('carrasco_vazio');
+    }
     Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
       if (maxLevelCompleted >= cond.requiredLevel || completedLevels.includes(cond.requiredLevel)) {
         if (rawUnlocked.includes(cName)) {

@@ -313,6 +313,7 @@ export const LEVELS: LevelConfig[] = [
       'Sobreviva às transformações de Fase de Combate.',
     ],
     grid: createGrid(10, 8, 'stone', {
+      '0,0': { obstacle: 'note' },
       '1,2': { obstacle: 'shrine' },
       '8,2': { obstacle: 'shrine' },
       '3,4': { obstacle: 'shrine' },

@@ -32,12 +32,24 @@ export const ClassUnlockModal: React.FC<ClassUnlockModalProps> = ({
     return null;
   }
 
+  const isSecret = Boolean(classDef.isSecret);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-[#1B2030] border-4 border-[#D4AD65] rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center text-[#F3F4F8] shadow-2xl space-y-5 animate-scale-up">
+      <div
+        className={`bg-[#1B2030] border-4 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center text-[#F3F4F8] shadow-2xl space-y-5 animate-scale-up ${
+          isSecret ? 'border-[#9D4EDD] shadow-[#7B2CBF]/40' : 'border-[#D4AD65]'
+        }`}
+      >
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 bg-[#D4AD65]/20 border border-[#D4AD65] text-[#D4AD65] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
-          <Sparkles size={16} /> NOVA CLASSE DESBLOQUEADA!
+        <div
+          className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest animate-pulse border ${
+            isSecret
+              ? 'bg-[#9D4EDD]/20 border-[#9D4EDD] text-[#C084FC]'
+              : 'bg-[#D4AD65]/20 border-[#D4AD65] text-[#D4AD65]'
+          }`}
+        >
+          <Sparkles size={16} /> {isSecret ? '🌟 CLASSE SECRETA DESBLOQUEADA!' : 'NOVA CLASSE DESBLOQUEADA!'}
         </div>
 
         {/* Avatar Emblem */}
@@ -53,7 +65,13 @@ export const ClassUnlockModal: React.FC<ClassUnlockModalProps> = ({
         {/* Title & Role */}
         <div className="space-y-1">
           <h2 className="text-3xl font-extrabold text-[#F3F4F8]">{classDef.name}</h2>
-          <p className="text-xs font-bold text-[#D4AD65] uppercase tracking-wider">{classDef.role}</p>
+          <p
+            className={`text-xs font-bold uppercase tracking-wider ${
+              isSecret ? 'text-[#C084FC]' : 'text-[#D4AD65]'
+            }`}
+          >
+            {classDef.role}
+          </p>
           <p className="text-xs text-[#A7B0C4] max-w-sm mx-auto pt-2 leading-relaxed">
             {classDef.description}
           </p>
@@ -87,7 +105,11 @@ export const ClassUnlockModal: React.FC<ClassUnlockModalProps> = ({
         {/* Button */}
         <button
           onClick={onDismiss}
-          className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] font-black text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all"
+          className={`w-full py-3 rounded-2xl font-black text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2 active:scale-95 transition-all text-[#10131C] ${
+            isSecret
+              ? 'bg-gradient-to-r from-[#C084FC] via-[#9D4EDD] to-[#7B2CBF] hover:from-[#E0AAFF] hover:to-[#9D4EDD] text-white'
+              : 'bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D]'
+          }`}
         >
           <Check size={16} /> Entendido & Continuar
         </button>
@@ -118,6 +140,8 @@ function getClassIcon(avatarKey: string, size = 24) {
       return <BookOpen size={size} />;
     case 'berserker':
       return <Flame size={size} />;
+    case 'void_executioner':
+      return <Swords size={size} />;
     default:
       return <Sparkles size={size} />;
   }

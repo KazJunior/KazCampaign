@@ -107,6 +107,9 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'berserker':
       buildBerserkerMini(char);
       break;
+    case 'void_executioner':
+      buildVoidExecutionerMini(char);
+      break;
     case 'goblin':
       buildGoblinMini(char);
       break;
@@ -788,6 +791,96 @@ function buildBerserkerMini(group: THREE.Group) {
   const blade = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.26), ironMat);
   blade.position.set(0.28, 0.76, 0.18);
   group.add(blade);
+}
+
+// -------------------------------------------------------------
+// 11. CARRASCO DO VAZIO (Void Samurai Executioner with Glowing Katana & Jingasa)
+// -------------------------------------------------------------
+function buildVoidExecutionerMini(group: THREE.Group) {
+  const voidDarkMat = new THREE.MeshStandardMaterial({ color: 0x181024, roughness: 0.7 });
+  const voidPurpleMat = new THREE.MeshStandardMaterial({ color: 0x5a189a, roughness: 0.5 });
+  const voidGlowMat = new THREE.MeshStandardMaterial({
+    color: 0xe9d5ff,
+    emissive: 0xa855f7,
+    emissiveIntensity: 1.1,
+    metalness: 0.9,
+    roughness: 0.1,
+  });
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.3 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5d0c5, roughness: 0.5 });
+
+  // Legs in dark Hakama
+  const legGeo = new THREE.BoxGeometry(0.08, 0.22, 0.1);
+  const legL = new THREE.Mesh(legGeo, voidDarkMat);
+  legL.position.set(-0.08, 0.11, 0);
+  const legR = new THREE.Mesh(legGeo, voidDarkMat);
+  legR.position.set(0.08, 0.11, 0);
+  group.add(legL, legR);
+
+  // Samurai Armored Torso (Do)
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.13, 0.32, 8), voidPurpleMat);
+  torso.position.y = 0.34;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Golden Chest Crest
+  const crest = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.02), goldMat);
+  crest.position.set(0, 0.36, 0.14);
+  group.add(crest);
+
+  // Samurai Shoulder Guards (Sode)
+  const sodeGeo = new THREE.BoxGeometry(0.06, 0.14, 0.14);
+  const sodeL = new THREE.Mesh(sodeGeo, voidPurpleMat);
+  sodeL.position.set(-0.21, 0.44, 0);
+  sodeL.rotation.z = Math.PI / 10;
+  const sodeR = new THREE.Mesh(sodeGeo, voidPurpleMat);
+  sodeR.position.set(0.21, 0.44, 0);
+  sodeR.rotation.z = -Math.PI / 10;
+  group.add(sodeL, sodeR);
+
+  // Head with pale face
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), skinMat);
+  head.position.set(0, 0.58, 0.02);
+  group.add(head);
+
+  // Glowing Purple Void Eyes
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0xc084fc });
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.018, 4, 4), eyeMat);
+  eyeL.position.set(-0.04, 0.59, 0.11);
+  const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.018, 4, 4), eyeMat);
+  eyeR.position.set(0.04, 0.59, 0.11);
+  group.add(eyeL, eyeR);
+
+  // Conical Straw Hat / Jingasa (Charcoal with Gold Edge)
+  const hat = new THREE.Mesh(new THREE.ConeGeometry(0.25, 0.12, 12), voidDarkMat);
+  hat.position.set(0, 0.68, 0);
+  hat.castShadow = true;
+  const hatTrim = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.012, 4, 12), goldMat);
+  hatTrim.position.set(0, 0.62, 0);
+  hatTrim.rotation.x = Math.PI / 2;
+  group.add(hat, hatTrim);
+
+  // Katana in Right Hand (Slender, curved and glowing with purple void energy)
+  const hilt = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.18, 6), voidDarkMat);
+  hilt.position.set(0.24, 0.32, 0.08);
+  const tsuba = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.015, 8), goldMat);
+  tsuba.position.set(0.24, 0.41, 0.08);
+
+  const katanaBlade = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.58, 0.045), voidGlowMat);
+  katanaBlade.position.set(0.24, 0.7, 0.09);
+  katanaBlade.castShadow = true;
+  group.add(hilt, tsuba, katanaBlade);
+
+  // Sheath (Saya) slung at the left hip
+  const saya = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.46, 0.05), voidDarkMat);
+  saya.position.set(-0.16, 0.28, -0.04);
+  saya.rotation.z = Math.PI / 6;
+  group.add(saya);
+
+  // Floating Void Sparkle
+  const voidLight = new THREE.PointLight(0xa855f7, 0.7, 1.5);
+  voidLight.position.set(0, 0.5, -0.15);
+  group.add(voidLight);
 }
 
 // -------------------------------------------------------------

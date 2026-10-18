@@ -20,7 +20,7 @@ import type {
   UnitProgression,
 } from './types/game';
 import { LEVELS } from './data/levels';
-import { createPlayerUnit, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
+import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
 import {
@@ -67,6 +67,7 @@ import { SkillChoiceModal } from './components/SkillChoiceModal';
 import { StatChoiceModal } from './components/StatChoiceModal';
 import { ClassUnlockModal } from './components/ClassUnlockModal';
 import { BossIntroBanner } from './components/BossIntroBanner';
+import { SecretRiddleModal } from './components/SecretRiddleModal';
 import { AuthScreen } from './components/AuthScreen';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { BestiaryModal } from './components/BestiaryModal';
@@ -282,6 +283,7 @@ export function App() {
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showSecretRiddle, setShowSecretRiddle] = useState(false);
   const [pendingStatChoices, setPendingStatChoices] = useState<{ unit: Unit; newLevel: number }[]>([]);
   const [pendingSkillChoices, setPendingSkillChoices] = useState<Unit[]>([]);
   const [pendingUnlockClasses, setPendingUnlockClasses] = useState<string[]>([]);
@@ -1101,6 +1103,13 @@ export function App() {
 
     const clickedUnit = units.find((u) => u.x === x && u.y === y && !u.isDead);
 
+    // Click on mysterious note / parchment in Level 10 (or any cell with obstacle 'note')
+    if (!clickedUnit && (grid[y]?.[x]?.obstacle === 'note' || (currentLevel?.id === 10 && x === 0 && y === 0))) {
+      setShowSecretRiddle(true);
+      soundManager.playSelect();
+      return;
+    }
+
     // Deployment swap
     if (phase === 'deployment') {
       if (selectedUnit && selectedUnit.faction === 'player') {
@@ -1586,6 +1595,17 @@ export function App() {
       addFloatingNumber(finalAttackerX, finalAttackerY, 'Recuo Disponível!', 'status', '#60A5FA');
     }
 
+    // EXTRA TURN MECHANIC: Carrasco do Vazio Ultimate (Decapitação do Vazio)
+    // Ao abater um alvo com a suprema, ganha mais um turno imediatamente (movimento e ação)
+    const isVoidExecutionKill =
+      (skill?.id === 'decapitacao_do_vazio' || skill?.id?.startsWith('decapitacao_do_vazio')) &&
+      totalKills > 0;
+
+    if (isVoidExecutionKill) {
+      soundManager.playUpgrade();
+      addFloatingNumber(finalAttackerX, finalAttackerY, 'EXECUÇÃO DO VAZIO! +1 TURNO!', 'status', '#C77DFF');
+    }
+
     updatedUnits = updatedUnits.map((u) => {
       if (u.id === selectedUnit.id) {
         const updatedSkills = u.skills.map((s) =>
@@ -1596,8 +1616,8 @@ export function App() {
           x: finalAttackerX,
           y: finalAttackerY,
           currentHp: finalAttackerHp,
-          hasMoved: canMoveAgain ? false : u.hasMoved,
-          hasAttacked: true,
+          hasMoved: isVoidExecutionKill ? false : (canMoveAgain ? false : u.hasMoved),
+          hasAttacked: isVoidExecutionKill ? false : true,
           skills: updatedSkills,
           statusEffects: finalAttackerEffects,
           damageDealt: u.damageDealt + totalDmgDone,
@@ -1613,6 +1633,10 @@ export function App() {
     setSelectedAction('none');
     setActiveSkill(null);
     setIsAnimatingAction(false);
+
+    if (isVoidExecutionKill) {
+      setSelectedUnitId(selectedUnit.id);
+    }
 
     setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 200);
   };
@@ -1980,6 +2004,23 @@ export function App() {
         newlyUnlocked.push(cName);
       }
     });
+
+    // SECRET CLASS UNLOCK: Carrasco do Vazio
+    // Condição: Derrotar Astaroth (Fase 10) utilizando apenas classes corpo a corpo (range === 1)
+    if (currentLevel.id === 10 && !currentUnlocked.includes('carrasco_vazio')) {
+      const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
+      const allMelee =
+        activeParty.length === 4 &&
+        activeParty.every((cKey) => {
+          const cDef = CLASS_DEFINITIONS[cKey];
+          return cDef && cDef.range === 1;
+        });
+
+      if (allMelee) {
+        newlyUnlocked.push('carrasco_vazio');
+      }
+    }
+
     const finalUnlockedClasses = Array.from(new Set([...currentUnlocked, ...newlyUnlocked]));
 
     const nextUnlocked = Math.max(progress.unlockedLevel, currentLevel.id + 1);
@@ -2486,6 +2527,7 @@ export function App() {
         onOpenEquipment={() => setShowEquipment(true)}
         onOpenItemCatalog={() => setShowItemBestiary(true)}
         onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
+        onOpenRiddle={currentLevel?.id === 10 ? () => setShowSecretRiddle(true) : undefined}
         onSaveAndExit={() => {
           if (currentLevel && units.length > 0) {
             saveLiveBattleState({
@@ -2589,6 +2631,9 @@ export function App() {
         />
       )}
       {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} />}
+      {showSecretRiddle && (
+        <SecretRiddleModal isOpen={showSecretRiddle} onClose={() => setShowSecretRiddle(false)} />
+      )}
       {activeBossBanner && (
         <BossIntroBanner
           bossName={activeBossBanner.name}

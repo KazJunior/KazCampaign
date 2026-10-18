@@ -544,6 +544,60 @@ export function createRichObstacle(type: ObstacleType, x: number, y: number): TH
       break;
     }
 
+    case 'note': {
+      // --- Bilhete Branco Secreto em Pedestal de Obsidiana com Runa do Vazio ---
+      const noteGroup = new THREE.Group();
+      noteGroup.name = 'secretNoteProp';
+
+      // Pedestal de Pedra do Abismo
+      const pedMat = new THREE.MeshStandardMaterial({
+        color: 0x1a1226,
+        roughness: 0.6,
+        metalness: 0.2,
+        flatShading: true,
+      });
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.3, 8), pedMat);
+      pedestal.position.y = 0.15;
+      pedestal.castShadow = true;
+      pedestal.receiveShadow = true;
+      noteGroup.add(pedestal);
+
+      // Friso Dourado Antigo no topo do pedestal
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.3 });
+      const goldRing = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.03, 8), ringMat);
+      goldRing.position.y = 0.29;
+      noteGroup.add(goldRing);
+
+      // Bilhete Branco (Pergaminho Dobrado repousando)
+      const paperMat = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.3,
+        emissive: 0xf5f3ff,
+        emissiveIntensity: 0.4,
+      });
+      const paper = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.02, 0.34), paperMat);
+      paper.position.set(0, 0.32, 0);
+      paper.rotation.y = 0.25;
+      paper.castShadow = true;
+      noteGroup.add(paper);
+
+      // Runa Roxa Brilhante do Vazio no Centro do Bilhete
+      const runeMat = new THREE.MeshBasicMaterial({ color: 0xa855f7 });
+      const rune = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.18), runeMat);
+      rune.position.set(0, 0.335, 0);
+      rune.rotation.x = -Math.PI / 2;
+      rune.rotation.z = 0.25;
+      noteGroup.add(rune);
+
+      // Brilho pulsante suave do Vazio
+      const voidGlow = new THREE.PointLight(0xa855f7, 0.8, 2.5);
+      voidGlow.position.set(0, 0.5, 0);
+      noteGroup.add(voidGlow);
+
+      group.add(noteGroup);
+      break;
+    }
+
     default:
       break;
   }

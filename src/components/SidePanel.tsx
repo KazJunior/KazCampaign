@@ -374,6 +374,8 @@ function getUnitAvatar(key: string, size = 16) {
       return <Hammer size={size} />;
     case 'spider':
       return <Skull size={size} />;
+    case 'void_executioner':
+      return <Swords size={size} />;
     default:
       return <Sparkles size={size} />;
   }

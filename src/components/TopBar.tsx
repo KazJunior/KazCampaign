@@ -13,6 +13,7 @@ import {
   Package,
   Sparkles,
   Building2,
+  Scroll,
 } from 'lucide-react';
 import type { BattlePhase, Unit } from '../types/game';
 
@@ -35,6 +36,7 @@ interface TopBarProps {
   onOpenEquipment?: () => void;
   onOpenItemCatalog?: () => void;
   onOpenBaseUpgrades?: () => void;
+  onOpenRiddle?: () => void;
   onSaveAndExit?: () => void;
 }
 
@@ -57,6 +59,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenEquipment,
   onOpenItemCatalog,
   onOpenBaseUpgrades,
+  onOpenRiddle,
   onSaveAndExit,
 }) => {
   const isPlayerTurn = phase === 'player_turn';
@@ -198,6 +201,18 @@ export const TopBar: React.FC<TopBarProps> = ({
             title="Base de Operações & Upgrades"
           >
             <Building2 size={16} />
+          </button>
+        )}
+
+        {/* Secret Riddle shortcut */}
+        {onOpenRiddle && (
+          <button
+            onClick={onOpenRiddle}
+            className="px-2.5 py-1.5 rounded-lg bg-[#240046] border border-[#9D4EDD] text-[#E0AAFF] hover:bg-[#3C096C] hover:border-[#C77DFF] transition-all shadow-md shadow-[#9D4EDD]/20 flex items-center gap-1.5"
+            title="Investigar Bilhete Misterioso (Enigma do Vazio)"
+          >
+            <Scroll size={16} className="text-[#E0AAFF]" />
+            <span className="hidden md:inline text-xs font-bold text-[#E0AAFF]">Bilhete Misterioso</span>
           </button>
         )}
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
-import { Shield, Swords, Wand2, HeartPulse, Footprints, Target, Check, Play, Sparkles, Skull, Wrench, BookOpen, Flame } from 'lucide-react';
+import { Shield, Swords, Wand2, HeartPulse, Footprints, Target, Check, Play, Sparkles, Skull, Wrench, BookOpen, Flame, HelpCircle } from 'lucide-react';
 
 interface PartySelectionModalProps {
   initialSelected: string[];
@@ -48,7 +48,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             Escolha 4 Heróis para a Campanha
           </h2>
           <p className="text-xs text-[#A7B0C4]">
-            Monte seu grupo tático de 4 classes entre as {unlockedClasses.length} opções desbloqueadas.
+            Monte seu grupo tático de 4 classes entre as {unlockedClasses.length} opções disponíveis.
           </p>
         </div>
 
@@ -64,17 +64,18 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             <Shield size={16} /> Equipe: {selected.length} / 4 Selecionados
           </span>
           <span className="px-3 py-1 rounded-full font-bold text-xs bg-[#10131C] border border-[#343B50] text-[#D4AD65]">
-            {unlockedClasses.length} de 10 Classes Liberadas
+            {unlockedClasses.length} de {allClasses.length} Classes Desbloqueadas
           </span>
         </div>
 
-        {/* Class Cards Grid (10 Options) */}
+        {/* Class Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {allClasses.map((cKey) => {
             const classDef = CLASS_DEFINITIONS[cKey];
             const isUnlocked = unlockedClasses.includes(cKey);
             const isSelected = selected.includes(cKey);
             const unlockCondition = CLASS_UNLOCK_CONDITIONS[cKey];
+            const isSecret = !!classDef.isSecret;
 
             return (
               <div
@@ -82,23 +83,42 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                 onClick={() => toggleClass(cKey)}
                 className={`p-4 rounded-2xl border-2 transition-all flex flex-col justify-between relative ${
                   !isUnlocked
-                    ? 'bg-[#0B0D13]/90 border-[#343B50]/50 opacity-60 cursor-not-allowed'
+                    ? isSecret
+                      ? 'bg-[#120D1D]/90 border-[#7B2CBF]/40 opacity-75 cursor-not-allowed shadow-inner shadow-[#7B2CBF]/10'
+                      : 'bg-[#0B0D13]/90 border-[#343B50]/50 opacity-60 cursor-not-allowed'
                     : isSelected
-                    ? 'bg-[#10131C] border-[#4C8DFF] shadow-lg shadow-[#4C8DFF]/20 scale-[1.02] cursor-pointer'
+                    ? isSecret
+                      ? 'bg-[#181126] border-[#9D4EDD] shadow-lg shadow-[#9D4EDD]/30 scale-[1.02] cursor-pointer'
+                      : 'bg-[#10131C] border-[#4C8DFF] shadow-lg shadow-[#4C8DFF]/20 scale-[1.02] cursor-pointer'
+                    : isSecret
+                    ? 'bg-[#140E20]/80 border-[#7B2CBF]/60 hover:border-[#9D4EDD] opacity-95 cursor-pointer shadow-sm shadow-[#7B2CBF]/20'
                     : 'bg-[#10131C]/60 border-[#343B50] hover:border-[#D4AD65]/60 opacity-90 cursor-pointer'
                 }`}
               >
                 {/* Selected indicator checkmark */}
                 {isSelected && (
-                  <div className="absolute top-3 right-3 bg-[#4C8DFF] text-white p-1 rounded-full shadow">
+                  <div className={`absolute top-3 right-3 text-white p-1 rounded-full shadow ${isSecret ? 'bg-[#9D4EDD]' : 'bg-[#4C8DFF]'}`}>
                     <Check size={14} />
                   </div>
                 )}
 
                 {/* Locked indicator badge */}
                 {!isUnlocked && (
-                  <div className="absolute top-3 right-3 bg-[#E65353]/20 border border-[#E65353]/50 text-[#E65353] px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1">
-                    Bloqueada
+                  <div
+                    className={`absolute top-3 right-3 px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1 ${
+                      isSecret
+                        ? 'bg-[#7B2CBF]/30 border border-[#9D4EDD]/60 text-[#C77DFF]'
+                        : 'bg-[#E65353]/20 border border-[#E65353]/50 text-[#E65353]'
+                    }`}
+                  >
+                    {isSecret ? 'Oculta' : 'Bloqueada'}
+                  </div>
+                )}
+
+                {/* Secret tag if unlocked */}
+                {isUnlocked && isSecret && !isSelected && (
+                  <div className="absolute top-3 right-3 bg-[#9D4EDD]/20 border border-[#9D4EDD]/60 text-[#C77DFF] px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1">
+                    Secreta
                   </div>
                 )}
 
@@ -106,27 +126,43 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 ${
-                        !isUnlocked ? 'grayscale brightness-75' : ''
+                        !isUnlocked ? (isSecret ? 'bg-[#3C096C]/80 text-[#C77DFF]' : 'grayscale brightness-75') : ''
                       }`}
-                      style={{ backgroundColor: classDef.color }}
+                      style={{ backgroundColor: !isUnlocked && isSecret ? undefined : classDef.color }}
                     >
-                      {getClassIcon(classDef.avatarKey, 24)}
+                      {!isUnlocked && isSecret ? <HelpCircle size={24} /> : getClassIcon(classDef.avatarKey, 24)}
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm text-[#F3F4F8]">{classDef.name}</h3>
-                      <span className="text-[10px] font-bold text-[#D4AD65]">{classDef.role}</span>
+                      <h3 className="font-bold text-sm text-[#F3F4F8]">
+                        {!isUnlocked && isSecret ? '??? — Oculta' : classDef.name}
+                      </h3>
+                      <span className={`text-[10px] font-bold ${isSecret ? 'text-[#C77DFF]' : 'text-[#D4AD65]'}`}>
+                        {!isUnlocked && isSecret ? 'Classe Secreta' : classDef.role}
+                      </span>
                     </div>
                   </div>
 
                   <p className="text-xs text-[#A7B0C4] leading-relaxed line-clamp-2">
-                    {classDef.description}
+                    {!isUnlocked && isSecret
+                      ? 'Uma entidade envolta em mistério. Há rumores de um enigma nas profundezas do Abismo...'
+                      : classDef.description}
                   </p>
                 </div>
 
                 {/* Unlock condition hint if locked */}
-                {!isUnlocked && unlockCondition && (
-                  <div className="mt-3 p-2 rounded-xl bg-[#10131C] border border-[#E65353]/30 text-[10px] text-[#F87171] leading-tight">
-                    🔒 {unlockCondition.description}
+                {!isUnlocked && (
+                  <div
+                    className={`mt-3 p-2 rounded-xl text-[10px] leading-tight ${
+                      isSecret
+                        ? 'bg-[#240046]/40 border border-[#7B2CBF]/40 text-[#E0AAFF]'
+                        : 'bg-[#10131C] border border-[#E65353]/30 text-[#F87171]'
+                    }`}
+                  >
+                    {isSecret
+                      ? '🔮 Condição Secreta: Decifre o pergaminho oculto no Trono do Abismo.'
+                      : unlockCondition
+                      ? `🔒 ${unlockCondition.description}`
+                      : '🔒 Desbloqueio especial'}
                   </div>
                 )}
 
@@ -134,15 +170,17 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                 <div className="mt-4 pt-3 border-t border-[#343B50] grid grid-cols-3 gap-1 text-[11px]">
                   <div className="bg-[#1B2030] p-1 rounded text-center">
                     <span className="text-[#A7B0C4] block text-[9px]">HP</span>
-                    <strong className="text-[#E94F5F]">{classDef.maxHp}</strong>
+                    <strong className="text-[#E94F5F]">{!isUnlocked && isSecret ? '???' : classDef.maxHp}</strong>
                   </div>
                   <div className="bg-[#1B2030] p-1 rounded text-center">
                     <span className="text-[#A7B0C4] block text-[9px]">ATK/MAG</span>
-                    <strong className="text-[#FF5252]">{Math.max(classDef.atk, classDef.mag)}</strong>
+                    <strong className="text-[#FF5252]">
+                      {!isUnlocked && isSecret ? '???' : Math.max(classDef.atk, classDef.mag)}
+                    </strong>
                   </div>
                   <div className="bg-[#1B2030] p-1 rounded text-center">
                     <span className="text-[#A7B0C4] block text-[9px]">MOV</span>
-                    <strong className="text-[#4C8DFF]">{classDef.mov}</strong>
+                    <strong className="text-[#4C8DFF]">{!isUnlocked && isSecret ? '???' : classDef.mov}</strong>
                   </div>
                 </div>
               </div>
@@ -191,7 +229,10 @@ function getClassIcon(avatarKey: string, size = 20) {
       return <BookOpen size={size} />;
     case 'berserker':
       return <Flame size={size} />;
+    case 'void_executioner':
+      return <Swords size={size} className="text-[#C77DFF]" />;
     default:
       return <Sparkles size={size} />;
   }
 }
+
