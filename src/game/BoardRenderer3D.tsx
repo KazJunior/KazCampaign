@@ -499,10 +499,15 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     playAttackAnimation: async (attackerId, targetId, damageType, skillAoeRadius, skill) => {
       const engine = animEngineRef.current;
       const attackerObj = getUnitObj(attackerId);
-      const targetObj = getUnitObj(targetId);
-      if (!engine || !attackerObj) return;
+      const isPedestal = targetId === 'pedestal';
+      const targetObj = isPedestal
+        ? ({ position: new THREE.Vector3(0.5, 0.3, 0.5), rotation: new THREE.Euler() } as unknown as THREE.Object3D)
+        : getUnitObj(targetId);
+      if (!engine || !attackerObj || !targetObj) return;
 
-      const targetUnit = units.find((u) => u.id === targetId);
+      const targetUnit = isPedestal
+        ? ({ id: 'pedestal', name: 'Pedestal Ancestral', x: 0, y: 0, faction: 'enemy' as const } as Unit)
+        : units.find((u) => u.id === targetId);
       const attackerUnit = units.find((u) => u.id === attackerId);
       if (!targetUnit || !attackerUnit) return;
 

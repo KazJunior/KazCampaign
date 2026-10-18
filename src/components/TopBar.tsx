@@ -208,11 +208,11 @@ export const TopBar: React.FC<TopBarProps> = ({
         {onOpenRiddle && (
           <button
             onClick={onOpenRiddle}
-            className="px-2.5 py-1.5 rounded-lg bg-[#240046] border border-[#9D4EDD] text-[#E0AAFF] hover:bg-[#3C096C] hover:border-[#C77DFF] transition-all shadow-md shadow-[#9D4EDD]/20 flex items-center gap-1.5"
-            title="Investigar Bilhete Misterioso (Enigma do Vazio)"
+            className="px-2.5 py-1.5 rounded-lg bg-[#240046] border border-[#9D4EDD] text-[#E0AAFF] hover:bg-[#3C096C] hover:border-[#C77DFF] transition-all shadow-md shadow-[#9D4EDD]/20 flex items-center gap-1.5 animate-pulse"
+            title="A Profecia do Vazio (Inscrição do Pedestal)"
           >
             <Scroll size={16} className="text-[#E0AAFF]" />
-            <span className="hidden md:inline text-xs font-bold text-[#E0AAFF]">Bilhete Misterioso</span>
+            <span className="hidden md:inline text-xs font-bold text-[#E0AAFF]">A Profecia do Vazio</span>
           </button>
         )}
 

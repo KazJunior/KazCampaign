@@ -279,17 +279,11 @@ export const SECRET_CLASS_UNLOCK_CONDITIONS: Record<string, SecretClassUnlockInf
   carrasco_vazio: {
     title: 'Carrasco do Vazio',
     description: 'Derrote Astaroth (Fase 10) utilizando apenas classes de combate corpo a corpo (Alcance 1).',
-    riddle: `O Vazio despreza os que temem a respiração da morte.
-Aquele que sentencia reis jamais responderá a quem busca o conforto do recuo.
+    riddle: `Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Carrasco do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
 
-Nenhum projétil cantará nos céus deste salão.
-Nenhum encantamento será sussurrado à distância do perigo.
+Se desejas empunhar a lâmina proibida que rasga o espaço, abandone a covardia do refúgio gerado por métodos fúteis e inferiores de combate.
 
-Apenas quatro almas de ferro, partilhando a mesma poeira e o mesmo sangue,
-olhando diretamente nos olhos do abismo.
-
-Façam o Soberano tombar sentindo o peso do aço em sua carne...
-e a lâmina proibida romperá o próprio silêncio.`,
+Desça ao abismo com coragem e encare Astaroth de frente. Façam o Soberano tombar sentindo o peso do aço em sua carne...`,
   },
 };
 

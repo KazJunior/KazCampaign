@@ -29,13 +29,13 @@ export const SecretRiddleModal: React.FC<SecretRiddleModalProps> = ({ isOpen, on
         {/* Header Badge */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 bg-[#9D4EDD]/20 border border-[#9D4EDD]/50 text-[#C084FC] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
-            <Scroll size={15} /> BILHETE ENCONTRADO NO TRONO
+            <Scroll size={15} /> PEDESTAL DO TRONO DO ABISMO
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#F3F4F8] flex items-center justify-center gap-2">
-            O Testamento das Quatro Lâminas
+            A profecia do vazio
           </h2>
           <p className="text-xs text-[#A7B0C4] italic">
-            Um pergaminho antigo repousando em silêncio sobre a pedra fria...
+            Palavras arcanas reveladas pelo impacto do golpe...
           </p>
         </div>
 
@@ -46,28 +46,26 @@ export const SecretRiddleModal: React.FC<SecretRiddleModalProps> = ({ isOpen, on
           </div>
 
           <p className="text-xs sm:text-sm text-[#E0AAFF] font-serif leading-relaxed text-center italic">
-            &ldquo;O Vazio despreza os que temem a respiração da morte.<br />
-            Aquele que sentencia reis jamais responderá a quem busca o conforto do recuo.
+            &ldquo;Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Carrasco do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
           </p>
 
           <div className="h-px w-24 bg-gradient-to-r from-transparent via-[#9D4EDD] to-transparent mx-auto my-1" />
 
-          <p className="text-xs sm:text-sm text-[#F3F4F8] font-serif leading-relaxed text-center space-y-2">
-            Nenhum projétil cantará nos céus deste salão.<br />
-            Nenhum encantamento será sussurrado à distância do perigo.<br />
-            <br />
-            Apenas quatro almas de ferro, partilhando a mesma poeira e o mesmo sangue,<br />
-            olhando diretamente nos olhos do abismo.<br />
-            <br />
-            Façam o Soberano tombar sentindo o peso do aço em sua carne...<br />
-            e a lâmina proibida romperá o próprio silêncio.&rdquo;
+          <p className="text-xs sm:text-sm text-[#F3F4F8] font-serif leading-relaxed text-center">
+            Se desejas empunhar a lâmina proibida que rasga o espaço, abandone a covardia do refúgio gerado por métodos fúteis e inferiores de combate.
+          </p>
+
+          <div className="h-px w-24 bg-gradient-to-r from-transparent via-[#9D4EDD] to-transparent mx-auto my-1" />
+
+          <p className="text-xs sm:text-sm text-[#F3F4F8] font-serif leading-relaxed text-center">
+            Desça ao abismo com coragem e encare Astaroth de frente. Façam o Soberano tombar sentindo o peso do aço em sua carne...&rdquo;
           </p>
         </div>
 
         {/* Thematic Flavor Inscription */}
         <div className="flex items-center justify-center gap-2 text-[11px] text-[#A7B0C4] italic">
           <Sparkles size={13} className="text-[#9D4EDD]" />
-          <span>— Inscrição talhada em cinzas na base do pedestal</span>
+          <span>— Inscrição entalhada na pedra do pedestal</span>
         </div>
 
         {/* Dismiss Button */}
@@ -75,7 +73,7 @@ export const SecretRiddleModal: React.FC<SecretRiddleModalProps> = ({ isOpen, on
           onClick={onClose}
           className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-[#7B2CBF] via-[#9D4EDD] to-[#5A189A] hover:from-[#9D4EDD] hover:to-[#7B2CBF] text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-[#7B2CBF]/30 transition-all hover:scale-[1.02] active:scale-95"
         >
-          Guardar Bilhete & Voltar ao Combate
+          Fechar Inscrição & Voltar ao Combate
         </button>
       </div>
     </div>

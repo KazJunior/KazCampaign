@@ -284,6 +284,7 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showSecretRiddle, setShowSecretRiddle] = useState(false);
+  const [hasPedestalBeenStruck, setHasPedestalBeenStruck] = useState(false);
   const [pendingStatChoices, setPendingStatChoices] = useState<{ unit: Unit; newLevel: number }[]>([]);
   const [pendingSkillChoices, setPendingSkillChoices] = useState<Unit[]>([]);
   const [pendingUnlockClasses, setPendingUnlockClasses] = useState<string[]>([]);
@@ -1102,16 +1103,15 @@ export function App() {
     if (isAnimatingAction) return;
 
     const clickedUnit = units.find((u) => u.x === x && u.y === y && !u.isDead);
-
-    // Click on mysterious note / parchment in Level 10 (or any cell with obstacle 'note')
-    if (!clickedUnit && (grid[y]?.[x]?.obstacle === 'note' || (currentLevel?.id === 10 && x === 0 && y === 0))) {
-      setShowSecretRiddle(true);
-      soundManager.playSelect();
-      return;
-    }
+    const isPedestalTile = (currentLevel?.id === 10 && x === 0 && y === 0) || grid[y]?.[x]?.obstacle === 'note';
 
     // Deployment swap
     if (phase === 'deployment') {
+      if (isPedestalTile && !clickedUnit) {
+        soundManager.playSelect();
+        addFloatingNumber(0, 0, 'Inscrição rúnica na pedra...', 'status', '#A7B0C4');
+        return;
+      }
       if (selectedUnit && selectedUnit.faction === 'player') {
         const isDepTile =
           currentLevel?.deploymentZone.some((z) => z.x === x && z.y === y) &&
@@ -1154,6 +1154,60 @@ export function App() {
         setUnits((prev) => prev.map((u) => (u.id === selectedUnit.id ? { ...u, x, y, hasMoved: true } : u)));
         setSelectedAction('none');
         soundManager.playStep();
+        setIsAnimatingAction(false);
+        return;
+      }
+    }
+
+    // ATTACKING THE PEDESTAL TO REVEAL THE PROPHECY
+    if (
+      isPedestalTile &&
+      selectedUnit &&
+      selectedUnit.faction === 'player' &&
+      !selectedUnit.hasAttacked &&
+      (selectedAction === 'attack' || !!activeSkill)
+    ) {
+      const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
+      if (isTargetTileValid) {
+        setIsAnimatingAction(true);
+        const skill = activeSkill || undefined;
+        setSelectedAction('none');
+        setActiveSkill(null);
+        setTargetUnitId(null);
+        setDamagePreview(null);
+        setTargetTeleportPoint(null);
+
+        if (skill && skill.damageType === 'magical') {
+          soundManager.playMagicSpell();
+        } else {
+          soundManager.playPhysicalAttack();
+        }
+
+        if (boardRef.current) {
+          await boardRef.current.playAttackAnimation(selectedUnit.id, 'pedestal', skill?.damageType || 'physical', 0, skill);
+        }
+
+        soundManager.playUpgrade();
+        addFloatingNumber(0, 0, 'Ressonância do Vazio!', 'status', '#C77DFF');
+
+        setUnits((prev) =>
+          prev.map((u) => {
+            if (u.id === selectedUnit.id) {
+              const updatedSkills = u.skills.map((s) =>
+                skill && s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+              );
+              return {
+                ...u,
+                hasAttacked: true,
+                skills: updatedSkills,
+              };
+            }
+            return u;
+          })
+        );
+
+        setHasPedestalBeenStruck(true);
+        setShowSecretRiddle(true);
         setIsAnimatingAction(false);
         return;
       }
@@ -1229,6 +1283,18 @@ export function App() {
           return;
         }
       }
+    }
+
+    // Inspecting or clicking pedestal directly (when not in attack mode)
+    if (isPedestalTile && !clickedUnit) {
+      if (hasPedestalBeenStruck) {
+        setShowSecretRiddle(true);
+        soundManager.playSelect();
+      } else {
+        soundManager.playSelect();
+        addFloatingNumber(0, 0, 'Inscrição rúnica na pedra...', 'status', '#A7B0C4');
+      }
+      return;
     }
 
     // Select / Deselect unit
@@ -2527,7 +2593,7 @@ export function App() {
         onOpenEquipment={() => setShowEquipment(true)}
         onOpenItemCatalog={() => setShowItemBestiary(true)}
         onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
-        onOpenRiddle={currentLevel?.id === 10 ? () => setShowSecretRiddle(true) : undefined}
+        onOpenRiddle={currentLevel?.id === 10 && hasPedestalBeenStruck ? () => setShowSecretRiddle(true) : undefined}
         onSaveAndExit={() => {
           if (currentLevel && units.length > 0) {
             saveLiveBattleState({

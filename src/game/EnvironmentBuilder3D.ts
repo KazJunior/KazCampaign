@@ -545,53 +545,86 @@ export function createRichObstacle(type: ObstacleType, x: number, y: number): TH
     }
 
     case 'note': {
-      // --- Bilhete Branco Secreto em Pedestal de Obsidiana com Runa do Vazio ---
+      // --- Pedestal Ancestral com Inscrições e Detalhes de Escrita Antiga Entalhada ---
       const noteGroup = new THREE.Group();
-      noteGroup.name = 'secretNoteProp';
+      noteGroup.name = 'secretPedestalProp';
 
-      // Pedestal de Pedra do Abismo
-      const pedMat = new THREE.MeshStandardMaterial({
-        color: 0x1a1226,
-        roughness: 0.6,
+      // Base de Pedra do Abismo
+      const baseMat = new THREE.MeshStandardMaterial({
+        color: 0x140e1f,
+        roughness: 0.7,
         metalness: 0.2,
         flatShading: true,
       });
-      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.32, 0.3, 8), pedMat);
-      pedestal.position.y = 0.15;
-      pedestal.castShadow = true;
-      pedestal.receiveShadow = true;
-      noteGroup.add(pedestal);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.12, 0.55), baseMat);
+      base.position.y = 0.06;
+      base.castShadow = true;
+      base.receiveShadow = true;
+      noteGroup.add(base);
 
-      // Friso Dourado Antigo no topo do pedestal
-      const ringMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.3 });
-      const goldRing = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.03, 8), ringMat);
-      goldRing.position.y = 0.29;
-      noteGroup.add(goldRing);
-
-      // Bilhete Branco (Pergaminho Dobrado repousando)
-      const paperMat = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        roughness: 0.3,
-        emissive: 0xf5f3ff,
-        emissiveIntensity: 0.4,
+      // Coluna Central do Pedestal (Octogonal)
+      const colMat = new THREE.MeshStandardMaterial({
+        color: 0x1d142c,
+        roughness: 0.5,
+        metalness: 0.3,
+        flatShading: true,
       });
-      const paper = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.02, 0.34), paperMat);
-      paper.position.set(0, 0.32, 0);
-      paper.rotation.y = 0.25;
-      paper.castShadow = true;
-      noteGroup.add(paper);
+      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 0.32, 8), colMat);
+      col.position.y = 0.26;
+      col.castShadow = true;
+      col.receiveShadow = true;
+      noteGroup.add(col);
 
-      // Runa Roxa Brilhante do Vazio no Centro do Bilhete
-      const runeMat = new THREE.MeshBasicMaterial({ color: 0xa855f7 });
-      const rune = new THREE.Mesh(new THREE.PlaneGeometry(0.14, 0.18), runeMat);
-      rune.position.set(0, 0.335, 0);
-      rune.rotation.x = -Math.PI / 2;
-      rune.rotation.z = 0.25;
-      noteGroup.add(rune);
+      // Topo chanfrado do Pedestal
+      const topMat = new THREE.MeshStandardMaterial({
+        color: 0x27193d,
+        roughness: 0.4,
+        metalness: 0.4,
+      });
+      const topPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.2, 0.08, 8), topMat);
+      topPillar.position.y = 0.44;
+      topPillar.castShadow = true;
+      topPillar.receiveShadow = true;
+      noteGroup.add(topPillar);
 
-      // Brilho pulsante suave do Vazio
-      const voidGlow = new THREE.PointLight(0xa855f7, 0.8, 2.5);
-      voidGlow.position.set(0, 0.5, 0);
+      // Friso de ouro antigo
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.3 });
+      const goldTrim = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.015, 6, 16), goldMat);
+      goldTrim.rotation.x = Math.PI / 2;
+      goldTrim.position.y = 0.42;
+      noteGroup.add(goldTrim);
+
+      // --- Detalhes de Escrita / Inscrição Rúnica na Pedra ---
+      const runeTextMat = new THREE.MeshBasicMaterial({ color: 0xc084fc });
+
+      // Placa frontal com inscrições entalhadas
+      const tabletMat = new THREE.MeshStandardMaterial({ color: 0x120a1c, roughness: 0.8 });
+      const tablet = new THREE.Mesh(new THREE.PlaneGeometry(0.18, 0.16), tabletMat);
+      tablet.position.set(0, 0.27, 0.21);
+      noteGroup.add(tablet);
+
+      // Linhas de escrita rúnica entalhada (glifos arcanos)
+      const lines = [
+        { y: 0.32, w: 0.12, h: 0.012 },
+        { y: 0.29, w: 0.14, h: 0.012 },
+        { y: 0.26, w: 0.10, h: 0.012 },
+        { y: 0.23, w: 0.13, h: 0.012 },
+      ];
+      lines.forEach((l) => {
+        const lineMesh = new THREE.Mesh(new THREE.PlaneGeometry(l.w, l.h), runeTextMat);
+        lineMesh.position.set(0, l.y, 0.215);
+        noteGroup.add(lineMesh);
+      });
+
+      // Runa selada entalhada na mesa superior
+      const topRune = new THREE.Mesh(new THREE.RingGeometry(0.05, 0.1, 6), runeTextMat);
+      topRune.rotation.x = -Math.PI / 2;
+      topRune.position.y = 0.485;
+      noteGroup.add(topRune);
+
+      // Brilho pulsante do Vazio emanando das inscrições
+      const voidGlow = new THREE.PointLight(0xa855f7, 0.9, 2.2);
+      voidGlow.position.set(0, 0.45, 0.15);
       noteGroup.add(voidGlow);
 
       group.add(noteGroup);
