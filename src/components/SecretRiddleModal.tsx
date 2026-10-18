@@ -29,47 +29,45 @@ export const SecretRiddleModal: React.FC<SecretRiddleModalProps> = ({ isOpen, on
         {/* Header Badge */}
         <div className="text-center space-y-2">
           <div className="inline-flex items-center gap-2 bg-[#9D4EDD]/20 border border-[#9D4EDD]/50 text-[#C084FC] px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest animate-pulse">
-            <Scroll size={15} /> PERGAMINHO DO TRONO DO ABISMO
+            <Scroll size={15} /> BILHETE ENCONTRADO NO TRONO
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-[#F3F4F8] flex items-center justify-center gap-2">
-            O Enigma da Lâmina Oculta
+            O Testamento das Quatro Lâminas
           </h2>
           <p className="text-xs text-[#A7B0C4] italic">
-            Encontrado repousando nas ruínas ancestrais da Fase 10...
+            Um pergaminho antigo repousando em silêncio sobre a pedra fria...
           </p>
         </div>
 
         {/* Parchment Box with Riddle */}
-        <div className="bg-[#0F0A19]/90 border border-[#9D4EDD]/40 rounded-2xl p-5 sm:p-6 space-y-3.5 shadow-inner relative overflow-hidden">
-          <div className="absolute top-2 right-2 text-[#7B2CBF]/20 pointer-events-none">
-            <Swords size={90} />
+        <div className="bg-[#0F0A19]/90 border border-[#9D4EDD]/40 rounded-2xl p-6 sm:p-7 space-y-4 shadow-inner relative overflow-hidden">
+          <div className="absolute top-2 right-2 text-[#7B2CBF]/15 pointer-events-none">
+            <Swords size={110} />
           </div>
 
           <p className="text-xs sm:text-sm text-[#E0AAFF] font-serif leading-relaxed text-center italic">
-            &ldquo;Nas sombras mais profundas do Trono, onde a luz jamais alcançou...<br />
-            O <strong className="text-[#F0B44D] font-bold not-italic">Carrasco do Vazio</strong> observa os tolos que ousam invadir o domínio de Astaroth.
+            &ldquo;O Vazio despreza os que temem a respiração da morte.<br />
+            Aquele que sentencia reis jamais responderá a quem busca o conforto do recuo.
           </p>
 
-          <div className="h-px w-24 bg-gradient-to-r from-transparent via-[#9D4EDD] to-transparent mx-auto my-2" />
+          <div className="h-px w-24 bg-gradient-to-r from-transparent via-[#9D4EDD] to-transparent mx-auto my-1" />
 
-          <p className="text-xs sm:text-sm text-[#F3F4F8] font-serif leading-relaxed text-center">
-            Se desejas empunhar a lâmina proibida que rasga o espaço,<br />
-            abandone a covardia das flechas e o refúgio das magias distantes.<br />
+          <p className="text-xs sm:text-sm text-[#F3F4F8] font-serif leading-relaxed text-center space-y-2">
+            Nenhum projétil cantará nos céus deste salão.<br />
+            Nenhum encantamento será sussurrado à distância do perigo.<br />
             <br />
-            Desça ao abismo cercado apenas por guerreiros de aço, fúria e lâmina face a face.<br />
-            Traga uma equipe formada <span className="text-[#FFD166] font-bold underline decoration-[#FFD166]/50">exclusivamente por combatentes corpo a corpo</span>.<br />
+            Apenas quatro almas de ferro, partilhando a mesma poeira e o mesmo sangue,<br />
+            olhando diretamente nos olhos do abismo.<br />
             <br />
-            Derrube o Soberano Astaroth em combate próximo...<br />
-            e a Lâmina do Vazio se curvará ao seu comando.&rdquo;
+            Façam o Soberano tombar sentindo o peso do aço em sua carne...<br />
+            e a lâmina proibida romperá o próprio silêncio.&rdquo;
           </p>
         </div>
 
-        {/* Footer Hint */}
-        <div className="flex items-center gap-2 p-3 rounded-xl bg-[#221735]/60 border border-[#9D4EDD]/30 text-xs text-[#C084FC]">
-          <Sparkles size={16} className="shrink-0 text-[#FFD166]" />
-          <span>
-            <strong>Dica do Enigma:</strong> Vença a Fase 10 (Astaroth) utilizando 4 heróis que possuam alcance de ataque corpo a corpo (Alcance 1).
-          </span>
+        {/* Thematic Flavor Inscription */}
+        <div className="flex items-center justify-center gap-2 text-[11px] text-[#A7B0C4] italic">
+          <Sparkles size={13} className="text-[#9D4EDD]" />
+          <span>— Inscrição talhada em cinzas na base do pedestal</span>
         </div>
 
         {/* Dismiss Button */}
