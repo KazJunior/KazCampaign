@@ -435,6 +435,12 @@ export function createMonsterUnit(
       ) {
         clone.cooldownMax = Math.max(3, clone.cooldownMax);
       }
+      if (
+        clone.statusEffect?.type === 'stun' ||
+        clone.secondaryStatusEffect?.type === 'stun'
+      ) {
+        clone.cooldownMax = Math.max(4, clone.cooldownMax);
+      }
       return clone;
     });
 

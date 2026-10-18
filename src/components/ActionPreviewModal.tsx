@@ -6,17 +6,25 @@ interface ActionPreviewModalProps {
   preview: DamagePreview;
   onConfirm: () => void;
   onCancel: () => void;
+  turnNumber?: number;
 }
 
 export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
   preview,
   onConfirm,
   onCancel,
+  turnNumber,
 }) => {
   const isTeleport = !!preview.skill?.isTeleport;
   const isHeal = preview.damageType === 'healing';
   const isMagic = preview.damageType === 'magical';
   const isSupportOnly = isHeal && preview.minDamage === 0;
+
+  const isBossMonster = Boolean(preview.target?.isBoss || preview.target?.isMiniBoss);
+  const isBossStunImmune =
+    isBossMonster &&
+    preview.target?.lastStunTurn !== undefined &&
+    ((turnNumber ?? 1) - preview.target.lastStunTurn <= 1);
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1B2030] border-2 border-[#D4AD65] p-4 rounded-2xl shadow-2xl text-[#F3F4F8] max-w-md w-full animate-bounce-short select-none">
@@ -78,11 +86,26 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.statusEffect.type === 'buff_atk' && `🔥 +${preview.skill.statusEffect.value}% Dano (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'shield' && `🛡️ +${preview.skill.statusEffect.value} Escudo (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'invisible' && `👁️ Invisibilidade (${preview.skill.statusEffect.duration}T)`}
-              {preview.skill.statusEffect.type === 'stun' && `⚡ Atordoamento (${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'stun' && (
+                isBossStunImmune ? (
+                  <span className="text-[#94A3B8] line-through font-semibold" title="Chefes não podem ser atordoados em turnos consecutivos">
+                    ⚡ Atordoamento (Boss Resiste)
+                  </span>
+                ) : (
+                  `⚡ Atordoamento (${preview.skill.statusEffect.duration}T)`
+                )
+              )}
               {preview.skill.statusEffect.type === 'poison' && `☠️ Veneno (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.statusEffect.value || 1} Mov, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.statusEffect.value}% (${preview.skill.statusEffect.duration}T)`}
             </span>
+          </div>
+        )}
+
+        {isBossStunImmune && (preview.skill?.statusEffect?.type === 'stun' || preview.skill?.secondaryStatusEffect?.type === 'stun') && (
+          <div className="flex items-center gap-2 text-xs bg-[#FACC15]/10 border border-[#FACC15]/30 text-[#FACC15] p-2.5 rounded-lg">
+            <AlertTriangle size={15} className="shrink-0 text-[#FACC15]" />
+            <span>Monstros boss não podem ser atordoados em turnos consecutivos. O efeito de atordoamento será resistido!</span>
           </div>
         )}
 

@@ -30,6 +30,7 @@ interface SidePanelProps {
   onWaitUnit: () => void;
   onCancelSelection: () => void;
   isPlayerTurn: boolean;
+  turnNumber?: number;
 }
 
 export const SidePanel: React.FC<SidePanelProps> = ({
@@ -39,6 +40,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   onWaitUnit,
   onCancelSelection,
   isPlayerTurn,
+  turnNumber,
 }) => {
   if (!selectedUnit) {
     return (
@@ -76,6 +78,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isPoisoned = selectedUnit.statusEffects?.some((e) => e.type === 'poison' && e.duration > 0);
   const isStealthed = selectedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
   const isDefDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+  const isBossMonster = Boolean(selectedUnit.isBoss || selectedUnit.isMiniBoss);
+  const isStunImmuneConsecutive =
+    isBossMonster &&
+    selectedUnit.lastStunTurn !== undefined &&
+    ((turnNumber ?? 1) - selectedUnit.lastStunTurn <= 1) &&
+    !isStunned;
 
   return (
     <aside className="w-80 bg-[#1B2030] border-l border-[#343B50] p-4 flex flex-col justify-between shadow-2xl text-[#F3F4F8] select-none h-full z-10 overflow-y-auto">
@@ -162,12 +170,20 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed) && (
+        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isStunImmuneConsecutive) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
             </div>
             <div className="flex flex-wrap gap-1.5">
+              {isStunImmuneConsecutive && (
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#64748B]/20 border border-[#64748B]/40 text-[#CBD5E1] flex items-center gap-1"
+                  title="Chefes não podem ser atordoados em turnos consecutivos"
+                >
+                  🛡️ Resiste a Atordoamento
+                </span>
+              )}
               {isStealthed && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 text-[#A78BFA] flex items-center gap-1">
                   👁️‍🗨️ Invisível

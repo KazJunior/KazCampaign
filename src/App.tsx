@@ -249,7 +249,14 @@ export function App() {
     const liveBattle = loadLiveBattleState();
     const loadedProg = loadPlayerProgress();
     if (liveBattle && loadedProg.activeAdventure && Array.isArray(liveBattle.units) && liveBattle.units.length > 0) {
-      return liveBattle.units;
+      return liveBattle.units.map((u) => ({
+        ...u,
+        skills: u.skills.map((s) =>
+          s.statusEffect?.type === 'stun' || s.secondaryStatusEffect?.type === 'stun'
+            ? { ...s, cooldownMax: Math.max(4, s.cooldownMax) }
+            : s
+        ),
+      }));
     }
     return [];
   });
@@ -442,7 +449,16 @@ export function App() {
       }))
     );
     setGrid(tileGrid);
-    setUnits(savedBattle.units);
+    setUnits(
+      savedBattle.units.map((u) => ({
+        ...u,
+        skills: u.skills.map((s) =>
+          s.statusEffect?.type === 'stun' || s.secondaryStatusEffect?.type === 'stun'
+            ? { ...s, cooldownMax: Math.max(4, s.cooldownMax) }
+            : s
+        ),
+      }))
+    );
     setTurnNumber(savedBattle.turnNumber);
     setPhase(savedBattle.phase === 'ai_turn' ? 'player_turn' : savedBattle.phase);
     setActiveBossBanner(savedBattle.activeBossBanner || null);
@@ -1677,6 +1693,13 @@ export function App() {
         totalDmgDone += actualDmg;
       }
 
+      let newLastStunTurn = t.lastStunTurn;
+      const isBossMonster = Boolean(t.isBoss || t.isMiniBoss);
+      const isBossStunImmune =
+        isBossMonster &&
+        t.lastStunTurn !== undefined &&
+        turnNumber - t.lastStunTurn <= 1;
+
       if (newHp === 0) {
         soundManager.playDeath();
         totalKills++;
@@ -1687,25 +1710,52 @@ export function App() {
         // Primary status effect
         if (skill?.statusEffect && dmgResult.damageType !== 'healing') {
           const eff = skill.statusEffect;
-          currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-          if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-          else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
-          else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
-          else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+          if (eff.type === 'stun' && isBossStunImmune) {
+            addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+          } else {
+            currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+            if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+            else if (eff.type === 'stun') {
+              addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+              if (isBossMonster) {
+                newLastStunTurn = turnNumber;
+              }
+            }
+            else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+            else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+          }
         }
 
         // Secondary status effect
         if (skill?.secondaryStatusEffect && dmgResult.damageType !== 'healing') {
           const eff2 = skill.secondaryStatusEffect;
-          currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-          if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-          else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
-          else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+          if (eff2.type === 'stun' && isBossStunImmune) {
+            addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+          } else {
+            currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+            if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+            else if (eff2.type === 'stun') {
+              addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+              if (isBossMonster) {
+                newLastStunTurn = turnNumber;
+              }
+            }
+            else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
+            else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+          }
         }
       }
 
       updatedUnits = updatedUnits.map((u) =>
-        u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+        u.id === t.id
+          ? {
+              ...u,
+              currentHp: newHp,
+              isDead: newHp === 0,
+              statusEffects: currentEffects,
+              lastStunTurn: newLastStunTurn,
+            }
+          : u
       );
     }
 
@@ -2855,12 +2905,14 @@ export function App() {
             setTargetUnitId(null);
           }}
           isPlayerTurn={phase === 'player_turn'}
+          turnNumber={turnNumber}
         />
       </div>
 
       {damagePreview && (
         <ActionPreviewModal
           preview={damagePreview}
+          turnNumber={turnNumber}
           onConfirm={handleConfirmAttack}
           onCancel={() => {
             setDamagePreview(null);

@@ -534,6 +534,12 @@ export function createPlayerUnit(
       ) {
         evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
       }
+      if (
+        evolved.statusEffect?.type === 'stun' ||
+        evolved.secondaryStatusEffect?.type === 'stun'
+      ) {
+        evolved.cooldownMax = Math.max(4, evolved.cooldownMax);
+      }
       return evolved;
     });
 

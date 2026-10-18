@@ -100,6 +100,7 @@ export interface Unit {
   isBoss?: boolean;
   isMiniBoss?: boolean;
   bossPhase?: number; // 1, 2, 3
+  lastStunTurn?: number; // Turno da batalha em que a unidade foi atordoada por último (impede stun em turnos consecutivos em chefes)
 
   damageDealt: number;
   kills: number;

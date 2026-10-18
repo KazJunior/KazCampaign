@@ -114,7 +114,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     teleportToTarget: true,
@@ -282,7 +282,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1108,7 +1108,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1385,7 +1385,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1458,7 +1458,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1792,7 +1792,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1878,7 +1878,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -2083,7 +2083,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -2363,7 +2363,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     teleportToTarget: true,
@@ -2719,6 +2719,12 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     ) {
       clone.cooldownMax = Math.max(3, clone.cooldownMax);
     }
+    if (
+      clone.statusEffect?.type === 'stun' ||
+      clone.secondaryStatusEffect?.type === 'stun'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
     return clone;
   }
 
@@ -2746,6 +2752,14 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     clone.id === 'sedenta_de_runas'
   ) {
     clone.cooldownMax = Math.max(3, clone.cooldownMax);
+  }
+
+  // Habilidades que causam atordoamento (stun) possuem cooldown mínimo de 4 turnos
+  if (
+    clone.statusEffect?.type === 'stun' ||
+    clone.secondaryStatusEffect?.type === 'stun'
+  ) {
+    clone.cooldownMax = Math.max(4, clone.cooldownMax);
   }
 
   // Aumento de efeito de status baixo (+5% no valor por nível; nunca altera duração de stun/slow)
