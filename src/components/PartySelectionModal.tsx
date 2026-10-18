@@ -142,43 +142,51 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                     : 'bg-[#10131C]/60 border-[#343B50] hover:border-[#D4AD65]/60 opacity-90 cursor-pointer'
                 }`}
               >
-                {/* Selected indicator checkmark */}
-                {isSelected && (
-                  <div
-                    className={`absolute top-3 right-3 text-white p-1 rounded-full shadow ${
-                      isSecret ? 'bg-[#9D4EDD]' : 'bg-[#4C8DFF]'
-                    }`}
-                  >
-                    <Check size={14} />
-                  </div>
-                )}
+                <div className="space-y-2.5">
+                  {/* Top Status & Badge Header */}
+                  <div className="flex items-center justify-between min-h-[22px] gap-1">
+                    <div>
+                      {!isUnlocked ? (
+                        isSecret ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#7B2CBF]/30 border border-[#9D4EDD]/60 text-[#C77DFF]">
+                            Oculta
+                          </span>
+                        ) : isPurchasable ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#F0B44D]/20 border border-[#F0B44D]/60 text-[#F0B44D]">
+                            100.000 🪙
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#E65353]/20 border border-[#E65353]/50 text-[#E65353]">
+                            Bloqueada
+                          </span>
+                        )
+                      ) : isSecret ? (
+                        <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#9D4EDD]/20 border border-[#9D4EDD]/60 text-[#C77DFF]">
+                          Secreta
+                        </span>
+                      ) : (
+                        <span className="text-[9px] font-bold uppercase tracking-wider text-[#A7B0C4]/70">
+                          {classDef.role.split('&')[0].trim()}
+                        </span>
+                      )}
+                    </div>
 
-                {/* Locked indicator badge */}
-                {!isUnlocked && (
-                  <div
-                    className={`absolute top-3 right-3 px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1 ${
-                      isSecret
-                        ? 'bg-[#7B2CBF]/30 border border-[#9D4EDD]/60 text-[#C77DFF]'
-                        : isPurchasable
-                        ? 'bg-[#F0B44D]/20 border border-[#F0B44D]/60 text-[#F0B44D]'
-                        : 'bg-[#E65353]/20 border border-[#E65353]/50 text-[#E65353]'
-                    }`}
-                  >
-                    {isSecret ? 'Oculta' : isPurchasable ? '100.000 🪙' : 'Bloqueada'}
+                    {isSelected && (
+                      <div
+                        className={`text-white p-1 rounded-full shadow flex items-center justify-center ${
+                          isSecret ? 'bg-[#9D4EDD]' : 'bg-[#4C8DFF]'
+                        }`}
+                        title="Herói Selecionado"
+                      >
+                        <Check size={12} strokeWidth={3} />
+                      </div>
+                    )}
                   </div>
-                )}
 
-                {/* Secret tag if unlocked */}
-                {isUnlocked && isSecret && !isSelected && (
-                  <div className="absolute top-3 right-3 bg-[#9D4EDD]/20 border border-[#9D4EDD]/60 text-[#C77DFF] px-2 py-0.5 rounded text-[9px] font-black uppercase flex items-center gap-1">
-                    Secreta
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
+                  {/* Class Identity: Avatar + Name & Subtitle */}
+                  <div className="flex items-center gap-2.5">
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 shrink-0 ${
+                      className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 shrink-0 ${
                         !isUnlocked
                           ? isSecret
                             ? 'bg-[#3C096C]/80 text-[#C77DFF]'
@@ -189,14 +197,14 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                       }`}
                       style={{ backgroundColor: !isUnlocked && isSecret ? undefined : classDef.color }}
                     >
-                      {!isUnlocked && isSecret ? <HelpCircle size={24} /> : getClassIcon(classDef.avatarKey, 24)}
+                      {!isUnlocked && isSecret ? <HelpCircle size={22} /> : getClassIcon(classDef.avatarKey, 22)}
                     </div>
-                    <div className="flex-1 min-w-0 pr-16">
-                      <h3 className="font-bold text-sm text-[#F3F4F8] truncate" title={classDef.name}>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-sm text-[#F3F4F8] leading-tight" title={classDef.name}>
                         {!isUnlocked && isSecret ? '??? — Oculta' : classDef.name}
                       </h3>
                       <span
-                        className={`text-[10px] font-bold block truncate ${
+                        className={`text-[10px] font-bold block leading-tight mt-0.5 truncate ${
                           isSecret ? 'text-[#C77DFF]' : isPurchasable ? 'text-[#F0B44D]' : 'text-[#D4AD65]'
                         }`}
                       >
@@ -242,7 +250,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                         }`}
                       >
                         {isSecret
-                          ? '🔮 Condição Secreta: Decifre o pergaminho oculto no Trono do Abismo.'
+                          ? '🔮 Condição de desbloqueio secreta!'
                           : unlockCondition
                           ? `🔒 ${unlockCondition.description}`
                           : '🔒 Desbloqueio especial'}
