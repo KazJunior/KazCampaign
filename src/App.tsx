@@ -277,6 +277,7 @@ export function App() {
   const [hoveredTile, setHoveredTile] = useState<Point | null>(null);
   const [damagePreview, setDamagePreview] = useState<DamagePreview | null>(null);
   const [targetTeleportPoint, setTargetTeleportPoint] = useState<Point | null>(null);
+  const [targetAoEPoint, setTargetAoEPoint] = useState<Point | null>(null);
 
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNumber[]>([]);
 
@@ -1063,10 +1064,10 @@ export function App() {
   const aoeTiles: Point[] = React.useMemo(() => {
     if (!activeSkill || activeSkill.aoeRadius === 0) return [];
     const targetUnit = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
-    const center = targetUnit ? { x: targetUnit.x, y: targetUnit.y } : hoveredTile;
+    const center = targetAoEPoint || (targetUnit ? { x: targetUnit.x, y: targetUnit.y } : hoveredTile);
     if (!center) return [];
     return getAoETiles(center, activeSkill.aoeRadius, grid[0].length, grid.length);
-  }, [activeSkill, hoveredTile, targetUnitId, units, grid]);
+  }, [activeSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid]);
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
@@ -1208,6 +1209,7 @@ export function App() {
         setTargetUnitId(null);
         setDamagePreview(null);
         setTargetTeleportPoint(null);
+        setTargetAoEPoint(null);
 
         if (skill && skill.damageType === 'magical') {
           soundManager.playMagicSpell();
@@ -1258,6 +1260,7 @@ export function App() {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         if (isTargetTileValid && !clickedUnit) {
           setTargetTeleportPoint({ x, y });
+          setTargetAoEPoint(null);
           const preview: DamagePreview = {
             attacker: selectedUnit,
             target: selectedUnit,
@@ -1284,11 +1287,43 @@ export function App() {
       // Self-targeting skill
       if (activeSkill && targetType === 'self' && x === selectedUnit.x && y === selectedUnit.y) {
         setTargetTeleportPoint(null);
+        setTargetAoEPoint(null);
         const preview = getDamagePreview(selectedUnit, selectedUnit, activeSkill);
         setDamagePreview(preview);
         setTargetUnitId(selectedUnit.id);
         soundManager.playSelect();
         return;
+      }
+
+      // Ground-targeted AoE attack (e.g. Cataclismo Infernal or other AoE skills on empty ground)
+      if (!clickedUnit && activeSkill && activeSkill.aoeRadius > 0 && activeSkill.category === 'attack') {
+        const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
+        if (isTargetTileValid) {
+          const matchFaction = activeSkill.targetType === 'ally' ? 'player' : 'enemy';
+          const affectedTargets = units.filter(
+            (u) =>
+              u.faction === matchFaction &&
+              !u.isDead &&
+              Math.abs(u.x - x) <= activeSkill.aoeRadius &&
+              Math.abs(u.y - y) <= activeSkill.aoeRadius
+          );
+
+          if (affectedTargets.length > 0) {
+            setTargetTeleportPoint(null);
+            setTargetAoEPoint({ x, y });
+            const primaryTarget = affectedTargets[0];
+            const preview = getDamagePreview(selectedUnit, primaryTarget, activeSkill);
+            preview.aoeTargetsCount = affectedTargets.length;
+            setDamagePreview(preview);
+            setTargetUnitId(primaryTarget.id);
+            soundManager.playSelect();
+            return;
+          } else {
+            addFloatingNumber(x, y, 'Nenhum alvo na área!', 'status', '#A7B0C4');
+            soundManager.playSelect();
+            return;
+          }
+        }
       }
 
       // Unit targeting (Enemy, Ally or Any)
@@ -1301,6 +1336,7 @@ export function App() {
 
         if (isTargetTileValid && (isTargeting ? isFactionValid : clickedUnit.faction === 'enemy')) {
           setTargetTeleportPoint(null);
+          setTargetAoEPoint({ x: clickedUnit.x, y: clickedUnit.y });
           const effectiveSkill = activeSkill || undefined;
           const preview = getDamagePreview(selectedUnit, clickedUnit, effectiveSkill);
 
@@ -1342,6 +1378,7 @@ export function App() {
       setActiveSkill(null);
       setDamagePreview(null);
       setTargetTeleportPoint(null);
+      setTargetAoEPoint(null);
       setTargetUnitId(null);
       soundManager.playSelect();
     } else {
@@ -1350,6 +1387,7 @@ export function App() {
       setActiveSkill(null);
       setDamagePreview(null);
       setTargetTeleportPoint(null);
+      setTargetAoEPoint(null);
       setTargetUnitId(null);
     }
   };
@@ -1495,6 +1533,10 @@ export function App() {
         { x: target.x - 1, y: target.y },
         { x: target.x, y: target.y + 1 },
         { x: target.x, y: target.y - 1 },
+        { x: target.x + 1, y: target.y + 1 },
+        { x: target.x + 1, y: target.y - 1 },
+        { x: target.x - 1, y: target.y + 1 },
+        { x: target.x - 1, y: target.y - 1 },
       ].filter(
         (pt) =>
           pt.x >= 0 &&
@@ -1535,8 +1577,10 @@ export function App() {
     else if (damageType === 'magical') soundManager.playMagicSpell();
     else soundManager.playPhysicalAttack();
 
+    const aoeCenter = targetAoEPoint || { x: target.x, y: target.y };
+
     if (boardRef.current) {
-      await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius, skill);
+      await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius, skill, targetAoEPoint || undefined);
     }
 
     const aoeRadius = skill?.aoeRadius || 0;
@@ -1547,8 +1591,8 @@ export function App() {
         (u) =>
           u.faction === matchFaction &&
           !u.isDead &&
-          Math.abs(u.x - target.x) <= aoeRadius &&
-          Math.abs(u.y - target.y) <= aoeRadius
+          Math.abs(u.x - aoeCenter.x) <= aoeRadius &&
+          Math.abs(u.y - aoeCenter.y) <= aoeRadius
       );
     } else {
       targetsToHit = [target];
@@ -1733,6 +1777,7 @@ export function App() {
 
     setUnits(updatedUnits);
     setTargetTeleportPoint(null);
+    setTargetAoEPoint(null);
     setTargetUnitId(null);
     setSelectedAction('none');
     setActiveSkill(null);
@@ -1869,6 +1914,10 @@ export function App() {
                   { x: freshTarget.x - 1, y: freshTarget.y },
                   { x: freshTarget.x, y: freshTarget.y + 1 },
                   { x: freshTarget.x, y: freshTarget.y - 1 },
+                  { x: freshTarget.x + 1, y: freshTarget.y + 1 },
+                  { x: freshTarget.x + 1, y: freshTarget.y - 1 },
+                  { x: freshTarget.x - 1, y: freshTarget.y + 1 },
+                  { x: freshTarget.x - 1, y: freshTarget.y - 1 },
                 ].filter(
                   (pt) =>
                     pt.x >= 0 &&
@@ -2436,11 +2485,13 @@ export function App() {
         setActiveSkill(null);
         setDamagePreview(null);
         setTargetUnitId(null);
+        setTargetAoEPoint(null);
         return;
       }
 
       setActiveSkill(sk);
       setSelectedAction('none');
+      setTargetAoEPoint(null);
       if (sk.targetType === 'self') {
         const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
         setDamagePreview(preview);
@@ -2754,6 +2805,7 @@ export function App() {
             setActiveSkill(null);
             setDamagePreview(null);
             setTargetUnitId(null);
+            setTargetAoEPoint(null);
           }}
           isPlayerTurn={phase === 'player_turn'}
         />

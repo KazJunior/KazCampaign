@@ -617,7 +617,7 @@ export const SKILLS: Record<string, Skill> = {
     damageType: 'magical',
     category: 'attack',
     power: 2.6,
-    rangeMin: 2,
+    rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 1,
     cooldownMax: 5,
@@ -633,7 +633,7 @@ export const SKILLS: Record<string, Skill> = {
     damageType: 'magical',
     category: 'attack',
     power: 2.6,
-    rangeMin: 2,
+    rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 1,
     cooldownMax: 5,
@@ -2664,9 +2664,7 @@ export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
   ],
   mago: [
     'lanca_chamas', 'armadura_de_magma', 'chuva_de_meteoros', 'combustao_espontanea',
-    'escudo_flamejante', 'labareda_infernal', 'passo_de_cinzas', 'cataclismo_infernal', 'furia_ignea',
-    'projetil_elemental', 'campo_de_energia', 'tempestade_magica', 'raio_glacial',
-    'barreira_elemental', 'orbe_do_vazio', 'teleporte_mistico', 'cometa_arcano', 'mente_arcana'
+    'escudo_flamejante', 'labareda_infernal', 'passo_de_cinzas', 'cataclismo_infernal', 'furia_ignea'
   ],
   curandeiro: [
     'cura_em_area', 'escudo_sagrado', 'purificacao', 'luz_restauradora',

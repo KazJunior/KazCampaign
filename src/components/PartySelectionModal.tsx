@@ -178,7 +178,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 ${
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 shrink-0 ${
                         !isUnlocked
                           ? isSecret
                             ? 'bg-[#3C096C]/80 text-[#C77DFF]'
@@ -191,12 +191,12 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                     >
                       {!isUnlocked && isSecret ? <HelpCircle size={24} /> : getClassIcon(classDef.avatarKey, 24)}
                     </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-[#F3F4F8]">
+                    <div className="flex-1 min-w-0 pr-16">
+                      <h3 className="font-bold text-sm text-[#F3F4F8] truncate" title={classDef.name}>
                         {!isUnlocked && isSecret ? '??? — Oculta' : classDef.name}
                       </h3>
                       <span
-                        className={`text-[10px] font-bold ${
+                        className={`text-[10px] font-bold block truncate ${
                           isSecret ? 'text-[#C77DFF]' : isPurchasable ? 'text-[#F0B44D]' : 'text-[#D4AD65]'
                         }`}
                       >
@@ -308,7 +308,7 @@ function getClassIcon(avatarKey: string, size = 20) {
     case 'archer':
       return <Target size={size} />;
     case 'mage':
-      return <Flame size={size} className="text-[#FF5722]" />;
+      return <Flame size={size} />;
     case 'cleric':
       return <HeartPulse size={size} />;
     case 'assassin':
@@ -324,15 +324,15 @@ function getClassIcon(avatarKey: string, size = 20) {
     case 'berserker':
       return <Flame size={size} />;
     case 'void_executioner':
-      return <Swords size={size} className="text-[#C77DFF]" />;
+      return <Swords size={size} />;
     case 'paladin':
-      return <Sun size={size} className="text-[#F59E0B]" />;
+      return <Sun size={size} />;
     case 'lancer':
-      return <Crosshair size={size} className="text-[#0EA5E9]" />;
+      return <Crosshair size={size} />;
     case 'bard':
-      return <Music size={size} className="text-[#EC4899]" />;
+      return <Music size={size} />;
     case 'ice_mage':
-      return <Snowflake size={size} className="text-[#06B6D4]" />;
+      return <Snowflake size={size} />;
     default:
       return <Sparkles size={size} />;
   }

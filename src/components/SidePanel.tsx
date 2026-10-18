@@ -19,6 +19,8 @@ import {
   Crosshair,
   Music,
   Snowflake,
+  Wrench,
+  BookOpen,
 } from 'lucide-react';
 
 interface SidePanelProps {
@@ -81,7 +83,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         {/* Unit Identity Card */}
         <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#10131C] border border-[#343B50]">
           <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md border-2 border-white/20 relative shrink-0"
+            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md border-2 border-white/20 relative shrink-0"
             style={{ backgroundColor: selectedUnit.color }}
           >
             {getUnitAvatar(selectedUnit.avatarKey, 28)}
@@ -391,12 +393,18 @@ function getUnitAvatar(key: string, size = 16) {
       return <Flame size={size} />;
     case 'cleric':
       return <HeartPulse size={size} />;
-    case 'goblin':
-      return <Zap size={size} />;
-    case 'orc':
-      return <Hammer size={size} />;
-    case 'spider':
+    case 'assassin':
+      return <Footprints size={size} />;
+    case 'arcane_knight':
+      return <Swords size={size} />;
+    case 'necromancer':
       return <Skull size={size} />;
+    case 'engineer':
+      return <Wrench size={size} />;
+    case 'rune_mage':
+      return <BookOpen size={size} />;
+    case 'berserker':
+      return <Flame size={size} />;
     case 'void_executioner':
       return <Swords size={size} />;
     case 'paladin':
@@ -407,6 +415,12 @@ function getUnitAvatar(key: string, size = 16) {
       return <Music size={size} />;
     case 'ice_mage':
       return <Snowflake size={size} />;
+    case 'goblin':
+      return <Zap size={size} />;
+    case 'orc':
+      return <Hammer size={size} />;
+    case 'spider':
+      return <Skull size={size} />;
     default:
       return <Sparkles size={size} />;
   }

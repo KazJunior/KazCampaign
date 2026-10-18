@@ -167,8 +167,17 @@ export function getAttackableTiles(
   const tiles: Point[] = [];
   for (let y = 0; y < gridHeight; y++) {
     for (let x = 0; x < gridWidth; x++) {
-      const dist = manhattanDistance(origin, { x, y });
-      if (dist >= rangeMin && dist <= rangeMax) {
+      const dx = Math.abs(origin.x - x);
+      const dy = Math.abs(origin.y - y);
+      const dist = dx + dy;
+      const isDiagonalAdjacent = dx === 1 && dy === 1;
+
+      // Unidades corpo a corpo e habilidades de alcance 1 podem atacar na diagonal adjacente
+      const inRange =
+        (dist >= rangeMin && dist <= rangeMax) ||
+        (rangeMin <= 1 && rangeMax >= 1 && isDiagonalAdjacent);
+
+      if (inRange) {
         tiles.push({ x, y });
       }
     }
@@ -214,7 +223,16 @@ export function getValidTargets(
     if (targetType === 'enemy' && target.faction === attacker.faction) return false;
     if (targetType === 'ally' && target.faction !== attacker.faction) return false;
 
-    const dist = manhattanDistance({ x: attacker.x, y: attacker.y }, { x: target.x, y: target.y });
-    return dist >= rangeMin && dist <= rangeMax;
+    const dx = Math.abs(attacker.x - target.x);
+    const dy = Math.abs(attacker.y - target.y);
+    const dist = dx + dy;
+    const isDiagonalAdjacent = dx === 1 && dy === 1;
+
+    const inRange =
+      (dist >= rangeMin && dist <= rangeMax) ||
+      (rangeMin <= 1 && rangeMax >= 1 && isDiagonalAdjacent);
+
+    return inRange;
   });
 }
+

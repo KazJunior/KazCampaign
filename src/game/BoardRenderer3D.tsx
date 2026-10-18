@@ -21,7 +21,8 @@ export interface BoardRenderer3DHandle {
     targetId: string,
     damageType: 'physical' | 'magical' | 'healing',
     skillAoeRadius?: number,
-    skill?: Skill
+    skill?: Skill,
+    targetPointOverride?: Point
   ) => Promise<void>;
   playDeathAnimation: (unitId: string) => Promise<void>;
   isAnimating: () => boolean;
@@ -496,17 +497,21 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       await engine.playMoveAnimation(unitObj, fromX, fromY, toX, toY, 400);
     },
 
-    playAttackAnimation: async (attackerId, targetId, damageType, skillAoeRadius, skill) => {
+    playAttackAnimation: async (attackerId, targetId, damageType, skillAoeRadius, skill, targetPointOverride) => {
       const engine = animEngineRef.current;
       const attackerObj = getUnitObj(attackerId);
       const isPedestal = targetId === 'pedestal';
       const targetObj = isPedestal
         ? ({ position: new THREE.Vector3(0.5, 0.3, 0.5), rotation: new THREE.Euler() } as unknown as THREE.Object3D)
+        : targetPointOverride
+        ? ({ position: new THREE.Vector3(targetPointOverride.x + 0.5, 0.35, targetPointOverride.y + 0.5), rotation: new THREE.Euler() } as unknown as THREE.Object3D)
         : getUnitObj(targetId);
       if (!engine || !attackerObj || !targetObj) return;
 
       const targetUnit = isPedestal
         ? ({ id: 'pedestal', name: 'Pedestal Ancestral', x: 0, y: 0, faction: 'enemy' as const } as Unit)
+        : targetPointOverride
+        ? ({ id: targetId, name: 'Área Alvo', x: targetPointOverride.x, y: targetPointOverride.y, faction: 'enemy' as const } as Unit)
         : units.find((u) => u.id === targetId);
       const attackerUnit = units.find((u) => u.id === attackerId);
       if (!targetUnit || !attackerUnit) return;
@@ -520,10 +525,18 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const isFire =
         skillId.includes('fogo') || skillId.includes('meteoro') || skillId.includes('chama') ||
         skillId.includes('ignis') || skillId.includes('drake') || skillName.includes('fogo') ||
-        skillName.includes('meteoro') || skillName.includes('chama') || skillName.includes('elemental');
+        skillName.includes('meteoro') || skillName.includes('chama') || skillName.includes('elemental') ||
+        skillId.includes('cataclismo') || skillName.includes('cataclismo') ||
+        skillId.includes('infernal') || skillName.includes('infernal') ||
+        skillId.includes('magma') || skillName.includes('magma') ||
+        skillId.includes('combustao') || skillName.includes('combustao') ||
+        skillId.includes('labareda') || skillName.includes('labareda') ||
+        skillId.includes('ignea') || skillName.includes('ígnia') || skillName.includes('ígnea');
 
       const isMeteor =
-        skillId.includes('meteoro') || skillName.includes('meteoro') || (isFire && aoeRad > 0);
+        skillId.includes('meteoro') || skillName.includes('meteoro') ||
+        skillId.includes('cataclismo') || skillName.includes('cataclismo') ||
+        (isFire && aoeRad > 0);
 
       const isIce =
         skillId.includes('gelo') || skillId.includes('glacial') || skillId.includes('geada') ||
