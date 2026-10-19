@@ -13,6 +13,10 @@ import {
 import {
   createOrganicMiniatureModel,
 } from './MiniatureBuilder3D';
+import {
+  apply3DModelToMiniature,
+  preloadUnitModels,
+} from './ModelLoader3D';
 
 // --- Public API exposed via ref ---
 export interface BoardRenderer3DHandle {
@@ -116,8 +120,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     const centerX = gridWidth / 2;
     const centerZ = gridHeight / 2;
-    camera.position.set(centerX, 11, centerZ + 11);
-    camera.lookAt(centerX, 0, centerZ);
+    camera.position.set(centerX, 8.2, centerZ + 8.2);
+    camera.lookAt(centerX, 0.1, centerZ);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -267,10 +271,10 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     const centerX = gridWidth / 2;
     const centerZ = gridHeight / 2;
     if (cameraMode === 'isometric') {
-      camera.position.set(centerX, 11, centerZ + 10.5);
-      camera.lookAt(centerX, 0, centerZ);
+      camera.position.set(centerX, 8.2, centerZ + 8.2);
+      camera.lookAt(centerX, 0.1, centerZ);
     } else if (cameraMode === 'topdown') {
-      camera.position.set(centerX, 15, centerZ + 0.05);
+      camera.position.set(centerX, 11, centerZ + 0.05);
       camera.lookAt(centerX, 0, centerZ);
     }
   }, [cameraMode, gridWidth, gridHeight]);
@@ -448,11 +452,17 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     }
     const newMap = new Map<string, THREE.Group>();
 
+    // Preload 3D GLB models for all active units
+    preloadUnitModels(units);
+
     units.forEach((unit) => {
       if (unit.isDead) return;
       const figure = createOrganicMiniatureModel(unit, createUnitHpBar, createStatusAuras);
       figure.position.set(unit.x + 0.5, 0, unit.y + 0.5);
       figure.name = `unit_${unit.id}`;
+
+      // Upgrade to 3D GLB Model (Path 1) with procedural fallback
+      apply3DModelToMiniature(figure, unit);
 
       // Stealth / Invisibility Visual: make unit meshes translucent ghostly
       const isInvisible = unit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
@@ -702,17 +712,17 @@ function createUnitHpBar(unit: Unit): THREE.Group {
   hpGroup.name = 'hpBarBillboard';
 
   // Height above unit head
-  const barY = unit.isBoss ? 1.75 : unit.isMiniBoss ? 1.45 : 1.18;
+  const barY = unit.isBoss ? 2.15 : unit.isMiniBoss ? 1.85 : 1.48;
   hpGroup.position.set(0, barY, 0);
 
   // Background frame
-  const bgGeo = new THREE.PlaneGeometry(0.72, 0.12);
+  const bgGeo = new THREE.PlaneGeometry(0.82, 0.13);
   const bgMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide });
   const bg = new THREE.Mesh(bgGeo, bgMat);
   hpGroup.add(bg);
 
   // Lost HP background (dark crimson)
-  const lostHpGeo = new THREE.PlaneGeometry(0.68, 0.08);
+  const lostHpGeo = new THREE.PlaneGeometry(0.78, 0.09);
   const lostHpMat = new THREE.MeshBasicMaterial({ color: 0x450a0a, side: THREE.DoubleSide });
   const lostHp = new THREE.Mesh(lostHpGeo, lostHpMat);
   lostHp.position.z = 0.002;
@@ -720,16 +730,16 @@ function createUnitHpBar(unit: Unit): THREE.Group {
 
   // Current HP fill
   const hpPercent = Math.max(0, Math.min(1, unit.currentHp / unit.maxHp));
-  const hpWidth = 0.68 * hpPercent;
+  const hpWidth = 0.78 * hpPercent;
   if (hpWidth > 0.01) {
     let fillColor = 0x22c55e; // Green
     if (hpPercent <= 0.25) fillColor = 0xef4444; // Red
     else if (hpPercent <= 0.5) fillColor = 0xf59e0b; // Amber
 
-    const fillGeo = new THREE.PlaneGeometry(hpWidth, 0.08);
+    const fillGeo = new THREE.PlaneGeometry(hpWidth, 0.09);
     const fillMat = new THREE.MeshBasicMaterial({ color: fillColor, side: THREE.DoubleSide });
     const fill = new THREE.Mesh(fillGeo, fillMat);
-    fill.position.set(-0.34 + hpWidth / 2, 0, 0.004);
+    fill.position.set(-0.39 + hpWidth / 2, 0, 0.004);
     hpGroup.add(fill);
   }
 

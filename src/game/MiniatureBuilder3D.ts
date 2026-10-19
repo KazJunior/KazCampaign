@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import type { Unit } from '../types/game';
+import { getCachedUnitModel } from './ModelLoader3D';
 
 /**
  * Creates the organic 3D tabletop miniature model (Option 1)
  * with rounded anatomies, limbs, articulated weapons, and glowing accents.
+ * Checks for a loaded 3D GLB model first, falling back to procedural mesh.
  */
 export function createOrganicMiniatureModel(
   unit: Unit,
@@ -15,8 +17,10 @@ export function createOrganicMiniatureModel(
   // 1. Tabletop Pedestal Base
   group.add(createMiniaturePedestal(unit));
 
-  // 2. Character / Monster Miniature Mesh
-  const charMesh = buildCharacterMesh(unit);
+  // 2. Character / Monster Miniature Mesh (3D GLB Model with procedural fallback)
+  const cachedModel = getCachedUnitModel(unit.avatarKey);
+  const charMesh = cachedModel || buildCharacterMesh(unit);
+  charMesh.name = 'miniatureChar';
   group.add(charMesh);
 
   // 3. Floating HP Bar & Status Auras
