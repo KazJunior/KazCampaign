@@ -93,7 +93,7 @@ export const LEVELS: LevelConfig[] = [
       { monsterTypeId: 'goblin', x: 5, y: 1, levelOffset: 0 },
       { monsterTypeId: 'goblin', x: 4, y: 1, levelOffset: 0 },
     ],
-    rewards: { gold: 150, xpPerUnit: 100 },
+    rewards: { gold: 500, xpPerUnit: 100 },
   },
   {
     id: 2,
@@ -119,7 +119,7 @@ export const LEVELS: LevelConfig[] = [
       { monsterTypeId: 'cavaleiro_caido', x: 5, y: 1, levelOffset: 1 },
       { monsterTypeId: 'orc', x: 8, y: 1, levelOffset: 1 },
     ],
-    rewards: { gold: 250, xpPerUnit: 150 },
+    rewards: { gold: 500, xpPerUnit: 150 },
   },
   {
     id: 3,
@@ -145,7 +145,7 @@ export const LEVELS: LevelConfig[] = [
       { monsterTypeId: 'aranha', x: 7, y: 2, levelOffset: 2 },
       { monsterTypeId: 'lobo_espectral', x: 5, y: 1, levelOffset: 2 },
     ],
-    rewards: { gold: 350, xpPerUnit: 200 },
+    rewards: { gold: 500, xpPerUnit: 200 },
   },
   {
     id: 4,
