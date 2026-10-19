@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { VFXSequencer } from './vfx/VFXSequencer';
+import type { VFXSequence } from './vfx/vfxTypes';
 
 // --- Animation Types ---
 
@@ -42,6 +44,7 @@ export class AnimationEngine {
   private particlesGroup: THREE.Group;
   private idCounter = 0;
   private onCameraShake?: (intensity: number, duration: number) => void;
+  private vfxSequencer: VFXSequencer;
 
   constructor(scene: THREE.Scene, onCameraShake?: (intensity: number, duration: number) => void) {
     this.scene = scene;
@@ -49,6 +52,23 @@ export class AnimationEngine {
     this.particlesGroup = new THREE.Group();
     this.particlesGroup.name = 'particles';
     this.scene.add(this.particlesGroup);
+
+    this.vfxSequencer = new VFXSequencer({
+      scene: this.scene,
+      particlesGroup: this.particlesGroup,
+      addTask: (task) => this.tasks.push(task),
+      onCameraShake: (intensity, duration) => this.onCameraShake?.(intensity, duration),
+      spawnFireParticles: (x, y, z, count) => this.spawnFireParticles(x, y, z, count),
+      spawnFireExplosion: (x, y, z, isBig) => this.spawnFireExplosion(x, y, z, isBig),
+      spawnIceShatter: (x, y, z, isBig) => this.spawnIceShatter(x, y, z, isBig),
+      spawnElectricSparks: (x, y, z, color) => this.spawnElectricSparks(x, y, z, color),
+      spawnGoldenStars: (x, y, z, count) => this.spawnGoldenStars(x, y, z, count),
+      spawnDustParticles: (x, y, z, count) => this.spawnDustParticles(x, y, z, count),
+      spawnSlashParticles: (x, y, z, color) => this.spawnSlashParticles(x, y, z, color),
+      spawnParticleDot: (x, y, z, color, size, decay) => this.spawnParticleDot(x, y, z, color, size, decay),
+      playHitReaction: (targetObj, damageType, duration) => this.playHitReaction(targetObj, damageType, duration),
+      playAoEAnimation: (cx, cy, rad, color, duration) => this.playAoEAnimation(cx, cy, rad, color, duration),
+    });
   }
 
   setCameraShakeHandler(handler: (intensity: number, duration: number) => void): void {
@@ -97,6 +117,33 @@ export class AnimationEngine {
     }
 
     this.updateParticles();
+  }
+
+  // ==========================================
+  // VFX SEQUENCER ENTRYPOINT
+  // ==========================================
+  playVFXSequence(
+    sequence: VFXSequence,
+    attackerObj: THREE.Object3D,
+    attackerX: number,
+    attackerY: number,
+    targetObj: THREE.Object3D | undefined,
+    targetX: number,
+    targetY: number,
+    aoeRadius: number = 0,
+    damageType: 'physical' | 'magical' | 'healing' = 'magical'
+  ): Promise<void> {
+    return this.vfxSequencer.playSequence(
+      sequence,
+      attackerObj,
+      attackerX,
+      attackerY,
+      targetObj,
+      targetX,
+      targetY,
+      aoeRadius,
+      damageType
+    );
   }
 
   // ==========================================

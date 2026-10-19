@@ -190,16 +190,23 @@ export function App() {
         setProgress(merged);
         savePlayerProgress(merged);
       } else {
-        // Nova conta: inicia limpa sem herdar classes indevidas de sessões anteriores
-        const freshProgress: PlayerProgress = {
-          ...DEFAULT_PROGRESS,
-          unlockedClasses: [...INITIAL_CLASSES],
-          selectedPartyClasses: [...INITIAL_CLASSES],
-          unitsState: createInitialUnitsState(),
-        };
-        setProgress(freshProgress);
-        savePlayerProgress(freshProgress);
-        await saveCloudProgress(freshProgress);
+        // Nova conta ou modo offline: preserva progresso local existente se houver
+        const existingLocal = loadPlayerProgress();
+        if (existingLocal && Array.isArray(existingLocal.unlockedClasses) && existingLocal.unlockedClasses.length > 0) {
+          setProgress(existingLocal);
+        } else {
+          const freshProgress: PlayerProgress = {
+            ...DEFAULT_PROGRESS,
+            unlockedClasses: [...INITIAL_CLASSES],
+            selectedPartyClasses: [...INITIAL_CLASSES],
+            unitsState: createInitialUnitsState(),
+          };
+          setProgress(freshProgress);
+          savePlayerProgress(freshProgress);
+          if (user.id !== 0) {
+            await saveCloudProgress(freshProgress);
+          }
+        }
       }
     } catch (err) {
       console.warn('Erro ao sincronizar progresso em nuvem:', err);
@@ -210,6 +217,11 @@ export function App() {
     fetchCurrentUser().then(async (user) => {
       if (user) {
         await syncUserCloudProgress(user);
+      } else {
+        const offlineSession = localStorage.getItem('kazcampaign_offline_mode');
+        if (offlineSession === 'true') {
+          await syncUserCloudProgress({ id: 0, username: 'Convidado' });
+        }
       }
       setAuthChecked(true);
     });
@@ -218,6 +230,7 @@ export function App() {
   const handleLogout = () => {
     clearLiveBattleState();
     logout();
+    localStorage.removeItem('kazcampaign_offline_mode');
     setAuthUser(null);
     const cleanProgress = resetPlayerProgress();
     setProgress(cleanProgress);
@@ -2730,6 +2743,11 @@ export function App() {
         <div className="fixed top-3 right-3 z-40 flex items-center gap-2 bg-[#1B2030]/90 backdrop-blur border border-[#343B50] rounded-xl p-1.5 shadow-lg text-xs font-sans">
           <span className="flex items-center gap-1.5 px-2 text-[#F3F4F8] font-semibold">
             <UserIcon size={14} className="text-[#4C8DFF]" /> {authUser.username}
+            {authUser.id === 0 && (
+              <span className="text-[10px] bg-[#38BDF8]/10 text-[#38BDF8] border border-[#38BDF8]/30 px-1.5 py-0.5 rounded-md font-normal">
+                Offline
+              </span>
+            )}
           </span>
           <button
             id="open-leaderboard"

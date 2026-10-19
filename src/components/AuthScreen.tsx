@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LogIn, UserPlus, Loader2, Trophy } from 'lucide-react';
+import { LogIn, UserPlus, Loader2, Trophy, Gamepad2 } from 'lucide-react';
 import { login, register } from '../utils/api';
 import type { AuthUser } from '../utils/api';
 
@@ -40,6 +40,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onOpenL
     setMode(next);
     setError(null);
     setConfirm('');
+  };
+
+  const handlePlayOffline = () => {
+    localStorage.setItem('kazcampaign_offline_mode', 'true');
+    onAuthenticated({ id: 0, username: 'Convidado' });
   };
 
   const inputClass =
@@ -126,6 +131,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onOpenL
               {isRegister ? 'Criar conta' : 'Entrar'}
             </button>
           </form>
+
+          <div className="relative flex py-1 items-center">
+            <div className="flex-grow border-t border-[#343B50]"></div>
+            <span className="flex-shrink mx-3 text-xs font-semibold text-[#7C86A0] uppercase tracking-wider">ou</span>
+            <div className="flex-grow border-t border-[#343B50]"></div>
+          </div>
+
+          <button
+            id="auth-play-offline"
+            type="button"
+            onClick={handlePlayOffline}
+            className="w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 bg-[#22283A] hover:bg-[#2D354D] text-[#F3F4F8] border border-[#3E4765] hover:border-[#38BDF8]/60 transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-md group"
+          >
+            <Gamepad2 size={18} className="text-[#38BDF8] group-hover:scale-110 transition-transform" />
+            Jogar Offline (Convidado)
+          </button>
         </div>
 
         <button

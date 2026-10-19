@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback, useImperativeHandle, f
 import * as THREE from 'three';
 import type { BattlePhase, FloatingNumber, Point, Skill, TileData, Unit } from '../types/game';
 import { AnimationEngine } from './AnimationEngine';
+import { resolveSkillVFX } from './vfx/skillVFXRegistry';
 import {
   createRichTile,
   createRichObstacle,
@@ -529,132 +530,36 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const aoeRad = skillAoeRadius ?? skill?.aoeRadius ?? 0;
       const targetAnimX = aoeRad > 0 && targetPointOverride ? targetPointOverride.x : targetUnit.x;
       const targetAnimY = aoeRad > 0 && targetPointOverride ? targetPointOverride.y : targetUnit.y;
-      const skillName = (skill?.name || '').toLowerCase();
-      const skillId = (skill?.id || '').toLowerCase();
       const className = (attackerUnit.className || '').toLowerCase();
 
-      // Check skill & attack archetype
-      const isFire =
-        skillId.includes('fogo') || skillId.includes('meteoro') || skillId.includes('chama') ||
-        skillId.includes('ignis') || skillId.includes('drake') || skillName.includes('fogo') ||
-        skillName.includes('meteoro') || skillName.includes('chama') || skillName.includes('elemental') ||
-        skillId.includes('cataclismo') || skillName.includes('cataclismo') ||
-        skillId.includes('infernal') || skillName.includes('infernal') ||
-        skillId.includes('magma') || skillName.includes('magma') ||
-        skillId.includes('combustao') || skillName.includes('combustao') ||
-        skillId.includes('labareda') || skillName.includes('labareda') ||
-        skillId.includes('ignea') || skillName.includes('ígnia') || skillName.includes('ígnea');
-
-      const isMeteor =
-        skillId.includes('meteoro') || skillName.includes('meteoro') ||
-        skillId.includes('cataclismo') || skillName.includes('cataclismo') ||
-        (isFire && aoeRad > 0);
-
-      const isIce =
-        skillId.includes('gelo') || skillId.includes('glacial') || skillId.includes('geada') ||
-        skillId.includes('nevasca') || skillId.includes('congel') || skillName.includes('gelo') ||
-        skillName.includes('glacial') || skillName.includes('nevasca');
-
-      const isLightning =
-        skillId.includes('raio') || skillId.includes('relampago') || skillId.includes('trovao') ||
-        skillId.includes('eletric') || skillId.includes('zap') || skillId.includes('tempestade') ||
-        skillName.includes('raio') || skillName.includes('relâmpago') || skillName.includes('tempestade');
-
-      const isHoly =
-        damageType === 'healing' || skill?.targetType === 'self' || skill?.targetType === 'ally' ||
-        skillId.includes('cura') || skillId.includes('luz') || skillId.includes('sagrad') ||
-        skillId.includes('bencao') || skillId.includes('prece') || skillId.includes('escudo') ||
-        skillName.includes('cura') || skillName.includes('luz') || skillName.includes('escudo');
-
-      const isVoid =
-        skillId.includes('vazio') || skillId.includes('trevas') || skillId.includes('sombra') ||
-        skillId.includes('drenar') || skillId.includes('maldicao') || skillId.includes('necro') ||
-        skillName.includes('sombrio') || skillName.includes('drenar') || skillName.includes('necrót');
-
-      const isCannon =
-        skillId.includes('canhao') || skillId.includes('bomba') || skillId.includes('morteiro') ||
-        skillId.includes('granada') || skillName.includes('canhão') || skillName.includes('bomba') ||
-        className.includes('engineer') || className.includes('engenheiro');
-
-      const isArrow =
-        skillId.includes('flecha') || skillId.includes('tiro') || skillId.includes('disparo') ||
-        skillName.includes('flecha') || skillName.includes('tiro') ||
-        ((className.includes('archer') || className.includes('arqueiro')) && !skill);
-
-      const isWhirlwind =
-        skillId.includes('circular') || skillId.includes('torvelinho') || skillId.includes('girar') ||
-        skillName.includes('circular') || skillName.includes('torvelinho');
-
-      const isShadowDash =
-        skillId.includes('furtivo') || skillId.includes('adaga') || skillId.includes('emboscada') ||
-        skillName.includes('furtivo') || (className.includes('assassin') && !skill);
-
-      const isHeavySlam =
-        skillId.includes('demolidor') || skillId.includes('esmagar') || skillId.includes('investida') ||
-        skillId.includes('pesada') || skillId.includes('terremoto') || skillId.includes('sismico') ||
-        skillName.includes('demolidor') || skillName.includes('investida') ||
-        (className.includes('berserker') && !skill);
-
-      // Execute targeted animation
-      if (isHoly) {
-        if (targetObj) {
-          await engine.playHolyLightAnimation(targetObj, targetAnimX, targetAnimY, aoeRad, 650);
-        }
-      } else if (isFire) {
-        await engine.playFireballAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          isMeteor, aoeRad, 650
+      // Execute animation via VFX Sequencer (or basic attack fallback)
+      if (skill) {
+        const sequence = resolveSkillVFX(skill, damageType, aoeRad);
+        await engine.playVFXSequence(
+          sequence,
+          attackerObj,
+          attackerUnit.x,
+          attackerUnit.y,
+          targetObj,
+          targetAnimX,
+          targetAnimY,
+          aoeRad,
+          damageType
         );
-      } else if (isIce) {
-        await engine.playIceShardAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          aoeRad > 0, aoeRad, 580
-        );
-      } else if (isLightning) {
-        await engine.playLightningAnimation(
-          attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          380
-        );
-      } else if (isVoid) {
-        await engine.playVoidDrainAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          720
-        );
-      } else if (isCannon) {
-        await engine.playCannonBombAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          aoeRad, 620
-        );
-      } else if (isArrow) {
-        const isVolley = aoeRad > 0 || skillId.includes('triplo') || skillName.includes('triplo');
+      } else if (className.includes('archer') || className.includes('arqueiro')) {
+        // Basic Ranged Physical Attack
         await engine.playArrowAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          isVolley, 460
+          attackerObj,
+          attackerUnit.x,
+          attackerUnit.y,
+          targetAnimX,
+          targetAnimY,
+          false,
+          460
         );
-      } else if (isWhirlwind) {
-        await engine.playWhirlwindAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          aoeRad > 0 ? aoeRad : 1, 550
-        );
-      } else if (isShadowDash) {
-        await engine.playShadowDashAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          520
-        );
-      } else if (isHeavySlam) {
-        await engine.playHeavySlamAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          aoeRad, 520
-        );
+        if (targetObj) await engine.playHitReaction(targetObj, damageType, 320);
       } else if (damageType === 'magical') {
+        // Basic Magic Attack
         const color =
           className.includes('curandeiro') || className.includes('cleric')
             ? 0x56e59a
@@ -662,27 +567,26 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
             ? 0xb58aff
             : 0x06b6d4;
         await engine.playMagicAttackAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
-          color, 650
+          attackerObj,
+          attackerUnit.x,
+          attackerUnit.y,
+          targetAnimX,
+          targetAnimY,
+          color,
+          650
         );
+        if (targetObj) await engine.playHitReaction(targetObj, damageType, 320);
       } else {
+        // Basic Melee Physical Attack
         await engine.playPhysicalAttackAnimation(
-          attackerObj, attackerUnit.x, attackerUnit.y,
-          targetAnimX, targetAnimY,
+          attackerObj,
+          attackerUnit.x,
+          attackerUnit.y,
+          targetAnimX,
+          targetAnimY,
           450
         );
-      }
-
-      // Hit reaction & flash on target
-      if (targetObj && !isHoly) {
-        await engine.playHitReaction(targetObj, damageType, 320);
-      }
-
-      // AoE expanding ring if applicable
-      if (aoeRad > 0 && !isHoly) {
-        const aoeColor = isFire ? 0xff4500 : isIce ? 0x38bdf8 : isLightning ? 0x00f0ff : 0xf59e0b;
-        await engine.playAoEAnimation(targetAnimX, targetAnimY, aoeRad, aoeColor, 450);
+        if (targetObj) await engine.playHitReaction(targetObj, damageType, 320);
       }
     },
 
