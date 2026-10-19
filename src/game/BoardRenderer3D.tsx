@@ -17,6 +17,7 @@ import {
   apply3DModelToMiniature,
   preloadUnitModels,
 } from './ModelLoader3D';
+import { ZoomIn, ZoomOut, RotateCcw, Box, Layers } from 'lucide-react';
 
 // --- Public API exposed via ref ---
 export interface BoardRenderer3DHandle {
@@ -65,6 +66,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 }, ref) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [cameraMode, setCameraMode] = useState<'isometric' | 'topdown'>('isometric');
+  const [zoomLevel, setZoomLevel] = useState<number>(1.0);
 
   const cameraModeRef = useRef<'isometric' | 'topdown'>('isometric');
 
@@ -247,9 +249,25 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       if (!container || !rendererRef.current || !cameraRef.current) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
-      cameraRef.current.aspect = w / h;
+      const aspect = w / h;
+      cameraRef.current.aspect = aspect;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
+
+      // Recalibrate camera distance dynamically based on aspect ratio
+      const isPortrait = aspect < 1;
+      const portraitMult = isPortrait ? Math.min(2.3, Math.max(1, 1.25 / aspect)) : 1.0;
+      const effectiveZoom = zoomLevel * portraitMult;
+      const centerX = gridWidth / 2;
+      const centerZ = gridHeight / 2;
+
+      if (cameraModeRef.current === 'isometric') {
+        cameraRef.current.position.set(centerX, 8.2 * effectiveZoom, centerZ + 8.2 * effectiveZoom);
+        cameraRef.current.lookAt(centerX, 0.1, centerZ);
+      } else {
+        cameraRef.current.position.set(centerX, 11 * effectiveZoom, centerZ + 0.05);
+        cameraRef.current.lookAt(centerX, 0, centerZ);
+      }
     };
     window.addEventListener('resize', handleResize);
 
@@ -262,22 +280,32 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       }
       renderer.dispose();
     };
-  }, [gridWidth, gridHeight]);
+  }, [gridWidth, gridHeight, zoomLevel]);
 
-  // Camera Presets
+  // Camera Presets & Dynamic Zoom
   useEffect(() => {
     const camera = cameraRef.current;
-    if (!camera) return;
+    const container = mountRef.current;
+    if (!camera || !container) return;
+
+    const w = container.clientWidth || 800;
+    const h = container.clientHeight || 600;
+    const aspect = w / h;
+    const isPortrait = aspect < 1;
+    const portraitMult = isPortrait ? Math.min(2.3, Math.max(1, 1.25 / aspect)) : 1.0;
+    const effectiveZoom = zoomLevel * portraitMult;
+
     const centerX = gridWidth / 2;
     const centerZ = gridHeight / 2;
+
     if (cameraMode === 'isometric') {
-      camera.position.set(centerX, 8.2, centerZ + 8.2);
+      camera.position.set(centerX, 8.2 * effectiveZoom, centerZ + 8.2 * effectiveZoom);
       camera.lookAt(centerX, 0.1, centerZ);
     } else if (cameraMode === 'topdown') {
-      camera.position.set(centerX, 11, centerZ + 0.05);
+      camera.position.set(centerX, 11 * effectiveZoom, centerZ + 0.05);
       camera.lookAt(centerX, 0, centerZ);
     }
-  }, [cameraMode, gridWidth, gridHeight]);
+  }, [cameraMode, gridWidth, gridHeight, zoomLevel]);
 
   // Rebuild Grid, Diorama Base & High-Detail 3D Obstacles
   useEffect(() => {
@@ -660,26 +688,63 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#10131C] select-none overflow-hidden">
-      {/* Camera Controls */}
-      <div className="absolute top-3 left-3 z-20 flex items-center gap-2 bg-[#1B2030]/90 border border-[#343B50] p-1.5 rounded-xl shadow-lg backdrop-blur">
+      {/* Camera & Zoom Controls */}
+      <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 sm:gap-2 bg-[#1B2030]/90 border border-[#343B50] p-1 sm:p-1.5 rounded-xl shadow-lg backdrop-blur">
         <button
+          type="button"
           onClick={() => setCameraMode('isometric')}
-          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+          className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
             cameraMode === 'isometric' ? 'bg-[#4C8DFF] text-white shadow' : 'text-[#A7B0C4] hover:text-white'
           }`}
+          title="Visão 3D Tática (45°)"
         >
-          Visão 3D Tática (45°)
+          <Box size={14} />
+          <span className="sm:inline hidden">Visão 3D (45°)</span>
+          <span className="sm:hidden inline">3D</span>
         </button>
         <button
+          type="button"
           onClick={() => setCameraMode('topdown')}
-          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+          className={`px-2 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
             cameraMode === 'topdown' ? 'bg-[#4C8DFF] text-white shadow' : 'text-[#A7B0C4] hover:text-white'
           }`}
+          title="Visão Superior (90°)"
         >
-          Visão Superior (90°)
+          <Layers size={14} />
+          <span className="sm:inline hidden">Superior (90°)</span>
+          <span className="sm:hidden inline">2D</span>
         </button>
-      </div>
 
+        <div className="w-[1px] h-4 bg-[#343B50] mx-0.5" />
+
+        {/* Zoom Controls */}
+        <button
+          type="button"
+          onClick={() => setZoomLevel((z) => Math.max(0.65, Number((z - 0.15).toFixed(2))))}
+          className="p-1 rounded-lg text-[#A7B0C4] hover:text-white hover:bg-[#10131C] active:scale-90 transition-all"
+          title="Aproximar Zoom (+)"
+        >
+          <ZoomIn size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => setZoomLevel((z) => Math.min(1.75, Number((z + 0.15).toFixed(2))))}
+          className="p-1 rounded-lg text-[#A7B0C4] hover:text-white hover:bg-[#10131C] active:scale-90 transition-all"
+          title="Afastar Zoom (-)"
+        >
+          <ZoomOut size={15} />
+        </button>
+        {zoomLevel !== 1.0 && (
+          <button
+            type="button"
+            onClick={() => setZoomLevel(1.0)}
+            className="p-1 rounded-lg text-[#D4AD65] hover:text-white hover:bg-[#10131C] active:scale-90 transition-all"
+            title="Resetar Zoom"
+          >
+            <RotateCcw size={13} />
+          </button>
+        )}
+      </div>
 
       {/* WebGL Canvas */}
       <div
@@ -687,7 +752,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerLeave={() => onTileHover(-1, null)}
-        className="w-full h-full cursor-pointer rounded-xl border border-[#343B50] shadow-2xl overflow-hidden"
+        className="w-full h-full cursor-pointer rounded-xl border border-[#343B50] shadow-2xl overflow-hidden touch-none"
+        style={{ touchAction: 'none' }}
       />
 
       {/* Floating Damage Numbers */}

@@ -9,8 +9,8 @@ interface ObjectivesModalProps {
 
 export const ObjectivesModal: React.FC<ObjectivesModalProps> = ({ level, onClose }) => {
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-[#1B2030] border border-[#343B50] rounded-2xl p-6 max-w-md w-full shadow-2xl text-[#F3F4F8] select-none">
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+      <div className="bg-[#1B2030] border border-[#343B50] rounded-2xl p-4 sm:p-6 max-w-md w-full shadow-2xl text-[#F3F4F8] select-none max-h-[92vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-[#343B50] pb-3 mb-4">
           <div className="flex items-center gap-2 text-[#D4AD65]">
             <Award size={20} />

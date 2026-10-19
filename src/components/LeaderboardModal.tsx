@@ -37,9 +37,9 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({ currentUsern
   }, []);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4" onClick={onClose}>
       <div
-        className="w-full max-w-3xl max-h-[85vh] flex flex-col bg-[#1B2030] border border-[#343B50] rounded-2xl shadow-2xl overflow-hidden"
+        className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-[#1B2030] border border-[#343B50] rounded-2xl shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/15 to-transparent">

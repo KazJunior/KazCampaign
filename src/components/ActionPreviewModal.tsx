@@ -27,7 +27,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
     ((turnNumber ?? 1) - preview.target.lastStunTurn <= 1);
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1B2030] border-2 border-[#D4AD65] p-4 rounded-2xl shadow-2xl text-[#F3F4F8] max-w-md w-full animate-bounce-short select-none">
+    <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1B2030] border-2 border-[#D4AD65] p-3 sm:p-4 rounded-2xl shadow-2xl text-[#F3F4F8] max-w-md w-[calc(100%-1rem)] sm:w-full select-none max-h-[85vh] overflow-y-auto">
       <div className="flex items-center justify-between border-b border-[#343B50] pb-2 mb-3">
         <span className="text-xs font-bold text-[#D4AD65] uppercase tracking-wider flex items-center gap-1.5">
           {isTeleport ? (

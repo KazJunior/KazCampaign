@@ -10,8 +10,8 @@ export const SecretRiddleModal: React.FC<SecretRiddleModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans animate-fade-in">
-      <div className="relative bg-gradient-to-b from-[#1B1528] via-[#150F22] to-[#0D0817] border-2 border-[#9D4EDD] rounded-3xl p-6 sm:p-8 max-w-lg w-full text-[#F3F4F8] shadow-2xl shadow-[#7B2CBF]/40 space-y-6">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans animate-fade-in">
+      <div className="relative bg-gradient-to-b from-[#1B1528] via-[#150F22] to-[#0D0817] border-2 border-[#9D4EDD] rounded-3xl p-5 sm:p-8 max-w-lg w-full text-[#F3F4F8] shadow-2xl shadow-[#7B2CBF]/40 space-y-4 sm:space-y-6 max-h-[92vh] overflow-y-auto">
         
         {/* Glow Effects */}
         <div className="absolute top-0 right-0 w-44 h-44 bg-[#9D4EDD]/15 rounded-full blur-3xl pointer-events-none" />

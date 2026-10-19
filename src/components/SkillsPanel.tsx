@@ -45,7 +45,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
 }) => {
   if (!selectedUnit) {
     return (
-      <aside className="w-80 bg-[#1B2030] border-r border-[#343B50] p-4 flex flex-col items-center justify-center text-center text-[#A7B0C4] shadow-xl select-none">
+      <aside className="hidden lg:flex w-80 bg-[#1B2030] border-r border-[#343B50] p-4 flex-col items-center justify-center text-center text-[#A7B0C4] shadow-xl select-none">
         <div className="w-14 h-14 rounded-2xl bg-[#10131C] border border-[#343B50] flex items-center justify-center mb-3 shadow-inner">
           <Sparkles className="text-[#D4AD65]/50" size={28} />
         </div>
@@ -63,7 +63,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
   const skills = selectedUnit.skills || [];
 
   return (
-    <aside className="w-80 bg-[#1B2030] border-r border-[#343B50] flex flex-col shadow-2xl text-[#F3F4F8] select-none h-full z-10">
+    <aside className="hidden lg:flex w-80 bg-[#1B2030] border-r border-[#343B50] flex-col shadow-2xl text-[#F3F4F8] select-none h-full z-10">
       {/* Sticky Header */}
       <div className="p-3.5 border-b border-[#343B50] bg-[#161A26]">
         <div className="flex items-center justify-between mb-1">

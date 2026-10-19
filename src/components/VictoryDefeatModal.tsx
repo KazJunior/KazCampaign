@@ -44,9 +44,9 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
   }, [isVictory]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans">
       <div
-        className={`bg-[#1B2030] border-2 rounded-2xl p-6 max-w-md w-full shadow-2xl text-[#F3F4F8] text-center ${
+        className={`bg-[#1B2030] border-2 rounded-2xl p-4 sm:p-6 max-w-md w-full max-h-[92vh] overflow-y-auto shadow-2xl text-[#F3F4F8] text-center ${
           isVictory ? 'border-[#D4AD65]' : 'border-[#E65353]'
         }`}
       >

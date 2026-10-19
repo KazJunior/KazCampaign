@@ -55,6 +55,7 @@ import type { BoardRenderer3DHandle } from './game/BoardRenderer3D';
 import { TopBar } from './components/TopBar';
 import { SidePanel } from './components/SidePanel';
 import { SkillsPanel } from './components/SkillsPanel';
+import { MobileBattleHUD } from './components/MobileBattleHUD';
 import { ActionPreviewModal } from './components/ActionPreviewModal';
 import { DeploymentBanner } from './components/DeploymentBanner';
 import { ObjectivesModal } from './components/ObjectivesModal';
@@ -2740,11 +2741,11 @@ export function App() {
   if (currentView === 'level_select') {
     return (
       <>
-        <div className="fixed top-3 right-3 z-40 flex items-center gap-2 bg-[#1B2030]/90 backdrop-blur border border-[#343B50] rounded-xl p-1.5 shadow-lg text-xs font-sans">
-          <span className="flex items-center gap-1.5 px-2 text-[#F3F4F8] font-semibold">
-            <UserIcon size={14} className="text-[#4C8DFF]" /> {authUser.username}
+        <div className="fixed top-2 right-2 sm:top-3 sm:right-3 z-40 flex items-center gap-1 sm:gap-2 bg-[#1B2030]/90 backdrop-blur border border-[#343B50] rounded-xl p-1 sm:p-1.5 shadow-lg text-xs font-sans max-w-[calc(100vw-1rem)]">
+          <span className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 text-[#F3F4F8] font-semibold truncate max-w-[120px] sm:max-w-none">
+            <UserIcon size={14} className="text-[#4C8DFF] shrink-0" /> <span className="truncate">{authUser.username}</span>
             {authUser.id === 0 && (
-              <span className="text-[10px] bg-[#38BDF8]/10 text-[#38BDF8] border border-[#38BDF8]/30 px-1.5 py-0.5 rounded-md font-normal">
+              <span className="text-[9px] sm:text-[10px] bg-[#38BDF8]/10 text-[#38BDF8] border border-[#38BDF8]/30 px-1 py-0.2 rounded font-normal shrink-0">
                 Offline
               </span>
             )}
@@ -2918,7 +2919,7 @@ export function App() {
         />
 
         {/* CENTER: 3D Tactical Battlefield */}
-        <main className="flex-1 flex items-center justify-center p-2 overflow-hidden relative">
+        <main className="flex-1 flex items-center justify-center p-0 md:p-2 overflow-hidden relative w-full h-full">
           <BoardRenderer3D
             ref={boardRef}
             grid={grid}
@@ -2943,7 +2944,7 @@ export function App() {
           />
         </main>
 
-        {/* RIGHT: Unit Status & Movement / Actions Panel */}
+        {/* RIGHT: Unit Status & Movement / Actions Panel (Desktop lg+) */}
         <SidePanel
           selectedUnit={selectedUnit}
           selectedAction={selectedAction}
@@ -2963,6 +2964,37 @@ export function App() {
           }}
           isPlayerTurn={phase === 'player_turn'}
           turnNumber={turnNumber}
+        />
+
+        {/* MOBILE HUD (< lg screen controls) */}
+        <MobileBattleHUD
+          selectedUnit={selectedUnit}
+          selectedAction={selectedAction}
+          activeSkill={activeSkill}
+          phase={phase}
+          turnNumber={turnNumber}
+          onSelectAction={(act) => {
+            setSelectedAction(act);
+            setActiveSkill(null);
+            setDamagePreview(null);
+            setTargetUnitId(null);
+          }}
+          onSelectSkill={handleSelectSkill}
+          onClearSkill={() => {
+            setActiveSkill(null);
+            setDamagePreview(null);
+            setTargetUnitId(null);
+            setTargetAoEPoint(null);
+          }}
+          onWaitUnit={handleWaitUnit}
+          onCancelSelection={() => {
+            setSelectedUnitId(null);
+            setSelectedAction('none');
+            setActiveSkill(null);
+            setDamagePreview(null);
+            setTargetUnitId(null);
+          }}
+          onEndTurn={handleEndPlayerTurn}
         />
       </div>
 

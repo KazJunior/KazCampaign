@@ -35,15 +35,15 @@ export const AdventureHistoryModal: React.FC<AdventureHistoryModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans"
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-3xl max-h-[85vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-3xl max-h-[92vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65]">
               <History size={22} />
@@ -69,7 +69,7 @@ export const AdventureHistoryModal: React.FC<AdventureHistoryModalProps> = ({
         </div>
 
         {/* History List */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3">
           {history.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center text-[#A7B0C4]">
               <ShieldAlert size={48} className="text-[#343B50] mb-3" />

@@ -24,8 +24,8 @@ export const BossIntroBanner: React.FC<BossIntroBannerProps> = ({
   }, [onDismiss]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans animate-pulse">
-      <div className="bg-[#1B2030] border-4 border-[#E65353] rounded-3xl p-8 max-w-lg w-full text-center text-[#F3F4F8] shadow-2xl space-y-4">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans animate-pulse">
+      <div className="bg-[#1B2030] border-4 border-[#E65353] rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center text-[#F3F4F8] shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
         <div className="flex justify-center">
           <div className="w-20 h-20 rounded-full bg-[#E65353]/20 border-4 border-[#E65353] text-[#E65353] flex items-center justify-center shadow-2xl animate-spin-slow">
             {phaseNumber && phaseNumber > 1 ? <Flame size={48} /> : <Skull size={48} />}

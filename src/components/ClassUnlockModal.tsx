@@ -35,9 +35,9 @@ export const ClassUnlockModal: React.FC<ClassUnlockModalProps> = ({
   const isSecret = Boolean(classDef.isSecret);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans">
       <div
-        className={`bg-[#1B2030] border-4 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center text-[#F3F4F8] shadow-2xl space-y-5 animate-scale-up ${
+        className={`bg-[#1B2030] border-4 rounded-3xl p-5 sm:p-8 max-w-lg w-full text-center text-[#F3F4F8] shadow-2xl space-y-4 sm:space-y-5 animate-scale-up max-h-[92vh] overflow-y-auto ${
           isSecret ? 'border-[#9D4EDD] shadow-[#7B2CBF]/40' : 'border-[#D4AD65]'
         }`}
       >

@@ -82,24 +82,24 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   });
 
   return (
-    <div className="min-h-screen bg-[#10131C] text-[#F3F4F8] p-4 sm:p-8 flex flex-col items-center justify-center select-none font-sans">
-      <div className="max-w-6xl w-full space-y-6">
+    <div className="min-h-screen bg-[#10131C] text-[#F3F4F8] p-3 sm:p-8 flex flex-col items-center justify-center select-none font-sans">
+      <div className="max-w-6xl w-full space-y-5 sm:space-y-6">
         {/* Header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm">
+          <div className="inline-flex items-center gap-2 bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 sm:px-4 py-1 rounded-full text-[11px] sm:text-xs font-bold uppercase tracking-widest shadow-sm">
             <Award size={16} /> RPG Tático — Modo Aventura Contínua (50 Fases)
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-[#F3F4F8] tracking-tight">
+          <h1 className="text-2xl sm:text-5xl font-black text-[#F3F4F8] tracking-tight">
             Centro de Expedição
           </h1>
-          <p className="text-xs sm:text-sm text-[#A7B0C4] max-w-2xl mx-auto">
+          <p className="text-xs sm:text-sm text-[#A7B0C4] max-w-2xl mx-auto px-2">
             Vença as 50 fases em uma única aventura! Se sua equipe cair, você reiniciará da Fase 1, mantendo para sempre todo o seu <strong className="text-[#F0B44D]">Ouro</strong>, todas as <strong className="text-[#4C8DFF]">Classes Desbloqueadas</strong>, seu <strong className="text-[#D4AD65]">Bestiário</strong> e seu <strong className="text-[#B58AFF]">Catálogo de Itens</strong>.
           </p>
         </div>
 
         {/* Action Hub Bar: Bestiary, History, and Gold/Party summary */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-[#1B2030] border border-[#343B50] rounded-2xl p-3 sm:p-4 shadow-xl">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 bg-[#1B2030] border border-[#343B50] rounded-2xl p-3 sm:p-4 shadow-xl">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-wrap items-center gap-2 w-full md:w-auto">
             <button
               onClick={onOpenBestiary}
               className="px-3.5 py-2 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#D4AD65] font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm"
@@ -167,10 +167,10 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-[#343B50]/60">
             <div className="flex items-center gap-1.5 text-xs text-[#F0B44D] font-bold bg-[#10131C] px-3 py-1.5 rounded-xl border border-[#343B50]">
               <Coins size={16} />
-              <span>Ouro Acumulado:</span>
+              <span className="hidden sm:inline">Ouro:</span>
               <strong className="text-sm font-black text-white">{progress.gold}</strong>
             </div>
 
@@ -356,7 +356,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
           </div>
 
           {/* Act Tabs */}
-          <div className="flex items-center justify-center gap-2 flex-wrap pb-1">
+          <div className="flex items-center justify-start sm:justify-center gap-2 overflow-x-auto no-scrollbar pb-2 max-w-full">
             {actTabs.map((tab) => {
               const isActive = selectedAct === tab.id;
               const isTabReached = tab.id === 'all' || tab.range[0] <= currentStageNum;
@@ -365,7 +365,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 <button
                   key={String(tab.id)}
                   onClick={() => setSelectedAct(tab.id)}
-                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                  className={`px-3 sm:px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
                     isActive
                       ? 'bg-[#D4AD65] text-[#10131C] shadow-lg shadow-[#D4AD65]/20 scale-105'
                       : isTabReached
@@ -381,7 +381,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
           </div>
 
           {/* Stages Grid Preview */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
             {filteredLevels.map((level) => {
               const isPastStage = activeAdv ? level.id < activeAdv.currentLevelId : false;
               const isCurrentStage = activeAdv ? level.id === activeAdv.currentLevelId : level.id === 1;

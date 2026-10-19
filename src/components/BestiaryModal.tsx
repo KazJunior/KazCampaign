@@ -65,46 +65,46 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans"
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-4xl max-h-[88vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-4xl max-h-[92vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65]">
-              <BookOpen size={22} />
+        <div className="flex items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65] shrink-0">
+              <BookOpen size={20} />
             </div>
-            <div>
-              <h2 className="font-black text-lg text-[#F3F4F8] flex items-center gap-2">
-                Bestiário do Abismo
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40">
-                  {discoveredMonsters.length} / {Object.keys(MONSTER_DEFINITIONS).length} Descobertos
+            <div className="min-w-0">
+              <h2 className="font-black text-sm sm:text-lg text-[#F3F4F8] flex items-center gap-1.5 truncate">
+                <span>Bestiário do Abismo</span>
+                <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40 shrink-0">
+                  {discoveredMonsters.length} / {Object.keys(MONSTER_DEFINITIONS).length}
                 </span>
               </h2>
-              <p className="text-xs text-[#A7B0C4]">
+              <p className="text-[10px] sm:text-xs text-[#A7B0C4] truncate hidden sm:block">
                 Catálogo de criaturas e abominações já enfrentadas durante suas aventuras.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
+            className="p-1.5 sm:p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50] shrink-0"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2 px-6 py-2.5 bg-[#141824] border-b border-[#343B50] text-xs">
+        <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-6 py-2 sm:py-2.5 bg-[#141824] border-b border-[#343B50] text-xs overflow-x-auto no-scrollbar shrink-0">
           <button
             onClick={() => setFilter('all')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
               filter === 'all'
-                ? 'bg-[#D4AD65] text-[#10131C] shadow'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
                 : 'text-[#A7B0C4] hover:bg-[#1B2030]'
             }`}
           >
@@ -112,53 +112,53 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
           </button>
           <button
             onClick={() => setFilter('normal')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
               filter === 'normal'
-                ? 'bg-[#D4AD65] text-[#10131C] shadow'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
                 : 'text-[#A7B0C4] hover:bg-[#1B2030]'
             }`}
           >
-            Monstros Normais ({discoveredMonsters.filter((m) => !m.isBoss && !m.isMiniBoss).length})
+            Normais ({discoveredMonsters.filter((m) => !m.isBoss && !m.isMiniBoss).length})
           </button>
           <button
             onClick={() => setFilter('bosses')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
               filter === 'bosses'
-                ? 'bg-[#D4AD65] text-[#10131C] shadow'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
                 : 'text-[#A7B0C4] hover:bg-[#1B2030]'
             }`}
           >
-            Chefes & Mini Bosses ({discoveredMonsters.filter((m) => m.isBoss || m.isMiniBoss).length})
+            Chefes ({discoveredMonsters.filter((m) => m.isBoss || m.isMiniBoss).length})
           </button>
         </div>
 
         {/* Content Body */}
         {discoveredMonsters.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center text-[#A7B0C4]">
-            <Skull size={48} className="text-[#343B50] mb-3" />
-            <h3 className="font-bold text-base text-[#F3F4F8]">Nenhum monstro descoberto ainda</h3>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 text-center text-[#A7B0C4]">
+            <Skull size={40} className="text-[#343B50] mb-3" />
+            <h3 className="font-bold text-sm sm:text-base text-[#F3F4F8]">Nenhum monstro descoberto ainda</h3>
             <p className="text-xs text-[#A7B0C4] max-w-sm mt-1">
               Inicie uma nova aventura! Conforme você enfrentar monstros e chefes pelas 50 fases, seus registros e habilidades serão catalogados aqui.
             </p>
           </div>
         ) : (
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
             {/* Left Monster List */}
-            <div className="w-72 border-r border-[#343B50] bg-[#141824] overflow-y-auto p-3 space-y-2">
+            <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-[#343B50] bg-[#141824] overflow-x-auto md:overflow-y-auto no-scrollbar p-2.5 sm:p-3 flex md:flex-col gap-2 shrink-0 max-h-44 md:max-h-none">
               {filteredMonsters.map((monster) => {
                 const isSelected = selectedMonster?.typeId === monster.typeId;
                 return (
                   <button
                     key={monster.typeId}
                     onClick={() => setSelectedMonster(monster)}
-                    className={`w-full p-2.5 rounded-xl border flex items-center gap-3 text-left transition-all ${
+                    className={`w-auto md:w-full shrink-0 p-2 sm:p-2.5 rounded-xl border flex items-center gap-2.5 sm:gap-3 text-left transition-all ${
                       isSelected
                         ? 'bg-[#D4AD65]/20 border-[#D4AD65] text-white shadow-md'
                         : 'bg-[#1B2030] border-[#343B50] hover:border-[#D4AD65]/50 text-[#F3F4F8]'
                     }`}
                   >
                     <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center shadow shrink-0 border border-white/20"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shadow shrink-0 border border-white/20"
                       style={{ backgroundColor: monster.color }}
                     >
                       {getAvatarIcon(monster.avatarKey, 20)}

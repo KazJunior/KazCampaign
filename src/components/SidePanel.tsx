@@ -44,7 +44,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 }) => {
   if (!selectedUnit) {
     return (
-      <aside className="w-80 bg-[#1B2030] border-l border-[#343B50] p-4 flex flex-col items-center justify-center text-center text-[#A7B0C4] shadow-xl select-none">
+      <aside className="hidden lg:flex w-80 bg-[#1B2030] border-l border-[#343B50] p-4 flex-col items-center justify-center text-center text-[#A7B0C4] shadow-xl select-none">
         <div className="w-16 h-16 rounded-2xl bg-[#10131C] border border-[#343B50] flex items-center justify-center mb-3 shadow-inner">
           <Footprints className="text-[#343B50]" size={32} />
         </div>
@@ -89,7 +89,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
     !isStunned;
 
   return (
-    <aside className="w-80 bg-[#1B2030] border-l border-[#343B50] p-4 flex flex-col justify-between shadow-2xl text-[#F3F4F8] select-none h-full z-10 overflow-y-auto">
+    <aside className="hidden lg:flex w-80 bg-[#1B2030] border-l border-[#343B50] p-4 flex-col justify-between shadow-2xl text-[#F3F4F8] select-none h-full z-10 overflow-y-auto">
       <div className="space-y-4">
         {/* Unit Identity Card */}
         <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#10131C] border border-[#343B50]">
@@ -406,7 +406,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   );
 };
 
-function getUnitAvatar(key: string, size = 16) {
+export function getUnitAvatar(key: string, size = 16) {
   switch (key) {
     case 'warrior':
       return <Swords size={size} />;

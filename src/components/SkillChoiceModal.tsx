@@ -49,8 +49,8 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
   // If in evolution mode, render the 5 skills with their upgrades!
   if (isEvolutionMode) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 select-none font-sans overflow-y-auto">
-        <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-5 sm:p-6 max-w-5xl w-full shadow-2xl text-[#F3F4F8] space-y-5 my-auto">
+      <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans overflow-y-auto">
+        <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-4 sm:p-6 max-w-5xl w-full shadow-2xl text-[#F3F4F8] space-y-5 my-auto max-h-[92vh] overflow-y-auto">
           {/* Header Banner */}
           <div className="text-center space-y-1.5">
             <div className="inline-flex items-center gap-2 bg-[#D4AD65]/15 border border-[#D4AD65]/40 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">
@@ -157,8 +157,8 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
 
   // 2. LEARNING NEW SKILL MODE (< 5 skills)
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-6 max-w-4xl w-full shadow-2xl text-[#F3F4F8] space-y-5">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans overflow-y-auto">
+      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-4 sm:p-6 max-w-4xl w-full shadow-2xl text-[#F3F4F8] space-y-5 my-auto max-h-[92vh] overflow-y-auto">
         {/* Header Banner */}
         <div className="text-center space-y-1">
           <div className="inline-flex items-center gap-2 bg-[#D4AD65]/15 border border-[#D4AD65]/40 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">

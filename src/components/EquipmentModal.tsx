@@ -47,6 +47,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
   const [activeClass, setActiveClass] = useState<string>(partyClasses[0] || 'guerreiro');
   const [selectedInventoryIndex, setSelectedInventoryIndex] = useState<number | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<'all' | ItemCategory>('all');
+  const [mobileSection, setMobileSection] = useState<'slots' | 'inventory'>('slots');
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -118,6 +119,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
     soundManager.playSelect();
     onEquipItem(activeClass, item.id, inventoryIndex);
     setSelectedInventoryIndex(null);
+    setMobileSection('slots');
   };
 
   const handleUnequip = (category: ItemCategory) => {
@@ -127,41 +129,41 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-5xl max-h-[92vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65]">
-              <Package size={22} />
+        <div className="flex items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65] shrink-0">
+              <Package size={20} />
             </div>
-            <div>
-              <h2 className="font-black text-lg text-[#F3F4F8] flex items-center gap-2">
-                Arsenal & Equipamentos da Equipe
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40">
-                  {inventory.length} Itens na Aventura
+            <div className="min-w-0">
+              <h2 className="font-black text-sm sm:text-lg text-[#F3F4F8] flex items-center gap-1.5 truncate">
+                <span>Arsenal & Equipamentos</span>
+                <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40 shrink-0">
+                  {inventory.length} Itens
                 </span>
               </h2>
-              <p className="text-xs text-[#A7B0C4]">
-                Equipe até 1 item por categoria em cada herói. Os itens são temporários desta aventura e somem ao final.
+              <p className="text-[10px] sm:text-xs text-[#A7B0C4] truncate">
+                Equipe até 1 item por categoria em cada herói.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
+            className="p-1.5 sm:p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50] shrink-0"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Hero Selector Tabs */}
-        <div className="flex items-center gap-2 px-6 py-3 bg-[#141824] border-b border-[#343B50] overflow-x-auto">
+        <div className="flex items-center gap-2 px-3 sm:px-6 py-2 sm:py-3 bg-[#141824] border-b border-[#343B50] overflow-x-auto no-scrollbar shrink-0">
           {partyClasses.map((cKey) => {
             const cDef = CLASS_DEFINITIONS[cKey];
             if (!cDef) return null;
@@ -177,14 +179,14 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
                   setActiveClass(cKey);
                   setSelectedInventoryIndex(null);
                 }}
-                className={`flex items-center gap-2.5 px-4 py-2 rounded-xl border-2 transition-all shrink-0 ${
+                className={`flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl border-2 transition-all shrink-0 ${
                   isSelected
                     ? 'border-[#D4AD65] bg-[#1B2030] shadow-lg shadow-[#D4AD65]/10 text-white'
                     : 'border-[#343B50] bg-[#10131C] text-[#A7B0C4] hover:border-[#A7B0C4]/40 hover:text-white'
                 }`}
               >
                 <div
-                  className="w-3 h-3 rounded-full"
+                  className="w-2.5 h-2.5 rounded-full"
                   style={{ backgroundColor: cDef.color }}
                 />
                 <span className="font-bold text-xs">{cDef.name}</span>
@@ -196,10 +198,40 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
           })}
         </div>
 
+        {/* Mobile Section Switcher */}
+        <div className="flex md:hidden border-b border-[#343B50] bg-[#10131C] p-1.5 gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setMobileSection('slots')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              mobileSection === 'slots'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
+                : 'text-[#A7B0C4] hover:text-white'
+            }`}
+          >
+            <Shield size={14} />
+            <span>Equipados ({equippedItemsForCurrentHero.length}/6)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileSection('inventory')}
+            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+              mobileSection === 'inventory'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
+                : 'text-[#A7B0C4] hover:text-white'
+            }`}
+          >
+            <Package size={14} />
+            <span>Mochila ({unequippedItems.length})</span>
+          </button>
+        </div>
+
         {/* Content Body: Left = Hero Equipment Slots & Stats, Right = Inventory */}
         <div className="grid grid-cols-1 md:grid-cols-12 flex-1 overflow-hidden">
           {/* Left: Hero Equipment Slots (7 cols) */}
-          <div className="md:col-span-7 p-6 border-b md:border-b-0 md:border-r border-[#343B50] overflow-y-auto space-y-4">
+          <div className={`md:col-span-7 p-3.5 sm:p-6 border-b md:border-b-0 md:border-r border-[#343B50] overflow-y-auto space-y-3 sm:space-y-4 ${
+            mobileSection === 'slots' ? 'flex flex-col flex-1' : 'hidden md:flex md:flex-col'
+          }`}>
             {/* Hero Quick Stats Banner */}
             <div className="bg-[#10131C] p-4 rounded-xl border border-[#343B50] flex items-center justify-between">
               <div>
@@ -356,7 +388,9 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
           </div>
 
           {/* Right: Adventure Inventory (5 cols) */}
-          <div className="md:col-span-5 p-6 flex flex-col bg-[#141824] overflow-hidden">
+          <div className={`md:col-span-5 p-3.5 sm:p-6 flex flex-col bg-[#141824] overflow-hidden ${
+            mobileSection === 'inventory' ? 'flex flex-1' : 'hidden md:flex'
+          }`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-sm text-[#F3F4F8] flex items-center gap-1.5">
                 <Package size={16} className="text-[#D4AD65]" />

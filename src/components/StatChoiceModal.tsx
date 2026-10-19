@@ -102,17 +102,17 @@ export const StatChoiceModal: React.FC<StatChoiceModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-6 sm:p-8 max-w-4xl w-full shadow-2xl text-[#F3F4F8] space-y-6 animate-scale-up">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans overflow-y-auto">
+      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-2xl sm:rounded-3xl p-3.5 sm:p-8 max-w-4xl w-full shadow-2xl text-[#F3F4F8] space-y-4 sm:space-y-6 my-auto max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-2 bg-[#D4AD65]/15 border border-[#D4AD65]/40 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">
+        <div className="text-center space-y-1.5 sm:space-y-2">
+          <div className="inline-flex items-center gap-2 bg-[#D4AD65]/15 border border-[#D4AD65]/40 text-[#D4AD65] px-3 sm:px-4 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest animate-pulse">
             <ArrowUpRight size={16} /> EVOLUÇÃO DE STATUS — NÍVEL {newLevel}
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#F3F4F8]">
+          <h2 className="text-xl sm:text-3xl font-extrabold text-[#F3F4F8]">
             Evolua um Atributo de {unit.name}
           </h2>
-          <p className="text-xs sm:text-sm text-[#A7B0C4] max-w-xl mx-auto">
+          <p className="text-[11px] sm:text-xs text-[#A7B0C4] max-w-xl mx-auto">
             Ao subir de nível, você escolhe qual aspecto do herói fortalecer permanentemente.
           </p>
 
@@ -124,7 +124,7 @@ export const StatChoiceModal: React.FC<StatChoiceModalProps> = ({
         </div>
 
         {/* 5 Stat Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
           {statOptions.map((stat) => (
             <div
               key={stat.type}

@@ -63,55 +63,55 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
   const isComplete = selected.length === 4;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
-      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-6 max-w-5xl w-full shadow-2xl text-[#F3F4F8] space-y-5 max-h-[90vh] overflow-y-auto relative">
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans">
+      <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 max-w-5xl w-full shadow-2xl text-[#F3F4F8] space-y-4 sm:space-y-5 max-h-[92vh] overflow-y-auto relative">
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-5 right-5 p-2 rounded-xl bg-[#10131C] border border-[#343B50] text-[#A7B0C4] hover:text-white hover:border-[#D4AD65] transition-all cursor-pointer"
+            className="absolute top-3.5 sm:top-5 right-3.5 sm:right-5 p-1.5 sm:p-2 rounded-xl bg-[#10131C] border border-[#343B50] text-[#A7B0C4] hover:text-white hover:border-[#D4AD65] transition-all cursor-pointer"
             title="Fechar Seleção"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         )}
 
         {/* Header */}
         <div className="text-center space-y-1">
-          <div className="inline-flex items-center gap-2 bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 sm:px-4 py-1 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">
             <Sparkles size={14} /> Seleção da Equipe de Heróis & Recrutamento
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#F3F4F8]">
+          <h2 className="text-xl sm:text-3xl font-extrabold text-[#F3F4F8]">
             Escolha 4 Heróis para a Campanha
           </h2>
-          <p className="text-xs text-[#A7B0C4]">
+          <p className="text-[11px] sm:text-xs text-[#A7B0C4]">
             Monte seu grupo tático ou recrute novos heróis lendários por 100.000 de Ouro cada!
           </p>
         </div>
 
         {/* Counter & Gold Badges */}
-        <div className="flex justify-center items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#10131C] border border-[#F0B44D]/50 text-[#F0B44D] font-black text-xs sm:text-sm shadow-inner">
-            <Coins size={16} />
+        <div className="flex justify-center items-center gap-2 sm:gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#10131C] border border-[#F0B44D]/50 text-[#F0B44D] font-black text-xs sm:text-sm shadow-inner">
+            <Coins size={14} />
             <span>Ouro: {playerGold.toLocaleString('pt-BR')}</span>
           </div>
 
           <span
-            className={`px-4 py-1.5 rounded-full font-bold text-xs sm:text-sm border flex items-center gap-2 ${
+            className={`px-3 py-1 rounded-full font-bold text-xs sm:text-sm border flex items-center gap-1.5 ${
               isComplete
                 ? 'bg-[#43C878]/20 border-[#43C878] text-[#43C878]'
                 : 'bg-[#F0B44D]/20 border-[#F0B44D] text-[#F0B44D]'
             }`}
           >
-            <Shield size={16} /> Equipe: {selected.length} / 4 Selecionados
+            <Shield size={14} /> {selected.length} / 4 Heróis
           </span>
 
-          <span className="px-3 py-1.5 rounded-full font-bold text-xs bg-[#10131C] border border-[#343B50] text-[#D4AD65]">
-            {unlockedClasses.length} de {allClasses.length} Classes Desbloqueadas
+          <span className="px-2.5 py-1 rounded-full font-bold text-[11px] sm:text-xs bg-[#10131C] border border-[#343B50] text-[#D4AD65]">
+            {unlockedClasses.length} de {allClasses.length} Desbloqueadas
           </span>
         </div>
 
         {/* Class Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
           {allClasses.map((cKey) => {
             const classDef = CLASS_DEFINITIONS[cKey];
             const isUnlocked = unlockedClasses.includes(cKey);

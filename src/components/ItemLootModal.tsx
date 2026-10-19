@@ -59,14 +59,14 @@ export const ItemLootModal: React.FC<ItemLootModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
-      <div className="w-full max-w-2xl bg-[#1B2030] border-2 border-[#D4AD65]/60 rounded-2xl shadow-2xl p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans">
+      <div className="w-full max-w-2xl bg-[#1B2030] border-2 border-[#D4AD65]/60 rounded-2xl shadow-2xl p-4 sm:p-6 text-center animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="mb-5">
+        <div className="mb-4 sm:mb-5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AD65]/20 border border-[#D4AD65]/50 text-[#D4AD65] text-xs font-bold uppercase tracking-wider mb-2">
             <Sparkles size={14} /> Espólios de Batalha — Fase {levelNumber}
           </div>
-          <h2 className="text-xl font-black text-[#F3F4F8]">
+          <h2 className="text-lg sm:text-xl font-black text-[#F3F4F8]">
             Escolha sua Recompensa de Equipamento
           </h2>
           <p className="text-xs text-[#A7B0C4] mt-1">
@@ -75,7 +75,7 @@ export const ItemLootModal: React.FC<ItemLootModalProps> = ({
         </div>
 
         {/* Item Cards (1 to 3 items) */}
-        <div className={`grid gap-3 mb-6 ${items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div className={`grid gap-3 mb-5 sm:mb-6 ${items.length === 1 ? 'grid-cols-1' : items.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'}`}>
           {items.map((item) => {
             const isSelected = selectedItem?.id === item.id;
             const rInfo = RARITY_INFO[item.rarity];

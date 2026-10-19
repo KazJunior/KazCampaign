@@ -127,57 +127,57 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65] shadow-inner">
-              <Building2 size={24} />
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-3.5 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2.5 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65] shadow-inner shrink-0">
+              <Building2 size={20} />
             </div>
-            <div>
-              <h2 className="font-black text-lg sm:text-xl text-[#F3F4F8] flex items-center gap-2">
+            <div className="min-w-0">
+              <h2 className="font-black text-sm sm:text-xl text-[#F3F4F8] flex items-center gap-2 truncate">
                 Base de Operações & Aprimoramentos
               </h2>
-              <p className="text-xs text-[#A7B0C4]">
+              <p className="text-[10px] sm:text-xs text-[#A7B0C4] truncate hidden sm:block">
                 Melhorias permanentes para classes, bônus globais de expedição e forja de equipamentos do catálogo.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto sm:ml-0">
             {/* Live Gold Counter */}
-            <div className="flex items-center gap-2 bg-[#10131C] border border-[#D4AD65]/60 px-3.5 py-1.5 rounded-xl shadow-md">
-              <Coins size={18} className="text-[#FFD700] animate-pulse" />
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-[#10131C] border border-[#D4AD65]/60 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl shadow-md">
+              <Coins size={16} className="text-[#FFD700] animate-pulse shrink-0" />
               <div className="flex flex-col text-right">
-                <span className="text-[10px] text-[#A7B0C4] uppercase tracking-wider font-semibold">Ouro Disponível</span>
-                <span className="text-sm font-black text-[#FFD700] tracking-wide">{gold.toLocaleString()} G</span>
+                <span className="text-[8px] sm:text-[10px] text-[#A7B0C4] uppercase tracking-wider font-semibold">Ouro</span>
+                <span className="text-xs sm:text-sm font-black text-[#FFD700] tracking-wide">{gold.toLocaleString()} G</span>
               </div>
             </div>
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
+              className="p-1.5 sm:p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-[#343B50] bg-[#141824] px-4 sm:px-6 gap-2 pt-2">
+        <div className="flex border-b border-[#343B50] bg-[#141824] px-3 sm:px-6 gap-1.5 sm:gap-2 pt-2 overflow-x-auto no-scrollbar shrink-0">
           <button
             type="button"
             onClick={() => {
               soundManager.playSelect();
               setActiveTab('classes');
             }}
-            className={`px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all flex items-center gap-2 border-t border-x ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all flex items-center gap-1.5 sm:gap-2 border-t border-x shrink-0 ${
               activeTab === 'classes'
-                ? 'bg-[#1B2030] text-[#D4AD65] border-[#D4AD65]/50 shadow-sm'
+                ? 'bg-[#1B2030] text-[#D4AD65] border-[#D4AD65]/50 shadow-sm font-black'
                 : 'bg-transparent text-[#A7B0C4] border-transparent hover:text-white hover:bg-[#1B2030]/50'
             }`}
           >
-            <Swords size={16} />
-            <span>Upgrades de Classes</span>
-            <span className="text-[10px] bg-[#10131C] px-1.5 py-0.5 rounded border border-[#343B50] text-[#D4AD65]">
+            <Swords size={15} />
+            <span>Classes</span>
+            <span className="text-[9px] sm:text-[10px] bg-[#10131C] px-1.5 py-0.2 rounded border border-[#343B50] text-[#D4AD65]">
               5 Níveis
             </span>
           </button>
@@ -188,15 +188,15 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
               soundManager.playSelect();
               setActiveTab('general');
             }}
-            className={`px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all flex items-center gap-2 border-t border-x ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all flex items-center gap-1.5 sm:gap-2 border-t border-x shrink-0 ${
               activeTab === 'general'
-                ? 'bg-[#1B2030] text-[#00E5FF] border-[#00E5FF]/50 shadow-sm'
+                ? 'bg-[#1B2030] text-[#00E5FF] border-[#00E5FF]/50 shadow-sm font-black'
                 : 'bg-transparent text-[#A7B0C4] border-transparent hover:text-white hover:bg-[#1B2030]/50'
             }`}
           >
-            <Sparkles size={16} />
-            <span>Melhorias Gerais</span>
-            <span className="text-[10px] bg-[#10131C] px-1.5 py-0.5 rounded border border-[#343B50] text-[#00E5FF]">
+            <Sparkles size={15} />
+            <span>Gerais</span>
+            <span className="text-[9px] sm:text-[10px] bg-[#10131C] px-1.5 py-0.2 rounded border border-[#343B50] text-[#00E5FF]">
               Meta
             </span>
           </button>
@@ -207,15 +207,15 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
               soundManager.playSelect();
               setActiveTab('forge');
             }}
-            className={`px-4 py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all flex items-center gap-2 border-t border-x ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-bold rounded-t-xl transition-all flex items-center gap-1.5 sm:gap-2 border-t border-x shrink-0 ${
               activeTab === 'forge'
-                ? 'bg-[#1B2030] text-[#B58AFF] border-[#B58AFF]/50 shadow-sm'
+                ? 'bg-[#1B2030] text-[#B58AFF] border-[#B58AFF]/50 shadow-sm font-black'
                 : 'bg-transparent text-[#A7B0C4] border-transparent hover:text-white hover:bg-[#1B2030]/50'
             }`}
           >
-            <Hammer size={16} />
-            <span>Forja do Catálogo</span>
-            <span className="text-[10px] bg-[#10131C] px-1.5 py-0.5 rounded border border-[#343B50] text-[#B58AFF]">
+            <Hammer size={15} />
+            <span>Forja</span>
+            <span className="text-[9px] sm:text-[10px] bg-[#10131C] px-1.5 py-0.2 rounded border border-[#343B50] text-[#B58AFF]">
               +5% até 3x
             </span>
           </button>
@@ -229,8 +229,8 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
           {activeTab === 'classes' && (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 h-full">
               {/* Left Column: Class Selector List */}
-              <div className="md:col-span-4 flex flex-col gap-2 overflow-y-auto pr-1 max-h-[65vh]">
-                <span className="text-xs font-bold text-[#A7B0C4] uppercase tracking-wider mb-1 flex items-center justify-between">
+              <div className="md:col-span-4 flex flex-row md:flex-col gap-2 overflow-x-auto md:overflow-y-auto no-scrollbar pb-2 md:pb-0 pr-0 md:pr-1 max-h-none md:max-h-[65vh] shrink-0">
+                <span className="hidden md:flex text-xs font-bold text-[#A7B0C4] uppercase tracking-wider mb-1 items-center justify-between">
                   <span>Selecione a Classe</span>
                   <span className="text-[10px] text-[#D4AD65]">{classList.length} Classes</span>
                 </span>
@@ -249,7 +249,7 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                         soundManager.playSelect();
                         setSelectedClass(cName);
                       }}
-                      className={`w-full p-3 rounded-xl border text-left transition-all flex items-center justify-between gap-3 ${
+                      className={`w-auto md:w-full shrink-0 p-2.5 sm:p-3 rounded-xl border text-left transition-all flex items-center justify-between gap-3 ${
                         isSelected
                           ? 'bg-[#10131C] border-[#D4AD65] shadow-lg scale-[1.01]'
                           : 'bg-[#141824]/80 border-[#343B50] hover:bg-[#1B2030] hover:border-[#71788E]'

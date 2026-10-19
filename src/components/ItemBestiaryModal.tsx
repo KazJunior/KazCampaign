@@ -86,57 +86,57 @@ export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans"
+      className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+        className="w-full max-w-5xl max-h-[92vh] flex flex-col bg-[#1B2030] border-2 border-[#D4AD65]/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65]">
-              <BookOpen size={22} />
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between px-3.5 sm:px-6 py-2.5 sm:py-4 border-b border-[#343B50] bg-gradient-to-r from-[#D4AD65]/20 via-[#1B2030] to-transparent gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div className="p-1.5 sm:p-2 rounded-xl bg-[#10131C] border border-[#D4AD65]/40 text-[#D4AD65] shrink-0">
+              <BookOpen size={20} />
             </div>
-            <div>
-              <h2 className="font-black text-lg text-[#F3F4F8] flex items-center gap-2">
-                Catálogo de Itens
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40">
-                  {discoveredCount} / {totalCount} Catalogados ({progressPercent}%)
+            <div className="min-w-0">
+              <h2 className="font-black text-sm sm:text-lg text-[#F3F4F8] flex items-center gap-1.5 truncate">
+                <span>Catálogo de Itens</span>
+                <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40 shrink-0">
+                  {discoveredCount}/{totalCount} ({progressPercent}%)
                 </span>
               </h2>
-              <p className="text-xs text-[#A7B0C4]">
-                Catálogo permanente de todos os armamentos, proteções e artefatos já encontrados nas suas aventuras.
+              <p className="text-[10px] sm:text-xs text-[#A7B0C4] truncate hidden sm:block">
+                Catálogo permanente de todos os armamentos, proteções e artefatos.
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto sm:ml-0">
             {gold !== undefined && (
-              <div className="flex items-center gap-2 bg-[#10131C] border border-[#D4AD65]/60 px-3 py-1.5 rounded-xl shadow-md">
-                <Coins size={16} className="text-[#FFD700]" />
+              <div className="flex items-center gap-1.5 bg-[#10131C] border border-[#D4AD65]/60 px-2.5 py-1 rounded-xl shadow-md">
+                <Coins size={14} className="text-[#FFD700]" />
                 <span className="text-xs font-black text-[#FFD700]">{gold.toLocaleString()} G</span>
               </div>
             )}
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
+              className="p-1.5 sm:p-2 rounded-xl text-[#A7B0C4] hover:text-[#F3F4F8] hover:bg-[#10131C] transition-colors border border-transparent hover:border-[#343B50]"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* Filter Bar */}
-        <div className="px-6 py-3 bg-[#141824] border-b border-[#343B50] flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="px-3 sm:px-6 py-2 sm:py-3 bg-[#141824] border-b border-[#343B50] flex flex-wrap items-center justify-between gap-2 text-xs">
           {/* Category Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-1">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 max-w-full">
             <button
               type="button"
               onClick={() => setSelectedCategory('all')}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
+              className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg font-bold transition-all shrink-0 ${
                 selectedCategory === 'all'
-                  ? 'bg-[#D4AD65] text-[#10131C]'
+                  ? 'bg-[#D4AD65] text-[#10131C] font-black'
                   : 'text-[#A7B0C4] hover:bg-[#1B2030]'
               }`}
             >
@@ -189,7 +189,7 @@ export const ItemBestiaryModal: React.FC<ItemBestiaryModalProps> = ({
         </div>
 
         {/* Items Grid */}
-        <div className="flex-1 overflow-y-auto p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
           {filteredItems.map((item) => {
             const isDiscovered = discoveredSet.has(item.id);
             const rInfo = RARITY_INFO[item.rarity];
