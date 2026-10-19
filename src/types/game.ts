@@ -22,6 +22,14 @@ export type DamageType = 'physical' | 'magical' | 'healing';
 
 export type SkillCategory = 'attack' | 'defense' | 'support' | 'passive';
 
+export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
+
+export interface StatusEffect {
+  type: StatusEffectType;
+  duration: number;
+  value: number;
+}
+
 export interface Skill {
   id: string;
   name: string;
@@ -37,16 +45,8 @@ export interface Skill {
   targetType: 'enemy' | 'ally' | 'any' | 'self' | 'empty_tile';
   defenseIgnoreRatio?: number;
   requiredLevel?: number;
-  statusEffect?: {
-    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
-    duration: number;
-    value: number;
-  };
-  secondaryStatusEffect?: {
-    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
-    duration: number;
-    value: number;
-  };
+  statusEffect?: StatusEffect;
+  secondaryStatusEffect?: StatusEffect;
   lifestealPercent?: number; // % of damage dealt converted to healing on caster (e.g. 100% for Dreno de Vida)
   isTeleport?: boolean; // Skill teleports caster to an empty tile
   teleportToTarget?: boolean; // Moves caster to adjacent tile next to target
@@ -90,11 +90,7 @@ export interface Unit {
   learnedSkillIds: string[]; // List of IDs learned via level up choices
   skillLevels?: Record<string, number>; // Evolution levels per skill ID (1, 2, 3...)
   
-  statusEffects: {
-    type: 'poison' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
-    duration: number;
-    value: number;
-  }[];
+  statusEffects: StatusEffect[];
 
   // Boss specific
   isBoss?: boolean;

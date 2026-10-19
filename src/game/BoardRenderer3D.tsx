@@ -915,6 +915,23 @@ function createStatusAuras(unit: Unit): THREE.Group {
     auraGroup.add(poisonMesh);
   }
 
+  // 4b. Burn (Fiery orange ring burning at base)
+  const hasBurn = unit.statusEffects?.some((e) => e.type === 'burn' && e.duration > 0);
+  if (hasBurn) {
+    const burnGeo = new THREE.RingGeometry(0.36, 0.47, 12);
+    burnGeo.rotateX(-Math.PI / 2);
+    const burnMat = new THREE.MeshBasicMaterial({
+      color: 0xf97316,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide,
+    });
+    const burnMesh = new THREE.Mesh(burnGeo, burnMat);
+    burnMesh.position.y = 0.065;
+    burnMesh.name = 'auraRing';
+    auraGroup.add(burnMesh);
+  }
+
   // 5. Invisibility / Stealth (Ghostly dark violet ring & shadow particles)
   const hasInvis = unit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
   if (hasInvis) {

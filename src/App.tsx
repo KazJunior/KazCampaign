@@ -1634,7 +1634,7 @@ export function App() {
       if (skill?.cleansesDebuffs) {
         const beforeCount = currentEffects.length;
         currentEffects = currentEffects.filter(
-          (e) => e.type !== 'poison' && e.type !== 'stun' && e.type !== 'slow' && e.type !== 'debuff_def'
+          (e) => e.type !== 'poison' && e.type !== 'burn' && e.type !== 'stun' && e.type !== 'slow' && e.type !== 'debuff_def'
         );
         if (currentEffects.length < beforeCount) {
           addFloatingNumber(t.x, t.y, 'Purificado!', 'status', '#38BDF8');
@@ -1719,7 +1719,8 @@ export function App() {
             addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
           } else {
             currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-            if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+            if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
+            else if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
             else if (eff.type === 'stun') {
               addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
               if (isBossMonster) {
@@ -1738,7 +1739,8 @@ export function App() {
             addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
           } else {
             currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-            if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+            if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
+            else if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
             else if (eff2.type === 'stun') {
               addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
               if (isBossMonster) {
@@ -1850,24 +1852,41 @@ export function App() {
     let currentUnits = initialUnitsOverride ? [...initialUnitsOverride] : [...units];
     const delayMult = progress.combatSpeed === 'fast' ? 0.5 : 1.0;
 
-    // Poison damage tick for monsters at start of AI turn
-    let anyMonsterPoisoned = false;
+    // DoT damage tick (Burn & Poison) for monsters at start of AI turn
+    let anyMonsterDamagedByDoT = false;
     currentUnits = currentUnits.map((u) => {
       if (u.faction === 'enemy' && !u.isDead) {
+        let currentHp = u.currentHp;
+        let isDead: boolean = Boolean(u.isDead);
+
+        // Burn tick (Queimadura)
+        const burn = u.statusEffects?.find((e) => e.type === 'burn');
+        if (burn && !isDead) {
+          anyMonsterDamagedByDoT = true;
+          const bDmg = burn.value || 20;
+          currentHp = Math.max(0, currentHp - bDmg);
+          isDead = currentHp === 0;
+          addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura`, 'status', '#F97316');
+        }
+
+        // Poison tick (Veneno)
         const poison = u.statusEffects?.find((e) => e.type === 'poison');
-        if (poison) {
-          anyMonsterPoisoned = true;
+        if (poison && !isDead) {
+          anyMonsterDamagedByDoT = true;
           const pDmg = poison.value || 15;
-          const currentHp = Math.max(0, u.currentHp - pDmg);
-          const isDead = currentHp === 0;
+          currentHp = Math.max(0, currentHp - pDmg);
+          isDead = currentHp === 0;
           addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+        }
+
+        if (isDead !== u.isDead || currentHp !== u.currentHp) {
           return { ...u, currentHp, isDead };
         }
       }
       return u;
     });
 
-    if (anyMonsterPoisoned) {
+    if (anyMonsterDamagedByDoT) {
       setUnits([...currentUnits]);
       await new Promise((r) => setTimeout(r, 300 * delayMult));
     }
@@ -2065,7 +2084,8 @@ export function App() {
                   if (choice.skillToUse?.statusEffect) {
                     const eff = choice.skillToUse.statusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-                    if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+                    if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
+                    else if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
                     else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
                     else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
                     else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
@@ -2074,7 +2094,8 @@ export function App() {
                   if (choice.skillToUse?.secondaryStatusEffect) {
                     const eff2 = choice.skillToUse.secondaryStatusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-                    if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+                    if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
+                    else if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
                     else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
                     else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
                   }
@@ -2146,7 +2167,7 @@ export function App() {
 
     setTurnNumber((t) => t + 1);
 
-    let anyPlayerDiedFromPoison = false;
+    let anyPlayerDiedFromDoT = false;
     setUnits((prev) => {
       return prev.map((u) => {
         let currentHp = u.currentHp;
@@ -2154,13 +2175,26 @@ export function App() {
 
         if (u.faction === 'player') {
           if (!isDead) {
-            const poison = u.statusEffects?.find((e) => e.type === 'poison');
-            if (poison) {
-              const pDmg = poison.value || 15;
-              currentHp = Math.max(0, currentHp - pDmg);
+            // Burn tick (Queimadura)
+            const burn = u.statusEffects?.find((e) => e.type === 'burn');
+            if (burn) {
+              const bDmg = burn.value || 20;
+              currentHp = Math.max(0, currentHp - bDmg);
               isDead = currentHp === 0;
-              if (isDead) anyPlayerDiedFromPoison = true;
-              addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+              if (isDead) anyPlayerDiedFromDoT = true;
+              addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura`, 'status', '#F97316');
+            }
+
+            // Poison tick (Veneno)
+            if (!isDead) {
+              const poison = u.statusEffects?.find((e) => e.type === 'poison');
+              if (poison) {
+                const pDmg = poison.value || 15;
+                currentHp = Math.max(0, currentHp - pDmg);
+                isDead = currentHp === 0;
+                if (isDead) anyPlayerDiedFromDoT = true;
+                addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+              }
             }
           }
           // Player status effects and cooldowns decrement when player ends their turn
@@ -2189,7 +2223,7 @@ export function App() {
       });
     });
 
-    if (anyPlayerDiedFromPoison) {
+    if (anyPlayerDiedFromDoT) {
       setTimeout(() => {
         setUnits((latest) => {
           const alive = latest.filter((u) => u.faction === 'player' && !u.isDead);

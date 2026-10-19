@@ -235,12 +235,23 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                 <div className="flex flex-wrap gap-1 pt-1 border-t border-white/5">
                   {skill.statusEffect && (
                     <span className="text-[10px] font-medium text-[#F3F4F8]/80 flex items-center gap-1">
-                      {skill.statusEffect.type === 'poison' && '☠️ Aplica Veneno'}
+                      {skill.statusEffect.type === 'burn' && `🔥 Queimadura (-${skill.statusEffect.value} HP)`}
+                      {skill.statusEffect.type === 'poison' && `☠️ Veneno (-${skill.statusEffect.value} HP)`}
                       {skill.statusEffect.type === 'stun' && '⚡ Atordoa (1 Turno)'}
                       {skill.statusEffect.type === 'slow' && `👣 Lentidão (-${skill.statusEffect.value || 1} Mov)`}
                       {skill.statusEffect.type === 'shield' && `🛡️ Concede +${skill.statusEffect.value} Escudo`}
-                      {skill.statusEffect.type === 'buff_atk' && `🔥 Aumenta Dano em +${skill.statusEffect.value}%`}
+                      {skill.statusEffect.type === 'buff_atk' && `⚔️ Aumenta Dano em +${skill.statusEffect.value}%`}
                       <span className="text-[#A7B0C4] text-[9px]">({skill.statusEffect.duration}T)</span>
+                    </span>
+                  )}
+                  {skill.secondaryStatusEffect && (
+                    <span className="text-[10px] font-medium text-[#F3F4F8]/80 flex items-center gap-1">
+                      {skill.secondaryStatusEffect.type === 'burn' && `🔥 Queimadura (-${skill.secondaryStatusEffect.value} HP)`}
+                      {skill.secondaryStatusEffect.type === 'poison' && `☠️ Veneno (-${skill.secondaryStatusEffect.value} HP)`}
+                      {skill.secondaryStatusEffect.type === 'stun' && '⚡ Atordoa (1 Turno)'}
+                      {skill.secondaryStatusEffect.type === 'slow' && `👣 Lentidão (-${skill.secondaryStatusEffect.value || 1} Mov)`}
+                      {skill.secondaryStatusEffect.type === 'debuff_def' && `🛡️ Defesa -${skill.secondaryStatusEffect.value}%`}
+                      <span className="text-[#A7B0C4] text-[9px]">({skill.secondaryStatusEffect.duration}T)</span>
                     </span>
                   )}
                   {skill.defenseIgnoreRatio && skill.defenseIgnoreRatio > 0 && (

@@ -75,7 +75,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isSlowed = !!slowEffect;
   const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
   const effectiveMov = isStunned ? 0 : isSlowed ? Math.max(1, selectedUnit.mov - slowPenalty) : selectedUnit.mov;
-  const isPoisoned = selectedUnit.statusEffects?.some((e) => e.type === 'poison' && e.duration > 0);
+  const burnEffect = selectedUnit.statusEffects?.find((e) => e.type === 'burn' && e.duration > 0);
+  const isBurned = !!burnEffect;
+  const poisonEffect = selectedUnit.statusEffects?.find((e) => e.type === 'poison' && e.duration > 0);
+  const isPoisoned = !!poisonEffect;
   const isStealthed = selectedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
   const isDefDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
   const isBossMonster = Boolean(selectedUnit.isBoss || selectedUnit.isMiniBoss);
@@ -194,9 +197,14 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                   🛡️ Defesa -{isDefDebuffed.value}%
                 </span>
               )}
+              {isBurned && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F97316]/20 border border-[#F97316]/40 text-[#F97316] flex items-center gap-1">
+                  🔥 Queimadura (-{burnEffect?.value} HP, {burnEffect?.duration}T)
+                </span>
+              )}
               {isPoisoned && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#A855F7] flex items-center gap-1">
-                  ☠️ Veneno
+                  ☠️ Veneno (-{poisonEffect?.value} HP, {poisonEffect?.duration}T)
                 </span>
               )}
               {isStunned && (
