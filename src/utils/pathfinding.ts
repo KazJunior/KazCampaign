@@ -228,7 +228,12 @@ export function getValidTargets(
     const dist = dx + dy;
     const isDiagonalAdjacent = dx === 1 && dy === 1;
 
+    const isSelfHealOrBuff =
+      target.id === attacker.id &&
+      (targetType === 'self' || (targetType === 'ally' && rangeMin <= 0));
+
     const inRange =
+      isSelfHealOrBuff ||
       (dist >= rangeMin && dist <= rangeMax) ||
       (rangeMin <= 1 && rangeMax >= 1 && isDiagonalAdjacent);
 

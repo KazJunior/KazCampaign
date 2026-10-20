@@ -1372,11 +1372,29 @@ export function App() {
       const isTargeting = selectedAction === 'attack' || !!activeSkill;
       const targetType = activeSkill ? activeSkill.targetType : 'enemy';
 
-      // Self-targeting skill
-      if (activeSkill && targetType === 'self' && x === selectedUnit.x && y === selectedUnit.y) {
+      // Self-targeting skill or Ally-targeting skill clicked directly on self
+      if (
+        activeSkill &&
+        (targetType === 'self' || (targetType === 'ally' && activeSkill.rangeMin <= 0)) &&
+        x === selectedUnit.x &&
+        y === selectedUnit.y
+      ) {
         setTargetTeleportPoint(null);
-        setTargetAoEPoint(null);
+        setTargetAoEPoint({ x: selectedUnit.x, y: selectedUnit.y });
         const preview = getDamagePreview(selectedUnit, selectedUnit, activeSkill);
+        preview.isGroundTarget = false;
+        preview.groundTargetPoint = undefined;
+
+        if (activeSkill.aoeRadius > 0) {
+          preview.aoeTargetsCount = units.filter(
+            (u) =>
+              u.faction === 'player' &&
+              !u.isDead &&
+              Math.abs(u.x - selectedUnit.x) <= activeSkill.aoeRadius &&
+              Math.abs(u.y - selectedUnit.y) <= activeSkill.aoeRadius
+          ).length;
+        }
+
         setDamagePreview(preview);
         setTargetUnitId(selectedUnit.id);
         soundManager.playSelect();
@@ -2878,7 +2896,7 @@ export function App() {
         const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
         setDamagePreview(preview);
         setTargetUnitId(selectedUnit.id);
-      } else if (sk.targetType === 'ally' && sk.rangeMin === 0 && sk.aoeRadius > 0) {
+      } else if (sk.targetType === 'ally' && sk.rangeMax === 0 && sk.aoeRadius > 0) {
         const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
         preview.aoeTargetsCount = units.filter(
           (u) =>
