@@ -564,6 +564,12 @@ export function createPlayerUnit(
       if (evolved.secondaryStatusEffect?.type === 'burn' || evolved.secondaryStatusEffect?.type === 'poison') {
         evolved.secondaryStatusEffect = { ...evolved.secondaryStatusEffect, duration: Math.min(2, evolved.secondaryStatusEffect.duration), value: 2 };
       }
+      if (evolved.statusEffect?.type === 'slow') {
+        evolved.statusEffect = { ...evolved.statusEffect, duration: Math.min(2, evolved.statusEffect.duration), value: 1 };
+      }
+      if (evolved.secondaryStatusEffect?.type === 'slow') {
+        evolved.secondaryStatusEffect = { ...evolved.secondaryStatusEffect, duration: Math.min(2, evolved.secondaryStatusEffect.duration), value: 1 };
+      }
       return evolved;
     });
 

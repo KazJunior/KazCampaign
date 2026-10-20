@@ -74,7 +74,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
   const slowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
   const isSlowed = !!slowEffect;
-  const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
+  const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
   const effectiveMov = isStunned ? 0 : isSlowed ? Math.max(1, selectedUnit.mov - slowPenalty) : selectedUnit.mov;
   const burnEffect = selectedUnit.statusEffects?.find((e) => e.type === 'burn' && e.duration > 0);
   const isBurned = !!burnEffect;

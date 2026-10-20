@@ -22,6 +22,7 @@ import type {
 } from './types/game';
 import { LEVELS } from './data/levels';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
+import { SKILLS, getEvolvedSkill } from './data/skills';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
 import {
@@ -289,11 +290,23 @@ export function App() {
     if (liveBattle && loadedProg.activeAdventure && Array.isArray(liveBattle.units) && liveBattle.units.length > 0) {
       return liveBattle.units.map((u) => ({
         ...u,
-        skills: u.skills.map((s) =>
-          s.statusEffect?.type === 'stun' || s.secondaryStatusEffect?.type === 'stun'
-            ? { ...s, cooldownMax: Math.max(4, s.cooldownMax) }
-            : s
-        ),
+        skills: u.skills.map((s) => {
+          const base = SKILLS[s.id];
+          const evolved = base ? getEvolvedSkill(base, s.level || 1) : s;
+          return {
+            ...evolved,
+            currentCooldown: s.currentCooldown ?? 0,
+            cooldownMax:
+              evolved.statusEffect?.type === 'stun' || evolved.secondaryStatusEffect?.type === 'stun'
+                ? Math.max(3, evolved.cooldownMax)
+                : evolved.cooldownMax,
+          };
+        }),
+        statusEffects: (u.statusEffects || []).map((eff) => {
+          if (eff.type === 'slow') return { ...eff, value: Math.min(1, eff.value || 1) };
+          if (eff.type === 'excess_heal' || eff.type === 'excess_shield') return { ...eff, duration: Math.min(1, eff.duration) };
+          return eff;
+        }),
       }));
     }
     return [];
@@ -492,11 +505,23 @@ export function App() {
     setUnits(
       savedBattle.units.map((u) => ({
         ...u,
-        skills: u.skills.map((s) =>
-          s.statusEffect?.type === 'stun' || s.secondaryStatusEffect?.type === 'stun'
-            ? { ...s, cooldownMax: Math.max(4, s.cooldownMax) }
-            : s
-        ),
+        skills: u.skills.map((s) => {
+          const base = SKILLS[s.id];
+          const evolved = base ? getEvolvedSkill(base, s.level || 1) : s;
+          return {
+            ...evolved,
+            currentCooldown: s.currentCooldown ?? 0,
+            cooldownMax:
+              evolved.statusEffect?.type === 'stun' || evolved.secondaryStatusEffect?.type === 'stun'
+                ? Math.max(3, evolved.cooldownMax)
+                : evolved.cooldownMax,
+          };
+        }),
+        statusEffects: (u.statusEffects || []).map((eff) => {
+          if (eff.type === 'slow') return { ...eff, value: Math.min(1, eff.value || 1) };
+          if (eff.type === 'excess_heal' || eff.type === 'excess_shield') return { ...eff, duration: Math.min(1, eff.duration) };
+          return eff;
+        }),
       }))
     );
     setTurnNumber(savedBattle.turnNumber);
@@ -1612,14 +1637,14 @@ export function App() {
       if (isHealSkill) {
         updatedEffects = [
           ...updatedEffects.filter((e) => e.type !== 'excess_heal'),
-          { type: 'excess_heal', duration: 2, value: 50 },
+          { type: 'excess_heal', duration: 1, value: 50 },
         ];
       }
 
       if (givesShield) {
         updatedEffects = [
           ...updatedEffects.filter((e) => e.type !== 'excess_shield'),
-          { type: 'excess_shield', duration: 2, value: 50 },
+          { type: 'excess_shield', duration: 1, value: 50 },
         ];
       }
 
@@ -1863,14 +1888,14 @@ export function App() {
         if (isHealed) {
           currentEffects = [
             ...currentEffects.filter((e) => e.type !== 'excess_heal'),
-            { type: 'excess_heal', duration: 2, value: 50 },
+            { type: 'excess_heal', duration: 1, value: 50 },
           ];
         }
 
         if (isShielded) {
           currentEffects = [
             ...currentEffects.filter((e) => e.type !== 'excess_shield'),
-            { type: 'excess_shield', duration: 2, value: 50 },
+            { type: 'excess_shield', duration: 1, value: 50 },
           ];
         }
       } else {
@@ -1989,7 +2014,7 @@ export function App() {
       }
       finalAttackerEffects = [
         ...finalAttackerEffects.filter((e) => e.type !== 'excess_heal'),
-        { type: 'excess_heal', duration: 2, value: 50 },
+        { type: 'excess_heal', duration: 1, value: 50 },
       ];
     }
 
@@ -2206,14 +2231,14 @@ export function App() {
               if (isHealed) {
                 currentEffects = [
                   ...currentEffects.filter((e) => e.type !== 'excess_heal'),
-                  { type: 'excess_heal', duration: 2, value: 50 },
+                  { type: 'excess_heal', duration: 1, value: 50 },
                 ];
               }
 
               if (isShielded) {
                 currentEffects = [
                   ...currentEffects.filter((e) => e.type !== 'excess_shield'),
-                  { type: 'excess_shield', duration: 2, value: 50 },
+                  { type: 'excess_shield', duration: 1, value: 50 },
                 ];
               }
 
@@ -2375,7 +2400,7 @@ export function App() {
                 }
                 finalMonsterEffects = [
                   ...finalMonsterEffects.filter((e) => e.type !== 'excess_heal'),
-                  { type: 'excess_heal', duration: 2, value: 50 },
+                  { type: 'excess_heal', duration: 1, value: 50 },
                 ];
               }
 

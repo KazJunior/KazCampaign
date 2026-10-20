@@ -43,9 +43,9 @@ export function getReachableTiles(
     return [];
   }
 
-  // Slow reduces movement points by slow penalty value (minimum 1 tile)
+  // Slow reduces movement points by slow penalty value (maximum 1 tile penalty, minimum 1 tile remaining)
   const slowEffect = unit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
-  const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
+  const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
   const effectiveMov = slowEffect ? Math.max(1, unit.mov - slowPenalty) : unit.mov;
 
   while (queue.length > 0) {

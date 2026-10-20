@@ -113,3 +113,49 @@ export function validateCredentials(body: Record<string, unknown> | null):
   }
   return { username, password };
 }
+
+// ---------- Chaves de Recuperação (Recovery Key) ----------
+
+const RECOVERY_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+
+export function generateRecoveryKey(): string {
+  const bytes = randomBytes(12);
+  let raw = '';
+  for (let i = 0; i < 12; i++) {
+    raw += RECOVERY_CHARS[bytes[i] % RECOVERY_CHARS.length];
+  }
+  return `KAZ-${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}`;
+}
+
+export function normalizeRecoveryKey(key: string): string {
+  return key.trim().toUpperCase().replace(/[^2-9A-Z]/g, '');
+}
+
+export function hashRecoveryKey(key: string): string {
+  const normalized = normalizeRecoveryKey(key);
+  const salt = randomBytes(16);
+  const hash = scryptSync(normalized, salt, 64);
+  return `scrypt$${salt.toString('hex')}$${hash.toString('hex')}`;
+}
+
+export function verifyRecoveryKey(key: string, stored: string | null | undefined): boolean {
+  if (!stored) return false;
+  const normalized = normalizeRecoveryKey(key);
+  const [algo, saltHex, hashHex] = stored.split('$');
+  if (algo !== 'scrypt' || !saltHex || !hashHex) return false;
+  const expected = Buffer.from(hashHex, 'hex');
+  const actual = scryptSync(normalized, Buffer.from(saltHex, 'hex'), expected.length);
+  return timingSafeEqual(expected, actual);
+}
+
+let schemaEnsured = false;
+export async function ensureUsersSchema(sql: ReturnType<typeof getSql>): Promise<void> {
+  if (schemaEnsured) return;
+  try {
+    await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS recovery_key_hash TEXT;`;
+    schemaEnsured = true;
+  } catch (e) {
+    console.warn('ensureUsersSchema warning:', e);
+  }
+}
+

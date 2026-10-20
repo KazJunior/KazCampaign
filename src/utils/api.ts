@@ -53,10 +53,36 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
   return data as T;
 }
 
-export async function register(username: string, password: string): Promise<AuthUser> {
-  const data = await request<{ token: string; user: AuthUser }>('/api/register', { method: 'POST', body: { username, password } });
+export interface RegisterResult {
+  user: AuthUser;
+  recoveryKey?: string;
+}
+
+export interface RecoverResult {
+  user: AuthUser;
+  newRecoveryKey: string;
+}
+
+export async function register(username: string, password: string): Promise<RegisterResult> {
+  const data = await request<{ token: string; user: AuthUser; recoveryKey?: string }>('/api/register', {
+    method: 'POST',
+    body: { username, password },
+  });
   setToken(data.token);
-  return data.user;
+  return { user: data.user, recoveryKey: data.recoveryKey };
+}
+
+export async function recoverPassword(
+  username: string,
+  recoveryKey: string,
+  newPassword: string
+): Promise<RecoverResult> {
+  const data = await request<{ token: string; user: AuthUser; newRecoveryKey: string }>('/api/recover', {
+    method: 'POST',
+    body: { username, recoveryKey, newPassword },
+  });
+  setToken(data.token);
+  return { user: data.user, newRecoveryKey: data.newRecoveryKey };
 }
 
 export async function login(username: string, password: string): Promise<AuthUser> {

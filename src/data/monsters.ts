@@ -1222,6 +1222,12 @@ export function createMonsterUnit(
       if (clone.secondaryStatusEffect?.type === 'burn' || clone.secondaryStatusEffect?.type === 'poison') {
         clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 2 };
       }
+      if (clone.statusEffect?.type === 'slow') {
+        clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 1 };
+      }
+      if (clone.secondaryStatusEffect?.type === 'slow') {
+        clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 1 };
+      }
       return clone;
     });
 
