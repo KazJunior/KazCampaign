@@ -550,6 +550,14 @@ export function createPlayerUnit(
       ) {
         evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
       }
+      if (
+        evolved.statusEffect?.type === 'buff_atk' ||
+        evolved.secondaryStatusEffect?.type === 'buff_atk' ||
+        evolved.statusEffect?.type === 'debuff_def' ||
+        evolved.secondaryStatusEffect?.type === 'debuff_def'
+      ) {
+        evolved.cooldownMax = Math.max(4, evolved.cooldownMax);
+      }
       return evolved;
     });
 

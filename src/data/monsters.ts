@@ -1208,6 +1208,14 @@ export function createMonsterUnit(
       ) {
         clone.cooldownMax = Math.max(3, clone.cooldownMax);
       }
+      if (
+        clone.statusEffect?.type === 'buff_atk' ||
+        clone.secondaryStatusEffect?.type === 'buff_atk' ||
+        clone.statusEffect?.type === 'debuff_def' ||
+        clone.secondaryStatusEffect?.type === 'debuff_def'
+      ) {
+        clone.cooldownMax = Math.max(4, clone.cooldownMax);
+      }
       return clone;
     });
 
