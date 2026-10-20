@@ -545,7 +545,7 @@ export const SKILLS: Record<string, Skill> = {
   // ==========================================
   cura: {
     id: 'cura',
-    name: 'Luz Restauradora',
+    name: 'Cura Sagrada',
     description: 'Canaliza bênçãos celestiais em um aliado ou em si mesmo (alcance até 3), restaurando vida proporcional ao poder mágico (130% MAG).',
     damageType: 'healing',
     category: 'support',
@@ -611,7 +611,7 @@ export const SKILLS: Record<string, Skill> = {
   },
   luz_restauradora: {
     id: 'luz_restauradora',
-    name: 'Bênção de Sustentação Divina',
+    name: 'Luz Restauradora',
     description: 'Potente cura focalizada (180% MAG) que restaura a saúde de um aliado ou de si mesmo e ainda concede 35 de escudo protetor adicional por 2 turnos.',
     damageType: 'healing',
     category: 'support',
