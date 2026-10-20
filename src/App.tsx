@@ -2781,8 +2781,10 @@ export function App() {
     setProgress(updatedProgress);
     savePlayerProgress(updatedProgress);
 
-    // Ao subir de nível, adiciona a unidade para aprender nova habilidade (ou evoluir se já tiver 5)
-    setPendingSkillChoices((prev) => [...prev, unit]);
+    // 1 nova habilidade a cada 3 níveis!
+    if (newLevel % 3 === 0) {
+      setPendingSkillChoices((prev) => [...prev, unit]);
+    }
 
     setPendingStatChoices((prev) => prev.slice(1));
   };

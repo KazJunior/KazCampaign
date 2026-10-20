@@ -14,6 +14,8 @@ export const StatChoiceModal: React.FC<StatChoiceModalProps> = ({
   newLevel,
   onChooseStat,
 }) => {
+  const isSkillMilestone = newLevel % 3 === 0;
+
   const handleSelect = (stat: StatType) => {
     soundManager.playSelect();
     onChooseStat(stat);
@@ -114,9 +116,11 @@ export const StatChoiceModal: React.FC<StatChoiceModalProps> = ({
             Ao subir de nível, você escolhe qual aspecto do herói fortalecer permanentemente.
           </p>
 
-          <div className="inline-flex items-center gap-2 bg-[#9333EA]/20 border border-[#9333EA]/50 text-[#C084FC] px-3 py-1 rounded-lg text-xs font-bold animate-pulse mt-1">
-            <Sparkles size={14} /> {(unit.skills || []).length < 5 ? '1 Nova Habilidade será sorteada a seguir!' : '1 Evolução de Habilidade disponível a seguir!'}
-          </div>
+          {isSkillMilestone && (
+            <div className="inline-flex items-center gap-2 bg-[#9333EA]/20 border border-[#9333EA]/50 text-[#C084FC] px-3 py-1 rounded-lg text-xs font-bold animate-bounce mt-1">
+              <Sparkles size={14} /> Marco de Habilidade atingido! {(unit.skills || []).length < 5 ? '1 Nova Habilidade será sorteada a seguir.' : '1 Evolução de Habilidade disponível a seguir.'}
+            </div>
+          )}
         </div>
 
         {/* 5 Stat Cards */}
