@@ -148,10 +148,25 @@ export function App() {
 
         // Merge local unlocked classes and cloud unlocked classes so no class is lost
         const combinedUnlocked = Array.from(
-          new Set([...(progress.unlockedClasses || []), ...(cloudP.unlockedClasses || [])])
-        );
-        const safeUnlocked = sanitizeUnlockedClasses(combinedUnlocked, maxCompleted);
-        const safeParty = sanitizePartyClasses(cloudP.selectedPartyClasses, safeUnlocked);
+          new Set([
+            ...(progress.unlockedClasses || []),
+            ...(cloudP.unlockedClasses || []),
+            ...(progress.selectedPartyClasses || []),
+            ...(progress.activeAdventure?.partyClasses || []),
+            ...(Array.isArray(cloudP.selectedPartyClasses) ? cloudP.selectedPartyClasses : []),
+            ...(cloudP.activeAdventure?.partyClasses ? cloudP.activeAdventure.partyClasses : []),
+          ])
+        ).map((c) => (c === 'engenheiro' ? 'druida' : c));
+        const safeUnlocked = sanitizeUnlockedClasses(combinedUnlocked, maxCompleted, progress.completedLevels || []);
+        
+        // Prefer local selectedPartyClasses if it has 4 valid classes (to prevent stale cloud overwrites)
+        const rawPartyChoice =
+          Array.isArray(progress.selectedPartyClasses) && progress.selectedPartyClasses.length === 4
+            ? progress.selectedPartyClasses
+            : (Array.isArray(cloudP.selectedPartyClasses) && cloudP.selectedPartyClasses.length === 4
+                ? cloudP.selectedPartyClasses
+                : INITIAL_CLASSES);
+        const safeParty = sanitizePartyClasses(rawPartyChoice, safeUnlocked);
 
         const merged: PlayerProgress = {
           ...DEFAULT_PROGRESS,
@@ -170,12 +185,15 @@ export function App() {
           activeAdventure: cloudP.activeAdventure
             ? {
                 ...cloudP.activeAdventure,
+                partyClasses: Array.isArray(cloudP.activeAdventure.partyClasses) && cloudP.activeAdventure.partyClasses.length === 4
+                  ? sanitizePartyClasses(cloudP.activeAdventure.partyClasses, safeUnlocked)
+                  : (progress.activeAdventure?.partyClasses || safeParty),
                 battleState: loadLiveBattleState() || cloudP.activeAdventure.battleState || progress.activeAdventure?.battleState || null,
               }
             : progress.activeAdventure?.battleState || loadLiveBattleState()
               ? {
                   currentLevelId: (loadLiveBattleState() || progress.activeAdventure?.battleState)!.levelId,
-                  partyClasses: safeParty,
+                  partyClasses: progress.activeAdventure?.partyClasses || safeParty,
                   startedAt: new Date().toISOString(),
                   goldEarnedInRun: 0,
                   unitsState: cloudP.unitsState || createInitialUnitsState(),

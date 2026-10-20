@@ -65,7 +65,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
           </div>
 
           {/* 5 Skills Cards Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-start p-1.5">
             {currentSkills.map((skill) => {
               const currentLvl = skill.level || 1;
               const nextLvl = currentLvl + 1;
@@ -75,12 +75,12 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
               return (
                 <div
                   key={skill.id}
-                  className="bg-[#10131C] border-2 border-[#343B50] hover:border-[#D4AD65] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 shadow-xl space-y-3 hover:scale-[1.02]"
+                  className="group relative bg-[#10131C] border-2 border-[#343B50] hover:border-[#D4AD65] rounded-2xl p-4 flex flex-col justify-between transition-all duration-300 ease-out shadow-xl space-y-3 hover:scale-[1.04] hover:shadow-2xl hover:shadow-[#D4AD65]/20 hover:z-20 min-h-[380px]"
                 >
                   <div className="space-y-2.5">
                     {/* Header: Icon & Level Tag */}
                     <div className="flex items-center justify-between">
-                      <div className="p-2.5 rounded-xl bg-[#1B2030] text-[#D4AD65] border border-[#343B50] shadow">
+                      <div className="p-2.5 rounded-xl bg-[#1B2030] text-[#D4AD65] border border-[#343B50] shadow transition-transform duration-300 group-hover:scale-105 group-hover:border-[#D4AD65]/60">
                         {getSkillIcon(skill.iconName, 20)}
                       </div>
                       <div className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded bg-[#D4AD65]/20 border border-[#D4AD65]/50 text-[#D4AD65]">
@@ -91,10 +91,10 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                     </div>
 
                     <div>
-                      <h3 className="font-bold text-sm text-[#F3F4F8] truncate" title={skill.name}>
+                      <h3 className="font-bold text-sm text-[#F3F4F8] truncate group-hover:whitespace-normal group-hover:text-[#D4AD65] transition-colors duration-200" title={skill.name}>
                         {skill.name}
                       </h3>
-                      <p className="text-[11px] text-[#A7B0C4] leading-relaxed line-clamp-3 mt-1">
+                      <p className="text-[11px] text-[#A7B0C4] leading-relaxed line-clamp-3 group-hover:line-clamp-none group-hover:text-[#F3F4F8] transition-all duration-300 mt-1">
                         {skill.description}
                       </p>
                     </div>
@@ -136,7 +136,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
 
                     <button
                       onClick={() => onChooseSkill(skill, true)}
-                      className="w-full py-2 px-1.5 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 shadow-md active:scale-95 transition-all"
+                      className="w-full py-2 px-1.5 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1 shadow-md active:scale-95 transition-all group-hover:shadow-[0_0_15px_rgba(212,173,101,0.4)]"
                     >
                       <Zap size={14} /> Evoluir Nv. {nextLvl}
                     </button>
@@ -173,19 +173,19 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
         </div>
 
         {/* 3 Skill Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start p-1.5">
           {eligibleNewSkills.map((skill) => {
             const isHeal = skill.damageType === 'healing';
 
             return (
               <div
                 key={skill.id}
-                className="bg-[#10131C] border-2 border-[#343B50] hover:border-[#D4AD65] rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 shadow-xl space-y-4 hover:scale-[1.02]"
+                className="group relative bg-[#10131C] border-2 border-[#343B50] hover:border-[#D4AD65] rounded-2xl p-5 flex flex-col justify-between transition-all duration-300 ease-out shadow-xl space-y-4 hover:scale-[1.03] hover:shadow-2xl hover:shadow-[#D4AD65]/20 hover:z-20 min-h-[420px]"
               >
                 <div className="space-y-3">
                   {/* Skill Badge & Icon */}
                   <div className="flex items-center justify-between">
-                    <div className="p-3 rounded-xl bg-[#1B2030] text-[#D4AD65] border border-[#343B50] shadow">
+                    <div className="p-3 rounded-xl bg-[#1B2030] text-[#D4AD65] border border-[#343B50] shadow transition-transform duration-300 group-hover:scale-105 group-hover:border-[#D4AD65]/60">
                       {getSkillIcon(skill.iconName, 24)}
                     </div>
                     <span
@@ -201,10 +201,14 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                     </span>
                   </div>
 
-                  <h3 className="font-bold text-base text-[#F3F4F8]">{skill.name}</h3>
-                  <p className="text-xs text-[#A7B0C4] leading-relaxed line-clamp-3">
-                    {skill.description}
-                  </p>
+                  <h3 className="font-bold text-base text-[#F3F4F8] min-h-[2.5rem] flex items-center leading-snug group-hover:text-[#D4AD65] transition-colors duration-200">
+                    {skill.name}
+                  </h3>
+                  <div className="relative">
+                    <p className="text-xs text-[#A7B0C4] leading-relaxed line-clamp-3 group-hover:line-clamp-none group-hover:text-[#F3F4F8] transition-all duration-300">
+                      {skill.description}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Skill Stats Table */}
@@ -237,7 +241,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
 
                   <button
                     onClick={() => onChooseSkill(skill, false)}
-                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                    className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all group-hover:shadow-[0_0_15px_rgba(212,173,101,0.4)]"
                   >
                     <Sparkles size={16} /> Aprender Habilidade
                   </button>

@@ -2,10 +2,16 @@ import { getAuthUser, getSql, json, readJson } from './_lib.js';
 
 const INITIAL_CLASSES = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
 
+function normalizeClass(c: unknown): string {
+  if (typeof c !== 'string') return '';
+  return c === 'engenheiro' ? 'druida' : c;
+}
+
 const CLASS_UNLOCK_LEVELS: Record<string, number> = {
   assassino: 5,
   cavaleiro_arcano: 10,
   necromante: 15,
+  druida: 20,
   engenheiro: 20,
   mago_runico: 25,
   berserker: 30,
@@ -19,6 +25,7 @@ const ALL_VALID_CLASSES = new Set<string>([
   'assassino',
   'cavaleiro_arcano',
   'necromante',
+  'druida',
   'engenheiro',
   'mago_runico',
   'berserker',
@@ -60,8 +67,9 @@ function resolveUnlockedClasses(
 
   // 1. Preserve any valid class previously unlocked in the database
   if (Array.isArray(existingDbClasses)) {
-    for (const c of existingDbClasses) {
-      if (typeof c === 'string' && ALL_VALID_CLASSES.has(c)) {
+    for (const raw of existingDbClasses) {
+      const c = normalizeClass(raw);
+      if (c && ALL_VALID_CLASSES.has(c)) {
         allowed.add(c);
       }
     }
@@ -69,8 +77,9 @@ function resolveUnlockedClasses(
 
   // 2. Preserve any valid class sent by the client (purchases, secret unlocks)
   if (Array.isArray(incomingClasses)) {
-    for (const c of incomingClasses) {
-      if (typeof c === 'string' && ALL_VALID_CLASSES.has(c)) {
+    for (const raw of incomingClasses) {
+      const c = normalizeClass(raw);
+      if (c && ALL_VALID_CLASSES.has(c)) {
         allowed.add(c);
       }
     }
@@ -79,14 +88,15 @@ function resolveUnlockedClasses(
   // 3. Automatically grant any boss unlocks earned by ranking or max level completed
   for (const [cName, reqLvl] of Object.entries(CLASS_UNLOCK_LEVELS)) {
     if (maxCompleted >= reqLvl) {
-      allowed.add(cName);
+      allowed.add(normalizeClass(cName));
     }
   }
 
   // 4. Preserve any valid class found in leaderboard party
   if (Array.isArray(leaderboardParty)) {
-    for (const c of leaderboardParty) {
-      if (typeof c === 'string' && ALL_VALID_CLASSES.has(c)) {
+    for (const raw of leaderboardParty) {
+      const c = normalizeClass(raw);
+      if (c && ALL_VALID_CLASSES.has(c)) {
         allowed.add(c);
       }
     }
@@ -96,11 +106,12 @@ function resolveUnlockedClasses(
 }
 
 function sanitizeParty(rawParty: unknown, unlocked: string[]): string[] {
-  const unlockedSet = new Set(unlocked);
+  const unlockedSet = new Set(unlocked.map(normalizeClass));
   const result: string[] = [];
   if (Array.isArray(rawParty)) {
-    for (const c of rawParty) {
-      if (typeof c === 'string' && unlockedSet.has(c) && !result.includes(c)) {
+    for (const raw of rawParty) {
+      const c = normalizeClass(raw);
+      if (c && (unlockedSet.has(c) || ALL_VALID_CLASSES.has(c)) && !result.includes(c)) {
         result.push(c);
       }
     }

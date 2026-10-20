@@ -100,6 +100,24 @@ export function loadPlayerProgress(): PlayerProgress {
       if (!unlockedClasses.includes(c)) unlockedClasses.push(c);
     });
 
+    // Also preserve any valid class currently in selectedPartyClasses or activeAdventure.partyClasses
+    if (Array.isArray(parsed.selectedPartyClasses)) {
+      parsed.selectedPartyClasses.forEach((raw: string) => {
+        const c = raw === 'engenheiro' ? 'druida' : raw;
+        if (typeof c === 'string' && !unlockedClasses.includes(c)) {
+          unlockedClasses.push(c);
+        }
+      });
+    }
+    if (parsed.activeAdventure && Array.isArray(parsed.activeAdventure.partyClasses)) {
+      parsed.activeAdventure.partyClasses.forEach((raw: string) => {
+        const c = raw === 'engenheiro' ? 'druida' : raw;
+        if (typeof c === 'string' && !unlockedClasses.includes(c)) {
+          unlockedClasses.push(c);
+        }
+      });
+    }
+
     // Ensure selectedPartyClasses only contains valid unlocked classes
     const selectedPartyClasses = sanitizePartyClasses(parsed.selectedPartyClasses, unlockedClasses);
 
@@ -138,6 +156,9 @@ export function loadPlayerProgress(): PlayerProgress {
       const liveBattle = loadLiveBattleState();
       activeAdventure = {
         ...activeAdventure,
+        partyClasses: Array.isArray(activeAdventure.partyClasses)
+          ? sanitizePartyClasses(activeAdventure.partyClasses.map((c: string) => (c === 'engenheiro' ? 'druida' : c)), unlockedClasses)
+          : selectedPartyClasses,
         inventory: Array.isArray(activeAdventure.inventory) ? activeAdventure.inventory : [],
         equipment: activeAdventure.equipment || {},
         battleState: liveBattle || activeAdventure.battleState || null,

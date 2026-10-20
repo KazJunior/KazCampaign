@@ -440,12 +440,12 @@ export function sanitizeUnlockedClasses(
 }
 
 export function sanitizePartyClasses(party: string[] | undefined, unlockedClasses: string[]): string[] {
-  const validUnlocked = new Set(unlockedClasses);
+  const validUnlocked = new Set(unlockedClasses.map((c) => (c === 'engenheiro' ? 'druida' : c)));
   const result: string[] = [];
   if (Array.isArray(party)) {
     for (const rawC of party) {
       const c = rawC === 'engenheiro' ? 'druida' : rawC;
-      if (validUnlocked.has(c) && !result.includes(c)) {
+      if (typeof c === 'string' && (validUnlocked.has(c) || CLASS_DEFINITIONS[c]) && !result.includes(c)) {
         result.push(c);
       }
     }
