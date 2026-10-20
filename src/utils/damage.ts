@@ -90,7 +90,8 @@ export function calculateBaseDamage(
     }
 
     if (skill.defenseIgnoreRatio) {
-      targetDef = Math.round(targetDef * (1 - skill.defenseIgnoreRatio));
+      const effectiveRatio = Math.min(0.30, skill.defenseIgnoreRatio);
+      targetDef = Math.round(targetDef * (1 - effectiveRatio));
     }
 
     const base = Math.max(1, Math.round(attackStat - targetDef));

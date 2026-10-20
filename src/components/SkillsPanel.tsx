@@ -261,7 +261,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                   )}
                   {skill.defenseIgnoreRatio && skill.defenseIgnoreRatio > 0 && (
                     <span className="text-[10px] font-medium text-[#F0B44D]">
-                      🎯 Ignora {Math.round(skill.defenseIgnoreRatio * 100)}% Armadura
+                      🎯 Ignora {Math.round(Math.min(0.30, skill.defenseIgnoreRatio) * 100)}% Armadura
                     </span>
                   )}
                 </div>

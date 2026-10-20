@@ -886,7 +886,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     avatarKey: 'celestial_slayer',
     skillId: 'decapitacao_imperial',
     skillIds: ['decapitacao_imperial', 'salto_espectral'],
-    description: 'Executor da corte de Malakor que desfere golpes letais perfurando metade da defesa.',
+    description: 'Executor da corte de Malakor que desfere golpes letais perfurando 30% da defesa.',
   },
   escriba_do_destino: {
     typeId: 'escriba_do_destino',

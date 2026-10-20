@@ -24,7 +24,7 @@ export const SKILLS: Record<string, Skill> = {
   golpe_demolidor: {
     id: 'golpe_demolidor',
     name: 'Quebra-Couraça',
-    description: 'Golpe esmagador que causa 190% de dano físico, ignora 35% da armadura do alvo e despedaça sua defesa (-20% por 2 turnos).',
+    description: 'Golpe esmagador que causa 190% de dano físico, ignora 30% da armadura do alvo e despedaça sua defesa (-20% por 2 turnos).',
     damageType: 'physical',
     category: 'attack',
     power: 1.9,
@@ -34,7 +34,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.35,
+    defenseIgnoreRatio: 0.30,
     statusEffect: { type: 'debuff_def', duration: 2, value: 20 },
     requiredLevel: 2,
     iconName: 'Hammer',
@@ -188,7 +188,7 @@ export const SKILLS: Record<string, Skill> = {
   flecha_perfurante: {
     id: 'flecha_perfurante',
     name: 'Disparo Perfurador',
-    description: 'Disparo de longa distância (alcance até 4) que atravessa defesas, causando 140% de dano físico e ignorando 40% da armadura do alvo.',
+    description: 'Disparo de longa distância (alcance até 4) que atravessa defesas, causando 140% de dano físico e ignorando 30% da armadura do alvo.',
     damageType: 'physical',
     category: 'attack',
     power: 1.4,
@@ -198,13 +198,13 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 1,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.40,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Crosshair',
   },
   disparo_triplo: {
     id: 'disparo_triplo',
     name: 'Rajada Perfurante Tripla',
-    description: 'Dispara uma saraivada rápida de flechas perfurantes a longa distância causando 175% de dano físico e ignorando 35% da armadura.',
+    description: 'Dispara uma saraivada rápida de flechas perfurantes a longa distância causando 175% de dano físico e ignorando 30% da armadura.',
     damageType: 'physical',
     category: 'attack',
     power: 1.75,
@@ -214,14 +214,14 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.35,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 2,
     iconName: 'ArrowUpRight',
   },
   tiro_de_precisao: {
     id: 'tiro_de_precisao',
     name: 'Tiro de Sniper de Alta Precisão',
-    description: 'Mira milimetricamente em pontos vitais a extrema distância (alcance até 5), causando 200% de dano físico e ignorando 60% da defesa do alvo.',
+    description: 'Mira milimetricamente em pontos vitais a extrema distância (alcance até 5), causando 200% de dano físico e ignorando 30% da defesa do alvo.',
     damageType: 'physical',
     category: 'attack',
     power: 2.0,
@@ -231,7 +231,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.60,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 2,
     iconName: 'Target',
   },
@@ -254,7 +254,7 @@ export const SKILLS: Record<string, Skill> = {
   flecha_venenosa: {
     id: 'flecha_venenosa',
     name: 'Flecha Rompe-Armaduras',
-    description: 'Flecha pesada de ponta temperada que causa 160% de dano físico, ignora 50% da armadura e fragmenta a proteção do alvo (-20% defesa por 2 turnos).',
+    description: 'Flecha pesada de ponta temperada que causa 160% de dano físico, ignora 30% da armadura e fragmenta a proteção do alvo (-20% defesa por 2 turnos).',
     damageType: 'physical',
     category: 'attack',
     power: 1.6,
@@ -264,7 +264,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.50,
+    defenseIgnoreRatio: 0.30,
     statusEffect: { type: 'debuff_def', duration: 2, value: 20 },
     requiredLevel: 4,
     iconName: 'ShieldAlert',
@@ -283,7 +283,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.35,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 5,
     iconName: 'CloudRain',
   },
@@ -342,7 +342,7 @@ export const SKILLS: Record<string, Skill> = {
   tiro_mortal: {
     id: 'tiro_mortal',
     name: 'Eliminação Extrema de Franco-Atirador (Suprema)',
-    description: 'Habilidade suprema: Disparo devastador a alcance extremo (até 6 casas), causando 260% de dano físico e ignorando 70% da armadura para eliminar alvos sem qualquer risco de retaliação.',
+    description: 'Habilidade suprema: Disparo devastador a alcance extremo (até 6 casas), causando 260% de dano físico e ignorando 30% da armadura para eliminar alvos sem qualquer risco de retaliação.',
     damageType: 'physical',
     category: 'attack',
     power: 2.6,
@@ -352,7 +352,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.70,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 8,
     iconName: 'Skull',
   },
@@ -773,7 +773,7 @@ export const SKILLS: Record<string, Skill> = {
   execucao: {
     id: 'execucao',
     name: 'Golpe de Execução',
-    description: 'Golpe devastador focado em um alvo único causando 230% de dano físico letal e ignorando 35% de sua armadura.',
+    description: 'Golpe devastador focado em um alvo único causando 230% de dano físico letal e ignorando 30% de sua armadura.',
     damageType: 'physical',
     category: 'attack',
     power: 2.3,
@@ -783,7 +783,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.35,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 3,
     iconName: 'Crosshair',
   },
@@ -877,7 +877,7 @@ export const SKILLS: Record<string, Skill> = {
   assassinato: {
     id: 'assassinato',
     name: 'Assassinato Cirúrgico (Suprema)',
-    description: 'Habilidade suprema: Salta das sombras diretamente sobre um alvo único (alcance até 3), desferindo uma estocada letal de 280% de dano físico e ignorando 50% de qualquer defesa para aniquilar o alvo instantaneamente.',
+    description: 'Habilidade suprema: Salta das sombras diretamente sobre um alvo único (alcance até 3), desferindo uma estocada letal de 280% de dano físico e ignorando 30% de qualquer defesa para aniquilar o alvo instantaneamente.',
     damageType: 'physical',
     category: 'attack',
     power: 2.8,
@@ -888,7 +888,7 @@ export const SKILLS: Record<string, Skill> = {
     currentCooldown: 0,
     targetType: 'enemy',
     teleportToTarget: true,
-    defenseIgnoreRatio: 0.50,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 8,
     iconName: 'Skull',
   },
@@ -1053,7 +1053,7 @@ export const SKILLS: Record<string, Skill> = {
   lamina_do_destino: {
     id: 'lamina_do_destino',
     name: 'Fissura da Lâmina do Infinito (Suprema)',
-    description: 'Habilidade suprema: Desperta o poder máximo da espada de aura em golpe híbrido devastador (alcance até 2) causando 260% de dano mágico e ignorando 50% de qualquer barreira ou armadura inimiga.',
+    description: 'Habilidade suprema: Desperta o poder máximo da espada de aura em golpe híbrido devastador (alcance até 2) causando 260% de dano mágico e ignorando 30% de qualquer barreira ou armadura inimiga.',
     damageType: 'magical',
     category: 'attack',
     power: 2.6,
@@ -1063,7 +1063,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.50,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 8,
     iconName: 'Zap',
   },
@@ -1386,7 +1386,7 @@ export const SKILLS: Record<string, Skill> = {
   corte_profano: {
     id: 'corte_profano',
     name: 'Corte Profano',
-    description: 'Lâmina espectral corrompida que ignora 35% da armadura do alvo.',
+    description: 'Lâmina espectral corrompida que ignora 30% da armadura do alvo.',
     damageType: 'physical',
     power: 1.87,
     rangeMin: 1,
@@ -1395,7 +1395,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.35,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Swords',
   },
   escudo_espectral: {
@@ -1444,7 +1444,7 @@ export const SKILLS: Record<string, Skill> = {
   acido_corrosivo: {
     id: 'acido_corrosivo',
     name: 'Ácido Dissolvente',
-    description: 'Cospe secreção corrosiva que ignora 50% da armadura física.',
+    description: 'Cospe secreção corrosiva que ignora 30% da armadura física.',
     damageType: 'physical',
     power: 1.54,
     rangeMin: 1,
@@ -1453,7 +1453,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.5,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Flame',
   },
   lingua_voraz: {
@@ -1714,7 +1714,7 @@ export const SKILLS: Record<string, Skill> = {
   jato_corrosivo_magma: {
     id: 'jato_corrosivo_magma',
     name: 'Jato de Magma Corrosivo',
-    description: 'Jorro ácido de rocha liquefeita que ignora 40% da armadura do alvo.',
+    description: 'Jorro ácido de rocha liquefeita que ignora 30% da armadura do alvo.',
     damageType: 'physical',
     power: 1.7,
     rangeMin: 1,
@@ -1723,7 +1723,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.4,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Zap',
   },
   mergulho_ferreo: {
@@ -1775,7 +1775,7 @@ export const SKILLS: Record<string, Skill> = {
   disparo_runico_longo: {
     id: 'disparo_runico_longo',
     name: 'Flecha do Horizonte Rúnico',
-    description: 'Disparo de precisão a longa distância que ignora 35% da defesa.',
+    description: 'Disparo de precisão a longa distância que ignora 30% da defesa.',
     damageType: 'physical',
     power: 1.6,
     rangeMin: 1,
@@ -1784,7 +1784,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.35,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Target',
   },
   totem_da_tempestade: {
@@ -1879,7 +1879,7 @@ export const SKILLS: Record<string, Skill> = {
   corte_lamina_ancestral: {
     id: 'corte_lamina_ancestral',
     name: 'Corte Espectral Rúnico',
-    description: 'Lâmina mágica etérea que ignora 50% da armadura física.',
+    description: 'Lâmina mágica etérea que ignora 30% da armadura física.',
     damageType: 'magical',
     power: 1.85,
     rangeMin: 1,
@@ -1888,7 +1888,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.5,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Swords',
   },
 
@@ -1926,7 +1926,7 @@ export const SKILLS: Record<string, Skill> = {
   ataque_furtivo_astral: {
     id: 'ataque_furtivo_astral',
     name: 'Foice Dimensional',
-    description: 'Ataque que rasga o espaço, ignorando 45% da defesa do alvo.',
+    description: 'Ataque que rasga o espaço, ignorando 30% da defesa do alvo.',
     damageType: 'physical',
     power: 2.0,
     rangeMin: 1,
@@ -1935,7 +1935,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.45,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Swords',
   },
   explosao_miasma_toxico: {
@@ -2047,7 +2047,7 @@ export const SKILLS: Record<string, Skill> = {
   estocada_sol_negro: {
     id: 'estocada_sol_negro',
     name: 'Punição do Sol Negro',
-    description: 'Estocada de espada impura que ignora 40% da defesa do herói.',
+    description: 'Estocada de espada impura que ignora 30% da defesa do herói.',
     damageType: 'physical',
     power: 2.1,
     rangeMin: 1,
@@ -2056,7 +2056,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.4,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Sun',
   },
   bencao_do_eclipse: {
@@ -2136,7 +2136,7 @@ export const SKILLS: Record<string, Skill> = {
   decapitacao_imperial: {
     id: 'decapitacao_imperial',
     name: 'Execução do Trono',
-    description: 'Golpe fulminante de lâmina imperial que ignora 50% de armadura.',
+    description: 'Golpe fulminante de lâmina imperial que ignora 30% de armadura.',
     damageType: 'physical',
     power: 2.3,
     rangeMin: 1,
@@ -2145,7 +2145,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.5,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Swords',
   },
   veredito_do_fim: {
@@ -2562,7 +2562,7 @@ export const SKILLS: Record<string, Skill> = {
   glifo_incandescente: {
     id: 'glifo_incandescente',
     name: 'Raio Rúnico Perfurante',
-    description: 'Canaliza um feixe rúnico perfurador a longa distância (alcance até 5) causando 200% de dano mágico e ignorando 50% de qualquer resistência mágica ou defesa do alvo.',
+    description: 'Canaliza um feixe rúnico perfurador a longa distância (alcance até 5) causando 200% de dano mágico e ignorando 30% de qualquer resistência mágica ou defesa do alvo.',
     damageType: 'magical',
     category: 'attack',
     power: 2.0,
@@ -2572,7 +2572,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.50,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 3,
     iconName: 'Flame',
   },
@@ -2612,7 +2612,7 @@ export const SKILLS: Record<string, Skill> = {
   apocalipse_runico: {
     id: 'apocalipse_runico',
     name: 'Aniquilação Rúnica Singular (Suprema)',
-    description: 'Habilidade suprema: Dispara a runa do colapso cósmico contra um único alvo (alcance até 5), causando estarrecedores 290% de dano mágico concentrado e ignorando 60% de qualquer defesa.',
+    description: 'Habilidade suprema: Dispara a runa do colapso cósmico contra um único alvo (alcance até 5), causando estarrecedores 290% de dano mágico concentrado e ignorando 30% de qualquer defesa.',
     damageType: 'magical',
     category: 'attack',
     power: 2.9,
@@ -2622,7 +2622,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.60,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 8,
     iconName: 'Zap',
   },
@@ -2650,7 +2650,7 @@ export const SKILLS: Record<string, Skill> = {
   corte_temerario: {
     id: 'corte_temerario',
     name: 'Corte Temerário',
-    description: 'Ataque desesperador e violento que sacrifica 15% da vida atual para desferir 230% de dano físico, ignorando 35% da armadura do alvo.',
+    description: 'Ataque desesperador e violento que sacrifica 15% da vida atual para desferir 230% de dano físico, ignorando 30% da armadura do alvo.',
     damageType: 'physical',
     category: 'attack',
     power: 2.3,
@@ -2661,7 +2661,7 @@ export const SKILLS: Record<string, Skill> = {
     currentCooldown: 0,
     targetType: 'enemy',
     hpCostPercent: 15,
-    defenseIgnoreRatio: 0.35,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 2,
     iconName: 'Sword',
   },
@@ -2722,7 +2722,7 @@ export const SKILLS: Record<string, Skill> = {
   ira_incontrolavel: {
     id: 'ira_incontrolavel',
     name: 'Ira Incontrolável Apocalíptica (Suprema)',
-    description: 'Habilidade suprema: O ápice da fúria berserker. Sacrifica 25% da vida atual para desferir um golpe titânico de 310% de dano físico com 40% de penetração de armadura e restaurando 50% de todo dano como vida!',
+    description: 'Habilidade suprema: O ápice da fúria berserker. Sacrifica 25% da vida atual para desferir um golpe titânico de 310% de dano físico com 30% de penetração de armadura e restaurando 50% de todo dano como vida!',
     damageType: 'physical',
     category: 'attack',
     power: 3.1,
@@ -2734,7 +2734,7 @@ export const SKILLS: Record<string, Skill> = {
     targetType: 'enemy',
     hpCostPercent: 25,
     lifestealPercent: 50,
-    defenseIgnoreRatio: 0.40,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 8,
     iconName: 'Skull',
   },
@@ -2779,7 +2779,7 @@ export const SKILLS: Record<string, Skill> = {
   fissura_espacial: {
     id: 'fissura_espacial',
     name: 'Fissura Espacial Rasgadora',
-    description: 'Rasga a realidade à sua frente (alcance até 2), desferindo 175% de dano físico que ignora 50% de qualquer armadura ou barreira.',
+    description: 'Rasga a realidade à sua frente (alcance até 2), desferindo 175% de dano físico que ignora 30% de qualquer armadura ou barreira.',
     damageType: 'physical',
     category: 'attack',
     power: 1.75,
@@ -2789,7 +2789,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.50,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 3,
     iconName: 'Zap',
   },
@@ -2831,7 +2831,7 @@ export const SKILLS: Record<string, Skill> = {
   decapitacao_do_vazio: {
     id: 'decapitacao_do_vazio',
     name: 'Decapitação do Vazio (Suprema)',
-    description: 'Habilidade suprema: Técnica de samurai dimensional que corta o próprio tecido do espaço (alcance até 2), causando 285% de dano físico e ignorando 60% da armadura. Ao eliminar o alvo, concede imediatamente um turno extra completo (movimento e ação)!',
+    description: 'Habilidade suprema: Técnica de samurai dimensional que corta o próprio tecido do espaço (alcance até 2), causando 285% de dano físico e ignorando 30% da armadura. Ao eliminar o alvo, concede imediatamente um turno extra completo (movimento e ação)!',
     damageType: 'physical',
     category: 'attack',
     power: 2.85,
@@ -2841,7 +2841,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.60,
+    defenseIgnoreRatio: 0.30,
     resetsActionOnKill: true,
     requiredLevel: 8,
     iconName: 'Skull',
@@ -2962,7 +2962,7 @@ export const SKILLS: Record<string, Skill> = {
   estocada_perfurante: {
     id: 'estocada_perfurante',
     name: 'Estocada de Pique Perfurante',
-    description: 'Estocada rápida com lança a 2 casas de distância que perfura couraças, causando 140% de dano físico e ignorando 45% da armadura inimiga.',
+    description: 'Estocada rápida com lança a 2 casas de distância que perfura couraças, causando 140% de dano físico e ignorando 30% da armadura inimiga.',
     damageType: 'physical',
     category: 'attack',
     power: 1.4,
@@ -2972,7 +2972,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 1,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.45,
+    defenseIgnoreRatio: 0.30,
     iconName: 'Crosshair',
   },
   recuo_da_lanca: {
@@ -2994,7 +2994,7 @@ export const SKILLS: Record<string, Skill> = {
   perfuracao_abissal: {
     id: 'perfuracao_abissal',
     name: 'Perfuração Transpassante',
-    description: 'Estocada penetrante violenta a 2 casas de distância causando 200% de dano físico e ignorando 65% de toda a defesa do alvo.',
+    description: 'Estocada penetrante violenta a 2 casas de distância causando 200% de dano físico e ignorando 30% de toda a defesa do alvo.',
     damageType: 'physical',
     category: 'attack',
     power: 2.0,
@@ -3004,7 +3004,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.65,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 3,
     iconName: 'Target',
   },
@@ -3046,7 +3046,7 @@ export const SKILLS: Record<string, Skill> = {
   cometa_do_dragao: {
     id: 'cometa_do_dragao',
     name: 'Cometa Perfurante do Dragão (Suprema)',
-    description: 'Habilidade suprema: Investida perfurante letal a 2 casas de distância que transpassa qualquer barreira, causando 265% de dano físico e ignorando 70% da armadura do inimigo.',
+    description: 'Habilidade suprema: Investida perfurante letal a 2 casas de distância que transpassa qualquer barreira, causando 265% de dano físico e ignorando 30% da armadura do inimigo.',
     damageType: 'physical',
     category: 'attack',
     power: 2.65,
@@ -3056,7 +3056,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    defenseIgnoreRatio: 0.70,
+    defenseIgnoreRatio: 0.30,
     requiredLevel: 8,
     iconName: 'Sword',
   },
@@ -3380,6 +3380,9 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     if (clone.secondaryStatusEffect?.type === 'slow') {
       clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 1 };
     }
+    if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0.30) {
+      clone.defenseIgnoreRatio = 0.30;
+    }
     return clone;
   }
 
@@ -3470,11 +3473,11 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     }
   }
 
-  // Penetração de armadura/defesa baixa (+3% por nível, limite 50%)
+  // Penetração de armadura/defesa (limite máximo fixo de 30% da armadura do alvo)
   if (canonicalBase.defenseIgnoreRatio && canonicalBase.defenseIgnoreRatio > 0) {
     clone.defenseIgnoreRatio = Math.min(
-      0.75,
-      Math.round((canonicalBase.defenseIgnoreRatio + 0.03 * (level - 1)) * 100) / 100
+      0.30,
+      Math.round((canonicalBase.defenseIgnoreRatio + 0.02 * (level - 1)) * 100) / 100
     );
   }
 
