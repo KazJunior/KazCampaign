@@ -168,23 +168,6 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     description: 'Especialista em controle de área com raízes e vinhas de espinhos, misturado com habilidades de suporte geral como curas revitalizantes, bênçãos de matilha e escudos de casca de ferro.',
     statGrowth: { hp: 12, atk: 2, mag: 4, def: 2, res: 2 },
   },
-  engenheiro: {
-    className: 'druida',
-    name: 'Druída',
-    role: 'Controle de Área & Suporte Vital',
-    maxHp: 85,
-    atk: 14,
-    mag: 24,
-    def: 9,
-    res: 10,
-    mov: 3,
-    range: 3,
-    color: '#10B981',
-    avatarKey: 'druid',
-    baseSkillId: 'raizes_vinculantes',
-    description: 'Especialista em controle de área com raízes e vinhas de espinhos, misturado com habilidades de suporte geral como curas revitalizantes, bênçãos de matilha e escudos de casca de ferro.',
-    statGrowth: { hp: 12, atk: 2, mag: 4, def: 2, res: 2 },
-  },
   mago_runico: {
     className: 'mago_runico',
     name: 'Mago Rúnico',
@@ -340,12 +323,6 @@ export const CLASS_UNLOCK_CONDITIONS: Record<string, ClassUnlockInfo> = {
     description: 'Derrote o Mini Boss Arauto dos Espectros na Fase 15 para desbloquear o Necromante.',
   },
   druida: {
-    requiredLevel: 20,
-    bossName: 'Vulcanus, Titã das Forjas (Fase 20)',
-    isBoss: true,
-    description: 'Derrote o Boss Poderoso Vulcanus na Fase 20 para desbloquear o Druída.',
-  },
-  engenheiro: {
     requiredLevel: 20,
     bossName: 'Vulcanus, Titã das Forjas (Fase 20)',
     isBoss: true,
@@ -559,13 +536,19 @@ export function createPlayerUnit(
         evolved.id === 'dreno_de_seiva' ||
         evolved.id === 'sedenta_de_runas'
       ) {
-        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
+        evolved.cooldownMax = Math.max(2, evolved.cooldownMax);
       }
       if (
         evolved.statusEffect?.type === 'stun' ||
         evolved.secondaryStatusEffect?.type === 'stun'
       ) {
-        evolved.cooldownMax = Math.max(4, evolved.cooldownMax);
+        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
+      }
+      if (
+        evolved.statusEffect?.type === 'slow' ||
+        evolved.secondaryStatusEffect?.type === 'slow'
+      ) {
+        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
       }
       return evolved;
     });

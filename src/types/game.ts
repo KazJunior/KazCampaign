@@ -42,6 +42,7 @@ export interface Skill {
   aoeRadius: number;
   cooldownMax: number;
   currentCooldown: number;
+  lastUsedTurn?: number; // Turno em que a habilidade foi utilizada (o cooldown só reduz a partir do turno seguinte)
   targetType: 'enemy' | 'ally' | 'any' | 'self' | 'empty_tile';
   defenseIgnoreRatio?: number;
   requiredLevel?: number;

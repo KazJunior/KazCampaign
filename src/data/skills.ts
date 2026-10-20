@@ -119,7 +119,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     teleportToTarget: true,
@@ -155,7 +155,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -315,7 +315,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 2,
     rangeMax: 4,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -637,7 +637,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -850,7 +850,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -992,7 +992,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1027,7 +1027,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 60,
@@ -1274,7 +1274,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1347,7 +1347,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1362,7 +1362,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 100,
@@ -1736,7 +1736,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1827,7 +1827,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -1871,7 +1871,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -1964,7 +1964,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -2037,7 +2037,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 100,
@@ -2084,7 +2084,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -2209,7 +2209,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 100,
@@ -2261,7 +2261,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 4,
+    cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 75,
@@ -2278,7 +2278,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -2320,7 +2320,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 1,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -2427,7 +2427,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 1,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -2587,7 +2587,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -2676,7 +2676,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 80,
@@ -2730,7 +2730,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 5,
+    cooldownMax: 2,
     currentCooldown: 0,
     targetType: 'enemy',
     hpCostPercent: 25,
@@ -3035,7 +3035,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     teleportToTarget: true,
@@ -3145,7 +3145,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -3185,7 +3185,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 1,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -3219,7 +3219,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -3274,7 +3274,7 @@ export const SKILLS: Record<string, Skill> = {
     aoeRadius: 1,
     canTargetGround: true,
     createsObstacle: 'pillar',
-    cooldownMax: 5,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
@@ -3314,9 +3314,6 @@ export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
   druida: [
     'campo_de_espinhos', 'casca_de_ferro', 'seiva_vital', 'bencao_da_alcateia', 'florescimento_ancestral'
   ],
-  engenheiro: [
-    'campo_de_espinhos', 'casca_de_ferro', 'seiva_vital', 'bencao_da_alcateia', 'florescimento_ancestral'
-  ],
   mago_runico: [
     'marca_do_destino', 'glifo_incandescente', 'runa_de_protecao', 'campo_runico', 'apocalipse_runico'
   ],
@@ -3349,13 +3346,19 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
       clone.id === 'dreno_de_vida' ||
       clone.id === 'sedenta_de_runas'
     ) {
-      clone.cooldownMax = Math.max(3, clone.cooldownMax);
+      clone.cooldownMax = Math.max(2, clone.cooldownMax);
     }
     if (
       clone.statusEffect?.type === 'stun' ||
       clone.secondaryStatusEffect?.type === 'stun'
     ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+      clone.cooldownMax = Math.max(3, clone.cooldownMax);
+    }
+    if (
+      clone.statusEffect?.type === 'slow' ||
+      clone.secondaryStatusEffect?.type === 'slow'
+    ) {
+      clone.cooldownMax = Math.max(3, clone.cooldownMax);
     }
     return clone;
   }
@@ -3378,20 +3381,26 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
 
   // Habilidades de roubo de vida (lifesteal) possuem cooldown mínimo de 3
   if (
-    (clone.lifestealPercent && clone.lifestealPercent > 0) ||
-    clone.id === 'dreno_de_vida' ||
-    clone.id === 'sedenta_de_runas'
-  ) {
-    clone.cooldownMax = Math.max(3, clone.cooldownMax);
-  }
+      (clone.lifestealPercent && clone.lifestealPercent > 0) ||
+      clone.id === 'dreno_de_vida' ||
+      clone.id === 'sedenta_de_runas'
+    ) {
+      clone.cooldownMax = Math.max(2, clone.cooldownMax);
+    }
 
   // Habilidades que causam atordoamento (stun) possuem cooldown mínimo de 4 turnos
   if (
-    clone.statusEffect?.type === 'stun' ||
-    clone.secondaryStatusEffect?.type === 'stun'
-  ) {
-    clone.cooldownMax = Math.max(4, clone.cooldownMax);
-  }
+      clone.statusEffect?.type === 'stun' ||
+      clone.secondaryStatusEffect?.type === 'stun'
+    ) {
+      clone.cooldownMax = Math.max(3, clone.cooldownMax);
+    }
+    if (
+      clone.statusEffect?.type === 'slow' ||
+      clone.secondaryStatusEffect?.type === 'slow'
+    ) {
+      clone.cooldownMax = Math.max(3, clone.cooldownMax);
+    }
 
   // Aumento de efeito de status baixo (+5% no valor por nível; nunca altera duração de stun/slow)
   if (clone.statusEffect) {

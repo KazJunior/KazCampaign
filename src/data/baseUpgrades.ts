@@ -78,13 +78,6 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 4, cost: 80000, bonus: { hp: 45, mag: 5, def: 2, res: 2 }, name: 'Força da Alcateia', description: '+45 HP, +5 MAG, +2 DEF e +2 RES permanente.' },
     { level: 5, cost: 100000, bonus: { hp: 60, mag: 7, def: 3, res: 3 }, name: 'Guardião do Bosque Sagrado', description: '+60 HP, +7 MAG, +3 DEF e +3 RES permanente.' },
   ],
-  engenheiro: [
-    { level: 1, cost: 10000, bonus: { hp: 20, mag: 2, def: 1 }, name: 'Comunhão Florestal', description: '+20 HP, +2 MAG e +1 DEF permanente.' },
-    { level: 2, cost: 30000, bonus: { hp: 25, mag: 3, res: 1 }, name: 'Seiva Ancestral', description: '+25 HP, +3 MAG e +1 RES permanente.' },
-    { level: 3, cost: 50000, bonus: { hp: 35, mag: 4, def: 2 }, name: 'Casca Imorredoura', description: '+35 HP, +4 MAG e +2 DEF permanente.' },
-    { level: 4, cost: 80000, bonus: { hp: 45, mag: 5, def: 2, res: 2 }, name: 'Força da Alcateia', description: '+45 HP, +5 MAG, +2 DEF e +2 RES permanente.' },
-    { level: 5, cost: 100000, bonus: { hp: 60, mag: 7, def: 3, res: 3 }, name: 'Guardião do Bosque Sagrado', description: '+60 HP, +7 MAG, +3 DEF e +3 RES permanente.' },
-  ],
   mago_runico: [
     { level: 1, cost: 10000, bonus: { hp: 15, mag: 2 }, name: 'Glifos Antigos', description: '+15 HP e +2 MAG permanente.' },
     { level: 2, cost: 30000, bonus: { hp: 20, mag: 3, res: 1 }, name: 'Ressonância Rúnica', description: '+20 HP, +3 MAG e +1 RES permanente.' },

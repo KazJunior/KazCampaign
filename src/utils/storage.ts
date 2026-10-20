@@ -16,7 +16,6 @@ export function createInitialUnitsState(): PlayerProgress['unitsState'] {
     cavaleiro_arcano: { className: 'cavaleiro_arcano', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     necromante: { className: 'necromante', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     druida: { className: 'druida', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
-    engenheiro: { className: 'druida', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     mago_runico: { className: 'mago_runico', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     berserker: { className: 'berserker', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     carrasco_vazio: { className: 'carrasco_vazio', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
@@ -83,12 +82,16 @@ export function loadPlayerProgress(): PlayerProgress {
     });
 
     // Sanitize unlocked classes: user retains all valid unlocked classes and gets boss classes
-    let unlockedClasses = sanitizeUnlockedClasses(parsed.unlockedClasses, maxCompleted, completedLevels);
+    let unlockedClasses = sanitizeUnlockedClasses(parsed.unlockedClasses, maxCompleted, completedLevels)
+      .map((c) => (c === 'engenheiro' ? 'druida' : c))
+      .filter((c) => c !== 'engenheiro');
+    unlockedClasses = Array.from(new Set(unlockedClasses));
 
     // Retroactively unlock any classes earned by completed boss/mini-boss levels
     Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, info]) => {
-      if ((completedLevels.includes(info.requiredLevel) || maxCompleted >= info.requiredLevel) && !unlockedClasses.includes(cName)) {
-        unlockedClasses.push(cName);
+      const canonicalName = cName === 'engenheiro' ? 'druida' : cName;
+      if ((completedLevels.includes(info.requiredLevel) || maxCompleted >= info.requiredLevel) && !unlockedClasses.includes(canonicalName)) {
+        unlockedClasses.push(canonicalName);
       }
     });
 
@@ -149,10 +152,17 @@ export function loadPlayerProgress(): PlayerProgress {
       completedLevels,
       unlockedClasses,
       selectedPartyClasses,
-      unitsState: {
-        ...createInitialUnitsState(),
-        ...(parsed.unitsState || {}),
-      },
+      unitsState: (() => {
+        const rawUnits = { ...(parsed.unitsState || {}) };
+        if (rawUnits.engenheiro && !rawUnits.druida) {
+          rawUnits.druida = { ...rawUnits.engenheiro, className: 'druida' };
+        }
+        delete rawUnits.engenheiro;
+        return {
+          ...createInitialUnitsState(),
+          ...rawUnits,
+        };
+      })(),
       activeAdventure,
       discoveredMonsterIds,
       discoveredItemIds,

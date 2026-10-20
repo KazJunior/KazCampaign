@@ -288,6 +288,8 @@ export function App() {
     }
     return 1;
   });
+  const turnNumberRef = useRef<number>(turnNumber);
+  turnNumberRef.current = turnNumber;
   const [phase, setPhase] = useState<BattlePhase>(() => {
     const liveBattle = loadLiveBattleState();
     const loadedProg = loadPlayerProgress();
@@ -1271,7 +1273,7 @@ export function App() {
           prev.map((u) => {
             if (u.id === selectedUnit.id) {
               const updatedSkills = u.skills.map((s) =>
-                skill && s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+                skill && s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
               );
               return {
                 ...u,
@@ -1484,7 +1486,7 @@ export function App() {
       }
 
       const updatedSkills = selectedUnit.skills.map((s) =>
-        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
 
       const updatedUnits = units.map((u) =>
@@ -1604,7 +1606,7 @@ export function App() {
       }
 
       const updatedSkills = selectedUnit.skills.map((s) =>
-        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
 
       const updatedUnits = units.map((u) =>
@@ -1998,7 +2000,7 @@ export function App() {
     updatedUnits = updatedUnits.map((u) => {
       if (u.id === selectedUnit.id) {
         const updatedSkills = u.skills.map((s) =>
-          skill && s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+          skill && s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
         );
         return {
           ...u,
@@ -2374,7 +2376,7 @@ export function App() {
                   return {
                     ...u,
                     skills: u.skills.map((s) =>
-                      s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax } : s
+                      s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
                     ),
                   };
                 }
@@ -2401,7 +2403,11 @@ export function App() {
       return;
     }
 
-    setTurnNumber((t) => t + 1);
+    const aiTurnNumber = turnNumberRef.current;
+    setTurnNumber((t) => {
+      turnNumberRef.current = t + 1;
+      return t + 1;
+    });
 
     let anyPlayerDiedFromDoT = false;
     setUnits((prev) => {
@@ -2450,10 +2456,13 @@ export function App() {
           return {
             ...u,
             statusEffects: updatedEffects,
-            skills: u.skills.map((s) => ({
-              ...s,
-              currentCooldown: Math.max(0, s.currentCooldown - 1),
-            })),
+            skills: u.skills.map((s) => {
+              if (s.lastUsedTurn === aiTurnNumber) return s;
+              return {
+                ...s,
+                currentCooldown: Math.max(0, s.currentCooldown - 1),
+              };
+            }),
           };
         }
       });
@@ -2481,6 +2490,8 @@ export function App() {
     setActiveSkill(null);
     soundManager.playTurnStart(false);
 
+    const currentTurn = turnNumberRef.current;
+
     // 1. Decrement player units' status effect durations and skill cooldowns as player turn ends
     let nextUnitsState: Unit[] = [];
     setUnits((prev) => {
@@ -2493,10 +2504,13 @@ export function App() {
           return {
             ...u,
             statusEffects: updatedEffects,
-            skills: u.skills.map((s) => ({
-              ...s,
-              currentCooldown: Math.max(0, s.currentCooldown - 1),
-            })),
+            skills: u.skills.map((s) => {
+              if (s.lastUsedTurn === currentTurn) return s;
+              return {
+                ...s,
+                currentCooldown: Math.max(0, s.currentCooldown - 1),
+              };
+            }),
           };
         }
         return u;

@@ -1194,13 +1194,19 @@ export function createMonsterUnit(
         clone.id === 'dreno_de_seiva' ||
         clone.id === 'sedenta_de_runas'
       ) {
-        clone.cooldownMax = Math.max(3, clone.cooldownMax);
+        clone.cooldownMax = Math.max(2, clone.cooldownMax);
       }
       if (
         clone.statusEffect?.type === 'stun' ||
         clone.secondaryStatusEffect?.type === 'stun'
       ) {
-        clone.cooldownMax = Math.max(4, clone.cooldownMax);
+        clone.cooldownMax = Math.max(3, clone.cooldownMax);
+      }
+      if (
+        clone.statusEffect?.type === 'slow' ||
+        clone.secondaryStatusEffect?.type === 'slow'
+      ) {
+        clone.cooldownMax = Math.max(3, clone.cooldownMax);
       }
       return clone;
     });
