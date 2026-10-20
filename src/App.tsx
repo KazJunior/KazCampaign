@@ -2063,24 +2063,24 @@ export function App() {
         let currentHp = u.currentHp;
         let isDead: boolean = Boolean(u.isDead);
 
-        // Burn tick (Queimadura)
+        // Burn tick (Queimadura) - 2% da vida máxima
         const burn = u.statusEffects?.find((e) => e.type === 'burn');
         if (burn && !isDead) {
           anyMonsterDamagedByDoT = true;
-          const bDmg = burn.value || 20;
+          const bDmg = Math.max(1, Math.round(u.maxHp * ((burn.value || 2) / 100)));
           currentHp = Math.max(0, currentHp - bDmg);
           isDead = currentHp === 0;
-          addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura`, 'status', '#F97316');
+          addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura (2%)`, 'status', '#F97316');
         }
 
-        // Poison tick (Veneno)
+        // Poison tick (Veneno) - 2% da vida máxima
         const poison = u.statusEffects?.find((e) => e.type === 'poison');
         if (poison && !isDead) {
           anyMonsterDamagedByDoT = true;
-          const pDmg = poison.value || 15;
+          const pDmg = Math.max(1, Math.round(u.maxHp * ((poison.value || 2) / 100)));
           currentHp = Math.max(0, currentHp - pDmg);
           isDead = currentHp === 0;
-          addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+          addFloatingNumber(u.x, u.y, `-${pDmg} Veneno (2%)`, 'status', '#A855F7');
         }
 
         if (isDead !== u.isDead || currentHp !== u.currentHp) {
@@ -2435,25 +2435,25 @@ export function App() {
 
         if (u.faction === 'player') {
           if (!isDead) {
-            // Burn tick (Queimadura)
+            // Burn tick (Queimadura) - 2% da vida máxima
             const burn = u.statusEffects?.find((e) => e.type === 'burn');
             if (burn) {
-              const bDmg = burn.value || 20;
+              const bDmg = Math.max(1, Math.round(u.maxHp * ((burn.value || 2) / 100)));
               currentHp = Math.max(0, currentHp - bDmg);
               isDead = currentHp === 0;
               if (isDead) anyPlayerDiedFromDoT = true;
-              addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura`, 'status', '#F97316');
+              addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura (2%)`, 'status', '#F97316');
             }
 
-            // Poison tick (Veneno)
+            // Poison tick (Veneno) - 2% da vida máxima
             if (!isDead) {
               const poison = u.statusEffects?.find((e) => e.type === 'poison');
               if (poison) {
-                const pDmg = poison.value || 15;
+                const pDmg = Math.max(1, Math.round(u.maxHp * ((poison.value || 2) / 100)));
                 currentHp = Math.max(0, currentHp - pDmg);
                 isDead = currentHp === 0;
                 if (isDead) anyPlayerDiedFromDoT = true;
-                addFloatingNumber(u.x, u.y, `-${pDmg} Veneno`, 'status', '#A855F7');
+                addFloatingNumber(u.x, u.y, `-${pDmg} Veneno (2%)`, 'status', '#A855F7');
               }
             }
           }

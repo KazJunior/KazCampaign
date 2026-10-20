@@ -546,17 +546,23 @@ export function createPlayerUnit(
       }
       if (
         evolved.statusEffect?.type === 'slow' ||
-        evolved.secondaryStatusEffect?.type === 'slow'
-      ) {
-        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
-      }
-      if (
+        evolved.secondaryStatusEffect?.type === 'slow' ||
         evolved.statusEffect?.type === 'buff_atk' ||
         evolved.secondaryStatusEffect?.type === 'buff_atk' ||
         evolved.statusEffect?.type === 'debuff_def' ||
-        evolved.secondaryStatusEffect?.type === 'debuff_def'
+        evolved.secondaryStatusEffect?.type === 'debuff_def' ||
+        evolved.statusEffect?.type === 'burn' ||
+        evolved.secondaryStatusEffect?.type === 'burn' ||
+        evolved.statusEffect?.type === 'poison' ||
+        evolved.secondaryStatusEffect?.type === 'poison'
       ) {
         evolved.cooldownMax = Math.max(4, evolved.cooldownMax);
+      }
+      if (evolved.statusEffect?.type === 'burn' || evolved.statusEffect?.type === 'poison') {
+        evolved.statusEffect = { ...evolved.statusEffect, duration: Math.min(2, evolved.statusEffect.duration), value: 2 };
+      }
+      if (evolved.secondaryStatusEffect?.type === 'burn' || evolved.secondaryStatusEffect?.type === 'poison') {
+        evolved.secondaryStatusEffect = { ...evolved.secondaryStatusEffect, duration: Math.min(2, evolved.secondaryStatusEffect.duration), value: 2 };
       }
       return evolved;
     });

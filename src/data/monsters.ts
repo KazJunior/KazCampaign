@@ -1204,17 +1204,23 @@ export function createMonsterUnit(
       }
       if (
         clone.statusEffect?.type === 'slow' ||
-        clone.secondaryStatusEffect?.type === 'slow'
-      ) {
-        clone.cooldownMax = Math.max(3, clone.cooldownMax);
-      }
-      if (
+        clone.secondaryStatusEffect?.type === 'slow' ||
         clone.statusEffect?.type === 'buff_atk' ||
         clone.secondaryStatusEffect?.type === 'buff_atk' ||
         clone.statusEffect?.type === 'debuff_def' ||
-        clone.secondaryStatusEffect?.type === 'debuff_def'
+        clone.secondaryStatusEffect?.type === 'debuff_def' ||
+        clone.statusEffect?.type === 'burn' ||
+        clone.secondaryStatusEffect?.type === 'burn' ||
+        clone.statusEffect?.type === 'poison' ||
+        clone.secondaryStatusEffect?.type === 'poison'
       ) {
         clone.cooldownMax = Math.max(4, clone.cooldownMax);
+      }
+      if (clone.statusEffect?.type === 'burn' || clone.statusEffect?.type === 'poison') {
+        clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 2 };
+      }
+      if (clone.secondaryStatusEffect?.type === 'burn' || clone.secondaryStatusEffect?.type === 'poison') {
+        clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 2 };
       }
       return clone;
     });

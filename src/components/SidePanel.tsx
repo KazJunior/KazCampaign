@@ -202,12 +202,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               )}
               {isBurned && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F97316]/20 border border-[#F97316]/40 text-[#F97316] flex items-center gap-1">
-                  🔥 Queimadura (-{burnEffect?.value} HP, {burnEffect?.duration}T)
+                  🔥 Queimadura (-{burnEffect?.value}% Vida Máx, {burnEffect?.duration}T)
                 </span>
               )}
               {isPoisoned && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#A855F7] flex items-center gap-1">
-                  ☠️ Veneno (-{poisonEffect?.value} HP, {poisonEffect?.duration}T)
+                  ☠️ Veneno (-{poisonEffect?.value}% Vida Máx, {poisonEffect?.duration}T)
                 </span>
               )}
               {isStunned && (

@@ -123,8 +123,8 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
                   `⚡ Atordoamento (${preview.skill.statusEffect.duration}T)`
                 )
               )}
-              {preview.skill.statusEffect.type === 'burn' && `🔥 Queimadura (-${preview.skill.statusEffect.value} HP, ${preview.skill.statusEffect.duration}T)`}
-              {preview.skill.statusEffect.type === 'poison' && `☠️ Veneno (-${preview.skill.statusEffect.value} HP, ${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'burn' && `🔥 Queimadura (-${preview.skill.statusEffect.value}% Vida Máx, ${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'poison' && `☠️ Veneno (-${preview.skill.statusEffect.value}% Vida Máx, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.statusEffect.value || 1} Mov, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.statusEffect.value}% (${preview.skill.statusEffect.duration}T)`}
             </span>
@@ -160,8 +160,8 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#343B50]">
             <span className="text-[#A7B0C4]">Efeito Secundário:</span>
             <span className="font-bold text-[#38BDF8]">
-              {preview.skill.secondaryStatusEffect.type === 'burn' && `🔥 Queimadura (-${preview.skill.secondaryStatusEffect.value} HP, ${preview.skill.secondaryStatusEffect.duration}T)`}
-              {preview.skill.secondaryStatusEffect.type === 'poison' && `☠️ Veneno (-${preview.skill.secondaryStatusEffect.value} HP, ${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'burn' && `🔥 Queimadura (-${preview.skill.secondaryStatusEffect.value}% Vida Máx, ${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'poison' && `☠️ Veneno (-${preview.skill.secondaryStatusEffect.value}% Vida Máx, ${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'shield' &&
                 `🛡️ +${targetHasExcessShield ? Math.max(1, Math.round(preview.skill.secondaryStatusEffect.value * 0.5)) : preview.skill.secondaryStatusEffect.value} Escudo ${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'buff_atk' && `⚔️ +${preview.skill.secondaryStatusEffect.value}% Dano (${preview.skill.secondaryStatusEffect.duration}T)`}

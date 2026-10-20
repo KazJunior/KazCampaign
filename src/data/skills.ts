@@ -60,17 +60,17 @@ export const SKILLS: Record<string, Skill> = {
   provocacao: {
     id: 'provocacao',
     name: 'Grito de Provocação',
-    description: 'Ruge furiosamente contra os inimigos, atraindo a atenção total das ameaças (Provocação por 3 turnos) e ganhando um escudo de 45 de absorção.',
+    description: 'Ruge furiosamente contra os inimigos, atraindo a atenção total das ameaças (Provocação por 2 turnos) e ganhando um escudo de 45 de absorção.',
     damageType: 'healing',
     category: 'defense',
     power: 0,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'taunt', duration: 3, value: 1 },
+    statusEffect: { type: 'taunt', duration: 2, value: 1 },
     secondaryStatusEffect: { type: 'shield', duration: 2, value: 45 },
     requiredLevel: 3,
     iconName: 'AlertTriangle',
@@ -148,7 +148,7 @@ export const SKILLS: Record<string, Skill> = {
   contra_ataque_furioso: {
     id: 'contra_ataque_furioso',
     name: 'Pancada Atordoadora',
-    description: 'Desfere um golpe maciço de 180% de dano físico que despedaça a postura do inimigo (Atordoado por 1 turno e -20% defesa).',
+    description: 'Desfere um golpe maciço de 180% de dano físico que despedaça a postura do inimigo (Atordoado por 1 turno e -20% de defesa por 2 turnos).',
     damageType: 'physical',
     category: 'attack',
     power: 1.8,
@@ -166,7 +166,7 @@ export const SKILLS: Record<string, Skill> = {
   resistencia_suprema: {
     id: 'resistencia_suprema',
     name: 'Fortaleza Inabalável (Suprema)',
-    description: 'Habilidade suprema: Regenera 50% da vida máxima instantaneamente, ganha um escudo maciço de 100 de absorção e retém todo o agro inimigo por 3 turnos.',
+    description: 'Habilidade suprema: Regenera 50% da vida máxima instantaneamente, ganha um escudo maciço de 100 de absorção e retém todo o agro inimigo por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
     power: 0.5,
@@ -176,8 +176,8 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'shield', duration: 3, value: 100 },
-    secondaryStatusEffect: { type: 'taunt', duration: 3, value: 1 },
+    statusEffect: { type: 'shield', duration: 2, value: 100 },
+    secondaryStatusEffect: { type: 'taunt', duration: 2, value: 1 },
     requiredLevel: 8,
     iconName: 'HeartPulse',
   },
@@ -298,7 +298,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 2,
     rangeMax: 4,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -325,7 +325,7 @@ export const SKILLS: Record<string, Skill> = {
   olho_de_aguia: {
     id: 'olho_de_aguia',
     name: 'Camuflagem de Franco-Atirador',
-    description: 'Entra em sintonia furtiva com o ambiente, tornando-se Invisível por 2 turnos para eliminação sem retaliação e ganhando +20% de dano.',
+    description: 'Entra em sintonia furtiva com o ambiente, tornando-se Invisível por 2 turnos para eliminação sem retaliação e ganhando +20% de dano por 2 turnos.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -365,7 +365,7 @@ export const SKILLS: Record<string, Skill> = {
   bola_de_fogo: {
     id: 'bola_de_fogo',
     name: 'Bola de Fogo Incendiária',
-    description: 'Conjura uma esfera piromântica que explode em área de 3x3 no solo ou alvo, causando 135% de dano mágico e aplicando Queimadura contínua (-25 HP por 2 turnos).',
+    description: 'Conjura uma esfera piromântica que explode em área de 3x3 no solo ou alvo, causando 135% de dano mágico e aplicando Queimadura contínua (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.35,
@@ -373,16 +373,16 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 25 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
   lanca_chamas: {
     id: 'lanca_chamas',
     name: 'Onda Ígnea Concentrada',
-    description: 'Varre a área à frente em 3x3 com chamas incandescentes, causando 160% de dano mágico e incinerando inimigos com Queimadura profunda (-30 HP por 3 turnos).',
+    description: 'Varre a área à frente em 3x3 com chamas incandescentes, causando 160% de dano mágico e incinerando inimigos com Queimadura profunda (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.6,
@@ -390,10 +390,10 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 2,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 3, value: 30 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     requiredLevel: 2,
     iconName: 'Flame',
   },
@@ -418,7 +418,7 @@ export const SKILLS: Record<string, Skill> = {
   chuva_de_meteoros: {
     id: 'chuva_de_meteoros',
     name: 'Chuva de Meteoros Devastadora',
-    description: 'Bombardeia uma zona de 3x3 com fragmentos estelares em chamas, causando 195% de dano mágico em área e aplicando Queimadura severa (-35 HP por 3 turnos).',
+    description: 'Bombardeia uma zona de 3x3 com fragmentos estelares em chamas, causando 195% de dano mágico em área e aplicando Queimadura severa (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.95,
@@ -429,24 +429,24 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 3, value: 35 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     requiredLevel: 3,
     iconName: 'CloudRain',
   },
   combustao_espontanea: {
     id: 'combustao_espontanea',
     name: 'Detonação Térmica',
-    description: 'Superaquece a matéria de um alvo à distância causando 185% de dano mágico e infligindo Queimadura imediata (-35 HP por 2 turnos).',
+    description: 'Superaquece a matéria de um alvo à distância causando 185% de dano mágico e infligindo Queimadura imediata (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.85,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 35 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     requiredLevel: 4,
     iconName: 'Zap',
   },
@@ -471,7 +471,7 @@ export const SKILLS: Record<string, Skill> = {
   labareda_infernal: {
     id: 'labareda_infernal',
     name: 'Muralha de Labaredas',
-    description: 'Levanta labaredas vorazes em área de 3x3 no solo, causando 170% de dano mágico e aplicando Queimadura contínua (-35 HP por 3 turnos) a quem estiver na região.',
+    description: 'Levanta labaredas vorazes em área de 3x3 no solo, causando 170% de dano mágico e aplicando Queimadura contínua (-2% da vida máxima por 2 turnos) a quem estiver na região.',
     damageType: 'magical',
     category: 'attack',
     power: 1.7,
@@ -479,17 +479,17 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 3, value: 35 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     requiredLevel: 6,
     iconName: 'Flame',
   },
   passo_de_cinzas: {
     id: 'passo_de_cinzas',
     name: 'Erupção de Cinzas',
-    description: 'Provoca uma erupção de calor em área 3x3 no solo causando 155% de dano mágico e deixando fumaça incandescente com Queimadura (-30 HP por 2 turnos).',
+    description: 'Provoca uma erupção de calor em área 3x3 no solo causando 155% de dano mágico e deixando fumaça incandescente com Queimadura (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.55,
@@ -497,10 +497,10 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 30 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     requiredLevel: 6,
     iconName: 'Sparkles',
   },
@@ -524,7 +524,7 @@ export const SKILLS: Record<string, Skill> = {
   cataclismo_infernal: {
     id: 'cataclismo_infernal',
     name: 'Cataclismo Infernal (Suprema)',
-    description: 'Habilidade suprema: Invoca o fogo primordial em uma enorme área de 3x3 no solo, causando estrondosos 240% de dano mágico e incinerando todos os inimigos com Queimadura devastadora (-50 HP por 3 turnos).',
+    description: 'Habilidade suprema: Invoca o fogo primordial em uma enorme área de 3x3 no solo, causando estrondosos 240% de dano mágico e incinerando todos os inimigos com Queimadura devastadora (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 2.4,
@@ -535,7 +535,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 3, value: 50 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     requiredLevel: 8,
     iconName: 'Flame',
   },
@@ -757,17 +757,17 @@ export const SKILLS: Record<string, Skill> = {
   veneno_mortal: {
     id: 'veneno_mortal',
     name: 'Adaga Envenenada',
-    description: 'Banha a lâmina em toxina hemotóxica causando 140% de dano físico e envenenando o alvo (-35 HP por 3 turnos).',
+    description: 'Banha a lâmina em toxina hemotóxica causando 140% de dano físico e envenenando o alvo (-2% da vida máxima por 2 turnos).',
     damageType: 'physical',
     category: 'attack',
     power: 1.4,
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'poison', duration: 3, value: 35 },
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
     requiredLevel: 2,
     iconName: 'Skull',
   },
@@ -808,7 +808,7 @@ export const SKILLS: Record<string, Skill> = {
   mortalha_das_sombras: {
     id: 'mortalha_das_sombras',
     name: 'Mortalha de Furtividade',
-    description: 'Dissolve-se na escuridão, tornando-se Invisível por 2 turnos para reposicionamento seguro e recebendo +20% de bônus de dano de emboscada.',
+    description: 'Dissolve-se na escuridão, tornando-se Invisível por 2 turnos para reposicionamento seguro e recebendo +20% de dano por 2 turnos.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -860,7 +860,7 @@ export const SKILLS: Record<string, Skill> = {
   agilidade_sombria: {
     id: 'agilidade_sombria',
     name: 'Instinto Assassino',
-    description: 'Aguça os reflexos e acelera a circulação, concedendo Invisibilidade por 1 turno e +20% de dano para o golpe fatal seguinte.',
+    description: 'Aguça os reflexos e acelera a circulação, concedendo Invisibilidade por 1 turno e +20% de dano por 2 turnos.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -968,17 +968,17 @@ export const SKILLS: Record<string, Skill> = {
   golpe_flamejante: {
     id: 'golpe_flamejante',
     name: 'Lâmina de Piro-Aura',
-    description: 'Infunde a lâmina com essência ígnea (alcance até 2) causando 175% de dano mágico e incinerando o alvo com Queimadura (-30 HP por 2 turnos).',
+    description: 'Infunde a lâmina com essência ígnea (alcance até 2) causando 175% de dano mágico e incinerando o alvo com Queimadura (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.75,
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 30 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     requiredLevel: 4,
     iconName: 'Flame',
   },
@@ -1089,16 +1089,16 @@ export const SKILLS: Record<string, Skill> = {
   bomba_fedida: {
     id: 'bomba_fedida',
     name: 'Bomba de Peste',
-    description: 'Arremessa frasco tóxico que causa dano e envenena o alvo.',
+    description: 'Arremessa frasco tóxico que causa dano e envenena o alvo (-2% da vida máxima por 2 turnos).',
     damageType: 'physical',
     power: 1.21,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'poison', duration: 2, value: 18 },
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
     iconName: 'Skull',
   },
   adaga_furtiva: {
@@ -1163,16 +1163,16 @@ export const SKILLS: Record<string, Skill> = {
   picada_venenosa: {
     id: 'picada_venenosa',
     name: 'Picada Venenosa',
-    description: 'Injeta veneno mortal no alvo.',
+    description: 'Injeta veneno mortal no alvo (-2% da vida máxima por 2 turnos).',
     damageType: 'physical',
     power: 1.21,
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'poison', duration: 3, value: 20 },
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
     iconName: 'Skull',
   },
   teia_paralisante: {
@@ -1184,7 +1184,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -1207,16 +1207,16 @@ export const SKILLS: Record<string, Skill> = {
   chama_sombria: {
     id: 'chama_sombria',
     name: 'Chama Sombria',
-    description: 'Lança projétil de fogo sombrio que queima o alvo por 2 turnos.',
+    description: 'Lança projétil de fogo sombrio que queima o alvo (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.54,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 1,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 16 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
   vortice_obscuro: {
@@ -1237,17 +1237,17 @@ export const SKILLS: Record<string, Skill> = {
   maldicao_debilitante: {
     id: 'maldicao_debilitante',
     name: 'Maldição Necrótica',
-    description: 'Aplica lentidão e veneno corrosivo a longa distância por 2 turnos.',
+    description: 'Aplica lentidão e veneno corrosivo a longa distância (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.1,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
-    secondaryStatusEffect: { type: 'poison', duration: 2, value: 15 },
+    secondaryStatusEffect: { type: 'poison', duration: 2, value: 2 },
     iconName: 'Skull',
   },
   mordida_fantasma: {
@@ -1326,16 +1326,16 @@ export const SKILLS: Record<string, Skill> = {
   espinhos_envenenados: {
     id: 'espinhos_envenenados',
     name: 'Chuva de Espinhos',
-    description: 'Dispara saraivada de espinhos tóxicos à distância.',
+    description: 'Dispara saraivada de espinhos tóxicos à distância, envenenando o alvo (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.43,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'poison', duration: 2, value: 20 },
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
     iconName: 'Target',
   },
   raiz_espinhosa: {
@@ -1474,32 +1474,32 @@ export const SKILLS: Record<string, Skill> = {
   sopro_de_magma: {
     id: 'sopro_de_magma',
     name: 'Sopro de Magma (AoE)',
-    description: 'Expele jato ardente em área 3x3 devastando grupos de heróis e queimando por 2 turnos.',
+    description: 'Expele jato ardente em área 3x3 devastando grupos de heróis e queimando (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.98,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 22 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
   mordida_incandescente: {
     id: 'mordida_incandescente',
     name: 'Presas Ardentes',
-    description: 'Mordida repleta de calor vulcânico causando 187% de dano e queimadura por 2 turnos.',
+    description: 'Mordida repleta de calor vulcânico causando 187% de dano e queimadura (-2% da vida máxima por 2 turnos).',
     damageType: 'physical',
     power: 1.87,
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 1,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 18 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Swords',
   },
   furia_draconica: {
@@ -1609,31 +1609,31 @@ export const SKILLS: Record<string, Skill> = {
   granada_incendiaria: {
     id: 'granada_incendiaria',
     name: 'Granada de Pólvora Ígnea',
-    description: 'Arremessa explosivo ardente que causa dano e queima o alvo por 2 turnos.',
+    description: 'Arremessa explosivo ardente que causa dano e queima o alvo (-2% da vida máxima por 2 turnos).',
     damageType: 'physical',
     power: 1.45,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 20 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
   sopro_abrasador: {
     id: 'sopro_abrasador',
     name: 'Baforada Abrasadora',
-    description: 'Rajada de fogo que incinera o alvo com alto dano mágico.',
+    description: 'Rajada de fogo que incinera o alvo com alto dano mágico e queimadura (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.6,
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 22 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
   martelada_forjador: {
@@ -1654,17 +1654,17 @@ export const SKILLS: Record<string, Skill> = {
   chama_viva: {
     id: 'chama_viva',
     name: 'Pulso de Brasas (AoE)',
-    description: 'Libera onda térmica em área (3x3) queimando todos os heróis próximos.',
+    description: 'Libera onda térmica em área (3x3) queimando todos os heróis próximos (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.5,
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 18 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
   blindagem_vapor: {
@@ -1685,16 +1685,16 @@ export const SKILLS: Record<string, Skill> = {
   chuva_de_meteoros_escoria: {
     id: 'chuva_de_meteoros_escoria',
     name: 'Meteoro de Escória',
-    description: 'Invoca uma rocha em brasa dos céus que atinge o alvo com grande dano mágico.',
+    description: 'Invoca uma rocha em brasa dos céus que atinge o alvo com grande dano mágico e queimadura (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.9,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 25 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
   cinzas_sufocantes: {
@@ -1706,7 +1706,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -1745,16 +1745,16 @@ export const SKILLS: Record<string, Skill> = {
   mordida_infernal: {
     id: 'mordida_infernal',
     name: 'Mordida Infernal',
-    description: 'Mandíbulas em chamas que causam 180% de dano físico e queimam o alvo.',
+    description: 'Mandíbulas em chamas que causam 180% de dano físico e queimam o alvo (-2% da vida máxima por 2 turnos).',
     damageType: 'physical',
     power: 1.8,
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 20 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
 
@@ -1871,7 +1871,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -1911,17 +1911,17 @@ export const SKILLS: Record<string, Skill> = {
   puxao_abissal_tentaculo: {
     id: 'puxao_abissal_tentaculo',
     name: 'Chicote do Lodo Negro',
-    description: 'Tentáculo que chicoteia à distância aplicando lentidão e veneno.',
+    description: 'Tentáculo que chicoteia à distância aplicando lentidão e veneno (-2% da vida máxima por 2 turnos).',
     damageType: 'physical',
     power: 1.5,
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
-    secondaryStatusEffect: { type: 'poison', duration: 2, value: 22 },
+    secondaryStatusEffect: { type: 'poison', duration: 2, value: 2 },
     iconName: 'Skull',
   },
   ataque_furtivo_astral: {
@@ -1942,17 +1942,17 @@ export const SKILLS: Record<string, Skill> = {
   explosao_miasma_toxico: {
     id: 'explosao_miasma_toxico',
     name: 'Gás Miasmático (AoE)',
-    description: 'Nuvem espessa de veneno corrosivo em área (3x3).',
+    description: 'Nuvem espessa de veneno corrosivo em área (3x3) (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 1.45,
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'poison', duration: 3, value: 25 },
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
     iconName: 'Skull',
   },
   olhar_da_loucura: {
@@ -1993,7 +1993,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -2063,7 +2063,7 @@ export const SKILLS: Record<string, Skill> = {
   bencao_do_eclipse: {
     id: 'bencao_do_eclipse',
     name: 'Bênção do Eclipse Eterno',
-    description: 'Imbui um aliado com o halo escuro, concedendo 130 de escudo e +25% de dano.',
+    description: 'Imbui um aliado com o halo escuro, concedendo 130 de escudo por 2 turnos.',
     damageType: 'healing',
     power: 0,
     rangeMin: 0,
@@ -2181,17 +2181,17 @@ export const SKILLS: Record<string, Skill> = {
   cataclismo_elemental: {
     id: 'cataclismo_elemental',
     name: 'Fúria do Cataclismo (AoE)',
-    description: 'Invoca chamas cósmicas e meteoros em área (3x3), queimando alvos com dano extremo.',
+    description: 'Invoca chamas cósmicas e meteoros em área (3x3), queimando alvos com dano extremo (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     power: 2.2,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'burn', duration: 2, value: 30 },
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
     iconName: 'Flame',
   },
 
@@ -2236,17 +2236,17 @@ export const SKILLS: Record<string, Skill> = {
   toque_apodrecedor: {
     id: 'toque_apodrecedor',
     name: 'Toque da Pestilência',
-    description: 'Infesta a carne do inimigo com decomposição acelerada, causando 140% de dano mágico e aplicando Veneno virulento (-40 HP por 3 turnos).',
+    description: 'Infesta a carne do inimigo com decomposição acelerada, causando 140% de dano mágico e aplicando Veneno virulento (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.4,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'poison', duration: 3, value: 40 },
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
     requiredLevel: 3,
     iconName: 'Biohazard',
   },
@@ -2271,25 +2271,25 @@ export const SKILLS: Record<string, Skill> = {
   pacto_de_sangue: {
     id: 'pacto_de_sangue',
     name: 'Podridão Concussiva',
-    description: 'Dispara uma esfera de energia necrótica causando 160% de dano mágico, atordoando o alvo por 1 turno e envenenando-o (-35 HP por 2 turnos).',
+    description: 'Dispara uma esfera de energia necrótica causando 160% de dano mágico, atordoando o alvo por 1 turno e envenenando-o (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 1.6,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'stun', duration: 1, value: 1 },
-    secondaryStatusEffect: { type: 'poison', duration: 2, value: 35 },
+    secondaryStatusEffect: { type: 'poison', duration: 2, value: 2 },
     requiredLevel: 6,
     iconName: 'HeartPulse',
   },
   profanar_solo: {
     id: 'profanar_solo',
     name: 'Profanação Abissal (Suprema)',
-    description: 'Habilidade suprema: Amaldiçoa uma enorme área de 3x3 no solo com energias do submundo, causando 205% de dano mágico, envenenando gravemente todos os inimigos (-50 HP por 3 turnos) e dissolvendo suas defesas (-20% por 2 turnos).',
+    description: 'Habilidade suprema: Amaldiçoa uma enorme área de 3x3 no solo com energias do submundo, causando 205% de dano mágico, envenenando gravemente todos os inimigos (-2% da vida máxima por 2 turnos) e dissolvendo suas defesas (-20% por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 2.05,
@@ -2300,7 +2300,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'poison', duration: 3, value: 50 },
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
     secondaryStatusEffect: { type: 'debuff_def', duration: 2, value: 20 },
     requiredLevel: 8,
     iconName: 'Skull',
@@ -2320,7 +2320,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -2337,7 +2337,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -2427,7 +2427,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -2444,7 +2444,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -2888,18 +2888,18 @@ export const SKILLS: Record<string, Skill> = {
   aura_de_retribuicao: {
     id: 'aura_de_retribuicao',
     name: 'Aura de Desafio Sagrado',
-    description: 'Irradia glória radiante forçando todos os inimigos a focarem seus ataques no Paladino (Provocação por 3 turnos) e erguendo escudo de 60 de absorção.',
+    description: 'Irradia glória radiante forçando todos os inimigos a focarem seus ataques no Paladino (Provocação por 2 turnos) e erguendo escudo de 60 de absorção por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
     power: 0,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'taunt', duration: 3, value: 1 },
-    secondaryStatusEffect: { type: 'shield', duration: 3, value: 60 },
+    statusEffect: { type: 'taunt', duration: 2, value: 1 },
+    secondaryStatusEffect: { type: 'shield', duration: 2, value: 60 },
     requiredLevel: 3,
     iconName: 'AlertTriangle',
   },
@@ -2939,7 +2939,7 @@ export const SKILLS: Record<string, Skill> = {
   imposicao_da_justica: {
     id: 'imposicao_da_justica',
     name: 'Baluarte da Graça Divina (Suprema)',
-    description: 'Habilidade suprema: Ergue o estandarte celestial, concedendo ao Paladino Provocação absoluta por 3 turnos, um escudo impenetrável de 110 pontos e inspirando todos os aliados com +25% de dano.',
+    description: 'Habilidade suprema: Ergue o estandarte celestial, concedendo ao Paladino Provocação absoluta por 2 turnos e um escudo impenetrável de 110 pontos por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -2949,8 +2949,8 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'shield', duration: 3, value: 110 },
-    secondaryStatusEffect: { type: 'taunt', duration: 3, value: 1 },
+    statusEffect: { type: 'shield', duration: 2, value: 110 },
+    secondaryStatusEffect: { type: 'taunt', duration: 2, value: 1 },
     requiredLevel: 8,
     iconName: 'ShieldCheck',
   },
@@ -3018,7 +3018,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 2,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -3185,7 +3185,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 2 },
@@ -3237,7 +3237,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 4,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'slow', duration: 2, value: 3 },
@@ -3356,17 +3356,23 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     }
     if (
       clone.statusEffect?.type === 'slow' ||
-      clone.secondaryStatusEffect?.type === 'slow'
-    ) {
-      clone.cooldownMax = Math.max(3, clone.cooldownMax);
-    }
-    if (
+      clone.secondaryStatusEffect?.type === 'slow' ||
       clone.statusEffect?.type === 'buff_atk' ||
       clone.secondaryStatusEffect?.type === 'buff_atk' ||
       clone.statusEffect?.type === 'debuff_def' ||
-      clone.secondaryStatusEffect?.type === 'debuff_def'
+      clone.secondaryStatusEffect?.type === 'debuff_def' ||
+      clone.statusEffect?.type === 'burn' ||
+      clone.secondaryStatusEffect?.type === 'burn' ||
+      clone.statusEffect?.type === 'poison' ||
+      clone.secondaryStatusEffect?.type === 'poison'
     ) {
       clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    if (clone.statusEffect?.type === 'burn' || clone.statusEffect?.type === 'poison') {
+      clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 2 };
+    }
+    if (clone.secondaryStatusEffect?.type === 'burn' || clone.secondaryStatusEffect?.type === 'poison') {
+      clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 2 };
     }
     return clone;
   }
@@ -3405,15 +3411,15 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     }
     if (
       clone.statusEffect?.type === 'slow' ||
-      clone.secondaryStatusEffect?.type === 'slow'
-    ) {
-      clone.cooldownMax = Math.max(3, clone.cooldownMax);
-    }
-    if (
+      clone.secondaryStatusEffect?.type === 'slow' ||
       clone.statusEffect?.type === 'buff_atk' ||
       clone.secondaryStatusEffect?.type === 'buff_atk' ||
       clone.statusEffect?.type === 'debuff_def' ||
-      clone.secondaryStatusEffect?.type === 'debuff_def'
+      clone.secondaryStatusEffect?.type === 'debuff_def' ||
+      clone.statusEffect?.type === 'burn' ||
+      clone.secondaryStatusEffect?.type === 'burn' ||
+      clone.statusEffect?.type === 'poison' ||
+      clone.secondaryStatusEffect?.type === 'poison'
     ) {
       clone.cooldownMax = Math.max(4, clone.cooldownMax);
     }
@@ -3422,22 +3428,30 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
   if (clone.statusEffect) {
     const isDurationEffect = clone.statusEffect.type === 'stun' || clone.statusEffect.type === 'slow' || clone.statusEffect.type === 'taunt';
     const isStatBuffDebuff = clone.statusEffect.type === 'buff_atk' || clone.statusEffect.type === 'debuff_def';
-    const bonus = isDurationEffect ? 0 : Math.round(canonicalBase.statusEffect!.value * 0.05 * (level - 1));
-    const calculatedValue = canonicalBase.statusEffect!.value + bonus;
+    const isPoisonBurn = clone.statusEffect.type === 'burn' || clone.statusEffect.type === 'poison';
+    const bonus = (isDurationEffect || isPoisonBurn) ? 0 : Math.round(canonicalBase.statusEffect!.value * 0.05 * (level - 1));
+    const calculatedValue = isPoisonBurn ? 2 : (canonicalBase.statusEffect!.value + bonus);
     clone.statusEffect = {
       ...clone.statusEffect,
-      duration: isStatBuffDebuff ? Math.min(2, clone.statusEffect.duration) : clone.statusEffect.duration,
-      value: isStatBuffDebuff ? Math.min(20, calculatedValue) : calculatedValue,
+      duration: (isStatBuffDebuff || isPoisonBurn) ? Math.min(2, clone.statusEffect.duration) : clone.statusEffect.duration,
+      value: isStatBuffDebuff ? Math.min(20, calculatedValue) : (isPoisonBurn ? 2 : calculatedValue),
     };
   }
 
   if (clone.secondaryStatusEffect) {
     const isStatBuffDebuff = clone.secondaryStatusEffect.type === 'buff_atk' || clone.secondaryStatusEffect.type === 'debuff_def';
+    const isPoisonBurn = clone.secondaryStatusEffect.type === 'burn' || clone.secondaryStatusEffect.type === 'poison';
     if (isStatBuffDebuff) {
       clone.secondaryStatusEffect = {
         ...clone.secondaryStatusEffect,
         duration: Math.min(2, clone.secondaryStatusEffect.duration),
         value: Math.min(20, clone.secondaryStatusEffect.value),
+      };
+    } else if (isPoisonBurn) {
+      clone.secondaryStatusEffect = {
+        ...clone.secondaryStatusEffect,
+        duration: Math.min(2, clone.secondaryStatusEffect.duration),
+        value: 2,
       };
     }
   }

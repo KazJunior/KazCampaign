@@ -443,8 +443,8 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                           className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#1B2030] border border-[#343B50] text-[#F3F4F8]"
                         >
                           {eff.type === 'shield' && `🛡️ Escudo +${eff.value}`}
-                          {eff.type === 'burn' && `🔥 Queimadura (${eff.duration}T)`}
-                          {eff.type === 'poison' && `☠️ Veneno (${eff.duration}T)`}
+                          {eff.type === 'burn' && `🔥 Queimadura (-${eff.value || 2}%, ${eff.duration}T)`}
+                          {eff.type === 'poison' && `☠️ Veneno (-${eff.value || 2}%, ${eff.duration}T)`}
                           {eff.type === 'stun' && `⚡ Atordoado (${eff.duration}T)`}
                           {eff.type === 'slow' && `👣 Lentidão (-${eff.value || 1} Mov)`}
                           {eff.type === 'buff_atk' && `⚔️ Buff ATK +${eff.value}%`}
