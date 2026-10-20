@@ -100,24 +100,6 @@ export function loadPlayerProgress(): PlayerProgress {
       if (!unlockedClasses.includes(c)) unlockedClasses.push(c);
     });
 
-    // Also preserve any valid class currently in selectedPartyClasses or activeAdventure.partyClasses
-    if (Array.isArray(parsed.selectedPartyClasses)) {
-      parsed.selectedPartyClasses.forEach((raw: string) => {
-        const c = raw === 'engenheiro' ? 'druida' : raw;
-        if (typeof c === 'string' && !unlockedClasses.includes(c)) {
-          unlockedClasses.push(c);
-        }
-      });
-    }
-    if (parsed.activeAdventure && Array.isArray(parsed.activeAdventure.partyClasses)) {
-      parsed.activeAdventure.partyClasses.forEach((raw: string) => {
-        const c = raw === 'engenheiro' ? 'druida' : raw;
-        if (typeof c === 'string' && !unlockedClasses.includes(c)) {
-          unlockedClasses.push(c);
-        }
-      });
-    }
-
     // Ensure selectedPartyClasses only contains valid unlocked classes
     const selectedPartyClasses = sanitizePartyClasses(parsed.selectedPartyClasses, unlockedClasses);
 

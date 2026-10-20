@@ -418,12 +418,20 @@ export function sanitizeUnlockedClasses(
 ): string[] {
   const allowed = new Set<string>(INITIAL_CLASSES);
 
-  // 1. Preserve any valid class the user has already unlocked (meta-progression is permanent)
+  // 1. Preserve valid classes unlocked via shop (purchasable) or secret conditions.
+  // Boss unlock classes (CLASS_UNLOCK_CONDITIONS, such as 'druida') strictly require completing their required stage!
   if (Array.isArray(rawUnlocked)) {
     for (const rawC of rawUnlocked) {
       const c = rawC === 'engenheiro' ? 'druida' : rawC;
       if (typeof c === 'string' && CLASS_DEFINITIONS[c]) {
-        allowed.add(c);
+        const unlockCond = CLASS_UNLOCK_CONDITIONS[c];
+        if (unlockCond) {
+          if (maxLevelCompleted >= unlockCond.requiredLevel || completedLevels.includes(unlockCond.requiredLevel)) {
+            allowed.add(c);
+          }
+        } else {
+          allowed.add(c);
+        }
       }
     }
   }
@@ -445,7 +453,7 @@ export function sanitizePartyClasses(party: string[] | undefined, unlockedClasse
   if (Array.isArray(party)) {
     for (const rawC of party) {
       const c = rawC === 'engenheiro' ? 'druida' : rawC;
-      if (typeof c === 'string' && (validUnlocked.has(c) || CLASS_DEFINITIONS[c]) && !result.includes(c)) {
+      if (typeof c === 'string' && validUnlocked.has(c) && !result.includes(c)) {
         result.push(c);
       }
     }

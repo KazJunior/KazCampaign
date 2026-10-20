@@ -147,15 +147,11 @@ export function App() {
           leaderboardHighestLevel: cloudP.highestLevel || progress.highScore,
         });
 
-        // Merge local unlocked classes and cloud unlocked classes so no class is lost
+        // Merge local unlocked classes and cloud unlocked classes so no valid unlock is lost
         const combinedUnlocked = Array.from(
           new Set([
             ...(progress.unlockedClasses || []),
             ...(cloudP.unlockedClasses || []),
-            ...(progress.selectedPartyClasses || []),
-            ...(progress.activeAdventure?.partyClasses || []),
-            ...(Array.isArray(cloudP.selectedPartyClasses) ? cloudP.selectedPartyClasses : []),
-            ...(cloudP.activeAdventure?.partyClasses ? cloudP.activeAdventure.partyClasses : []),
           ])
         ).map((c) => (c === 'engenheiro' ? 'druida' : c));
         const safeUnlocked = sanitizeUnlockedClasses(combinedUnlocked, maxCompleted, progress.completedLevels || []);

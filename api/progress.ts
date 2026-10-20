@@ -65,23 +65,31 @@ function resolveUnlockedClasses(
 ): string[] {
   const allowed = new Set<string>(INITIAL_CLASSES);
 
-  // 1. Preserve any valid class previously unlocked in the database
-  if (Array.isArray(existingDbClasses)) {
-    for (const raw of existingDbClasses) {
-      const c = normalizeClass(raw);
-      if (c && ALL_VALID_CLASSES.has(c)) {
+  const checkAndAdd = (raw: unknown) => {
+    const c = normalizeClass(raw);
+    if (!c || !ALL_VALID_CLASSES.has(c)) return;
+    const reqLvl = CLASS_UNLOCK_LEVELS[c];
+    if (typeof reqLvl === 'number') {
+      if (maxCompleted >= reqLvl) {
         allowed.add(c);
       }
+    } else {
+      // Purchasable or secret class
+      allowed.add(c);
+    }
+  };
+
+  // 1. Check classes in database
+  if (Array.isArray(existingDbClasses)) {
+    for (const raw of existingDbClasses) {
+      checkAndAdd(raw);
     }
   }
 
-  // 2. Preserve any valid class sent by the client (purchases, secret unlocks)
+  // 2. Check classes sent by client (purchases, secret unlocks)
   if (Array.isArray(incomingClasses)) {
     for (const raw of incomingClasses) {
-      const c = normalizeClass(raw);
-      if (c && ALL_VALID_CLASSES.has(c)) {
-        allowed.add(c);
-      }
+      checkAndAdd(raw);
     }
   }
 
@@ -92,13 +100,10 @@ function resolveUnlockedClasses(
     }
   }
 
-  // 4. Preserve any valid class found in leaderboard party
+  // 4. Preserve valid classes found in leaderboard party (if level requirement met)
   if (Array.isArray(leaderboardParty)) {
     for (const raw of leaderboardParty) {
-      const c = normalizeClass(raw);
-      if (c && ALL_VALID_CLASSES.has(c)) {
-        allowed.add(c);
-      }
+      checkAndAdd(raw);
     }
   }
 
@@ -111,7 +116,7 @@ function sanitizeParty(rawParty: unknown, unlocked: string[]): string[] {
   if (Array.isArray(rawParty)) {
     for (const raw of rawParty) {
       const c = normalizeClass(raw);
-      if (c && (unlockedSet.has(c) || ALL_VALID_CLASSES.has(c)) && !result.includes(c)) {
+      if (c && unlockedSet.has(c) && !result.includes(c)) {
         result.push(c);
       }
     }
@@ -159,13 +164,17 @@ export async function GET(req: Request): Promise<Response> {
     const safeUnlocked = resolveUnlockedClasses(row.unlocked_classes, null, maxCompleted, lbParty);
     const safeParty = sanitizeParty(row.selected_party_classes, safeUnlocked);
 
-    // If new classes were granted that weren't in row.unlocked_classes, persist them to DB
-    const prevCount = Array.isArray(row.unlocked_classes) ? row.unlocked_classes.length : 0;
-    if (safeUnlocked.length > prevCount) {
+    // If unlocked classes changed or invalid/unearned classes were removed, persist to DB
+    const prevClasses = Array.isArray(row.unlocked_classes) ? row.unlocked_classes : [];
+    const isDifferent = safeUnlocked.length !== prevClasses.length || safeUnlocked.some((c, i) => c !== prevClasses[i]);
+    if (isDifferent) {
       const unlockedJson = JSON.stringify(safeUnlocked);
+      const partyJson = JSON.stringify(safeParty);
       await sql`
         UPDATE player_progress 
-        SET unlocked_classes = ${unlockedJson}::jsonb, updated_at = NOW() 
+        SET unlocked_classes = ${unlockedJson}::jsonb,
+            selected_party_classes = ${partyJson}::jsonb,
+            updated_at = NOW() 
         WHERE user_id = ${auth.uid}
       `;
     }
