@@ -584,6 +584,16 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           aoeRad,
           damageType
         );
+
+        // When an AoE attack strikes, trigger flinch / hit reaction on all units caught in the blast radius
+        if (aoeRad > 0 && damageType !== 'healing') {
+          units.forEach((u) => {
+            if (!u.isDead && Math.abs(u.x - targetAnimX) <= aoeRad && Math.abs(u.y - targetAnimY) <= aoeRad) {
+              const uObj = getUnitObj(u.id);
+              if (uObj) engine.playHitReaction(uObj, damageType, 260);
+            }
+          });
+        }
       } else if (className.includes('archer') || className.includes('arqueiro')) {
         // Basic Ranged Physical Attack
         await engine.playArrowAnimation(

@@ -69,11 +69,12 @@ export const TopBar: React.FC<TopBarProps> = ({
   const isDeployment = phase === 'deployment';
 
   return (
-    <header className="w-full bg-[#1B2030] border-b border-[#343B50] px-3 sm:px-4 py-2 flex flex-col shadow-lg text-[#F3F4F8] select-none z-30 shrink-0">
+    <>
       {/* ========================================================= */}
       {/* DESKTOP LAYOUT (md:flex) */}
       {/* ========================================================= */}
-      <div className="hidden md:flex flex-wrap items-center justify-between gap-3">
+      <header className="hidden md:flex w-full bg-[#1B2030] border-b border-[#343B50] px-3 sm:px-4 py-2 flex-col shadow-lg text-[#F3F4F8] select-none z-30 shrink-0">
+        <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Level & Turn Info */}
         <div className="flex items-center gap-3">
           <div className="bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 py-1 rounded-md font-bold text-sm tracking-wide">
@@ -256,257 +257,294 @@ export const TopBar: React.FC<TopBarProps> = ({
           )}
         </div>
       </div>
+    </header>
 
       {/* ========================================================= */}
-      {/* MOBILE COMPACT HEADER (md:hidden) */}
+      {/* MOBILE FLOATING HUD & LATERAL MENU (md:hidden) */}
       {/* ========================================================= */}
-      <div className="flex md:hidden items-center justify-between w-full gap-2">
-        {/* Left: Stage & Turn info */}
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="bg-[#D4AD65]/15 border border-[#D4AD65]/40 text-[#D4AD65] px-2 py-0.5 rounded font-black text-xs shrink-0">
+      {/* 1. Mobile Stage & Turn Floating Badge (Top-Left) */}
+      <div className="md:hidden fixed top-2 left-2 z-30 pointer-events-none flex flex-col gap-1 max-w-[calc(100vw-110px)]">
+        <div className="bg-[#1B2030]/95 backdrop-blur-md border border-[#343B50] px-2.5 py-1 rounded-xl shadow-lg flex items-center gap-2 pointer-events-auto">
+          <span className="bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/40 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0">
             F{levelNumber}
-          </div>
-          <div className="min-w-0">
-            <div className="font-bold text-xs text-[#F3F4F8] truncate max-w-[110px] leading-tight">
-              {levelName}
-            </div>
-            <div className="text-[10px] text-[#A7B0C4] flex items-center gap-1.5">
-              <span>T{turnNumber}</span>
-              <span>•</span>
-              <span className="text-[#4C8DFF] font-semibold">{alliesCount}A</span>
-              <span>•</span>
-              <span className="text-[#E65353] font-semibold">{enemiesCount}I</span>
-            </div>
-          </div>
+          </span>
+          <span className="text-xs font-bold text-[#F3F4F8] truncate leading-tight">
+            {levelName}
+          </span>
+          <span className="text-[10px] text-[#A7B0C4] shrink-0 font-semibold">
+            T{turnNumber}
+          </span>
         </div>
 
-        {/* Center / Right: Phase badge, End Turn, Speed & Menu */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          {/* Phase Badge */}
-          {isDeployment ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/40 animate-pulse">
-              Posicionar
-            </span>
-          ) : isPlayerTurn ? (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#4C8DFF]/20 text-[#4C8DFF] border border-[#4C8DFF]/40 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4C8DFF] animate-ping" /> Seu Turno
-            </span>
-          ) : (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E65353]/20 text-[#E65353] border border-[#E65353]/40">
-              Inimigo
-            </span>
-          )}
-
-          {/* Quick End Turn on Mobile */}
-          {isPlayerTurn && (
-            <button
-              onClick={onEndTurn}
-              className="bg-gradient-to-r from-[#4C8DFF] to-[#2563EB] text-white px-2.5 py-1 rounded-lg font-black text-[11px] uppercase tracking-wider flex items-center gap-1 shadow transition-all active:scale-95 border border-[#6BA0FF]/40"
-              title="Passar Turno"
-            >
-              <Play size={11} fill="currentColor" /> Fim
-            </button>
-          )}
-
-          {/* Speed Toggle */}
-          <button
-            onClick={onToggleSpeed}
-            className={`p-1.5 rounded-lg border text-[11px] font-bold transition-colors ${
-              combatSpeed === 'fast'
-                ? 'bg-[#F0B44D]/20 border-[#F0B44D] text-[#F0B44D]'
-                : 'bg-[#10131C] border-[#343B50] text-[#A7B0C4]'
-            }`}
-            title="Velocidade"
-          >
-            {combatSpeed === 'fast' ? '2x' : '1x'}
-          </button>
-
-          {/* Mobile Menu Hamburger */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className={`p-1.5 rounded-lg border transition-all ${
-              mobileMenuOpen
-                ? 'bg-[#D4AD65] text-[#10131C] border-[#D4AD65]'
-                : 'bg-[#10131C] border-[#343B50] text-[#F3F4F8] hover:border-[#D4AD65]'
-            }`}
-            title="Menu da Batalha"
-          >
-            {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
-          </button>
-        </div>
+        {/* Mobile Boss Healthbar floating if boss alive */}
+        {bossUnit && !bossUnit.isDead && (
+          <div className="bg-[#10131C]/95 backdrop-blur-md px-2.5 py-1 rounded-xl border border-[#E65353]/50 shadow-lg pointer-events-auto">
+            <div className="flex items-center justify-between text-[10px] font-bold text-[#E65353] gap-2">
+              <span className="truncate max-w-[120px]">{bossUnit.name}</span>
+              <span>
+                {bossUnit.currentHp}/{bossUnit.maxHp} HP
+              </span>
+            </div>
+            <div className="w-full bg-[#1B2030] h-1.5 rounded-full overflow-hidden mt-0.5">
+              <div
+                className="bg-gradient-to-r from-[#E65353] to-[#9333EA] h-full transition-all duration-300"
+                style={{ width: `${Math.max(0, (bossUnit.currentHp / bossUnit.maxHp) * 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Mobile Boss Healthbar */}
-      {bossUnit && !bossUnit.isDead && (
-        <div className="flex md:hidden flex-col w-full bg-[#10131C] px-2.5 py-1 rounded-lg border border-[#E65353]/50 mt-1.5">
-          <div className="flex items-center justify-between w-full text-[10px] font-bold text-[#E65353]">
-            <span className="truncate">{bossUnit.name}</span>
-            <span>
-              {bossUnit.currentHp} / {bossUnit.maxHp} HP
-            </span>
-          </div>
-          <div className="w-full bg-[#1B2030] h-1.5 rounded-full overflow-hidden mt-0.5">
-            <div
-              className="bg-gradient-to-r from-[#E65353] to-[#9333EA] h-full transition-all duration-300"
-              style={{ width: `${Math.max(0, (bossUnit.currentHp / bossUnit.maxHp) * 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
+      {/* 2. Mobile Floating Lateral Dock (Top-Right / Lateral Edge) */}
+      <div className="md:hidden fixed top-2 right-2 z-30 flex flex-col items-end gap-1.5 pointer-events-auto">
+        {/* Main Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex items-center gap-1.5 bg-[#1B2030]/95 backdrop-blur-md border border-[#D4AD65]/70 text-[#D4AD65] px-2.5 py-1.5 rounded-xl shadow-xl active:scale-95 transition-all text-xs font-black cursor-pointer"
+          title="Abrir Menu Lateral"
+        >
+          <Menu size={16} />
+          <span>Menu</span>
+        </button>
 
-      {/* ========================================================= */}
-      {/* MOBILE POPUP MENU DRAWER */}
-      {/* ========================================================= */}
+        {/* Speed Toggle Shortcut */}
+        <button
+          onClick={onToggleSpeed}
+          className={`px-2 py-1 rounded-lg border text-[11px] font-black backdrop-blur-md shadow-md active:scale-95 transition-all cursor-pointer ${
+            combatSpeed === 'fast'
+              ? 'bg-[#F0B44D]/25 border-[#F0B44D] text-[#F0B44D]'
+              : 'bg-[#10131C]/95 border-[#343B50] text-[#A7B0C4]'
+          }`}
+          title="Velocidade"
+        >
+          {combatSpeed === 'fast' ? '⚡ 2x' : '1x'}
+        </button>
+
+        {/* Quick Equipment Shortcut */}
+        {onOpenEquipment && (
+          <button
+            onClick={onOpenEquipment}
+            className="p-1.5 rounded-lg bg-[#10131C]/95 backdrop-blur-md border border-[#343B50] hover:border-[#F0B44D] text-[#F0B44D] shadow-md active:scale-95 transition-all cursor-pointer"
+            title="Equipamentos"
+          >
+            <Package size={16} />
+          </button>
+        )}
+
+        {/* Quick Objectives Shortcut */}
+        <button
+          onClick={onOpenObjectives}
+          className="p-1.5 rounded-lg bg-[#10131C]/95 backdrop-blur-md border border-[#343B50] hover:border-[#D4AD65] text-[#D4AD65] shadow-md active:scale-95 transition-all cursor-pointer"
+          title="Objetivos"
+        >
+          <Award size={16} />
+        </button>
+      </div>
+
+      {/* 3. Mobile Lateral Drawer (Slide-in from Right) */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex flex-col justify-end md:hidden animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex justify-end md:hidden animate-in fade-in duration-150"
           onClick={() => setMobileMenuOpen(false)}
         >
           <div
-            className="bg-[#1B2030] border-t-2 border-[#D4AD65] rounded-t-3xl p-4 max-h-[85vh] overflow-y-auto space-y-4 shadow-2xl"
+            className="w-72 sm:w-80 h-full bg-[#1B2030] border-l-2 border-[#D4AD65] p-4 flex flex-col justify-between shadow-2xl animate-in slide-in-from-right duration-200 overflow-y-auto select-none"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-2 border-b border-[#343B50]">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-[#D4AD65] uppercase tracking-wider">
-                  Menu da Aventura — Fase {levelNumber}
-                </span>
+            <div>
+              {/* Header with Title and Close Button */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#343B50] mb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-[#D4AD65]/15 border border-[#D4AD65]/40 flex items-center justify-center text-[#D4AD65]">
+                    <Shield size={16} />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-xs text-[#F3F4F8] uppercase tracking-wider">
+                      Menu Lateral
+                    </h3>
+                    <p className="text-[10px] text-[#A7B0C4]">
+                      Fase {levelNumber} • Turno {turnNumber}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg bg-[#10131C] border border-[#343B50] text-[#A7B0C4] hover:text-white active:scale-95 transition-all cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
               </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1 rounded-lg bg-[#10131C] border border-[#343B50] text-[#A7B0C4] hover:text-white"
-              >
-                <X size={18} />
-              </button>
+
+              {/* Status Pill: Phase & Units */}
+              <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] mb-3 space-y-1.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#A7B0C4]">Status da Batalha:</span>
+                  {isDeployment ? (
+                    <span className="text-[#D4AD65] font-black text-[11px] animate-pulse">
+                      POSICIONAMENTO
+                    </span>
+                  ) : isPlayerTurn ? (
+                    <span className="text-[#4C8DFF] font-black text-[11px] flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#4C8DFF] animate-ping" /> SEU TURNO
+                    </span>
+                  ) : (
+                    <span className="text-[#E65353] font-black text-[11px]">TURNO DO INIMIGO</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between text-[11px] pt-1.5 border-t border-[#343B50]/60">
+                  <span className="text-[#4C8DFF] font-bold flex items-center gap-1">
+                    <Shield size={12} /> {alliesCount} Aliados
+                  </span>
+                  <span className="text-[#E65353] font-bold flex items-center gap-1">
+                    <Target size={12} /> {enemiesCount} Inimigos
+                  </span>
+                </div>
+              </div>
+
+              {/* Action Button: End Turn or Confirm Deployment */}
+              {isPlayerTurn && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onEndTurn();
+                  }}
+                  className="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#4C8DFF] to-[#2563EB] hover:from-[#3B82F6] hover:to-[#1D4ED8] text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all border border-[#6BA0FF]/40 mb-3 cursor-pointer"
+                >
+                  <Play size={14} fill="currentColor" /> Passar Turno
+                </button>
+              )}
+
+              {/* Quick Actions Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                {onOpenEquipment && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenEquipment();
+                    }}
+                    className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#F0B44D] text-[#F0B44D] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Package size={17} />
+                    <span>Equipamentos</span>
+                  </button>
+                )}
+
+                {onOpenBaseUpgrades && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenBaseUpgrades();
+                    }}
+                    className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#D4AD65] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Building2 size={17} />
+                    <span>Base & Melhorias</span>
+                  </button>
+                )}
+
+                {onOpenItemCatalog && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenItemCatalog();
+                    }}
+                    className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#B58AFF] text-[#B58AFF] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Sparkles size={17} />
+                    <span>Catálogo Itens</span>
+                  </button>
+                )}
+
+                {onOpenBestiary && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenBestiary();
+                    }}
+                    className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#4C8DFF] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <BookOpen size={17} />
+                    <span>Bestiário</span>
+                  </button>
+                )}
+
+                {onOpenHistory && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenHistory();
+                    }}
+                    className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <History size={17} />
+                    <span>Histórico</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenObjectives();
+                  }}
+                  className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#D4AD65] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Award size={17} />
+                  <span>Objetivos</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenTutorial();
+                  }}
+                  className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                >
+                  <HelpCircle size={17} />
+                  <span>Tutorial</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenSettings();
+                  }}
+                  className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Settings size={17} />
+                  <span>Áudio & Ajustes</span>
+                </button>
+              </div>
+
+              {onOpenRiddle && (
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenRiddle();
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-[#240046] border border-[#9D4EDD] text-[#E0AAFF] font-bold text-xs flex items-center justify-center gap-2 shadow-md animate-pulse mt-2 cursor-pointer"
+                >
+                  <Scroll size={17} /> A Profecia do Vazio (Pedestal)
+                </button>
+              )}
             </div>
 
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
-              {onOpenEquipment && (
+            {/* Footer with Save & Exit */}
+            <div className="pt-3 border-t border-[#343B50] mt-3">
+              {onSaveAndExit && (
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
-                    onOpenEquipment();
+                    onSaveAndExit();
                   }}
-                  className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#F0B44D] text-[#F0B44D] flex items-center gap-2.5 transition-all active:scale-95"
+                  className="w-full py-2.5 rounded-xl bg-[#10131C] border border-[#E65353]/50 text-[#FF7A7A] hover:bg-[#E65353]/20 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                 >
-                  <Package size={18} />
-                  <span>Equipamentos</span>
+                  <Home size={16} /> Salvar & Voltar ao Menu
                 </button>
               )}
-
-              {onOpenBaseUpgrades && (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenBaseUpgrades();
-                  }}
-                  className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#D4AD65] flex items-center gap-2.5 transition-all active:scale-95"
-                >
-                  <Building2 size={18} />
-                  <span>Base & Upgrades</span>
-                </button>
-              )}
-
-              {onOpenItemCatalog && (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenItemCatalog();
-                  }}
-                  className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#B58AFF] text-[#B58AFF] flex items-center gap-2.5 transition-all active:scale-95"
-                >
-                  <Sparkles size={18} />
-                  <span>Catálogo de Itens</span>
-                </button>
-              )}
-
-              {onOpenBestiary && (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenBestiary();
-                  }}
-                  className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#4C8DFF] flex items-center gap-2.5 transition-all active:scale-95"
-                >
-                  <BookOpen size={18} />
-                  <span>Bestiário</span>
-                </button>
-              )}
-
-              {onOpenHistory && (
-                <button
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenHistory();
-                  }}
-                  className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] flex items-center gap-2.5 transition-all active:scale-95"
-                >
-                  <History size={18} />
-                  <span>Histórico</span>
-                </button>
-              )}
-
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenObjectives();
-                }}
-                className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#D4AD65] text-[#D4AD65] flex items-center gap-2.5 transition-all active:scale-95"
-              >
-                <Award size={18} />
-                <span>Objetivos</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenTutorial();
-                }}
-                className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] flex items-center gap-2.5 transition-all active:scale-95"
-              >
-                <HelpCircle size={18} />
-                <span>Tutorial</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenSettings();
-                }}
-                className="p-3 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#4C8DFF] text-[#A7B0C4] flex items-center gap-2.5 transition-all active:scale-95"
-              >
-                <Settings size={18} />
-                <span>Áudio & Ajustes</span>
-              </button>
             </div>
-
-            {onOpenRiddle && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenRiddle();
-                }}
-                className="w-full p-3 rounded-xl bg-[#240046] border border-[#9D4EDD] text-[#E0AAFF] font-bold text-xs flex items-center justify-center gap-2 shadow-md animate-pulse"
-              >
-                <Scroll size={18} /> A Profecia do Vazio (Pedestal)
-              </button>
-            )}
-
-            {onSaveAndExit && (
-              <button
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onSaveAndExit();
-                }}
-                className="w-full py-3 rounded-xl bg-[#10131C] border border-[#E65353]/50 text-[#FF7A7A] hover:bg-[#E65353]/20 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-95"
-              >
-                <Home size={16} /> Salvar & Voltar ao Menu
-              </button>
-            )}
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 };

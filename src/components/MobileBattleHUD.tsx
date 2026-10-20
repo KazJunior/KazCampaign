@@ -384,10 +384,13 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                           {skill.description}
                         </p>
 
-                        <div className="flex items-center gap-3 text-[10px] text-[#D4AD65] font-semibold mt-0.5">
+                        <div className="flex items-center gap-3 text-[10px] text-[#D4AD65] font-semibold mt-0.5 flex-wrap">
                           <span>Alcance: {skill.rangeMax} casas</span>
                           {skill.aoeRadius && skill.aoeRadius > 0 && (
                             <span>• Raio AoE: {skill.aoeRadius}</span>
+                          )}
+                          {skill.canTargetGround && (
+                            <span className="text-[#10B981] font-bold">• 🎯 Alvo no Solo</span>
                           )}
                         </div>
                       </button>

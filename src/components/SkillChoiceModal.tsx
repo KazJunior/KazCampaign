@@ -230,7 +230,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                     <div className="bg-[#1B2030] p-2 rounded-lg border border-[#343B50]">
                       <span className="text-[#A7B0C4] block">Área (AoE)</span>
                       <strong className="text-[#4C8DFF]">
-                        {skill.aoeRadius > 0 ? 'Área 3x3' : 'Alvo Único'}
+                        {skill.canTargetGround ? 'Área 3x3 (Solo)' : skill.aoeRadius > 0 ? 'Área 3x3' : 'Alvo Único'}
                       </strong>
                     </div>
                   </div>

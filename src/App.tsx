@@ -1098,11 +1098,18 @@ export function App() {
 
   const aoeTiles: Point[] = React.useMemo(() => {
     if (!activeSkill || activeSkill.aoeRadius === 0) return [];
+    if (targetAoEPoint) {
+      return getAoETiles(targetAoEPoint, activeSkill.aoeRadius, grid[0].length, grid.length);
+    }
     const targetUnit = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
-    const center = targetAoEPoint || (targetUnit ? { x: targetUnit.x, y: targetUnit.y } : hoveredTile);
-    if (!center) return [];
-    return getAoETiles(center, activeSkill.aoeRadius, grid[0].length, grid.length);
-  }, [activeSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid]);
+    if (targetUnit) {
+      return getAoETiles({ x: targetUnit.x, y: targetUnit.y }, activeSkill.aoeRadius, grid[0].length, grid.length);
+    }
+    if (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y)) {
+      return getAoETiles(hoveredTile, activeSkill.aoeRadius, grid[0].length, grid.length);
+    }
+    return [];
+  }, [activeSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles]);
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
@@ -1330,8 +1337,17 @@ export function App() {
         return;
       }
 
-      // Ground-targeted AoE attack (e.g. Cataclismo Infernal or other AoE skills on empty ground)
-      if (!clickedUnit && activeSkill && activeSkill.aoeRadius > 0 && activeSkill.category === 'attack') {
+      // Ground-targeted AoE attack (e.g. Meteoro, Bola de Fogo, Nevasca or other AoE skills on empty ground)
+      const canSkillTargetGround = Boolean(
+        activeSkill &&
+        (activeSkill.canTargetGround ||
+          (activeSkill.aoeRadius > 0 &&
+           activeSkill.rangeMax >= 2 &&
+           activeSkill.targetType !== 'self' &&
+           activeSkill.targetType !== 'ally'))
+      );
+
+      if (!clickedUnit && activeSkill && canSkillTargetGround) {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         if (isTargetTileValid) {
           const matchFaction = activeSkill.targetType === 'ally' ? 'player' : 'enemy';
@@ -1349,12 +1365,14 @@ export function App() {
             const primaryTarget = affectedTargets[0];
             const preview = getDamagePreview(selectedUnit, primaryTarget, activeSkill);
             preview.aoeTargetsCount = affectedTargets.length;
+            preview.isGroundTarget = true;
+            preview.groundTargetPoint = { x, y };
             setDamagePreview(preview);
             setTargetUnitId(primaryTarget.id);
             soundManager.playSelect();
             return;
           } else {
-            addFloatingNumber(x, y, 'Nenhum alvo na área!', 'status', '#A7B0C4');
+            addFloatingNumber(x, y, 'Nenhum alvo ao redor!', 'status', '#A7B0C4');
             soundManager.playSelect();
             return;
           }
@@ -1374,6 +1392,8 @@ export function App() {
           setTargetAoEPoint({ x: clickedUnit.x, y: clickedUnit.y });
           const effectiveSkill = activeSkill || undefined;
           const preview = getDamagePreview(selectedUnit, clickedUnit, effectiveSkill);
+          preview.isGroundTarget = false;
+          preview.groundTargetPoint = undefined;
 
           if (effectiveSkill && effectiveSkill.aoeRadius > 0) {
             const matchFaction = effectiveSkill.targetType === 'ally' ? 'player' : 'enemy';

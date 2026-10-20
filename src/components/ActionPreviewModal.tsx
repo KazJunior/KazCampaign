@@ -70,11 +70,27 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
         <div className="text-sm font-black text-[#D4AD65] uppercase">VS</div>
 
         <div className="text-center flex-1">
-          <div className="text-[10px] text-[#A7B0C4] uppercase">Alvo</div>
-          <div className={`font-bold text-sm truncate ${preview.target.faction === 'player' ? 'text-[#4C8DFF]' : 'text-[#E65353]'}`}>
-            {preview.target.name}
+          <div className="text-[10px] text-[#A7B0C4] uppercase">
+            {preview.isGroundTarget ? 'Local da Mira' : 'Alvo'}
           </div>
-          <div className="text-[11px] text-[#A7B0C4]">Lv.{preview.target.level}</div>
+          <div
+            className={`font-bold text-sm truncate ${
+              preview.isGroundTarget
+                ? 'text-[#F59E0B]'
+                : preview.target.faction === 'player'
+                ? 'text-[#4C8DFF]'
+                : 'text-[#E65353]'
+            }`}
+          >
+            {preview.isGroundTarget
+              ? `🎯 Solo (${preview.groundTargetPoint?.x ?? 0}, ${preview.groundTargetPoint?.y ?? 0})`
+              : preview.target.name}
+          </div>
+          <div className="text-[11px] text-[#A7B0C4]">
+            {preview.isGroundTarget
+              ? `${preview.aoeTargetsCount || 1} ${(preview.aoeTargetsCount || 1) === 1 ? 'alvo ao redor' : 'alvos ao redor'}`
+              : `Lv.${preview.target.level}`}
+          </div>
         </div>
       </div>
 
@@ -160,26 +176,36 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
             className={`border px-3 py-1.5 rounded-lg text-xs font-black flex items-center justify-between ${
               preview.skill.targetType === 'ally'
                 ? 'bg-[#38BDF8]/15 border-[#38BDF8]/50 text-[#38BDF8]'
+                : preview.isGroundTarget
+                ? 'bg-[#F59E0B]/15 border-[#F59E0B]/50 text-[#F59E0B]'
                 : 'bg-[#FF9800]/15 border-[#FF9800]/50 text-[#FF9800]'
             }`}
           >
             <span className="flex items-center gap-1.5">
-              <span>{preview.skill.targetType === 'ally' ? '✨' : '💥'}</span>
-              {preview.skill.targetType === 'ally' ? 'ÁREA DE EFEITO (ALIADOS) 3x3' : 'ATAQUE EM ÁREA 3x3'}
+              <span>{preview.skill.targetType === 'ally' ? '✨' : preview.isGroundTarget ? '🎯' : '💥'}</span>
+              {preview.skill.targetType === 'ally'
+                ? 'ÁREA DE EFEITO (ALIADOS) 3x3'
+                : preview.isGroundTarget
+                ? 'ATAQUE NO SOLO (ÁREA 3x3)'
+                : 'ATAQUE EM ÁREA 3x3'}
             </span>
             <span
               className={`px-2 py-0.5 rounded text-[11px] ${
-                preview.skill.targetType === 'ally' ? 'bg-[#38BDF8]/25 text-[#38BDF8]' : 'bg-[#FF9800]/25 text-[#FF9800]'
+                preview.skill.targetType === 'ally'
+                  ? 'bg-[#38BDF8]/25 text-[#38BDF8]'
+                  : preview.isGroundTarget
+                  ? 'bg-[#F59E0B]/25 text-[#F59E0B]'
+                  : 'bg-[#FF9800]/25 text-[#FF9800]'
               }`}
             >
               {preview.aoeTargetsCount || 1}{' '}
               {preview.aoeTargetsCount === 1
                 ? preview.skill.targetType === 'ally'
                   ? 'aliado na área'
-                  : 'alvo na área'
+                  : 'alvo ao redor'
                 : preview.skill.targetType === 'ally'
                 ? 'aliados na área'
-                : 'alvos na área'}
+                : 'alvos ao redor'}
             </span>
           </div>
         )}
@@ -202,7 +228,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           onClick={onConfirm}
           className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] font-black text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95"
         >
-          {isTeleport ? 'Confirmar Teleporte' : isHeal ? 'Confirmar Ação' : 'Confirmar Ataque'}
+          {isTeleport
+            ? 'Confirmar Teleporte'
+            : isHeal
+            ? 'Confirmar Ação'
+            : preview.isGroundTarget
+            ? 'Confirmar Ataque em Área'
+            : 'Confirmar Ataque'}
         </button>
       </div>
     </div>

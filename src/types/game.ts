@@ -51,6 +51,7 @@ export interface Skill {
   isTeleport?: boolean; // Skill teleports caster to an empty tile
   teleportToTarget?: boolean; // Moves caster to adjacent tile next to target
   cleansesDebuffs?: boolean; // Removes debuffs from target ally
+  canTargetGround?: boolean; // Allows targeting empty tiles on battlefield to damage enemies around (e.g. Meteoro)
   iconName: string;
   isPassive?: boolean;
   level?: number; // Skill evolution level (1, 2, 3...)
@@ -141,6 +142,8 @@ export interface EquipmentSlots {
 export interface DamagePreview {
   attacker: Unit;
   target: Unit;
+  isGroundTarget?: boolean;
+  groundTargetPoint?: Point;
   skill?: Skill;
   minDamage: number;
   maxDamage: number;

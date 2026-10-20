@@ -409,42 +409,87 @@ export const SidePanel: React.FC<SidePanelProps> = ({
 export function getUnitAvatar(key: string, size = 16) {
   switch (key) {
     case 'warrior':
+    case 'arcane_knight':
+    case 'void_executioner':
+    case 'fallen_knight':
+    case 'black_sun_templar':
+    case 'celestial_slayer':
+    case 'twilight_reaper':
+    case 'rune_blade':
+    case 'astral_stalker':
       return <Swords size={size} />;
     case 'archer':
+    case 'steppe_hunter':
+    case 'kobold_gunner':
       return <Target size={size} />;
     case 'mage':
     case 'dark_mage':
+    case 'pyromancer':
+    case 'ember_elemental':
+    case 'cataclysm_avatar':
+    case 'volcanic_drake':
       return <Flame size={size} />;
     case 'cleric':
+    case 'thorn_witch':
+    case 'storm_shaman':
+    case 'cosmic_parasite':
       return <HeartPulse size={size} />;
     case 'assassin':
+    case 'spectral_wolf':
+    case 'hell_hound':
+    case 'thunder_wolf':
+    case 'magma_lizard':
+    case 'void_crawler':
       return <Footprints size={size} />;
-    case 'arcane_knight':
-      return <Swords size={size} />;
     case 'necromancer':
+    case 'spider':
+    case 'mimic':
+    case 'ash_specter':
+    case 'miasma_aberration':
+    case 'living_nightmare':
+    case 'devourer_boss':
+    case 'lava_worm':
       return <Skull size={size} />;
     case 'engineer':
+    case 'steam_golem':
       return <Wrench size={size} />;
     case 'rune_mage':
+    case 'glyph_weaver':
+    case 'fate_scribe':
       return <BookOpen size={size} />;
     case 'berserker':
-      return <Flame size={size} />;
-    case 'void_executioner':
-      return <Swords size={size} />;
+    case 'orc':
+    case 'cursed_blacksmith':
+    case 'berserker_warrior':
+    case 'war_bear':
+      return <Hammer size={size} />;
     case 'paladin':
+    case 'sun':
+    case 'eclipse_herald':
+    case 'madness_eye':
       return <Sun size={size} />;
     case 'lancer':
+    case 'dark_valkyrie':
+    case 'fallen_seraph':
       return <Crosshair size={size} />;
     case 'bard':
+    case 'abyssal_siren':
       return <Music size={size} />;
     case 'ice_mage':
       return <Snowflake size={size} />;
     case 'goblin':
+    case 'abyssal_tentacle':
       return <Zap size={size} />;
-    case 'orc':
-      return <Hammer size={size} />;
-    case 'spider':
-      return <Skull size={size} />;
+    case 'astaroth_boss':
+      return <Crown size={size} />;
+    case 'basalt_golem':
+    case 'rune_construct':
+    case 'iron_gargoyle':
+    case 'megalith_guardian':
+    case 'void_blob':
+    case 'obsidian_colossus':
+    case 'chaos_praetorian':
+      return <Shield size={size} />;
     default:
       return <Sparkles size={size} />;
   }

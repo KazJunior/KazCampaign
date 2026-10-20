@@ -213,6 +213,11 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                           💥 Área 3x3
                         </span>
                       )}
+                      {skill.canTargetGround && (
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#10B981]/20 border border-[#10B981]/40 text-[#10B981]">
+                          🎯 Alvo no Solo
+                        </span>
+                      )}
                       {skill.id === 'resistencia_suprema' ? (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#56E59A]/15 border border-[#56E59A]/40 text-[#56E59A]">
                           {Math.round((skill.power || 0.5) * 100)}% Vida Máx

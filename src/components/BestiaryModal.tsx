@@ -17,6 +17,10 @@ import {
   Gem,
   Dice5,
   CheckCircle2,
+  Target,
+  Sun,
+  Crosshair,
+  Music,
 } from 'lucide-react';
 import { MONSTER_DEFINITIONS } from '../data/monsters';
 import type { MonsterDefinition } from '../data/monsters';
@@ -43,7 +47,7 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
   const [selectedMonster, setSelectedMonster] = useState<MonsterDefinition | null>(
     discoveredMonsters[0] || null
   );
-  const [filter, setFilter] = useState<'all' | 'normal' | 'bosses'>('all');
+  const [filter, setFilter] = useState<'all' | 'act1' | 'act2' | 'act3' | 'act4' | 'act5' | 'bosses'>('all');
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -52,7 +56,11 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
   }, [onClose]);
 
   const filteredMonsters = discoveredMonsters.filter((m) => {
-    if (filter === 'normal') return !m.isBoss && !m.isMiniBoss;
+    if (filter === 'act1') return m.act === 1;
+    if (filter === 'act2') return m.act === 2;
+    if (filter === 'act3') return m.act === 3;
+    if (filter === 'act4') return m.act === 4;
+    if (filter === 'act5') return m.act === 5;
     if (filter === 'bosses') return m.isBoss || m.isMiniBoss;
     return true;
   });
@@ -111,14 +119,54 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
             Todos ({discoveredMonsters.length})
           </button>
           <button
-            onClick={() => setFilter('normal')}
+            onClick={() => setFilter('act1')}
             className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
-              filter === 'normal'
+              filter === 'act1'
                 ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
                 : 'text-[#A7B0C4] hover:bg-[#1B2030]'
             }`}
           >
-            Normais ({discoveredMonsters.filter((m) => !m.isBoss && !m.isMiniBoss).length})
+            Ato I ({discoveredMonsters.filter((m) => m.act === 1).length})
+          </button>
+          <button
+            onClick={() => setFilter('act2')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
+              filter === 'act2'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
+                : 'text-[#A7B0C4] hover:bg-[#1B2030]'
+            }`}
+          >
+            Ato II ({discoveredMonsters.filter((m) => m.act === 2).length})
+          </button>
+          <button
+            onClick={() => setFilter('act3')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
+              filter === 'act3'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
+                : 'text-[#A7B0C4] hover:bg-[#1B2030]'
+            }`}
+          >
+            Ato III ({discoveredMonsters.filter((m) => m.act === 3).length})
+          </button>
+          <button
+            onClick={() => setFilter('act4')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
+              filter === 'act4'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
+                : 'text-[#A7B0C4] hover:bg-[#1B2030]'
+            }`}
+          >
+            Ato IV ({discoveredMonsters.filter((m) => m.act === 4).length})
+          </button>
+          <button
+            onClick={() => setFilter('act5')}
+            className={`px-3 py-1.5 rounded-lg font-bold transition-all shrink-0 ${
+              filter === 'act5'
+                ? 'bg-[#D4AD65] text-[#10131C] shadow font-black'
+                : 'text-[#A7B0C4] hover:bg-[#1B2030]'
+            }`}
+          >
+            Ato V ({discoveredMonsters.filter((m) => m.act === 5).length})
           </button>
           <button
             onClick={() => setFilter('bosses')}
@@ -461,27 +509,67 @@ function getCategoryIcon(category: ItemCategory, size = 12) {
 function getAvatarIcon(key: string, size = 20) {
   switch (key) {
     case 'goblin':
+    case 'abyssal_tentacle':
       return <Zap size={size} />;
     case 'orc':
+    case 'cursed_blacksmith':
+    case 'berserker_warrior':
+    case 'war_bear':
       return <Hammer size={size} />;
     case 'spider':
+    case 'mimic':
+    case 'devourer_boss':
+    case 'ash_specter':
+    case 'lava_worm':
+    case 'miasma_aberration':
+    case 'living_nightmare':
+    case 'doom_inquisitor':
       return <Skull size={size} />;
     case 'dark_mage':
+    case 'volcanic_drake':
+    case 'pyromancer':
+    case 'ember_elemental':
+    case 'cataclysm_avatar':
       return <Flame size={size} />;
     case 'spectral_wolf':
+    case 'hell_hound':
+    case 'thunder_wolf':
+    case 'magma_lizard':
+    case 'void_crawler':
       return <Footprints size={size} />;
     case 'basalt_golem':
+    case 'steam_golem':
+    case 'rune_construct':
+    case 'iron_gargoyle':
+    case 'megalith_guardian':
+    case 'void_blob':
+    case 'obsidian_colossus':
+    case 'chaos_praetorian':
       return <Shield size={size} />;
     case 'thorn_witch':
+    case 'storm_shaman':
+    case 'cosmic_parasite':
+    case 'glyph_weaver':
+    case 'fate_scribe':
       return <Sparkles size={size} />;
     case 'fallen_knight':
+    case 'rune_blade':
+    case 'astral_stalker':
+    case 'black_sun_templar':
+    case 'twilight_reaper':
+    case 'celestial_slayer':
       return <Swords size={size} />;
-    case 'mimic':
-      return <Skull size={size} />;
-    case 'volcanic_drake':
-      return <Flame size={size} />;
-    case 'devourer_boss':
-      return <Skull size={size} />;
+    case 'kobold_gunner':
+    case 'steppe_hunter':
+      return <Target size={size} />;
+    case 'eclipse_herald':
+    case 'madness_eye':
+      return <Sun size={size} />;
+    case 'dark_valkyrie':
+    case 'fallen_seraph':
+      return <Crosshair size={size} />;
+    case 'abyssal_siren':
+      return <Music size={size} />;
     case 'astaroth_boss':
       return <Crown size={size} />;
     default:
