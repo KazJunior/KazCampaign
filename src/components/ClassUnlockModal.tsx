@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, Shield, Target, HeartPulse, Footprints, Swords, Skull, Wrench, BookOpen, Flame, Check, Sun, Crosshair, Music, Snowflake } from 'lucide-react';
+import { Sparkles, Shield, Target, HeartPulse, Footprints, Swords, Skull, BookOpen, Flame, Check, Sun, Crosshair, Music, Snowflake, TreePine } from 'lucide-react';
 import { CLASS_DEFINITIONS } from '../data/units';
 import { soundManager } from '../utils/audio';
 
@@ -134,8 +134,10 @@ function getClassIcon(avatarKey: string, size = 24) {
       return <Swords size={size} />;
     case 'necromancer':
       return <Skull size={size} />;
+    case 'druid':
+      return <TreePine size={size} />;
     case 'engineer':
-      return <Wrench size={size} />;
+      return <TreePine size={size} />;
     case 'rune_mage':
       return <BookOpen size={size} />;
     case 'berserker':

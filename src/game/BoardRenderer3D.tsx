@@ -973,6 +973,40 @@ function createStatusAuras(unit: Unit): THREE.Group {
     auraGroup.add(slowMesh);
   }
 
+  // 8. Excess Heal (Subtle crimson ring at base)
+  const hasExcessHeal = unit.statusEffects?.some((e) => e.type === 'excess_heal' && e.duration > 0);
+  if (hasExcessHeal) {
+    const healDebuffGeo = new THREE.RingGeometry(0.31, 0.38, 12);
+    healDebuffGeo.rotateX(-Math.PI / 2);
+    const healDebuffMat = new THREE.MeshBasicMaterial({
+      color: 0xef4444,
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide,
+    });
+    const healDebuffMesh = new THREE.Mesh(healDebuffGeo, healDebuffMat);
+    healDebuffMesh.position.y = 0.045;
+    healDebuffMesh.name = 'auraRing';
+    auraGroup.add(healDebuffMesh);
+  }
+
+  // 9. Excess Shield (Subtle amber ring at base)
+  const hasExcessShield = unit.statusEffects?.some((e) => e.type === 'excess_shield' && e.duration > 0);
+  if (hasExcessShield) {
+    const shieldDebuffGeo = new THREE.RingGeometry(0.33, 0.41, 12);
+    shieldDebuffGeo.rotateX(-Math.PI / 2);
+    const shieldDebuffMat = new THREE.MeshBasicMaterial({
+      color: 0xf59e0b,
+      transparent: true,
+      opacity: 0.6,
+      side: THREE.DoubleSide,
+    });
+    const shieldDebuffMesh = new THREE.Mesh(shieldDebuffGeo, shieldDebuffMat);
+    shieldDebuffMesh.position.y = 0.048;
+    shieldDebuffMesh.name = 'auraRing';
+    auraGroup.add(shieldDebuffMesh);
+  }
+
   return auraGroup;
 }
 

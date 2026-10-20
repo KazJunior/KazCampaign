@@ -21,6 +21,7 @@ import {
   Snowflake,
   Wrench,
   BookOpen,
+  TreePine,
 } from 'lucide-react';
 
 interface SidePanelProps {
@@ -81,6 +82,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isPoisoned = !!poisonEffect;
   const isStealthed = selectedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
   const isDefDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+  const excessHealEffect = selectedUnit.statusEffects?.find((e) => e.type === 'excess_heal' && e.duration > 0);
+  const excessShieldEffect = selectedUnit.statusEffects?.find((e) => e.type === 'excess_shield' && e.duration > 0);
   const isBossMonster = Boolean(selectedUnit.isBoss || selectedUnit.isMiniBoss);
   const isStunImmuneConsecutive =
     isBossMonster &&
@@ -225,6 +228,16 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               {activeBuffAtk && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F97316]/20 border border-[#F97316]/40 text-[#F97316] flex items-center gap-1">
                   🔥 Fúria (+{activeBuffAtk.value}% Dano)
+                </span>
+              )}
+              {excessHealEffect && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#EF4444]/20 border border-[#EF4444]/40 text-[#EF4444] flex items-center gap-1">
+                  💔 Cura excessiva (-50% cura, {excessHealEffect.duration}T)
+                </span>
+              )}
+              {excessShieldEffect && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F59E0B]/20 border border-[#F59E0B]/40 text-[#F59E0B] flex items-center gap-1">
+                  🛡️ Escudo excessivo (-50% escudo, {excessShieldEffect.duration}T)
                 </span>
               )}
             </div>
@@ -450,6 +463,8 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'devourer_boss':
     case 'lava_worm':
       return <Skull size={size} />;
+    case 'druid':
+      return <TreePine size={size} />;
     case 'engineer':
     case 'steam_golem':
       return <Wrench size={size} />;

@@ -102,8 +102,9 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'necromancer':
       buildNecromancerMini(char);
       break;
+    case 'druid':
     case 'engineer':
-      buildEngineerMini(char);
+      buildDruidMini(char);
       break;
     case 'rune_mage':
       buildRuneMageMini(char);
@@ -714,42 +715,43 @@ function buildNecromancerMini(group: THREE.Group) {
 }
 
 // -------------------------------------------------------------
-// 10. ENGINEER (Goggles, Boiler Backpack & Wrench-Hammer)
+// 10. DRUID (Emerald Nature Robes, Horns/Floral Antlers & Wooden Staff)
 // -------------------------------------------------------------
-function buildEngineerMini(group: THREE.Group) {
-  const leatherMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.8 });
-  const brassMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.85, roughness: 0.25 });
+function buildDruidMini(group: THREE.Group) {
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0x065f46, roughness: 0.6 });
+  const barkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+  const leafMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.5 });
 
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.14, 0.32, 8), leatherMat);
-  torso.position.y = 0.36;
-  group.add(torso);
+  // Robe
+  const robe = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.55, 8), robeMat);
+  robe.position.y = 0.32;
+  group.add(robe);
 
-  // Boiler Backpack
-  const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.28, 8), brassMat);
-  boiler.position.set(0, 0.42, -0.15);
-  group.add(boiler);
+  // Torso / Mantle
+  const mantle = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.16, 0.22, 8), barkMat);
+  mantle.position.y = 0.44;
+  group.add(mantle);
 
-  // Head with Aviator Cap & Dual Goggles
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), leatherMat);
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshStandardMaterial({ color: 0xfde047 }));
   head.position.y = 0.62;
   group.add(head);
 
-  const goggleMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x38bdf8, emissiveIntensity: 0.9 });
-  const g1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 8), goggleMat);
-  g1.rotateX(Math.PI / 2);
-  g1.position.set(-0.05, 0.63, 0.13);
-  const g2 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.03, 8), goggleMat);
-  g2.rotateX(Math.PI / 2);
-  g2.position.set(0.05, 0.63, 0.13);
-  group.add(g1, g2);
+  // Nature Horns / Antlers
+  const horn1 = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 6), barkMat);
+  horn1.position.set(-0.08, 0.73, 0);
+  horn1.rotateZ(0.4);
+  const horn2 = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 6), barkMat);
+  horn2.position.set(0.08, 0.73, 0);
+  horn2.rotateZ(-0.4);
+  group.add(horn1, horn2);
 
-  // Wrench-Hammer
-  const wrench = new THREE.Mesh(
-    new THREE.BoxGeometry(0.05, 0.58, 0.05),
-    new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.9 })
-  );
-  wrench.position.set(0.25, 0.42, 0.08);
-  group.add(wrench);
+  // Wooden Staff with glowing nature crystal
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 0.75, 8), barkMat);
+  staff.position.set(0.22, 0.4, 0.08);
+  const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.06), leafMat);
+  crystal.position.set(0.22, 0.76, 0.08);
+  group.add(staff, crystal);
 }
 
 // -------------------------------------------------------------

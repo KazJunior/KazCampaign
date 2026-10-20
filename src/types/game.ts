@@ -22,7 +22,7 @@ export type DamageType = 'physical' | 'magical' | 'healing';
 
 export type SkillCategory = 'attack' | 'defense' | 'support' | 'passive';
 
-export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def';
+export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -52,6 +52,10 @@ export interface Skill {
   teleportToTarget?: boolean; // Moves caster to adjacent tile next to target
   cleansesDebuffs?: boolean; // Removes debuffs from target ally
   canTargetGround?: boolean; // Allows targeting empty tiles on battlefield to damage enemies around (e.g. Meteoro)
+  hpCostPercent?: number; // % of current HP sacrificed by caster to activate skill (Berserker)
+  resetsActionOnKill?: boolean; // Kills reset caster's attack and move action immediately (Carrasco do Vazio)
+  grantsExtraTurn?: boolean; // Grants target ally an immediate additional turn (Bardo)
+  createsObstacle?: ObstacleType; // Spawns an obstacle on targeted tile (Mago de Gelo)
   iconName: string;
   isPassive?: boolean;
   level?: number; // Skill evolution level (1, 2, 3...)

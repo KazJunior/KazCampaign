@@ -220,6 +220,16 @@ export function decideMonsterAction(
           }
         }
 
+        // Taunt mechanic: prioritize taunting targets, penalize others if a taunting hero exists
+        const tauntingHero = allAlivePlayers.find((p) => p.statusEffects?.some((e) => e.type === 'taunt' && e.duration > 0));
+        if (tauntingHero) {
+          if (target.id === tauntingHero.id) {
+            score += 1500;
+          } else {
+            score -= 1000;
+          }
+        }
+
         // Target squishies
         if (target.className === 'mago' || target.className === 'curandeiro') {
           score += 45;

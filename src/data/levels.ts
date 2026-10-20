@@ -561,10 +561,10 @@ export const LEVELS: LevelConfig[] = [
     environment: 'fortress',
     width: 10,
     height: 8,
-    description: 'Vulcanus, Titã das Forjas, ruge com fúria de bronze e fogo! Derrote-o para desbloquear o Engenheiro.',
+    description: 'Vulcanus, Titã das Forjas, ruge com fúria de bronze e fogo! Derrote-o para desbloquear o Druída.',
     objectives: [
       'Derrote Vulcanus, Titã das Forjas (BOSS PODEROSO)!',
-      'Desbloqueie a classe Engenheiro.',
+      'Desbloqueie a classe Druída.',
       'Sobreviva ao impacto abissal e ondas de calor vulcânico.',
     ],
     grid: createGrid(10, 8, 'stone', {

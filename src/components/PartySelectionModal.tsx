@@ -10,7 +10,6 @@ import {
   Play,
   Sparkles,
   Skull,
-  Wrench,
   BookOpen,
   Flame,
   HelpCircle,
@@ -19,6 +18,7 @@ import {
   Snowflake,
   Sun,
   Crosshair,
+  TreePine,
   X,
 } from 'lucide-react';
 
@@ -325,8 +325,10 @@ function getClassIcon(avatarKey: string, size = 20) {
       return <Swords size={size} />;
     case 'necromancer':
       return <Skull size={size} />;
+    case 'druid':
+      return <TreePine size={size} />;
     case 'engineer':
-      return <Wrench size={size} />;
+      return <TreePine size={size} />;
     case 'rune_mage':
       return <BookOpen size={size} />;
     case 'berserker':

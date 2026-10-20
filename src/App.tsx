@@ -15,6 +15,7 @@ import type {
   SelectedAction,
   Skill,
   StatType,
+  StatusEffect,
   TileData,
   Unit,
   UnitProgression,
@@ -1518,36 +1519,88 @@ export function App() {
 
       let currentUnitHp = selectedUnit.currentHp;
 
-      // Special: Pacto de Sangue sacrifices 20% HP (down to at least 1 HP)
-      if (skill.id === 'pacto_de_sangue') {
-        const hpCost = Math.max(1, Math.round(selectedUnit.currentHp * 0.2));
+      // Special: Pacto de Sangue / hpCostPercent sacrifices HP (down to at least 1 HP)
+      const hpCostPct = skill.hpCostPercent ?? (skill.id === 'pacto_de_sangue' ? 20 : 0);
+      if (hpCostPct > 0) {
+        const hpCost = Math.max(1, Math.round(selectedUnit.currentHp * (hpCostPct / 100)));
         currentUnitHp = Math.max(1, currentUnitHp - hpCost);
         addFloatingNumber(selectedUnit.x, selectedUnit.y, `-${hpCost} (Sacrifício)`, 'status', '#E65353');
       }
 
       // Special: Resistência Suprema recovers 50% max HP (or scaled if evolved)
+      const hadExcessHeal = selectedUnit.statusEffects?.some(
+        (e) => e.type === 'excess_heal' && e.duration > 0
+      );
+      const hadExcessShield = selectedUnit.statusEffects?.some(
+        (e) => e.type === 'excess_shield' && e.duration > 0
+      );
+
+      let isHealSkill = false;
       if (skill.id === 'resistencia_suprema') {
+        isHealSkill = true;
         const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
-        const healAmt = Math.max(1, Math.round(selectedUnit.maxHp * ratio));
+        let healAmt = Math.max(1, Math.round(selectedUnit.maxHp * ratio));
+        if (hadExcessHeal) {
+          healAmt = Math.max(1, Math.round(healAmt * 0.5));
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+        } else {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva', 'status', '#F59E0B');
+        }
         currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
         addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt} (${Math.round(ratio * 100)}% HP)`, 'healing', '#56E59A');
       } else if (skill.damageType === 'healing' && skill.power && skill.power > 0) {
-        const healAmt = Math.max(1, Math.round(selectedUnit.mag * skill.power));
+        isHealSkill = true;
+        let healAmt = Math.max(1, Math.round(selectedUnit.mag * skill.power));
+        if (hadExcessHeal) {
+          healAmt = Math.max(1, Math.round(healAmt * 0.5));
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+        } else {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva', 'status', '#F59E0B');
+        }
         currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
         addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt}`, 'healing', '#56E59A');
       }
 
-      const effect = skill.statusEffect;
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
-      if (effect) {
-        if (effect.type === 'shield') {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${effect.value} Escudo`, 'shield', '#38BDF8');
-        } else if (effect.type === 'buff_atk') {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${effect.value}% Dano`, 'status', '#F97316');
-        } else if (effect.type === 'invisible') {
+      let givesShield = false;
+
+      const handleSelfStatusEffect = (effToProcess?: StatusEffect) => {
+        if (!effToProcess) return;
+        const eff = { ...effToProcess };
+        if (eff.type === 'shield') {
+          givesShield = true;
+          if (hadExcessShield) {
+            eff.value = Math.max(1, Math.round(eff.value * 0.5));
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+          } else {
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo', 'status', '#F59E0B');
+          }
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+        } else if (eff.type === 'buff_atk') {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value}% Dano`, 'status', '#F97316');
+        } else if (eff.type === 'invisible') {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Invisível!', 'status', '#8B5CF6');
+        } else if (eff.type === 'taunt') {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Provocando Inimigos!', 'status', '#EF4444');
         }
-        updatedEffects = [...updatedEffects.filter((e) => e.type !== effect.type), { ...effect }];
+        updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), eff];
+      };
+
+      handleSelfStatusEffect(skill.statusEffect);
+      handleSelfStatusEffect(skill.secondaryStatusEffect);
+
+      if (isHealSkill) {
+        updatedEffects = [
+          ...updatedEffects.filter((e) => e.type !== 'excess_heal'),
+          { type: 'excess_heal', duration: 2, value: 50 },
+        ];
+      }
+
+      if (givesShield) {
+        updatedEffects = [
+          ...updatedEffects.filter((e) => e.type !== 'excess_shield'),
+          { type: 'excess_shield', duration: 2, value: 50 },
+        ];
       }
 
       const updatedSkills = selectedUnit.skills.map((s) =>
@@ -1570,6 +1623,14 @@ export function App() {
 
     // 3. Offensive / Targeted Combat Actions
     let attackerEffects = [...(selectedUnit.statusEffects || [])];
+    let currentAttackerHp = selectedUnit.currentHp;
+
+    // Offensive sacrifice skills (e.g. Berserker attacks)
+    if (skill?.hpCostPercent && skill.hpCostPercent > 0) {
+      const hpCost = Math.max(1, Math.round(currentAttackerHp * (skill.hpCostPercent / 100)));
+      currentAttackerHp = Math.max(1, currentAttackerHp - hpCost);
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, `-${hpCost} (Sacrifício)`, 'status', '#E65353');
+    }
 
     // Attacking breaks invisibility (surprise sneak attack!)
     const wasInvisible = attackerEffects.some((e) => e.type === 'invisible' && e.duration > 0);
@@ -1638,6 +1699,27 @@ export function App() {
       await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius, skill, targetAoEPoint || undefined);
     }
 
+    // Ice / Obstacle Creation (Mago de Gelo)
+    if (skill?.createsObstacle) {
+      const obsType = skill.createsObstacle;
+      setGrid((prevGrid) =>
+        prevGrid.map((row, rY) =>
+          row.map((cell, cX) => {
+            if (cX === aoeCenter.x && rY === aoeCenter.y) {
+              return {
+                ...cell,
+                obstacle: obsType,
+                isWalkable: false,
+                blocksVision: obsType === 'wall' || obsType === 'ruins' || obsType === 'pillar',
+              };
+            }
+            return cell;
+          })
+        )
+      );
+      addFloatingNumber(aoeCenter.x, aoeCenter.y, 'Barreira Sólida!', 'status', '#38BDF8');
+    }
+
     const aoeRadius = skill?.aoeRadius || 0;
     let targetsToHit: Unit[] = [];
     if (aoeRadius > 0) {
@@ -1686,7 +1768,7 @@ export function App() {
           } else {
             addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
             actualDmg -= sh.value;
-            sh.value = 0;
+            actualDmg = 0;
           }
           if (sh.value <= 0) {
             currentEffects = currentEffects.filter((_, idx) => idx !== sIdx);
@@ -1695,33 +1777,81 @@ export function App() {
       }
 
       let newHp = t.currentHp;
+      let allyHasMoved = t.hasMoved;
+      let allyHasAttacked = t.hasAttacked;
+
       if (dmgResult.damageType === 'healing') {
-        if (actualDmg > 0) {
-          newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
-          addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
+        const hadExcessHeal = currentEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
+        const hadExcessShield = currentEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+        let isHealed = false;
+        let isShielded = false;
+
+        const isHealingSpell = (skill && (skill.power > 0 || skill.id === 'resistencia_suprema' || skill.id === 'ressurreicao_mistica')) || actualDmg > 0;
+
+        if (isHealingSpell) {
+          isHealed = true;
+          if (actualDmg > 0) {
+            newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
+            addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
+          }
+          if (hadExcessHeal) {
+            addFloatingNumber(t.x, t.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+          } else {
+            addFloatingNumber(t.x, t.y, 'Cura excessiva', 'status', '#F59E0B');
+          }
         }
 
-        // Support status effects for allies in healing/support skills (Shield, Buff Atk, Invisible, etc.)
-        if (skill?.statusEffect) {
-          const eff = skill.statusEffect;
-          currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+        // Extra Turn mechanic granted to an ally (Bardo)
+        if (skill?.grantsExtraTurn && t.faction === 'player' && t.id !== selectedUnit.id) {
+          allyHasMoved = false;
+          allyHasAttacked = false;
+          addFloatingNumber(t.x, t.y, '+1 Turno / Ação!', 'status', '#F59E0B');
+          soundManager.playUpgrade();
+        }
+
+        // Support status effects for allies in healing/support skills (Shield, Buff Atk, Invisible, Taunt, etc.)
+        const applyTargetSupportEffect = (effToProcess?: StatusEffect) => {
+          if (!effToProcess) return;
+          const eff = { ...effToProcess };
           if (eff.type === 'shield') {
+            isShielded = true;
+            if (hadExcessShield) {
+              eff.value = Math.max(1, Math.round(eff.value * 0.5));
+              addFloatingNumber(t.x, t.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+            } else {
+              addFloatingNumber(t.x, t.y, 'Escudo excessivo', 'status', '#F59E0B');
+            }
             addFloatingNumber(t.x, t.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
           } else if (eff.type === 'buff_atk') {
             addFloatingNumber(t.x, t.y, `+${eff.value}% Dano`, 'status', '#F97316');
           } else if (eff.type === 'invisible') {
             addFloatingNumber(t.x, t.y, 'Invisível!', 'status', '#8B5CF6');
+          } else if (eff.type === 'taunt') {
+            addFloatingNumber(t.x, t.y, 'Provocação!', 'status', '#EF4444');
           }
+          currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), eff];
+        };
+
+        if (skill?.statusEffect) {
+          applyTargetSupportEffect(skill.statusEffect);
         }
 
         if (skill?.secondaryStatusEffect) {
-          const eff2 = skill.secondaryStatusEffect;
-          currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-          if (eff2.type === 'shield') {
-            addFloatingNumber(t.x, t.y, `+${eff2.value} Escudo`, 'shield', '#38BDF8');
-          } else if (eff2.type === 'buff_atk') {
-            addFloatingNumber(t.x, t.y, `+${eff2.value}% Dano`, 'status', '#F97316');
-          }
+          applyTargetSupportEffect(skill.secondaryStatusEffect);
+        }
+
+        if (isHealed) {
+          currentEffects = [
+            ...currentEffects.filter((e) => e.type !== 'excess_heal'),
+            { type: 'excess_heal', duration: 2, value: 50 },
+          ];
+        }
+
+        if (isShielded) {
+          currentEffects = [
+            ...currentEffects.filter((e) => e.type !== 'excess_shield'),
+            { type: 'excess_shield', duration: 2, value: 50 },
+          ];
         }
       } else {
         newHp = Math.max(0, t.currentHp - actualDmg);
@@ -1763,6 +1893,7 @@ export function App() {
             }
             else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
             else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+            else if (eff.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
           }
         }
 
@@ -1783,6 +1914,7 @@ export function App() {
             }
             else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
             else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+            else if (eff2.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
           }
         }
       }
@@ -1795,6 +1927,8 @@ export function App() {
               isDead: newHp === 0,
               statusEffects: currentEffects,
               lastStunTurn: newLastStunTurn,
+              hasMoved: allyHasMoved,
+              hasAttacked: allyHasAttacked,
             }
           : u
       );
@@ -1802,13 +1936,13 @@ export function App() {
 
     // Retrieve attacker's updated state from the loop (in case attacker healed or shielded themselves)
     const attackerAfterLoop = updatedUnits.find((u) => u.id === selectedUnit.id);
-    let finalAttackerHp = attackerAfterLoop ? attackerAfterLoop.currentHp : selectedUnit.currentHp;
+    let finalAttackerHp = attackerAfterLoop ? attackerAfterLoop.currentHp : currentAttackerHp;
     let finalAttackerEffects = attackerAfterLoop ? attackerAfterLoop.statusEffects : attackerEffects;
     if (wasInvisible) {
       finalAttackerEffects = finalAttackerEffects.filter((e) => e.type !== 'invisible');
     }
 
-    // LIFESTEAL (Dreno de Vida / Dreno de Seiva / Sedenta de Runas)
+    // LIFESTEAL
     const lifestealPct =
       skill?.lifestealPercent ??
       (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
@@ -1818,7 +1952,14 @@ export function App() {
         : 0);
 
     if (lifestealPct > 0 && totalDmgDone > 0) {
-      const healAmt = Math.max(1, Math.round(totalDmgDone * (lifestealPct / 100)));
+      const hadExcessHeal = finalAttackerEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
+      let healAmt = Math.max(1, Math.round(totalDmgDone * (lifestealPct / 100)));
+      if (hadExcessHeal) {
+        healAmt = Math.max(1, Math.round(healAmt * 0.5));
+        addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+      } else {
+        addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva', 'status', '#F59E0B');
+      }
       const newHp = Math.min(selectedUnit.maxHp, finalAttackerHp + healAmt);
       const actualHealed = newHp - finalAttackerHp;
       if (actualHealed > 0) {
@@ -1826,23 +1967,32 @@ export function App() {
         addFloatingNumber(finalAttackerX, finalAttackerY, `+${actualHealed} (Dreno)`, 'healing', '#56E59A');
         soundManager.playHeal();
       }
+      finalAttackerEffects = [
+        ...finalAttackerEffects.filter((e) => e.type !== 'excess_heal'),
+        { type: 'excess_heal', duration: 2, value: 50 },
+      ];
     }
 
-    // Recuo Tático: grants extra repositioning / movement after shooting
-    const canMoveAgain = skill?.id === 'recuo_tatico';
+    // Repositioning / movement after skill (Recuo Tático / Recuo da Lança)
+    const canMoveAgain =
+      skill?.id === 'recuo_tatico' ||
+      skill?.id?.startsWith('recuo_tatico') ||
+      skill?.id === 'recuo_da_lanca' ||
+      skill?.id?.startsWith('recuo_da_lanca');
     if (canMoveAgain) {
       addFloatingNumber(finalAttackerX, finalAttackerY, 'Recuo Disponível!', 'status', '#60A5FA');
     }
 
-    // EXTRA TURN MECHANIC: Carrasco do Vazio Ultimate (Decapitação do Vazio)
-    // Ao abater um alvo com a suprema, ganha mais um turno imediatamente (movimento e ação)
-    const isVoidExecutionKill =
-      (skill?.id === 'decapitacao_do_vazio' || skill?.id?.startsWith('decapitacao_do_vazio')) &&
+    // ACTION RESET MECHANIC ON KILL: Carrasco do Vazio or any skill with resetsActionOnKill
+    const isExecutionKill =
+      (skill?.resetsActionOnKill ||
+        skill?.id === 'decapitacao_do_vazio' ||
+        skill?.id?.startsWith('decapitacao_do_vazio')) &&
       totalKills > 0;
 
-    if (isVoidExecutionKill) {
+    if (isExecutionKill) {
       soundManager.playUpgrade();
-      addFloatingNumber(finalAttackerX, finalAttackerY, 'EXECUÇÃO DO VAZIO! +1 TURNO!', 'status', '#C77DFF');
+      addFloatingNumber(finalAttackerX, finalAttackerY, 'EXECUÇÃO! +1 AÇÃO!', 'status', '#C77DFF');
     }
 
     updatedUnits = updatedUnits.map((u) => {
@@ -1855,8 +2005,8 @@ export function App() {
           x: finalAttackerX,
           y: finalAttackerY,
           currentHp: finalAttackerHp,
-          hasMoved: isVoidExecutionKill ? false : (canMoveAgain ? false : u.hasMoved),
-          hasAttacked: isVoidExecutionKill ? false : true,
+          hasMoved: isExecutionKill ? false : (canMoveAgain ? false : u.hasMoved),
+          hasAttacked: isExecutionKill ? false : true,
           skills: updatedSkills,
           statusEffects: finalAttackerEffects,
           damageDealt: u.damageDealt + totalDmgDone,
@@ -1874,7 +2024,7 @@ export function App() {
     setActiveSkill(null);
     setIsAnimatingAction(false);
 
-    if (isVoidExecutionKill) {
+    if (isExecutionKill) {
       setSelectedUnitId(selectedUnit.id);
     }
 
@@ -1990,21 +2140,61 @@ export function App() {
 
               let currentEffects = [...(freshTarget.statusEffects || [])];
               let newHp = freshTarget.currentHp;
+              const hadExcessHeal = currentEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
+              const hadExcessShield = currentEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+              let isHealed = false;
+              let isShielded = false;
 
               if (skill.damageType === 'healing' && skill.power > 0) {
-                const healAmount = Math.max(1, Math.round(freshAttacker.mag * skill.power));
+                isHealed = true;
+                let healAmount = Math.max(1, Math.round(freshAttacker.mag * skill.power));
+                if (hadExcessHeal) {
+                  healAmount = Math.max(1, Math.round(healAmount * 0.5));
+                  addFloatingNumber(freshTarget.x, freshTarget.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+                } else {
+                  addFloatingNumber(freshTarget.x, freshTarget.y, 'Cura excessiva', 'status', '#F59E0B');
+                }
                 newHp = Math.min(freshTarget.maxHp, freshTarget.currentHp + healAmount);
                 addFloatingNumber(freshTarget.x, freshTarget.y, `+${healAmount}`, 'healing', '#56E59A');
               }
 
-              if (skill.statusEffect) {
-                const eff = skill.statusEffect;
-                currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+              const applyMonsterSupportEffect = (effToProcess?: StatusEffect) => {
+                if (!effToProcess) return;
+                const eff = { ...effToProcess };
                 if (eff.type === 'shield') {
+                  isShielded = true;
+                  if (hadExcessShield) {
+                    eff.value = Math.max(1, Math.round(eff.value * 0.5));
+                    addFloatingNumber(freshTarget.x, freshTarget.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+                  } else {
+                    addFloatingNumber(freshTarget.x, freshTarget.y, 'Escudo excessivo', 'status', '#F59E0B');
+                  }
                   addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
                 } else if (eff.type === 'buff_atk') {
                   addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value}% Dano`, 'status', '#F97316');
                 }
+                currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), eff];
+              };
+
+              if (skill.statusEffect) {
+                applyMonsterSupportEffect(skill.statusEffect);
+              }
+              if (skill.secondaryStatusEffect) {
+                applyMonsterSupportEffect(skill.secondaryStatusEffect);
+              }
+
+              if (isHealed) {
+                currentEffects = [
+                  ...currentEffects.filter((e) => e.type !== 'excess_heal'),
+                  { type: 'excess_heal', duration: 2, value: 50 },
+                ];
+              }
+
+              if (isShielded) {
+                currentEffects = [
+                  ...currentEffects.filter((e) => e.type !== 'excess_shield'),
+                  { type: 'excess_shield', duration: 2, value: 50 },
+                ];
               }
 
               currentUnits = currentUnits.map((u) =>
@@ -2142,12 +2332,20 @@ export function App() {
 
               // Monster Lifesteal (Dreno de Seiva / Dreno de Vida)
               let finalMonsterHp = freshAttacker.currentHp;
+              let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
               const aiLifestealPct =
                 skill?.lifestealPercent ??
                 (skill?.id === 'dreno_de_seiva' || skill?.id === 'dreno_de_vida' ? 100 : 0);
 
               if (aiLifestealPct > 0 && totalAiDmgDone > 0) {
-                const healAmt = Math.max(1, Math.round(totalAiDmgDone * (aiLifestealPct / 100)));
+                const hadExcessHeal = finalMonsterEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
+                let healAmt = Math.max(1, Math.round(totalAiDmgDone * (aiLifestealPct / 100)));
+                if (hadExcessHeal) {
+                  healAmt = Math.max(1, Math.round(healAmt * 0.5));
+                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+                } else {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Cura excessiva', 'status', '#F59E0B');
+                }
                 const newHp = Math.min(freshAttacker.maxHp, finalMonsterHp + healAmt);
                 const actualHealed = newHp - finalMonsterHp;
                 if (actualHealed > 0) {
@@ -2155,12 +2353,16 @@ export function App() {
                   addFloatingNumber(finalMonsterX, finalMonsterY, `+${actualHealed} (Dreno)`, 'healing', '#56E59A');
                   soundManager.playHeal();
                 }
+                finalMonsterEffects = [
+                  ...finalMonsterEffects.filter((e) => e.type !== 'excess_heal'),
+                  { type: 'excess_heal', duration: 2, value: 50 },
+                ];
               }
 
-              // Update freshAttacker position and HP
+              // Update freshAttacker position, HP and status effects
               currentUnits = currentUnits.map((u) =>
                 u.id === freshAttacker.id
-                  ? { ...u, x: finalMonsterX, y: finalMonsterY, currentHp: finalMonsterHp }
+                  ? { ...u, x: finalMonsterX, y: finalMonsterY, currentHp: finalMonsterHp, statusEffects: finalMonsterEffects }
                   : u
               );
             }

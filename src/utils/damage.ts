@@ -43,17 +43,25 @@ export function calculateBaseDamage(
     const damageType: DamageType = skill.damageType;
 
     if (damageType === 'healing') {
+      let healAmount = 0;
       if (skill.id === 'resistencia_suprema') {
         const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
-        const healAmount = Math.max(1, Math.round(attacker.maxHp * ratio));
-        return { base: healAmount, damageType: 'healing' };
+        healAmount = Math.max(1, Math.round(attacker.maxHp * ratio));
+      } else if (skill.id === 'ressurreicao_mistica') {
+        healAmount = Math.max(1, target.maxHp - target.currentHp);
+      } else {
+        const power = skill.power ?? 0;
+        healAmount = Math.round(attacker.mag * power);
       }
-      if (skill.id === 'ressurreicao_mistica') {
-        const healAmount = Math.max(1, target.maxHp - target.currentHp);
-        return { base: healAmount, damageType: 'healing' };
+
+      // Excess Heal Debuff: heals only half (50%) if healed within duration
+      const hasExcessHeal = target.statusEffects?.some(
+        (e) => e.type === 'excess_heal' && e.duration > 0
+      );
+      if (hasExcessHeal) {
+        healAmount = Math.max(1, Math.round(healAmount * 0.5));
       }
-      const power = skill.power ?? 0;
-      const healAmount = Math.round(attacker.mag * power);
+
       return { base: healAmount, damageType: 'healing' };
     }
 
