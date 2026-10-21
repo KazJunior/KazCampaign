@@ -2177,6 +2177,8 @@ export function App() {
         addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value}% Dano`, 'status', '#F97316');
       } else if (cEff.type === 'invisible') {
         addFloatingNumber(finalAttackerX, finalAttackerY, 'Invisível!', 'status', '#8B5CF6');
+      } else if (cEff.type === 'taunt') {
+        addFloatingNumber(finalAttackerX, finalAttackerY, 'Provocando Inimigos!', 'status', '#EF4444');
       }
       finalAttackerEffects = [...finalAttackerEffects.filter((e) => e.type !== cEff.type), cEff];
     }
@@ -2575,6 +2577,16 @@ export function App() {
                   ...finalMonsterEffects.filter((e) => e.type !== 'excess_heal'),
                   { type: 'excess_heal', duration: 1, value: 50 },
                 ];
+              }
+
+              if (choice.skillToUse?.casterStatusEffect) {
+                const cEff = { ...choice.skillToUse.casterStatusEffect };
+                if (cEff.type === 'shield') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+                } else if (cEff.type === 'taunt') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Provocando!', 'status', '#EF4444');
+                }
+                finalMonsterEffects = [...finalMonsterEffects.filter((e) => e.type !== cEff.type), cEff];
               }
 
               // Update freshAttacker position, HP and status effects

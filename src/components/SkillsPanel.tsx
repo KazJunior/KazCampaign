@@ -277,7 +277,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                   )}
                   {Boolean(skill.casterStatusEffect) && (
                     <span className="text-[10px] font-medium text-[#34D399]">
-                      🛡️ Auto-Efeito: +{skill.casterStatusEffect!.value} {skill.casterStatusEffect!.type === 'shield' ? 'Escudo' : skill.casterStatusEffect!.type}
+                      Auto-Efeito: {skill.casterStatusEffect!.type === 'taunt' ? `📢 Provocação (${skill.casterStatusEffect!.duration}T)` : `+${skill.casterStatusEffect!.value} ${skill.casterStatusEffect!.type === 'shield' ? 'Escudo' : skill.casterStatusEffect!.type}`}
                     </span>
                   )}
                 </div>

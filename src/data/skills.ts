@@ -42,7 +42,7 @@ export const SKILLS: Record<string, Skill> = {
   postura_defensiva: {
     id: 'postura_defensiva',
     name: 'Muralha de Escudos',
-    description: 'Finca os pés no chão, erguendo um escudo massivo de 60 de absorção e forçando os inimigos ao redor a focarem seus ataques em você por 2 turnos.',
+    description: 'Finca os pés no chão, erguendo um escudo massivo de 60 de absorção por 3 turnos.',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -53,14 +53,13 @@ export const SKILLS: Record<string, Skill> = {
     currentCooldown: 0,
     targetType: 'self',
     statusEffect: { type: 'shield', duration: 3, value: 60 },
-    secondaryStatusEffect: { type: 'taunt', duration: 2, value: 1 },
     requiredLevel: 2,
     iconName: 'Shield',
   },
   provocacao: {
     id: 'provocacao',
     name: 'Grito de Provocação',
-    description: 'Ruge furiosamente contra os inimigos, atraindo a atenção total das ameaças (Provocação por 2 turnos) e ganhando um escudo de 45 de absorção.',
+    description: 'Ruge furiosamente contra os inimigos, atraindo a atenção total das ameaças (Provocação por 2 turnos).',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -71,7 +70,6 @@ export const SKILLS: Record<string, Skill> = {
     currentCooldown: 0,
     targetType: 'self',
     statusEffect: { type: 'taunt', duration: 2, value: 1 },
-    secondaryStatusEffect: { type: 'shield', duration: 2, value: 45 },
     requiredLevel: 3,
     iconName: 'AlertTriangle',
   },
@@ -165,7 +163,7 @@ export const SKILLS: Record<string, Skill> = {
   resistencia_suprema: {
     id: 'resistencia_suprema',
     name: 'Fortaleza Inabalável (Suprema)',
-    description: 'Habilidade suprema: Regenera 50% da vida máxima instantaneamente, ganha um escudo maciço de 100 de absorção e retém todo o agro inimigo por 2 turnos.',
+    description: 'Habilidade suprema: Regenera 50% da vida máxima instantaneamente e retém todo o agro inimigo com Provocação por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
     power: 0.5,
@@ -175,8 +173,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'shield', duration: 2, value: 100 },
-    secondaryStatusEffect: { type: 'taunt', duration: 2, value: 1 },
+    statusEffect: { type: 'taunt', duration: 2, value: 1 },
     requiredLevel: 8,
     iconName: 'HeartPulse',
   },
@@ -379,7 +376,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'burn', duration: 2, value: 2 },
@@ -397,7 +394,7 @@ export const SKILLS: Record<string, Skill> = {
     aoeRadius: 1,
     aoeType: 'cone',
     canTargetGround: true,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     statusEffect: { type: 'burn', duration: 2, value: 2 },
@@ -2367,7 +2364,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'ally',
     statusEffect: { type: 'shield', duration: 3, value: 65 },
@@ -2384,7 +2381,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'ally',
     statusEffect: { type: 'shield', duration: 2, value: 30 },
@@ -2474,7 +2471,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 3,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'ally',
     statusEffect: { type: 'shield', duration: 3, value: 65 },
@@ -2491,7 +2488,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'ally',
     statusEffect: { type: 'shield', duration: 2, value: 30 },
@@ -2905,7 +2902,7 @@ export const SKILLS: Record<string, Skill> = {
   aura_de_retribuicao: {
     id: 'aura_de_retribuicao',
     name: 'Aura de Desafio Sagrado',
-    description: 'Irradia glória radiante forçando todos os inimigos a focarem seus ataques no Paladino (Provocação por 2 turnos) e erguendo escudo de 60 de absorção por 2 turnos.',
+    description: 'Irradia glória radiante forçando todos os inimigos a focarem seus ataques no Paladino (Provocação por 2 turnos).',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -2916,7 +2913,6 @@ export const SKILLS: Record<string, Skill> = {
     currentCooldown: 0,
     targetType: 'self',
     statusEffect: { type: 'taunt', duration: 2, value: 1 },
-    secondaryStatusEffect: { type: 'shield', duration: 2, value: 60 },
     requiredLevel: 3,
     iconName: 'AlertTriangle',
   },
@@ -2956,19 +2952,18 @@ export const SKILLS: Record<string, Skill> = {
   },
   imposicao_da_justica: {
     id: 'imposicao_da_justica',
-    name: 'Baluarte da Graça Divina (Suprema)',
-    description: 'Habilidade suprema: Ergue o estandarte celestial, concedendo ao Paladino Provocação absoluta por 2 turnos e um escudo impenetrável de 110 pontos por 2 turnos.',
-    damageType: 'healing',
-    category: 'defense',
-    power: 0,
-    rangeMin: 0,
-    rangeMax: 0,
+    name: 'Imposição da Justiça (Suprema)',
+    description: 'Habilidade suprema: Desfere um golpe devastador de justiça sagrada contra o inimigo (alcance até 2), causando 260% de dano físico e ativando Provocação por 2 turnos.',
+    damageType: 'physical',
+    category: 'attack',
+    power: 2.6,
+    rangeMin: 1,
+    rangeMax: 2,
     aoeRadius: 0,
     cooldownMax: 5,
     currentCooldown: 0,
-    targetType: 'self',
-    statusEffect: { type: 'shield', duration: 2, value: 110 },
-    secondaryStatusEffect: { type: 'taunt', duration: 2, value: 1 },
+    targetType: 'enemy',
+    casterStatusEffect: { type: 'taunt', duration: 2, value: 1 },
     requiredLevel: 8,
     iconName: 'ShieldCheck',
   },
@@ -3393,6 +3388,23 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     ) {
       clone.cooldownMax = Math.max(4, clone.cooldownMax);
     }
+    // Habilidades do druída de cura e escudo possuem no mínimo 4 turnos de cooldown
+    if (
+      clone.id === 'casca_de_ferro' ||
+      clone.id === 'seiva_vital' ||
+      clone.id === 'bencao_da_alcateia' ||
+      clone.id === 'florescimento_ancestral' ||
+      clone.id === 'barreira_tecnologica' ||
+      clone.id === 'choque_estatico' ||
+      clone.id === 'injecao_de_adrenalina' ||
+      clone.id === 'sobrecarga_nuclear'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // 1° habilidade do mago possui cooldown reduzido para 3
+    if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
+      clone.cooldownMax = 3;
+    }
     if (clone.statusEffect?.type === 'burn' || clone.statusEffect?.type === 'poison') {
       clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 2 };
     }
@@ -3456,6 +3468,23 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
       clone.secondaryStatusEffect?.type === 'poison'
     ) {
       clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // Habilidades do druída de cura e escudo possuem no mínimo 4 turnos de cooldown
+    if (
+      clone.id === 'casca_de_ferro' ||
+      clone.id === 'seiva_vital' ||
+      clone.id === 'bencao_da_alcateia' ||
+      clone.id === 'florescimento_ancestral' ||
+      clone.id === 'barreira_tecnologica' ||
+      clone.id === 'choque_estatico' ||
+      clone.id === 'injecao_de_adrenalina' ||
+      clone.id === 'sobrecarga_nuclear'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // 1° habilidade do mago possui cooldown reduzido para 3
+    if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
+      clone.cooldownMax = 3;
     }
 
   // Aumento de efeito de status baixo (+5% no valor por nível; nunca altera duração de stun/slow)

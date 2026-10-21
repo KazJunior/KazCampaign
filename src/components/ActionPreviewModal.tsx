@@ -222,6 +222,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.casterStatusEffect.type === 'shield' && `🛡️ Ganha Escudo (+${preview.skill.casterStatusEffect.value})`}
               {preview.skill.casterStatusEffect.type === 'invisible' && `👤 Fica Invisível (${preview.skill.casterStatusEffect.duration}T)`}
               {preview.skill.casterStatusEffect.type === 'buff_atk' && `⚔️ +${preview.skill.casterStatusEffect.value}% Dano (${preview.skill.casterStatusEffect.duration}T)`}
+              {preview.skill.casterStatusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.casterStatusEffect.duration}T)`}
             </span>
           </div>
         )}
