@@ -67,12 +67,27 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [cameraMode, setCameraMode] = useState<'isometric' | 'topdown'>('isometric');
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
+  const [panOffset, setPanOffset] = useState<{ x: number; z: number }>({ x: 0, z: 0 });
 
   const cameraModeRef = useRef<'isometric' | 'topdown'>('isometric');
+  const zoomLevelRef = useRef<number>(1.0);
+  const panOffsetRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
+
+  // Touch and Drag State Refs (Direct manipulation without 60fps re-renders)
+  const activePointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const dragStartPanRef = useRef<{ x: number; z: number }>({ x: 0, z: 0 });
+  const isDraggingRef = useRef<boolean>(false);
+  const initialPinchDistRef = useRef<number | null>(null);
+  const initialPinchZoomRef = useRef<number>(1.0);
 
   useEffect(() => {
     cameraModeRef.current = cameraMode;
   }, [cameraMode]);
+
+  useEffect(() => {
+    zoomLevelRef.current = zoomLevel;
+  }, [zoomLevel]);
 
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -106,6 +121,31 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
   const gridWidth = grid[0].length;
   const gridHeight = grid.length;
 
+  const applyCameraTransform = useCallback((panX = panOffsetRef.current.x, panZ = panOffsetRef.current.z) => {
+    const camera = cameraRef.current;
+    const container = mountRef.current;
+    if (!camera || !container) return;
+
+    const w = container.clientWidth || 800;
+    const h = container.clientHeight || 600;
+    const aspect = w / h;
+    const isPortrait = aspect < 1;
+    const portraitMult = isPortrait ? Math.min(1.25, Math.max(0.85, 0.60 / aspect)) : 1.0;
+    const effectiveZoom = zoomLevelRef.current * portraitMult;
+
+    const centerX = gridWidth / 2 + panX;
+    const centerZ = gridHeight / 2 + panZ;
+    const targetZ = isPortrait ? centerZ + 0.8 : centerZ;
+
+    if (cameraModeRef.current === 'isometric') {
+      camera.position.set(centerX, 8.2 * effectiveZoom, targetZ + 8.2 * effectiveZoom);
+      camera.lookAt(centerX, 0.1, targetZ);
+    } else {
+      camera.position.set(centerX, 11 * effectiveZoom, targetZ + 0.05);
+      camera.lookAt(centerX, 0, targetZ);
+    }
+  }, [gridWidth, gridHeight]);
+
   // --- Initialize Three.js Scene ---
   useEffect(() => {
     const container = mountRef.current;
@@ -120,15 +160,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     sceneRef.current = scene;
 
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    const centerX = gridWidth / 2;
-    const centerZ = gridHeight / 2;
-    const isPortraitInit = (width / height) < 1;
-    const portraitMultInit = isPortraitInit ? Math.min(1.25, Math.max(0.85, 0.60 / (width / height))) : 1.0;
-    const effectiveZoomInit = zoomLevel * portraitMultInit;
-    const targetZInit = isPortraitInit ? centerZ + 0.8 : centerZ;
-    camera.position.set(centerX, 8.2 * effectiveZoomInit, targetZInit + 8.2 * effectiveZoomInit);
-    camera.lookAt(centerX, 0.1, targetZInit);
     cameraRef.current = camera;
+    applyCameraTransform(panOffsetRef.current.x, panOffsetRef.current.z);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setSize(width, height);
@@ -139,6 +172,9 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     rendererRef.current = renderer;
 
     // Lighting
+    const initialCenterX = gridWidth / 2;
+    const initialCenterZ = gridHeight / 2;
+
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
     scene.add(ambientLight);
 
@@ -146,7 +182,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     scene.add(hemiLight);
 
     const dirLight = new THREE.DirectionalLight(0xfffaed, 1.35);
-    dirLight.position.set(centerX + 10, 18, centerZ + 12);
+    dirLight.position.set(initialCenterX + 10, 18, initialCenterZ + 12);
     dirLight.castShadow = true;
     dirLight.shadow.mapSize.width = 2048;
     dirLight.shadow.mapSize.height = 2048;
@@ -160,7 +196,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     scene.add(dirLight);
 
     const accentLight = new THREE.PointLight(0xd4ad65, 0.65, 25);
-    accentLight.position.set(centerX, 7, centerZ);
+    accentLight.position.set(initialCenterX, 7, initialCenterZ);
     scene.add(accentLight);
 
     // Ambient floating atmospheric particles
@@ -257,22 +293,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       cameraRef.current.aspect = aspect;
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
-
-      // Recalibrate camera distance dynamically based on aspect ratio
-      const isPortrait = aspect < 1;
-      const portraitMult = isPortrait ? Math.min(1.25, Math.max(0.85, 0.60 / aspect)) : 1.0;
-      const effectiveZoom = zoomLevel * portraitMult;
-      const centerX = gridWidth / 2;
-      const centerZ = gridHeight / 2;
-      const targetZ = isPortrait ? centerZ + 0.8 : centerZ;
-
-      if (cameraModeRef.current === 'isometric') {
-        cameraRef.current.position.set(centerX, 8.2 * effectiveZoom, targetZ + 8.2 * effectiveZoom);
-        cameraRef.current.lookAt(centerX, 0.1, targetZ);
-      } else {
-        cameraRef.current.position.set(centerX, 11 * effectiveZoom, targetZ + 0.05);
-        cameraRef.current.lookAt(centerX, 0, targetZ);
-      }
+      applyCameraTransform();
     };
     window.addEventListener('resize', handleResize);
 
@@ -285,33 +306,19 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       }
       renderer.dispose();
     };
-  }, [gridWidth, gridHeight, zoomLevel]);
+  }, [gridWidth, gridHeight, applyCameraTransform]);
 
   // Camera Presets & Dynamic Zoom
   useEffect(() => {
-    const camera = cameraRef.current;
-    const container = mountRef.current;
-    if (!camera || !container) return;
+    applyCameraTransform();
+  }, [cameraMode, zoomLevel, applyCameraTransform]);
 
-    const w = container.clientWidth || 800;
-    const h = container.clientHeight || 600;
-    const aspect = w / h;
-    const isPortrait = aspect < 1;
-    const portraitMult = isPortrait ? Math.min(1.25, Math.max(0.85, 0.60 / aspect)) : 1.0;
-    const effectiveZoom = zoomLevel * portraitMult;
-
-    const centerX = gridWidth / 2;
-    const centerZ = gridHeight / 2;
-    const targetZ = isPortrait ? centerZ + 0.8 : centerZ;
-
-    if (cameraMode === 'isometric') {
-      camera.position.set(centerX, 8.2 * effectiveZoom, targetZ + 8.2 * effectiveZoom);
-      camera.lookAt(centerX, 0.1, targetZ);
-    } else if (cameraMode === 'topdown') {
-      camera.position.set(centerX, 11 * effectiveZoom, targetZ + 0.05);
-      camera.lookAt(centerX, 0, targetZ);
-    }
-  }, [cameraMode, gridWidth, gridHeight, zoomLevel]);
+  // Reset Pan on stage / grid change
+  useEffect(() => {
+    panOffsetRef.current = { x: 0, z: 0 };
+    setPanOffset({ x: 0, z: 0 });
+    applyCameraTransform(0, 0);
+  }, [gridWidth, gridHeight, applyCameraTransform]);
 
   // Rebuild Grid, Diorama Base & High-Detail 3D Obstacles
   useEffect(() => {
@@ -656,8 +663,134 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     },
   }), [getUnitObj, units]);
 
-  // Raycasting Handlers
+  // --- Pointer & Touch Pan / Pinch / Click Handlers ---
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      (e.target as HTMLElement)?.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Ignore pointer capture errors
+    }
+
+    activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activePointersRef.current.size === 1) {
+      dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+      dragStartPanRef.current = { ...panOffsetRef.current };
+      isDraggingRef.current = false;
+    } else if (activePointersRef.current.size === 2) {
+      // Multi-touch pinch-to-zoom initial distance
+      const pts = Array.from(activePointersRef.current.values());
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      initialPinchDistRef.current = dist;
+      initialPinchZoomRef.current = zoomLevelRef.current;
+      isDraggingRef.current = true;
+    }
+  };
+
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (activePointersRef.current.has(e.pointerId)) {
+      activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+
+    const container = mountRef.current;
+    if (!container || !cameraRef.current) return;
+
+    // Multi-touch Pinch to Zoom
+    if (activePointersRef.current.size === 2 && initialPinchDistRef.current !== null && initialPinchDistRef.current > 0) {
+      isDraggingRef.current = true;
+      const pts = Array.from(activePointersRef.current.values());
+      const currentDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      const ratio = currentDist / initialPinchDistRef.current;
+      const newZoom = Math.max(0.45, Math.min(1.50, initialPinchZoomRef.current / ratio));
+      setZoomLevel(Number(newZoom.toFixed(2)));
+      return;
+    }
+
+    // 1-finger touch or mouse drag to Pan
+    if (dragStartPosRef.current && activePointersRef.current.size === 1) {
+      const dx = e.clientX - dragStartPosRef.current.x;
+      const dy = e.clientY - dragStartPosRef.current.y;
+      const distSq = dx * dx + dy * dy;
+
+      // Threshold of 6px to separate deliberate drag from static tap
+      if (!isDraggingRef.current && distSq > 36) {
+        isDraggingRef.current = true;
+      }
+
+      if (isDraggingRef.current) {
+        const rect = container.getBoundingClientRect();
+        const aspect = rect.width / (rect.height || 1);
+        const isPortrait = aspect < 1;
+        const portraitMult = isPortrait ? Math.min(1.25, Math.max(0.85, 0.60 / aspect)) : 1.0;
+        const effectiveZoom = zoomLevelRef.current * portraitMult;
+
+        // Factor maps screen pixels to 3D board world units
+        const factorX = (11.5 * effectiveZoom) / rect.width;
+        const factorZ = (14.5 * effectiveZoom) / rect.height;
+
+        const deltaX = -dx * factorX;
+        const deltaZ = -dy * factorZ;
+
+        const maxPanX = Math.max(4, gridWidth * 0.75);
+        const maxPanZ = Math.max(4, gridHeight * 0.75);
+
+        const targetPanX = Math.max(-maxPanX, Math.min(maxPanX, dragStartPanRef.current.x + deltaX));
+        const targetPanZ = Math.max(-maxPanZ, Math.min(maxPanZ, dragStartPanRef.current.z + deltaZ));
+
+        panOffsetRef.current = { x: targetPanX, z: targetPanZ };
+        applyCameraTransform(targetPanX, targetPanZ);
+        return; // Suppress hover while dragging
+      }
+    }
+
+    // Hover raycasting when not dragging (for desktop mouse hover)
+    if (!isDraggingRef.current && activePointersRef.current.size <= 1) {
+      const rect = container.getBoundingClientRect();
+      const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const targetPoint = new THREE.Vector3();
+      const hit = raycaster.ray.intersectPlane(plane, targetPoint);
+      if (hit) {
+        const x = Math.floor(targetPoint.x);
+        const y = Math.floor(targetPoint.z);
+        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
+          onTileHover(x, y);
+        } else {
+          onTileHover(-1, null);
+        }
+      }
+    }
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      if ((e.target as HTMLElement)?.hasPointerCapture?.(e.pointerId)) {
+        (e.target as HTMLElement)?.releasePointerCapture?.(e.pointerId);
+      }
+    } catch {
+      // Ignore pointer capture errors
+    }
+
+    activePointersRef.current.delete(e.pointerId);
+
+    // If dragging was in progress, commit state and do not click tile
+    if (isDraggingRef.current) {
+      setPanOffset({ ...panOffsetRef.current });
+      if (activePointersRef.current.size === 0) {
+        isDraggingRef.current = false;
+        dragStartPosRef.current = null;
+        initialPinchDistRef.current = null;
+      }
+      return;
+    }
+
+    // Clean tap/click (finger released without moving)
+    dragStartPosRef.current = null;
+    initialPinchDistRef.current = null;
+
     // Block clicks during animations
     if (animEngineRef.current?.isAnimating) return;
 
@@ -670,8 +803,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
     const targetPoint = new THREE.Vector3();
-    raycaster.ray.intersectPlane(plane, targetPoint);
-    if (targetPoint) {
+    const hit = raycaster.ray.intersectPlane(plane, targetPoint);
+    if (hit) {
       const x = Math.floor(targetPoint.x);
       const y = Math.floor(targetPoint.z);
       if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
@@ -680,25 +813,35 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     }
   };
 
-  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    const container = mountRef.current;
-    if (!container || !cameraRef.current) return;
-    const rect = container.getBoundingClientRect();
-    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const targetPoint = new THREE.Vector3();
-    raycaster.ray.intersectPlane(plane, targetPoint);
-    if (targetPoint) {
-      const x = Math.floor(targetPoint.x);
-      const y = Math.floor(targetPoint.z);
-      if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
-        onTileHover(x, y);
-      } else {
-        onTileHover(-1, null);
+  const handlePointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    try {
+      if ((e.target as HTMLElement)?.hasPointerCapture?.(e.pointerId)) {
+        (e.target as HTMLElement)?.releasePointerCapture?.(e.pointerId);
       }
+    } catch {
+      // Ignore
+    }
+    activePointersRef.current.delete(e.pointerId);
+    if (activePointersRef.current.size === 0) {
+      if (isDraggingRef.current) {
+        setPanOffset({ ...panOffsetRef.current });
+      }
+      isDraggingRef.current = false;
+      dragStartPosRef.current = null;
+      initialPinchDistRef.current = null;
+    }
+  };
+
+  const handlePointerLeave = () => {
+    onTileHover(-1, null);
+  };
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+      setZoomLevel((z) => Math.max(0.45, Number((z - 0.1).toFixed(2))));
+    } else if (e.deltaY > 0) {
+      setZoomLevel((z) => Math.min(1.50, Number((z + 0.1).toFixed(2))));
     }
   };
 
@@ -750,25 +893,51 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         >
           <ZoomOut size={15} />
         </button>
-        {zoomLevel !== 1.0 && (
+        {(zoomLevel !== 1.0 || panOffset.x !== 0 || panOffset.z !== 0) && (
           <button
             type="button"
-            onClick={() => setZoomLevel(1.0)}
-            className="p-1 rounded-lg text-[#D4AD65] hover:text-white hover:bg-[#10131C] active:scale-90 transition-all"
-            title="Resetar Zoom"
+            onClick={() => {
+              setZoomLevel(1.0);
+              setPanOffset({ x: 0, z: 0 });
+              panOffsetRef.current = { x: 0, z: 0 };
+              applyCameraTransform(0, 0);
+            }}
+            className="px-2 py-1 rounded-lg text-[#D4AD65] hover:text-white hover:bg-[#10131C] active:scale-90 transition-all flex items-center gap-1 text-xs font-bold border border-[#D4AD65]/30 bg-[#D4AD65]/10"
+            title="Recentralizar Tabuleiro"
           >
             <RotateCcw size={13} />
+            <span className="sm:inline hidden">Centralizar</span>
           </button>
         )}
       </div>
+
+      {/* Mobile Quick Recenter Button */}
+      {(panOffset.x !== 0 || panOffset.z !== 0) && (
+        <button
+          type="button"
+          onClick={() => {
+            setPanOffset({ x: 0, z: 0 });
+            panOffsetRef.current = { x: 0, z: 0 };
+            applyCameraTransform(0, 0);
+          }}
+          className="sm:hidden absolute top-12 right-2 z-20 flex items-center gap-1 px-2.5 py-1 bg-[#1B2030]/95 border border-[#D4AD65]/40 text-[#D4AD65] text-xs font-bold rounded-xl shadow-xl backdrop-blur active:scale-95 transition-all"
+          title="Centralizar tabuleiro"
+        >
+          <RotateCcw size={12} />
+          <span>Centralizar</span>
+        </button>
+      )}
 
       {/* WebGL Canvas */}
       <div
         ref={mountRef}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerLeave={() => onTileHover(-1, null)}
-        className="w-full h-full cursor-pointer rounded-xl border border-[#343B50] shadow-2xl overflow-hidden touch-none"
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={handlePointerLeave}
+        onWheel={handleWheel}
+        className="w-full h-full cursor-grab active:cursor-grabbing rounded-xl border border-[#343B50] shadow-2xl overflow-hidden touch-none"
         style={{ touchAction: 'none' }}
       />
 
