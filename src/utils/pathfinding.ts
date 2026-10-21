@@ -270,22 +270,32 @@ export function getAoETiles(
       const startX = originTile ? originTile.x : targetTile.x - dirX;
       const startY = originTile ? originTile.y : targetTile.y - dirY;
 
-      // Distance 1: 1 tile wide in front of caster
+      // Fileira 1 (distância 1): 1 casa na frente do conjurador
       addTile(startX + dirX, startY + dirY);
 
-      // Distance 2: 3 tiles wide (center, +perp, -perp)
+      // Fileira 2 (distância 2): 3 casas (centro, +perp, -perp)
       const d2X = startX + 2 * dirX;
       const d2Y = startY + 2 * dirY;
       addTile(d2X, d2Y);
       addTile(d2X + perpX, d2Y + perpY);
       addTile(d2X - perpX, d2Y - perpY);
 
-      // If aoeRadius >= 2, distance 3: 5 tiles wide
-      if (aoeRadius >= 2) {
-        const d3X = startX + 3 * dirX;
-        const d3Y = startY + 3 * dirY;
-        for (let p = -2; p <= 2; p++) {
-          addTile(d3X + p * perpX, d3Y + p * perpY);
+      // Fileira 3 (distância 3): 5 casas (centro, +-1 perp, +-2 perp)
+      const d3X = startX + 3 * dirX;
+      const d3Y = startY + 3 * dirY;
+      for (let p = -2; p <= 2; p++) {
+        addTile(d3X + p * perpX, d3Y + p * perpY);
+      }
+
+      // Se aoeRadius > 1, expande fileiras adicionais além da terceira
+      if (aoeRadius > 1) {
+        for (let dist = 4; dist <= 2 + aoeRadius; dist++) {
+          const dX = startX + dist * dirX;
+          const dY = startY + dist * dirY;
+          const maxP = dist - 1;
+          for (let p = -maxP; p <= maxP; p++) {
+            addTile(dX + p * perpX, dY + p * perpY);
+          }
         }
       }
       break;
@@ -336,7 +346,7 @@ export function getAoELabel(skill?: Skill | null): string {
     case 'line':
       return `Linha Reta (${skill.aoeRadius * 2 + 1})`;
     case 'cone':
-      return 'Cone Frontal';
+      return 'Cone Frontal (3 Fileiras)';
     case 'cross':
       return 'Cruz (+)';
     case 'cleave':
