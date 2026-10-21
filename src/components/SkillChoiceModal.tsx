@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Skill, Unit } from '../types/game';
-import { SKILLS, CLASS_LEARNABLE_SKILL_IDS, getEvolvedSkill } from '../data/skills';
+import { SKILLS, CLASS_LEARNABLE_SKILL_IDS, getEvolvedSkill, MAX_SKILL_LEVEL } from '../data/skills';
 import { getAoELabel } from '../utils/pathfinding';
 import {
   ArrowUpRight,
@@ -22,9 +22,10 @@ import {
 interface SkillChoiceModalProps {
   unit: Unit;
   onChooseSkill: (skill: Skill, isEvolution: boolean) => void;
+  onSkip?: () => void;
 }
 
-export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChooseSkill }) => {
+export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChooseSkill, onSkip }) => {
   const currentSkills = unit.skills || [];
   const has5Skills = currentSkills.length >= 5;
 
@@ -49,6 +50,29 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
 
   // If in evolution mode, render the 5 skills with their upgrades!
   if (isEvolutionMode) {
+    const evolvableSkills = currentSkills.filter((s) => (s.level || 1) < MAX_SKILL_LEVEL);
+
+    if (evolvableSkills.length === 0) {
+      return (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 select-none font-sans">
+          <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-6 max-w-md w-full shadow-2xl text-[#F3F4F8] text-center space-y-4">
+            <div className="inline-flex items-center gap-2 bg-[#D4AD65]/15 border border-[#D4AD65]/40 text-[#D4AD65] px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">
+              <Zap size={16} /> NÍVEL MÁXIMO
+            </div>
+            <h2 className="text-2xl font-extrabold">Todas as habilidades de {unit.name} estão no Nv. {MAX_SKILL_LEVEL}!</h2>
+            <p className="text-xs text-[#A7B0C4]">Não há mais evoluções disponíveis para este herói.</p>
+            <button
+              id="skill-choice-skip"
+              onClick={() => onSkip?.()}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] text-[#10131C] font-black text-xs uppercase tracking-wider"
+            >
+              Continuar
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans overflow-y-auto">
         <div className="bg-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-4 sm:p-6 max-w-5xl w-full shadow-2xl text-[#F3F4F8] space-y-5 my-auto max-h-[92vh] overflow-y-auto">
@@ -67,7 +91,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
 
           {/* 5 Skills Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-start p-1.5">
-            {currentSkills.map((skill) => {
+            {evolvableSkills.map((skill) => {
               const currentLvl = skill.level || 1;
               const nextLvl = currentLvl + 1;
               const evolved = getEvolvedSkill(skill, nextLvl);
@@ -87,7 +111,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                       <div className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded bg-[#D4AD65]/20 border border-[#D4AD65]/50 text-[#D4AD65]">
                         <span>Nv. {currentLvl}</span>
                         <TrendingUp size={11} className="text-[#56E59A]" />
-                        <span className="text-[#56E59A]">Nv. {nextLvl}</span>
+                        <span className="text-[#56E59A]">Nv. {nextLvl}/{MAX_SKILL_LEVEL}</span>
                       </div>
                     </div>
 

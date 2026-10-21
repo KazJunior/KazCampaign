@@ -22,7 +22,7 @@ import {
   Crosshair,
   Music,
 } from 'lucide-react';
-import { MONSTER_DEFINITIONS } from '../data/monsters';
+import { MONSTER_DEFINITIONS, STAGE_20_PLUS_BOSS_SKILL_POWERS } from '../data/monsters';
 import type { MonsterDefinition } from '../data/monsters';
 import { SKILLS } from '../data/skills';
 import { getMonsterDropTable, RARITY_INFO, CATEGORY_INFO } from '../data/items';
@@ -340,6 +340,12 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                       const skill = SKILLS[sId];
                       if (!skill) return null;
 
+                      const bossPower = STAGE_20_PLUS_BOSS_SKILL_POWERS[selectedMonster.typeId]?.[sId];
+                      const effectivePower = bossPower ?? skill.power;
+                      const effectiveDesc = bossPower
+                        ? skill.description.replace(/\d+%/g, `${Math.round(bossPower * 100)}%`)
+                        : skill.description;
+
                       let typeColor = 'bg-[#4C8DFF]/20 text-[#4C8DFF] border-[#4C8DFF]/30';
                       if (skill.damageType === 'magical') typeColor = 'bg-[#B58AFF]/20 text-[#B58AFF] border-[#B58AFF]/30';
                       else if (skill.damageType === 'healing') typeColor = 'bg-[#56E59A]/20 text-[#56E59A] border-[#56E59A]/30';
@@ -352,12 +358,19 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                           <div>
                             <div className="flex items-center justify-between gap-1">
                               <span className="font-bold text-xs text-[#F3F4F8]">{skill.name}</span>
-                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${typeColor}`}>
-                                {skill.damageType.toUpperCase()}
-                              </span>
+                              <div className="flex items-center gap-1.5">
+                                {effectivePower > 0 && (
+                                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-[#FF5252]/20 text-[#FF5252] border border-[#FF5252]/30">
+                                    x{effectivePower} ({Math.round(effectivePower * 100)}%)
+                                  </span>
+                                )}
+                                <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${typeColor}`}>
+                                  {skill.damageType.toUpperCase()}
+                                </span>
+                              </div>
                             </div>
                             <p className="text-[11px] text-[#A7B0C4] mt-1 leading-snug">
-                              {skill.description}
+                              {effectiveDesc}
                             </p>
                           </div>
 

@@ -1008,7 +1008,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Vulcanus, Titã das Forjas',
     role: 'tank',
     act: 2,
-    maxHp: 1247,
+    maxHp: 5000,
     atk: 53,
     mag: 36,
     def: 68,
@@ -1027,7 +1027,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Arquimago das Runas',
     role: 'support',
     act: 3,
-    maxHp: 1024,
+    maxHp: 6200,
     atk: 34,
     mag: 55,
     def: 59,
@@ -1046,7 +1046,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Valgar, o Carniceiro Imortal',
     role: 'attacker',
     act: 3,
-    maxHp: 1706,
+    maxHp: 7600,
     atk: 65,
     mag: 29,
     def: 65,
@@ -1065,7 +1065,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Quimera das Sombras Antigas',
     role: 'attacker',
     act: 4,
-    maxHp: 1379,
+    maxHp: 9200,
     atk: 55,
     mag: 48,
     def: 63,
@@ -1084,7 +1084,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Leviatã do Vazio Primordial',
     role: 'attacker',
     act: 4,
-    maxHp: 2363,
+    maxHp: 11000,
     atk: 69,
     mag: 69,
     def: 72,
@@ -1103,7 +1103,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Cavaleiro do Eclipse Eterno',
     role: 'tank',
     act: 5,
-    maxHp: 1838,
+    maxHp: 13000,
     atk: 65,
     mag: 53,
     def: 70,
@@ -1122,7 +1122,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Malakor, O Fim de Todas as Eras',
     role: 'attacker',
     act: 5,
-    maxHp: 3675,
+    maxHp: 15500,
     atk: 82,
     mag: 86,
     def: 76,
@@ -1135,6 +1135,61 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     skillIds: ['ruina_absoluta', 'lanca_do_abismo', 'despertar_sombrio', 'apocalipse_runico', 'furia_draconica'],
     description: 'BOSS SUPREMO FINAL (FASE 50): A divindade do caos definitivo. O teste final para a sua guilda.',
     isBoss: true,
+  },
+};
+
+export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
+  tita_forjador: 5000,
+  mestre_runico: 6200,
+  valgar_sanguinario: 7600,
+  quimera_venenosa: 9200,
+  leviata_vazio: 11000,
+  cavaleiro_apocalipse: 13000,
+  cronos_abissal: 15500,
+};
+
+export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, number>> = {
+  tita_forjador: {
+    golpe_esmagador: 2.00,
+    impacto_abissal: 2.00,
+    chama_sombria: 2.00,
+    terremoto_basalto: 2.00,
+  },
+  mestre_runico: {
+    runa_de_choque: 2.10,
+    glifo_incandescente: 2.10,
+    runa_de_protecao: 2.10,
+    vortice_obscuro: 2.15,
+  },
+  valgar_sanguinario: {
+    golpe_selvagem: 2.20,
+    salto_destrutivo: 2.25,
+    ruina_absoluta: 2.30,
+    frenesi_sanguinario: 2.40,
+  },
+  quimera_venenosa: {
+    picada_venenosa: 2.30,
+    teia_paralisante: 2.30,
+    impacto_abissal: 2.35,
+    sopro_de_magma: 2.45,
+  },
+  leviata_vazio: {
+    maldicao_debilitante: 2.40,
+    lanca_do_abismo: 2.50,
+    vortice_obscuro: 2.50,
+    despertar_sombrio: 2.60,
+    ruina_absoluta: 2.70,
+  },
+  cavaleiro_apocalipse: {
+    corte_profano: 2.60,
+    golpe_esmagador: 2.70,
+    ruina_absoluta: 2.80,
+  },
+  cronos_abissal: {
+    lanca_do_abismo: 2.80,
+    despertar_sombrio: 2.90,
+    ruina_absoluta: 3.00,
+    apocalipse_runico: 3.20,
   },
 };
 
@@ -1154,7 +1209,14 @@ export function createMonsterUnit(
   let unitDef: number;
   let res: number;
 
-  if (def.isBoss) {
+  if (STAGE_20_PLUS_BOSS_HP[typeId]) {
+    // Bosses a partir da Fase 20: Vida progressiva (5000 na Fase 20, crescendo progressivamente)
+    maxHp = STAGE_20_PLUS_BOSS_HP[typeId];
+    atk = def.atk + Math.round(levelOffset * 5.1);
+    mag = def.mag + Math.round(levelOffset * 5.1);
+    unitDef = def.def + Math.round(levelOffset * 4.2);
+    res = def.res + Math.round(levelOffset * 4.2);
+  } else if (def.isBoss) {
     // Boss scaling (+5% em todos os status)
     maxHp = def.maxHp + Math.round(levelOffset * 118);
     atk = def.atk + Math.round(levelOffset * 5.1);
@@ -1185,6 +1247,18 @@ export function createMonsterUnit(
     .filter(Boolean)
     .map((s) => {
       const clone = JSON.parse(JSON.stringify(s));
+
+      // Escalonamento de dano dos bosses a partir da Fase 20 (>= 200% progressivo)
+      if (STAGE_20_PLUS_BOSS_SKILL_POWERS[typeId]?.[clone.id]) {
+        clone.power = STAGE_20_PLUS_BOSS_SKILL_POWERS[typeId][clone.id];
+        const pct = Math.round(clone.power * 100);
+        clone.description = clone.description.replace(/\d+%/g, `${pct}%`);
+      } else if ((def.isBoss || def.isMiniBoss) && levelOffset >= 19 && clone.power > 0) {
+        clone.power = Math.max(2.0, clone.power);
+        const pct = Math.round(clone.power * 100);
+        clone.description = clone.description.replace(/\d+%/g, `${pct}%`);
+      }
+
       if (clone.damageType === 'healing' || clone.statusEffect?.type === 'shield') {
         clone.cooldownMax = Math.max(3, clone.cooldownMax);
       }

@@ -22,7 +22,7 @@ import type {
 } from './types/game';
 import { LEVELS } from './data/levels';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
-import { SKILLS, getEvolvedSkill } from './data/skills';
+import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL } from './data/skills';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
 import {
@@ -3005,7 +3005,8 @@ export function App() {
 
     if (isEvolution) {
       const currentLvl = skillLevels[chosenSkill.id] || 1;
-      skillLevels[chosenSkill.id] = currentLvl + 1;
+      // Nível máximo de evolução por habilidade: 5
+      skillLevels[chosenSkill.id] = Math.min(MAX_SKILL_LEVEL, currentLvl + 1);
     } else {
       if (!learnedList.includes(chosenSkill.id) && learnedList.length < 4) {
         learnedList.push(chosenSkill.id);
@@ -3517,6 +3518,7 @@ export function App() {
         <SkillChoiceModal
           unit={currentSkillChoiceUnit}
           onChooseSkill={handleLearnOrEvolveSkill}
+          onSkip={() => setPendingSkillChoices((prev) => prev.slice(1))}
         />
       )}
 
