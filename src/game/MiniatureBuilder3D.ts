@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Unit } from '../types/game';
 import { getCachedUnitModel } from './ModelLoader3D';
+import { NORMAL_MONSTER_BUILDERS } from './NormalMonsterBuilders';
 
 /**
  * Creates the organic 3D tabletop miniature model (Option 1)
@@ -80,6 +81,14 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
   char.name = 'miniatureChar';
   const key = unit.avatarKey;
 
+  // 1. Monstro normal dedicado dos Atos II a V (Fases 11 a 50)
+  const normalMonsterBuilder = NORMAL_MONSTER_BUILDERS[key];
+  if (normalMonsterBuilder) {
+    normalMonsterBuilder(char);
+    return char;
+  }
+
+  // 2. Classes de jogadores, monstros do Ato I e chefes
   switch (key) {
     case 'warrior':
       buildWarriorMini(char);
