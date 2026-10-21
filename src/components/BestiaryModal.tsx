@@ -572,7 +572,21 @@ function getAvatarIcon(key: string, size = 20) {
     case 'abyssal_siren':
       return <Music size={size} />;
     case 'astaroth_boss':
+    case 'malakor_final_boss':
       return <Crown size={size} />;
+    case 'spectral_harbinger_boss':
+    case 'void_leviathan_boss':
+      return <Skull size={size} />;
+    case 'forge_titan_boss':
+      return <Flame size={size} />;
+    case 'rune_master_boss':
+      return <Sparkles size={size} />;
+    case 'valgar_butcher_boss':
+      return <Hammer size={size} />;
+    case 'venom_chimera_boss':
+      return <Zap size={size} />;
+    case 'eclipse_knight_boss':
+      return <Sun size={size} />;
     default:
       return <Skull size={size} />;
   }

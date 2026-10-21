@@ -496,7 +496,21 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'abyssal_tentacle':
       return <Zap size={size} />;
     case 'astaroth_boss':
+    case 'malakor_final_boss':
       return <Crown size={size} />;
+    case 'spectral_harbinger_boss':
+    case 'void_leviathan_boss':
+      return <Skull size={size} />;
+    case 'forge_titan_boss':
+      return <Flame size={size} />;
+    case 'rune_master_boss':
+      return <BookOpen size={size} />;
+    case 'valgar_butcher_boss':
+      return <Hammer size={size} />;
+    case 'venom_chimera_boss':
+      return <Zap size={size} />;
+    case 'eclipse_knight_boss':
+      return <Sun size={size} />;
     case 'basalt_golem':
     case 'rune_construct':
     case 'iron_gargoyle':
