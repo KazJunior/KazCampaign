@@ -1878,23 +1878,23 @@ export function App() {
         }
       }
 
-      if (dmgResult.damageType !== 'healing') {
-        const sIdx = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
-        if (sIdx !== -1) {
-          const sh = currentEffects[sIdx];
-          if (sh.value >= actualDmg) {
-            addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
-            sh.value -= actualDmg;
-            actualDmg = 0;
-          } else {
-            addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
-            actualDmg -= sh.value;
-            actualDmg = 0;
-          }
-          if (sh.value <= 0) {
-            currentEffects = currentEffects.filter((_, idx) => idx !== sIdx);
+      if (dmgResult.damageType !== 'healing' && actualDmg > 0) {
+        for (let i = 0; i < currentEffects.length; i++) {
+          if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+            const sh = currentEffects[i];
+            if (sh.value >= actualDmg) {
+              addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
+              sh.value -= actualDmg;
+              actualDmg = 0;
+              break;
+            } else {
+              addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
+              actualDmg -= sh.value;
+              sh.value = 0;
+            }
           }
         }
+        currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
       }
 
       let newHp = t.currentHp;
@@ -2483,21 +2483,23 @@ export function App() {
                 const damageType = res.damageType;
 
                 let currentEffects = [...(t.statusEffects || [])];
-                const sIdx = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
-                if (sIdx !== -1) {
-                  const sh = currentEffects[sIdx];
-                  if (sh.value >= actualDmg) {
-                    addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
-                    sh.value -= actualDmg;
-                    actualDmg = 0;
-                  } else {
-                    addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
-                    actualDmg -= sh.value;
-                    sh.value = 0;
+                if (actualDmg > 0) {
+                  for (let i = 0; i < currentEffects.length; i++) {
+                    if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                      const sh = currentEffects[i];
+                      if (sh.value >= actualDmg) {
+                        addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
+                        sh.value -= actualDmg;
+                        actualDmg = 0;
+                        break;
+                      } else {
+                        addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
+                        actualDmg -= sh.value;
+                        sh.value = 0;
+                      }
+                    }
                   }
-                  if (sh.value <= 0) {
-                    currentEffects = currentEffects.filter((_, idx) => idx !== sIdx);
-                  }
+                  currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
                 }
 
                 const newHp = Math.max(0, t.currentHp - actualDmg);

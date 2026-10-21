@@ -152,8 +152,17 @@ export function getDamagePreview(
   const maxDamage = Math.max(1, Math.ceil(base * 1.1));
   const avgDamage = Math.round((minDamage + maxDamage) / 2);
 
-  const targetHpAfterMax = Math.max(0, target.currentHp - maxDamage);
-  const targetHpAfterMin = Math.max(0, target.currentHp - minDamage);
+  // Consider active shields when previewing target HP after hit
+  const targetShield = target.statusEffects
+    ?.filter((e) => e.type === 'shield' && e.value > 0)
+    .reduce((sum, e) => sum + e.value, 0) || 0;
+
+  const effectiveMaxDamage = Math.max(0, maxDamage - targetShield);
+  const effectiveMinDamage = Math.max(0, minDamage - targetShield);
+  const effectiveAvgDamage = Math.max(0, avgDamage - targetShield);
+
+  const targetHpAfterMax = Math.max(0, target.currentHp - effectiveMaxDamage);
+  const targetHpAfterMin = Math.max(0, target.currentHp - effectiveMinDamage);
 
   return {
     attacker,
@@ -165,7 +174,7 @@ export function getDamagePreview(
     targetCurrentHp: target.currentHp,
     targetHpAfterMin,
     targetHpAfterMax,
-    isKillLikely: target.currentHp <= avgDamage,
+    isKillLikely: target.currentHp <= effectiveAvgDamage,
     damageType,
   };
 }
