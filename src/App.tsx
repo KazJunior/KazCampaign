@@ -165,6 +165,26 @@ export function App() {
                 : INITIAL_CLASSES);
         const safeParty = sanitizePartyClasses(rawPartyChoice, safeUnlocked);
 
+        const mergeLevelMaps = (
+          localMap?: Record<string, number>,
+          cloudMap?: Record<string, number>
+        ): Record<string, number> => {
+          const result: Record<string, number> = {};
+          if (cloudMap && typeof cloudMap === 'object') {
+            for (const [k, v] of Object.entries(cloudMap)) {
+              if (typeof v === 'number') result[k] = v;
+            }
+          }
+          if (localMap && typeof localMap === 'object') {
+            for (const [k, v] of Object.entries(localMap)) {
+              if (typeof v === 'number') {
+                result[k] = Math.max(result[k] || 0, v);
+              }
+            }
+          }
+          return result;
+        };
+
         const merged: PlayerProgress = {
           ...DEFAULT_PROGRESS,
           gold: typeof cloudP.gold === 'number' ? cloudP.gold : 0,
@@ -199,9 +219,9 @@ export function App() {
               : null,
           adventureHistory: Array.isArray(cloudP.adventureHistory) ? cloudP.adventureHistory : [],
           combatSpeed: cloudP.combatSpeed || 'normal',
-          classUpgrades: cloudP.classUpgrades && typeof cloudP.classUpgrades === 'object' ? cloudP.classUpgrades : (progress.classUpgrades || {}),
-          generalUpgrades: cloudP.generalUpgrades && typeof cloudP.generalUpgrades === 'object' ? cloudP.generalUpgrades : (progress.generalUpgrades || {}),
-          itemUpgrades: cloudP.itemUpgrades && typeof cloudP.itemUpgrades === 'object' ? cloudP.itemUpgrades : (progress.itemUpgrades || {}),
+          classUpgrades: mergeLevelMaps(progress.classUpgrades, cloudP.classUpgrades),
+          generalUpgrades: mergeLevelMaps(progress.generalUpgrades, cloudP.generalUpgrades),
+          itemUpgrades: mergeLevelMaps(progress.itemUpgrades, cloudP.itemUpgrades),
         };
 
         setProgress(merged);
@@ -244,7 +264,14 @@ export function App() {
     });
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (authUser && authUser.id !== 0) {
+      try {
+        await saveCloudProgress(progress);
+      } catch (err) {
+        console.warn('Erro ao sincronizar progresso em nuvem antes de sair:', err);
+      }
+    }
     clearLiveBattleState();
     logout();
     localStorage.removeItem('kazcampaign_offline_mode');

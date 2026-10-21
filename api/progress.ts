@@ -128,15 +128,35 @@ function sanitizeParty(rawParty: unknown, unlocked: string[]): string[] {
   return result.slice(0, 4);
 }
 
+let progressSchemaEnsured = false;
+async function ensureProgressSchema(sql: ReturnType<typeof getSql>): Promise<void> {
+  if (progressSchemaEnsured) return;
+  try {
+    await sql`
+      ALTER TABLE player_progress 
+      ADD COLUMN IF NOT EXISTS class_upgrades JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS general_upgrades JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS item_upgrades JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS discovered_item_ids JSONB DEFAULT '[]'::jsonb;
+    `;
+    progressSchemaEnsured = true;
+  } catch (e) {
+    console.warn('ensureProgressSchema warning:', e);
+  }
+}
+
 export async function GET(req: Request): Promise<Response> {
   const auth = getAuthUser(req);
   if (!auth) return json({ error: 'Não autorizado' }, 401);
 
   try {
     const sql = getSql();
+    await ensureProgressSchema(sql);
+
     const rows = await sql`
       SELECT gold, unlocked_classes, selected_party_classes, units_state, 
-             discovered_monster_ids, active_adventure, adventure_history, combat_speed
+             discovered_monster_ids, discovered_item_ids, active_adventure, adventure_history, combat_speed,
+             class_upgrades, general_upgrades, item_upgrades
       FROM player_progress
       WHERE user_id = ${auth.uid}
       LIMIT 1`;
@@ -151,9 +171,13 @@ export async function GET(req: Request): Promise<Response> {
       selected_party_classes: string[];
       units_state: Record<string, any>;
       discovered_monster_ids: string[];
+      discovered_item_ids?: string[];
       active_adventure: any;
       adventure_history: any[];
       combat_speed: string;
+      class_upgrades?: Record<string, number>;
+      general_upgrades?: Record<string, number>;
+      item_upgrades?: Record<string, number>;
     };
 
     const lbRows = await sql`SELECT highest_level, party FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
@@ -186,10 +210,14 @@ export async function GET(req: Request): Promise<Response> {
         selectedPartyClasses: safeParty,
         unitsState: row.units_state,
         discoveredMonsterIds: row.discovered_monster_ids,
+        discoveredItemIds: Array.isArray(row.discovered_item_ids) ? row.discovered_item_ids : [],
         activeAdventure: row.active_adventure,
         adventureHistory: row.adventure_history,
         combatSpeed: row.combat_speed || 'normal',
         highestLevel: lbHighest,
+        classUpgrades: row.class_upgrades && typeof row.class_upgrades === 'object' ? row.class_upgrades : {},
+        generalUpgrades: row.general_upgrades && typeof row.general_upgrades === 'object' ? row.general_upgrades : {},
+        itemUpgrades: row.item_upgrades && typeof row.item_upgrades === 'object' ? row.item_upgrades : {},
       },
     });
   } catch (err) {
@@ -211,6 +239,8 @@ export async function POST(req: Request): Promise<Response> {
 
   try {
     const sql = getSql();
+    await ensureProgressSchema(sql);
+
     const existingRows = await sql`
       SELECT unlocked_classes FROM player_progress WHERE user_id = ${auth.uid} LIMIT 1
     `;
@@ -236,18 +266,24 @@ export async function POST(req: Request): Promise<Response> {
     const selectedPartyClassesJson = JSON.stringify(safeParty);
     const unitsStateJson = JSON.stringify(body.unitsState || {});
     const discoveredMonsterIdsJson = JSON.stringify(body.discoveredMonsterIds || ['goblin']);
+    const discoveredItemIdsJson = JSON.stringify(Array.isArray(body.discoveredItemIds) ? body.discoveredItemIds : []);
     const activeAdventureJson = activeAdventure ? JSON.stringify(activeAdventure) : null;
     const adventureHistoryJson = JSON.stringify(adventureHistory);
     const combatSpeed = body.combatSpeed === 'fast' ? 'fast' : 'normal';
+    const classUpgradesJson = JSON.stringify(body.classUpgrades && typeof body.classUpgrades === 'object' ? body.classUpgrades : {});
+    const generalUpgradesJson = JSON.stringify(body.generalUpgrades && typeof body.generalUpgrades === 'object' ? body.generalUpgrades : {});
+    const itemUpgradesJson = JSON.stringify(body.itemUpgrades && typeof body.itemUpgrades === 'object' ? body.itemUpgrades : {});
 
     await sql`
       INSERT INTO player_progress (
         user_id, gold, unlocked_classes, selected_party_classes, units_state,
-        discovered_monster_ids, active_adventure, adventure_history, combat_speed, updated_at
+        discovered_monster_ids, discovered_item_ids, active_adventure, adventure_history, combat_speed,
+        class_upgrades, general_upgrades, item_upgrades, updated_at
       )
       VALUES (
         ${auth.uid}, ${gold}, ${unlockedClassesJson}::jsonb, ${selectedPartyClassesJson}::jsonb, ${unitsStateJson}::jsonb,
-        ${discoveredMonsterIdsJson}::jsonb, ${activeAdventureJson}::jsonb, ${adventureHistoryJson}::jsonb, ${combatSpeed}, NOW()
+        ${discoveredMonsterIdsJson}::jsonb, ${discoveredItemIdsJson}::jsonb, ${activeAdventureJson}::jsonb, ${adventureHistoryJson}::jsonb, ${combatSpeed},
+        ${classUpgradesJson}::jsonb, ${generalUpgradesJson}::jsonb, ${itemUpgradesJson}::jsonb, NOW()
       )
       ON CONFLICT (user_id) DO UPDATE SET
         gold = EXCLUDED.gold,
@@ -255,9 +291,13 @@ export async function POST(req: Request): Promise<Response> {
         selected_party_classes = EXCLUDED.selected_party_classes,
         units_state = EXCLUDED.units_state,
         discovered_monster_ids = EXCLUDED.discovered_monster_ids,
+        discovered_item_ids = EXCLUDED.discovered_item_ids,
         active_adventure = EXCLUDED.active_adventure,
         adventure_history = EXCLUDED.adventure_history,
         combat_speed = EXCLUDED.combat_speed,
+        class_upgrades = EXCLUDED.class_upgrades,
+        general_upgrades = EXCLUDED.general_upgrades,
+        item_upgrades = EXCLUDED.item_upgrades,
         updated_at = NOW()`;
 
     return json({ ok: true });
@@ -270,4 +310,5 @@ export async function POST(req: Request): Promise<Response> {
     return json({ error: 'Erro ao salvar progresso' }, 500);
   }
 }
+
 
