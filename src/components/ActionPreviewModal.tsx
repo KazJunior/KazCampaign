@@ -214,6 +214,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </div>
         )}
 
+        {(Boolean(preview.skill?.lifestealPercent && preview.skill.lifestealPercent > 0) || preview.skill?.id === 'golpe_sagrado') && (
+          <div className="flex items-center justify-between text-xs bg-[#064E3B]/40 p-2.5 rounded-lg border border-[#10B981]/40">
+            <span className="text-[#A7F3D0] font-semibold">Cura Sagrada ao Atacar:</span>
+            <span className="font-bold text-[#34D399]">💚 Restaura {preview.skill?.lifestealPercent || 30}% como vida</span>
+          </div>
+        )}
+
         {!isSupportOnly && (
           <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#343B50]">
             <span className="text-[#A7B0C4]">

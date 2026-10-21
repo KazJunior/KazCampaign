@@ -2001,31 +2001,44 @@ export function App() {
       finalAttackerEffects = finalAttackerEffects.filter((e) => e.type !== 'invisible');
     }
 
-    // LIFESTEAL
+    // LIFESTEAL & AUTO-CURA DA HABILIDADE (Golpe Sagrado: 30%, Dreno de Vida, etc.)
+    const isGolpeSagrado = skill?.id === 'golpe_sagrado' || skill?.id?.startsWith('golpe_sagrado');
     const lifestealPct =
       skill?.lifestealPercent ??
       (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
         ? 100
         : skill?.id === 'sedenta_de_runas'
         ? 60
+        : isGolpeSagrado
+        ? 30
         : 0);
 
-    if (lifestealPct > 0 && totalDmgDone > 0) {
+    if ((lifestealPct > 0 || isGolpeSagrado) && (totalDmgDone > 0 || isGolpeSagrado)) {
       const hadExcessHeal = finalAttackerEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
-      let healAmt = Math.max(1, Math.round(totalDmgDone * (lifestealPct / 100)));
+      let healAmt = isGolpeSagrado
+        ? Math.max(1, Math.round(selectedUnit.mag * 0.3), Math.round(totalDmgDone * 0.3))
+        : Math.max(1, Math.round(totalDmgDone * (lifestealPct / 100)));
+
       if (hadExcessHeal) {
         healAmt = Math.max(1, Math.round(healAmt * 0.5));
         addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
       } else {
         addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva', 'status', '#F59E0B');
       }
+
       const newHp = Math.min(selectedUnit.maxHp, finalAttackerHp + healAmt);
       const actualHealed = newHp - finalAttackerHp;
       if (actualHealed > 0) {
         finalAttackerHp = newHp;
-        addFloatingNumber(finalAttackerX, finalAttackerY, `+${actualHealed} (Dreno)`, 'healing', '#56E59A');
+        const tag = isGolpeSagrado ? 'Cura Sagrada' : 'Dreno';
+        addFloatingNumber(finalAttackerX, finalAttackerY, `+${actualHealed} (${tag})`, 'healing', '#56E59A');
+        soundManager.playHeal();
+      } else {
+        // Feedback visual imediato mesmo com vida cheia para confirmar a ativação da cura
+        addFloatingNumber(finalAttackerX, finalAttackerY, '+0 (Vida Máxima)', 'healing', '#56E59A');
         soundManager.playHeal();
       }
+
       finalAttackerEffects = [
         ...finalAttackerEffects.filter((e) => e.type !== 'excess_heal'),
         { type: 'excess_heal', duration: 1, value: 50 },
@@ -2389,16 +2402,24 @@ export function App() {
                 );
               }
 
-              // Monster Lifesteal (Dreno de Seiva / Dreno de Vida)
+              // Monster / AI Lifesteal & Golpe Sagrado
               let finalMonsterHp = freshAttacker.currentHp;
               let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
+              const aiIsGolpeSagrado = skill?.id === 'golpe_sagrado' || skill?.id?.startsWith('golpe_sagrado');
               const aiLifestealPct =
                 skill?.lifestealPercent ??
-                (skill?.id === 'dreno_de_seiva' || skill?.id === 'dreno_de_vida' ? 100 : 0);
+                (skill?.id === 'dreno_de_seiva' || skill?.id === 'dreno_de_vida'
+                  ? 100
+                  : aiIsGolpeSagrado
+                  ? 30
+                  : 0);
 
-              if (aiLifestealPct > 0 && totalAiDmgDone > 0) {
+              if ((aiLifestealPct > 0 || aiIsGolpeSagrado) && (totalAiDmgDone > 0 || aiIsGolpeSagrado)) {
                 const hadExcessHeal = finalMonsterEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
-                let healAmt = Math.max(1, Math.round(totalAiDmgDone * (aiLifestealPct / 100)));
+                let healAmt = aiIsGolpeSagrado
+                  ? Math.max(1, Math.round(freshAttacker.mag * 0.3), Math.round(totalAiDmgDone * 0.3))
+                  : Math.max(1, Math.round(totalAiDmgDone * (aiLifestealPct / 100)));
+
                 if (hadExcessHeal) {
                   healAmt = Math.max(1, Math.round(healAmt * 0.5));
                   addFloatingNumber(finalMonsterX, finalMonsterY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
@@ -2409,7 +2430,11 @@ export function App() {
                 const actualHealed = newHp - finalMonsterHp;
                 if (actualHealed > 0) {
                   finalMonsterHp = newHp;
-                  addFloatingNumber(finalMonsterX, finalMonsterY, `+${actualHealed} (Dreno)`, 'healing', '#56E59A');
+                  const tag = aiIsGolpeSagrado ? 'Cura Sagrada' : 'Dreno';
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `+${actualHealed} (${tag})`, 'healing', '#56E59A');
+                  soundManager.playHeal();
+                } else {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, '+0 (Vida Máxima)', 'healing', '#56E59A');
                   soundManager.playHeal();
                 }
                 finalMonsterEffects = [

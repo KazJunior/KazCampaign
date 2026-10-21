@@ -11,6 +11,18 @@ const pendingLoads = new Map<string, Promise<THREE.Group | null>>();
 const missingModels = new Set<string>();
 
 /**
+ * Whitelist of unit models currently present in /public/models.
+ * Checking this upfront prevents spurious 404 network requests in the browser console.
+ */
+export const AVAILABLE_GLB_MODELS = new Set<string>([
+  'archer',
+  'cleric',
+  'goblin',
+  'mage',
+  'warrior',
+]);
+
+/**
  * Deep clones a model hierarchy and duplicates its materials so
  * transparency / status effect shaders do not bleed across different units.
  */
@@ -72,7 +84,7 @@ function normalizeModel(modelGroup: THREE.Group, targetHeight = 0.72): THREE.Gro
  * Returns null if the file does not exist, enabling seamless procedural fallback.
  */
 export async function loadUnitModel(avatarKey: string, isBoss = false): Promise<THREE.Group | null> {
-  if (missingModels.has(avatarKey)) {
+  if (!AVAILABLE_GLB_MODELS.has(avatarKey) || missingModels.has(avatarKey)) {
     return null;
   }
 
@@ -132,7 +144,7 @@ export function getCachedUnitModel(avatarKey: string): THREE.Group | null {
  * Pre-fetches .glb models for a list of units to avoid pop-in on battle start.
  */
 export async function preloadUnitModels(units: Unit[]): Promise<void> {
-  const keys = Array.from(new Set(units.map((u) => u.avatarKey)));
+  const keys = Array.from(new Set(units.map((u) => u.avatarKey))).filter((k) => AVAILABLE_GLB_MODELS.has(k));
   await Promise.all(
     keys.map((key) => {
       const isBoss = units.some((u) => u.avatarKey === key && (u.isBoss || u.isMiniBoss));
