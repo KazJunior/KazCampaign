@@ -12,7 +12,6 @@ import {
   Crown,
   Play,
   Zap,
-  CheckCircle2,
 } from 'lucide-react';
 
 interface MobileBattleHUDProps {
@@ -173,8 +172,20 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
             </div>
           </div>
 
-          {/* Controls: Expand/Collapse & Close */}
-          <div className="flex items-center gap-1 shrink-0">
+          {/* Controls: Pass Turn, Expand/Collapse & Close */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isPlayerTurn && (
+              <button
+                type="button"
+                onClick={onEndTurn}
+                className="px-2 py-1 rounded-lg bg-[#4C8DFF]/20 border border-[#4C8DFF]/50 text-[#4C8DFF] hover:bg-[#4C8DFF] hover:text-white text-[10px] font-black uppercase flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                title="Passar Turno"
+              >
+                <Play size={10} fill="currentColor" />
+                <span>Passar</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
@@ -240,8 +251,12 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
             <button
               disabled={skills.length === 0 || isStunned}
               onClick={() => {
-                setActiveTab('skills');
-                setIsExpanded(true);
+                if (activeSkill) {
+                  onClearSkill();
+                } else {
+                  setActiveTab('skills');
+                  setIsExpanded(true);
+                }
               }}
               className={`py-2 px-1 rounded-xl font-black text-[11px] uppercase flex flex-col items-center justify-center gap-0.5 transition-all active:scale-95 relative ${
                 activeTab === 'skills' && isExpanded
@@ -266,22 +281,6 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
             >
               <Check size={15} />
               <span>Esperar</span>
-            </button>
-          </div>
-        )}
-
-        {/* Active Skill Notice Banner */}
-        {activeSkill && (
-          <div className="px-3 py-1.5 bg-[#D4AD65]/20 border-b border-[#D4AD65]/50 flex items-center justify-between text-xs animate-pulse">
-            <span className="font-bold text-[#D4AD65] flex items-center gap-1.5 truncate">
-              <CheckCircle2 size={14} className="shrink-0" /> Ativa: {activeSkill.name} (Toque no alvo)
-            </span>
-            <button
-              type="button"
-              onClick={onClearSkill}
-              className="text-[10px] uppercase font-black px-2 py-0.5 rounded bg-[#10131C] border border-[#343B50] text-[#A7B0C4] hover:text-white shrink-0"
-            >
-              Cancelar
             </button>
           </div>
         )}

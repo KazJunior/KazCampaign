@@ -122,8 +122,12 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     const centerX = gridWidth / 2;
     const centerZ = gridHeight / 2;
-    camera.position.set(centerX, 8.2, centerZ + 8.2);
-    camera.lookAt(centerX, 0.1, centerZ);
+    const isPortraitInit = (width / height) < 1;
+    const portraitMultInit = isPortraitInit ? Math.min(1.25, Math.max(0.85, 0.60 / (width / height))) : 1.0;
+    const effectiveZoomInit = zoomLevel * portraitMultInit;
+    const targetZInit = isPortraitInit ? centerZ + 0.8 : centerZ;
+    camera.position.set(centerX, 8.2 * effectiveZoomInit, targetZInit + 8.2 * effectiveZoomInit);
+    camera.lookAt(centerX, 0.1, targetZInit);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -256,17 +260,18 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
       // Recalibrate camera distance dynamically based on aspect ratio
       const isPortrait = aspect < 1;
-      const portraitMult = isPortrait ? Math.min(2.3, Math.max(1, 1.25 / aspect)) : 1.0;
+      const portraitMult = isPortrait ? Math.min(1.25, Math.max(0.85, 0.60 / aspect)) : 1.0;
       const effectiveZoom = zoomLevel * portraitMult;
       const centerX = gridWidth / 2;
       const centerZ = gridHeight / 2;
+      const targetZ = isPortrait ? centerZ + 0.8 : centerZ;
 
       if (cameraModeRef.current === 'isometric') {
-        cameraRef.current.position.set(centerX, 8.2 * effectiveZoom, centerZ + 8.2 * effectiveZoom);
-        cameraRef.current.lookAt(centerX, 0.1, centerZ);
+        cameraRef.current.position.set(centerX, 8.2 * effectiveZoom, targetZ + 8.2 * effectiveZoom);
+        cameraRef.current.lookAt(centerX, 0.1, targetZ);
       } else {
-        cameraRef.current.position.set(centerX, 11 * effectiveZoom, centerZ + 0.05);
-        cameraRef.current.lookAt(centerX, 0, centerZ);
+        cameraRef.current.position.set(centerX, 11 * effectiveZoom, targetZ + 0.05);
+        cameraRef.current.lookAt(centerX, 0, targetZ);
       }
     };
     window.addEventListener('resize', handleResize);
@@ -292,18 +297,19 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     const h = container.clientHeight || 600;
     const aspect = w / h;
     const isPortrait = aspect < 1;
-    const portraitMult = isPortrait ? Math.min(2.3, Math.max(1, 1.25 / aspect)) : 1.0;
+    const portraitMult = isPortrait ? Math.min(1.25, Math.max(0.85, 0.60 / aspect)) : 1.0;
     const effectiveZoom = zoomLevel * portraitMult;
 
     const centerX = gridWidth / 2;
     const centerZ = gridHeight / 2;
+    const targetZ = isPortrait ? centerZ + 0.8 : centerZ;
 
     if (cameraMode === 'isometric') {
-      camera.position.set(centerX, 8.2 * effectiveZoom, centerZ + 8.2 * effectiveZoom);
-      camera.lookAt(centerX, 0.1, centerZ);
+      camera.position.set(centerX, 8.2 * effectiveZoom, targetZ + 8.2 * effectiveZoom);
+      camera.lookAt(centerX, 0.1, targetZ);
     } else if (cameraMode === 'topdown') {
-      camera.position.set(centerX, 11 * effectiveZoom, centerZ + 0.05);
-      camera.lookAt(centerX, 0, centerZ);
+      camera.position.set(centerX, 11 * effectiveZoom, targetZ + 0.05);
+      camera.lookAt(centerX, 0, targetZ);
     }
   }, [cameraMode, gridWidth, gridHeight, zoomLevel]);
 
@@ -699,7 +705,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
   return (
     <div className="relative w-full h-full flex flex-col items-center justify-center bg-[#10131C] select-none overflow-hidden">
       {/* Camera & Zoom Controls */}
-      <div className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1.5 sm:gap-2 bg-[#1B2030]/90 border border-[#343B50] p-1 sm:p-1.5 rounded-xl shadow-lg backdrop-blur">
+      <div className="absolute top-12 left-2 sm:top-2.5 sm:left-2.5 z-20 flex items-center gap-1.5 sm:gap-2 bg-[#1B2030]/90 border border-[#343B50] p-1 sm:p-1.5 rounded-xl shadow-lg backdrop-blur">
         <button
           type="button"
           onClick={() => setCameraMode('isometric')}
@@ -730,7 +736,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         {/* Zoom Controls */}
         <button
           type="button"
-          onClick={() => setZoomLevel((z) => Math.max(0.65, Number((z - 0.15).toFixed(2))))}
+          onClick={() => setZoomLevel((z) => Math.max(0.45, Number((z - 0.15).toFixed(2))))}
           className="p-1 rounded-lg text-[#A7B0C4] hover:text-white hover:bg-[#10131C] active:scale-90 transition-all"
           title="Aproximar Zoom (+)"
         >
@@ -738,7 +744,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         </button>
         <button
           type="button"
-          onClick={() => setZoomLevel((z) => Math.min(1.75, Number((z + 0.15).toFixed(2))))}
+          onClick={() => setZoomLevel((z) => Math.min(1.50, Number((z + 0.15).toFixed(2))))}
           className="p-1 rounded-lg text-[#A7B0C4] hover:text-white hover:bg-[#10131C] active:scale-90 transition-all"
           title="Afastar Zoom (-)"
         >

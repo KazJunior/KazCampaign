@@ -297,28 +297,42 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       {/* 2. Mobile Floating Lateral Dock (Top-Right / Lateral Edge) */}
       <div className="md:hidden fixed top-2 right-2 z-30 flex flex-col items-end gap-1.5 pointer-events-auto">
-        {/* Main Menu Button */}
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="flex items-center gap-1.5 bg-[#1B2030]/95 backdrop-blur-md border border-[#D4AD65]/70 text-[#D4AD65] px-2.5 py-1.5 rounded-xl shadow-xl active:scale-95 transition-all text-xs font-black cursor-pointer"
-          title="Abrir Menu Lateral"
-        >
-          <Menu size={16} />
-          <span>Menu</span>
-        </button>
+        {/* Pass Turn Button - Always visible on mobile during player turn */}
+        {isPlayerTurn && (
+          <button
+            onClick={onEndTurn}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-[#4C8DFF] to-[#2563EB] text-white px-3 py-1.5 rounded-xl shadow-xl active:scale-95 transition-all text-xs font-black cursor-pointer border border-[#6BA0FF]/60"
+            title="Passar Turno"
+          >
+            <Play size={12} fill="currentColor" />
+            <span>Passar Turno</span>
+          </button>
+        )}
 
-        {/* Speed Toggle Shortcut */}
-        <button
-          onClick={onToggleSpeed}
-          className={`px-2 py-1 rounded-lg border text-[11px] font-black backdrop-blur-md shadow-md active:scale-95 transition-all cursor-pointer ${
-            combatSpeed === 'fast'
-              ? 'bg-[#F0B44D]/25 border-[#F0B44D] text-[#F0B44D]'
-              : 'bg-[#10131C]/95 border-[#343B50] text-[#A7B0C4]'
-          }`}
-          title="Velocidade"
-        >
-          {combatSpeed === 'fast' ? '⚡ 2x' : '1x'}
-        </button>
+        <div className="flex items-center gap-1.5">
+          {/* Main Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="flex items-center gap-1 bg-[#1B2030]/95 backdrop-blur-md border border-[#D4AD65]/70 text-[#D4AD65] px-2 py-1 rounded-lg shadow-xl active:scale-95 transition-all text-[11px] font-black cursor-pointer"
+            title="Abrir Menu Lateral"
+          >
+            <Menu size={14} />
+            <span>Menu</span>
+          </button>
+
+          {/* Speed Toggle Shortcut */}
+          <button
+            onClick={onToggleSpeed}
+            className={`px-2 py-1 rounded-lg border text-[11px] font-black backdrop-blur-md shadow-md active:scale-95 transition-all cursor-pointer ${
+              combatSpeed === 'fast'
+                ? 'bg-[#F0B44D]/25 border-[#F0B44D] text-[#F0B44D]'
+                : 'bg-[#10131C]/95 border-[#343B50] text-[#A7B0C4]'
+            }`}
+            title="Velocidade"
+          >
+            {combatSpeed === 'fast' ? '⚡ 2x' : '1x'}
+          </button>
+        </div>
 
         {/* Quick Equipment Shortcut */}
         {onOpenEquipment && (
