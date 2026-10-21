@@ -30,6 +30,16 @@ export interface StatusEffect {
   value: number;
 }
 
+export type AoEType =
+  | 'circle'
+  | 'row'
+  | 'column'
+  | 'line'
+  | 'cone'
+  | 'cross'
+  | 'cleave'
+  | 't_shape';
+
 export interface Skill {
   id: string;
   name: string;
@@ -40,6 +50,7 @@ export interface Skill {
   rangeMin: number;
   rangeMax: number;
   aoeRadius: number;
+  aoeType?: AoEType;
   cooldownMax: number;
   currentCooldown: number;
   lastUsedTurn?: number; // Turno em que a habilidade foi utilizada (o cooldown só reduz a partir do turno seguinte)
@@ -57,6 +68,8 @@ export interface Skill {
   resetsActionOnKill?: boolean; // Kills reset caster's attack and move action immediately (Carrasco do Vazio)
   grantsExtraTurn?: boolean; // Grants target ally an immediate additional turn (Bardo)
   createsObstacle?: ObstacleType; // Spawns an obstacle on targeted tile (Mago de Gelo)
+  knockback?: number; // Pushes hit targets back N tiles away from caster (Disparo de Impacto)
+  casterStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to the caster upon using this skill
   iconName: string;
   isPassive?: boolean;
   level?: number; // Skill evolution level (1, 2, 3...)

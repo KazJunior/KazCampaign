@@ -1,6 +1,7 @@
 import React from 'react';
 import type { Skill, Unit } from '../types/game';
 import { SKILLS, CLASS_LEARNABLE_SKILL_IDS, getEvolvedSkill } from '../data/skills';
+import { getAoELabel } from '../utils/pathfinding';
 import {
   ArrowUpRight,
   Sparkles,
@@ -234,7 +235,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                     <div className="bg-[#1B2030] p-2 rounded-lg border border-[#343B50]">
                       <span className="text-[#A7B0C4] block">Área (AoE)</span>
                       <strong className="text-[#4C8DFF]">
-                        {skill.canTargetGround ? 'Área 3x3 (Solo)' : skill.aoeRadius > 0 ? 'Área 3x3' : 'Alvo Único'}
+                        {getAoELabel(skill)}
                       </strong>
                     </div>
                   </div>

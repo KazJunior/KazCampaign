@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Unit, SelectedAction, Skill, BattlePhase } from '../types/game';
 import { getUnitAvatar } from './SidePanel';
+import { getAoELabel } from '../utils/pathfinding';
 import {
   Footprints,
   Swords,
@@ -385,11 +386,17 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
 
                         <div className="flex items-center gap-3 text-[10px] text-[#D4AD65] font-semibold mt-0.5 flex-wrap">
                           <span>Alcance: {skill.rangeMax} casas</span>
-                          {skill.aoeRadius && skill.aoeRadius > 0 && (
-                            <span>• Raio AoE: {skill.aoeRadius}</span>
+                          {(skill.aoeRadius ?? 0) > 0 && (
+                            <span className="text-[#38BDF8] font-bold">• {getAoELabel(skill)}</span>
                           )}
-                          {skill.canTargetGround && (
+                          {Boolean(skill.canTargetGround) && (
                             <span className="text-[#10B981] font-bold">• 🎯 Alvo no Solo</span>
+                          )}
+                          {(skill.knockback ?? 0) > 0 && (
+                            <span className="text-[#38BDF8] font-bold">• 💨 Empurrão</span>
+                          )}
+                          {Boolean(skill.resetsActionOnKill) && (
+                            <span className="text-[#C084FC] font-bold">• ⚡ Execução</span>
                           )}
                         </div>
                       </button>

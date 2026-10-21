@@ -1,6 +1,7 @@
 import React from 'react';
 import type { DamagePreview } from '../types/game';
 import { Swords, HeartPulse, AlertTriangle, Wand2 } from 'lucide-react';
+import { getAoELabel } from '../utils/pathfinding';
 
 interface ActionPreviewModalProps {
   preview: DamagePreview;
@@ -200,6 +201,31 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </div>
         )}
 
+        {preview.skill?.knockback && preview.skill.knockback > 0 && (
+          <div className="flex items-center justify-between text-xs bg-[#0C4A6E]/40 p-2.5 rounded-lg border border-[#38BDF8]/40">
+            <span className="text-[#BAE6FD] font-semibold">Impacto Cinético:</span>
+            <span className="font-bold text-[#38BDF8]">💨 Empurra o alvo {preview.skill.knockback} casa(s)</span>
+          </div>
+        )}
+
+        {preview.skill?.resetsActionOnKill && (
+          <div className="flex items-center justify-between text-xs bg-[#581C87]/40 p-2.5 rounded-lg border border-[#A855F7]/40">
+            <span className="text-[#E9D5FF] font-semibold">Execução em Cadeia:</span>
+            <span className="font-bold text-[#C084FC]">⚡ Abater o alvo restaura Ação Imediata</span>
+          </div>
+        )}
+
+        {preview.skill?.casterStatusEffect && (
+          <div className="flex items-center justify-between text-xs bg-[#1E293B] p-2.5 rounded-lg border border-[#64748B]">
+            <span className="text-[#94A3B8]">Auto-Efeito:</span>
+            <span className="font-bold text-[#38BDF8]">
+              {preview.skill.casterStatusEffect.type === 'shield' && `🛡️ Ganha Escudo (+${preview.skill.casterStatusEffect.value})`}
+              {preview.skill.casterStatusEffect.type === 'invisible' && `👤 Fica Invisível (${preview.skill.casterStatusEffect.duration}T)`}
+              {preview.skill.casterStatusEffect.type === 'buff_atk' && `⚔️ +${preview.skill.casterStatusEffect.value}% Dano (${preview.skill.casterStatusEffect.duration}T)`}
+            </span>
+          </div>
+        )}
+
         {preview.skill?.defenseIgnoreRatio && preview.skill.defenseIgnoreRatio > 0 && (
           <div className="flex items-center justify-between text-xs bg-[#1E293B] p-2.5 rounded-lg border border-[#64748B]">
             <span className="text-[#94A3B8]">Dano Perfurante:</span>
@@ -255,13 +281,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
                 : 'bg-[#FF9800]/15 border-[#FF9800]/50 text-[#FF9800]'
             }`}
           >
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 uppercase">
               <span>{preview.skill.targetType === 'ally' ? '✨' : preview.isGroundTarget ? '🎯' : '💥'}</span>
               {preview.skill.targetType === 'ally'
-                ? 'ÁREA DE EFEITO (ALIADOS) 3x3'
+                ? `Área (${getAoELabel(preview.skill)})`
                 : preview.isGroundTarget
-                ? 'ATAQUE NO SOLO (ÁREA 3x3)'
-                : 'ATAQUE EM ÁREA 3x3'}
+                ? `Área no Solo (${getAoELabel(preview.skill)})`
+                : `Ataque em Área (${getAoELabel(preview.skill)})`}
             </span>
             <span
               className={`px-2 py-0.5 rounded text-[11px] ${

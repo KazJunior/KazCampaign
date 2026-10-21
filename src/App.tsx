@@ -1140,18 +1140,21 @@ export function App() {
 
   const aoeTiles: Point[] = React.useMemo(() => {
     if (!activeSkill || activeSkill.aoeRadius === 0) return [];
+    const aoeType = activeSkill.aoeType || 'circle';
+    const origin = selectedUnit ? { x: selectedUnit.x, y: selectedUnit.y } : null;
+
     if (targetAoEPoint) {
-      return getAoETiles(targetAoEPoint, activeSkill.aoeRadius, grid[0].length, grid.length);
+      return getAoETiles(targetAoEPoint, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin);
     }
     const targetUnit = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
     if (targetUnit) {
-      return getAoETiles({ x: targetUnit.x, y: targetUnit.y }, activeSkill.aoeRadius, grid[0].length, grid.length);
+      return getAoETiles({ x: targetUnit.x, y: targetUnit.y }, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin);
     }
     if (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y)) {
-      return getAoETiles(hoveredTile, activeSkill.aoeRadius, grid[0].length, grid.length);
+      return getAoETiles(hoveredTile, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin);
     }
     return [];
-  }, [activeSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles]);
+  }, [activeSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles, selectedUnit]);
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
@@ -1382,12 +1385,20 @@ export function App() {
         preview.groundTargetPoint = undefined;
 
         if (activeSkill.aoeRadius > 0) {
+          const origin = { x: selectedUnit.x, y: selectedUnit.y };
+          const hitTiles = getAoETiles(
+            origin,
+            activeSkill.aoeRadius,
+            grid[0].length,
+            grid.length,
+            activeSkill.aoeType || 'circle',
+            origin
+          );
           preview.aoeTargetsCount = units.filter(
             (u) =>
               u.faction === 'player' &&
               !u.isDead &&
-              Math.abs(u.x - selectedUnit.x) <= activeSkill.aoeRadius &&
-              Math.abs(u.y - selectedUnit.y) <= activeSkill.aoeRadius
+              hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
           ).length;
         }
 
@@ -1411,12 +1422,20 @@ export function App() {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         if (isTargetTileValid) {
           const matchFaction = activeSkill.targetType === 'ally' ? 'player' : 'enemy';
+          const origin = { x: selectedUnit.x, y: selectedUnit.y };
+          const hitTiles = getAoETiles(
+            { x, y },
+            activeSkill.aoeRadius,
+            grid[0].length,
+            grid.length,
+            activeSkill.aoeType || 'circle',
+            origin
+          );
           const affectedTargets = units.filter(
             (u) =>
               u.faction === matchFaction &&
               !u.isDead &&
-              Math.abs(u.x - x) <= activeSkill.aoeRadius &&
-              Math.abs(u.y - y) <= activeSkill.aoeRadius
+              hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
           );
 
           if (affectedTargets.length > 0) {
@@ -1457,12 +1476,20 @@ export function App() {
 
           if (effectiveSkill && effectiveSkill.aoeRadius > 0) {
             const matchFaction = effectiveSkill.targetType === 'ally' ? 'player' : 'enemy';
+            const origin = { x: selectedUnit.x, y: selectedUnit.y };
+            const hitTiles = getAoETiles(
+              { x: clickedUnit.x, y: clickedUnit.y },
+              effectiveSkill.aoeRadius,
+              grid[0].length,
+              grid.length,
+              effectiveSkill.aoeType || 'circle',
+              origin
+            );
             preview.aoeTargetsCount = units.filter(
               (u) =>
                 u.faction === matchFaction &&
                 !u.isDead &&
-                Math.abs(u.x - clickedUnit.x) <= effectiveSkill.aoeRadius &&
-                Math.abs(u.y - clickedUnit.y) <= effectiveSkill.aoeRadius
+                hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
             ).length;
           }
 
@@ -1783,12 +1810,20 @@ export function App() {
     let targetsToHit: Unit[] = [];
     if (aoeRadius > 0) {
       const matchFaction = skill?.targetType === 'ally' ? 'player' : 'enemy';
+      const origin = { x: selectedUnit.x, y: selectedUnit.y };
+      const hitTiles = getAoETiles(
+        aoeCenter,
+        aoeRadius,
+        grid[0].length,
+        grid.length,
+        skill?.aoeType || 'circle',
+        origin
+      );
       targetsToHit = units.filter(
         (u) =>
           u.faction === matchFaction &&
           !u.isDead &&
-          Math.abs(u.x - aoeCenter.x) <= aoeRadius &&
-          Math.abs(u.y - aoeCenter.y) <= aoeRadius
+          hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
       );
     } else {
       targetsToHit = [target];
@@ -1978,10 +2013,54 @@ export function App() {
         }
       }
 
+      // Knockback displacement (Disparo de Impacto)
+      let finalTargetX = t.x;
+      let finalTargetY = t.y;
+      if (skill?.knockback && skill.knockback > 0 && newHp > 0) {
+        const dx = t.x - finalAttackerX;
+        const dy = t.y - finalAttackerY;
+        let pushX = 0;
+        let pushY = 0;
+        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+          pushX = Math.sign(dx);
+        } else if (dy !== 0) {
+          pushY = Math.sign(dy);
+        }
+
+        const destX = t.x + pushX;
+        const destY = t.y + pushY;
+        const inBounds = destX >= 0 && destX < grid[0].length && destY >= 0 && destY < grid.length;
+        const isWalkable = inBounds && grid[destY][destX].isWalkable;
+        const isOccupied = inBounds && updatedUnits.some((u) => !u.isDead && u.id !== t.id && u.x === destX && u.y === destY);
+
+        if (inBounds && isWalkable && !isOccupied) {
+          finalTargetX = destX;
+          finalTargetY = destY;
+          if (boardRef.current) {
+            await boardRef.current.playMoveAnimation(t.id, t.x, t.y, destX, destY);
+          }
+          addFloatingNumber(destX, destY, 'Recuo Forçado!', 'status', '#38BDF8');
+        } else {
+          // Blocked by wall, obstacle or another unit -> Impact collision damage!
+          const colDmg = Math.max(1, Math.round(selectedUnit.atk * 0.20));
+          newHp = Math.max(0, newHp - colDmg);
+          addFloatingNumber(t.x, t.y, `Impacto! -${colDmg}`, 'physical', '#F97316');
+          if (newHp === 0) {
+            soundManager.playDeath();
+            totalKills++;
+            if (boardRef.current) {
+              await boardRef.current.playDeathAnimation(t.id);
+            }
+          }
+        }
+      }
+
       updatedUnits = updatedUnits.map((u) =>
         u.id === t.id
           ? {
               ...u,
+              x: finalTargetX,
+              y: finalTargetY,
               currentHp: newHp,
               isDead: newHp === 0,
               statusEffects: currentEffects,
@@ -2053,6 +2132,26 @@ export function App() {
       skill?.id?.startsWith('recuo_da_lanca');
     if (canMoveAgain) {
       addFloatingNumber(finalAttackerX, finalAttackerY, 'Recuo Disponível!', 'status', '#60A5FA');
+    }
+
+    // Caster Status Effect (e.g. self-shield, stealth, or buff on attack)
+    if (skill?.casterStatusEffect) {
+      const cEff = { ...skill.casterStatusEffect };
+      if (cEff.type === 'shield') {
+        const hadExcessShield = finalAttackerEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+        if (hadExcessShield) {
+          cEff.value = Math.max(1, Math.round(cEff.value * 0.5));
+          addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+        } else {
+          addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo', 'status', '#F59E0B');
+        }
+        addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+      } else if (cEff.type === 'buff_atk') {
+        addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value}% Dano`, 'status', '#F97316');
+      } else if (cEff.type === 'invisible') {
+        addFloatingNumber(finalAttackerX, finalAttackerY, 'Invisível!', 'status', '#8B5CF6');
+      }
+      finalAttackerEffects = [...finalAttackerEffects.filter((e) => e.type !== cEff.type), cEff];
     }
 
     // ACTION RESET MECHANIC ON KILL: Carrasco do Vazio or any skill with resetsActionOnKill
@@ -2328,12 +2427,20 @@ export function App() {
               const aoeRad = skill?.aoeRadius || 0;
               let enemyTargets: Unit[] = [];
               if (aoeRad > 0) {
+                const origin = { x: freshAttacker.x, y: freshAttacker.y };
+                const hitTiles = getAoETiles(
+                  { x: freshTarget.x, y: freshTarget.y },
+                  aoeRad,
+                  grid[0].length,
+                  grid.length,
+                  skill?.aoeType || 'circle',
+                  origin
+                );
                 enemyTargets = currentUnits.filter(
                   (u) =>
                     u.faction === 'player' &&
                     !u.isDead &&
-                    Math.abs(u.x - freshTarget.x) <= aoeRad &&
-                    Math.abs(u.y - freshTarget.y) <= aoeRad
+                    hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
                 );
               } else {
                 enemyTargets = [freshTarget];
@@ -2919,12 +3026,20 @@ export function App() {
         setTargetUnitId(selectedUnit.id);
       } else if (sk.targetType === 'ally' && sk.rangeMax === 0 && sk.aoeRadius > 0) {
         const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
+        const origin = { x: selectedUnit.x, y: selectedUnit.y };
+        const hitTiles = getAoETiles(
+          origin,
+          sk.aoeRadius,
+          grid[0].length,
+          grid.length,
+          sk.aoeType || 'circle',
+          origin
+        );
         preview.aoeTargetsCount = units.filter(
           (u) =>
             u.faction === 'player' &&
             !u.isDead &&
-            Math.abs(u.x - selectedUnit.x) <= sk.aoeRadius &&
-            Math.abs(u.y - selectedUnit.y) <= sk.aoeRadius
+            hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
         ).length;
         setDamagePreview(preview);
         setTargetUnitId(selectedUnit.id);

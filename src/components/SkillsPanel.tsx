@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Unit, Skill } from '../types/game';
+import { getAoELabel } from '../utils/pathfinding';
 import {
   Sparkles,
   Flame,
@@ -210,7 +211,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       </span>
                       {skill.aoeRadius > 0 && (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#FF9800]/20 border border-[#FF9800]/40 text-[#FF9800]">
-                          💥 Área 3x3
+                          💥 {getAoELabel(skill)}
                         </span>
                       )}
                       {skill.canTargetGround && (
@@ -259,9 +260,24 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       <span className="text-[#A7B0C4] text-[9px]">({skill.secondaryStatusEffect.duration}T)</span>
                     </span>
                   )}
-                  {skill.defenseIgnoreRatio && skill.defenseIgnoreRatio > 0 && (
+                  {(skill.defenseIgnoreRatio ?? 0) > 0 && (
                     <span className="text-[10px] font-medium text-[#F0B44D]">
-                      🎯 Ignora {Math.round(Math.min(0.30, skill.defenseIgnoreRatio) * 100)}% Armadura
+                      🎯 Ignora {Math.round(Math.min(0.30, skill.defenseIgnoreRatio!)) * 100}% Armadura
+                    </span>
+                  )}
+                  {(skill.knockback ?? 0) > 0 && (
+                    <span className="text-[10px] font-medium text-[#38BDF8]">
+                      💨 Empurrão ({skill.knockback} casa)
+                    </span>
+                  )}
+                  {Boolean(skill.resetsActionOnKill) && (
+                    <span className="text-[10px] font-medium text-[#C084FC]">
+                      ⚡ Execução (Reseta Ação)
+                    </span>
+                  )}
+                  {Boolean(skill.casterStatusEffect) && (
+                    <span className="text-[10px] font-medium text-[#34D399]">
+                      🛡️ Auto-Efeito: +{skill.casterStatusEffect!.value} {skill.casterStatusEffect!.type === 'shield' ? 'Escudo' : skill.casterStatusEffect!.type}
                     </span>
                   )}
                 </div>

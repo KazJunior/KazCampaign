@@ -1,4 +1,4 @@
-import type { Point, Skill, TileData, Unit } from '../types/game';
+import type { Point, Skill, TileData, Unit, AoEType } from '../types/game';
 
 export type { Point };
 
@@ -189,19 +189,164 @@ export function getAoETiles(
   targetTile: Point,
   aoeRadius: number,
   gridWidth: number,
-  gridHeight: number
+  gridHeight: number,
+  aoeType: AoEType = 'circle',
+  originTile?: Point | null
 ): Point[] {
-  const tiles: Point[] = [];
-  for (let dy = -aoeRadius; dy <= aoeRadius; dy++) {
-    for (let dx = -aoeRadius; dx <= aoeRadius; dx++) {
-      const tx = targetTile.x + dx;
-      const ty = targetTile.y + dy;
-      if (!isOutOfBounds(tx, ty, gridWidth, gridHeight)) {
-        tiles.push({ x: tx, y: ty });
+  if (aoeRadius <= 0) {
+    if (!isOutOfBounds(targetTile.x, targetTile.y, gridWidth, gridHeight)) {
+      return [{ x: targetTile.x, y: targetTile.y }];
+    }
+    return [];
+  }
+
+  const tileMap = new Map<string, Point>();
+  const addTile = (x: number, y: number) => {
+    if (!isOutOfBounds(x, y, gridWidth, gridHeight)) {
+      tileMap.set(`${x},${y}`, { x, y });
+    }
+  };
+
+  // Determine attack direction from origin to target
+  let dirX = 0;
+  let dirY = 0;
+  if (originTile) {
+    const diffX = targetTile.x - originTile.x;
+    const diffY = targetTile.y - originTile.y;
+    if (Math.abs(diffX) >= Math.abs(diffY)) {
+      dirX = diffX >= 0 ? 1 : -1;
+      dirY = 0;
+    } else {
+      dirX = 0;
+      dirY = diffY >= 0 ? 1 : -1;
+    }
+  } else {
+    // Default facing downwards if origin is unknown
+    dirX = 0;
+    dirY = 1;
+  }
+  const perpX = -dirY;
+  const perpY = dirX;
+
+  switch (aoeType) {
+    case 'row': {
+      // Horizontal line of tiles centered on target: e.g. for aoeRadius=1, 3 tiles horizontal
+      for (let dx = -aoeRadius; dx <= aoeRadius; dx++) {
+        addTile(targetTile.x + dx, targetTile.y);
       }
+      break;
+    }
+
+    case 'column': {
+      // Vertical line of tiles centered on target: e.g. for aoeRadius=1, 3 tiles vertical
+      for (let dy = -aoeRadius; dy <= aoeRadius; dy++) {
+        addTile(targetTile.x, targetTile.y + dy);
+      }
+      break;
+    }
+
+    case 'cross': {
+      // Cross (+) shape centered on target
+      addTile(targetTile.x, targetTile.y);
+      for (let r = 1; r <= aoeRadius; r++) {
+        addTile(targetTile.x + r, targetTile.y);
+        addTile(targetTile.x - r, targetTile.y);
+        addTile(targetTile.x, targetTile.y + r);
+        addTile(targetTile.x, targetTile.y - r);
+      }
+      break;
+    }
+
+    case 'line': {
+      // Directional line penetrating along the attack axis
+      for (let k = -aoeRadius; k <= aoeRadius; k++) {
+        addTile(targetTile.x + k * dirX, targetTile.y + k * dirY);
+      }
+      break;
+    }
+
+    case 'cone': {
+      // Cone fanning outward in attack direction from origin towards target:
+      const startX = originTile ? originTile.x : targetTile.x - dirX;
+      const startY = originTile ? originTile.y : targetTile.y - dirY;
+
+      // Distance 1: 1 tile wide in front of caster
+      addTile(startX + dirX, startY + dirY);
+
+      // Distance 2: 3 tiles wide (center, +perp, -perp)
+      const d2X = startX + 2 * dirX;
+      const d2Y = startY + 2 * dirY;
+      addTile(d2X, d2Y);
+      addTile(d2X + perpX, d2Y + perpY);
+      addTile(d2X - perpX, d2Y - perpY);
+
+      // If aoeRadius >= 2, distance 3: 5 tiles wide
+      if (aoeRadius >= 2) {
+        const d3X = startX + 3 * dirX;
+        const d3Y = startY + 3 * dirY;
+        for (let p = -2; p <= 2; p++) {
+          addTile(d3X + p * perpX, d3Y + p * perpY);
+        }
+      }
+      break;
+    }
+
+    case 'cleave': {
+      // Frontal sweep / cleave: 3 tiles perpendicular to attack direction at target
+      addTile(targetTile.x, targetTile.y);
+      for (let p = 1; p <= aoeRadius; p++) {
+        addTile(targetTile.x + p * perpX, targetTile.y + p * perpY);
+        addTile(targetTile.x - p * perpX, targetTile.y - p * perpY);
+      }
+      break;
+    }
+
+    case 't_shape': {
+      // T-shape: stem leading to target + perpendicular cap at target
+      addTile(targetTile.x, targetTile.y);
+      addTile(targetTile.x - dirX, targetTile.y - dirY);
+      for (let p = 1; p <= aoeRadius; p++) {
+        addTile(targetTile.x + p * perpX, targetTile.y + p * perpY);
+        addTile(targetTile.x - p * perpX, targetTile.y - p * perpY);
+      }
+      break;
+    }
+
+    case 'circle':
+    default: {
+      for (let dy = -aoeRadius; dy <= aoeRadius; dy++) {
+        for (let dx = -aoeRadius; dx <= aoeRadius; dx++) {
+          addTile(targetTile.x + dx, targetTile.y + dy);
+        }
+      }
+      break;
     }
   }
-  return tiles;
+
+  return Array.from(tileMap.values());
+}
+
+export function getAoELabel(skill?: Skill | null): string {
+  if (!skill || !skill.aoeRadius || skill.aoeRadius === 0) return 'Alvo Único';
+  switch (skill.aoeType) {
+    case 'row':
+      return `Linha de ${skill.aoeRadius * 2 + 1}`;
+    case 'column':
+      return `Coluna de ${skill.aoeRadius * 2 + 1}`;
+    case 'line':
+      return `Linha Reta (${skill.aoeRadius * 2 + 1})`;
+    case 'cone':
+      return 'Cone Frontal';
+    case 'cross':
+      return 'Cruz (+)';
+    case 'cleave':
+      return 'Varredura (3)';
+    case 't_shape':
+      return 'Formato em T';
+    case 'circle':
+    default:
+      return skill.canTargetGround ? 'Área 3x3 (Solo)' : 'Área 3x3';
+  }
 }
 
 export function getValidTargets(

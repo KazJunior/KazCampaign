@@ -27,6 +27,7 @@ import type { MonsterDefinition } from '../data/monsters';
 import { SKILLS } from '../data/skills';
 import { getMonsterDropTable, RARITY_INFO, CATEGORY_INFO } from '../data/items';
 import type { ItemCategory } from '../types/game';
+import { getAoELabel } from '../utils/pathfinding';
 
 interface BestiaryModalProps {
   discoveredMonsterIds: string[];
@@ -366,7 +367,7 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                             </span>
                             {skill.aoeRadius > 0 && (
                               <span className="px-1.5 py-0.5 rounded bg-[#FF9800]/20 text-[#FF9800] border border-[#FF9800]/40 font-bold">
-                                💥 Área 3x3
+                                💥 {getAoELabel(skill)}
                               </span>
                             )}
                             <span className="px-1.5 py-0.5 rounded bg-[#1B2030] border border-[#343B50]">

@@ -18,6 +18,7 @@ import {
   preloadUnitModels,
 } from './ModelLoader3D';
 import { ZoomIn, ZoomOut, RotateCcw, Box, Layers } from 'lucide-react';
+import { getAoETiles } from '../utils/pathfinding';
 
 // --- Public API exposed via ref ---
 export interface BoardRenderer3DHandle {
@@ -598,10 +599,18 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           damageType
         );
 
-        // When an AoE attack strikes, trigger flinch / hit reaction on all units caught in the blast radius
+        // When an AoE attack strikes, trigger flinch / hit reaction on all units caught in the blast area
         if (aoeRad > 0 && damageType !== 'healing') {
+          const hitTiles = getAoETiles(
+            { x: targetAnimX, y: targetAnimY },
+            aoeRad,
+            gridWidth,
+            gridHeight,
+            skill?.aoeType || 'circle',
+            { x: attackerUnit.x, y: attackerUnit.y }
+          );
           units.forEach((u) => {
-            if (!u.isDead && Math.abs(u.x - targetAnimX) <= aoeRad && Math.abs(u.y - targetAnimY) <= aoeRad) {
+            if (!u.isDead && hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)) {
               const uObj = getUnitObj(u.id);
               if (uObj) engine.playHitReaction(uObj, damageType, 260);
             }
