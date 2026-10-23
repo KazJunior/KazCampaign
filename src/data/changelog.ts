@@ -23,7 +23,7 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
     changes: [
       {
         highlight: 'Sistema de Pets & Ovos de Companheiro',
-        description: 'Os jogadores agora podem obter ovos derrotando monstros (1% de chance em monstros comuns, 100% garantido ao derrotar Chefes). Limite de até 20 ovos no ninho.',
+        description: 'Os jogadores agora podem obter ovos derrotando monstros (1% de chance em monstros comuns, 25% em Mini-Chefes e 100% garantido ao derrotar Chefes). Limite de até 20 ovos no ninho.',
         type: 'new',
       },
       {

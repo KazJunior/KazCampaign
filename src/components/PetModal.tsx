@@ -605,6 +605,7 @@ export const PetModal: React.FC<PetModalProps> = ({
                   </p>
                   <div className="text-xs text-[#A7B0C4] bg-[#10131C] max-w-sm mx-auto p-3 rounded-xl border border-[#343B50]/60 space-y-1 text-left">
                     <p className="font-bold text-[#F3F4F8]">• Monstros comuns: 1% de chance de ovo</p>
+                    <p className="font-bold text-[#60A5FA]">• Monstros Mini-Chefes: 25% de chance de ovo</p>
                     <p className="font-bold text-[#D4AD65]">• Monstros Chefes: 100% de chance de ovo!</p>
                   </div>
                 </div>

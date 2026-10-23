@@ -3146,13 +3146,14 @@ export function App() {
       };
     }
 
-    // Drop de ovos de companheiro: 1% para monstros normais, 100% para chefes (não mini-chefes)
+    // Drop de ovos de companheiro: 1% para monstros normais, 25% para mini-chefes, 100% para chefes reais
     let updatedEggs = [...(progress.eggs || [])];
     const newDroppedEggs: PetEgg[] = [];
 
     currentLevel.enemySpawns.forEach((spawn) => {
       const isBoss = Boolean(spawn.isBoss && !spawn.isMiniBoss);
-      const dropChance = isBoss ? 1.0 : 0.01;
+      const isMiniBoss = Boolean(spawn.isMiniBoss);
+      const dropChance = isBoss ? 1.0 : isMiniBoss ? 0.25 : 0.01;
       if (Math.random() < dropChance) {
         if (updatedEggs.length < MAX_EGGS_LIMIT) {
           const egg = createNewEgg();
