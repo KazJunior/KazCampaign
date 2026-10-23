@@ -121,8 +121,28 @@ export function calculateBaseDamage(
     targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
   }
 
-  const base = Math.max(1, Math.round(attackStat - targetDef));
+  let base = Math.max(1, Math.round(attackStat - targetDef));
+
+  // Contra bosses e mini bosses, ataques normais (sem habilidade) causam dano mínimo:
+  // 2% contra os 2 primeiros bosses (até a fase 10) e 1% para os bosses seguintes
+  const minBossDmg = getBossMinimumDamage(target);
+  if (minBossDmg > 0) {
+    base = Math.max(base, minBossDmg);
+  }
+
   return { base, damageType };
+}
+
+/**
+ * Retorna o piso de dano mínimo para ataques normais contra chefes e mini-chefes:
+ * - 2% da vida máxima contra os 2 primeiros bosses (até a fase 10: Devorador e Astaroth)
+ * - 1% da vida máxima para todos os chefes subsequentes (fase 15 em diante)
+ */
+export function getBossMinimumDamage(target: Unit): number {
+  if (!target.isBoss && !target.isMiniBoss) return 0;
+  const isEarlyBoss = (target.level <= 10) || target.avatarKey === 'devorador' || target.avatarKey === 'astaroth';
+  const minRatio = isEarlyBoss ? 0.02 : 0.01;
+  return Math.max(1, Math.round(target.maxHp * minRatio));
 }
 
 export function getDamagePreview(
@@ -148,8 +168,11 @@ export function getDamagePreview(
     };
   }
 
-  const minDamage = Math.max(1, Math.floor(base * 0.9));
-  const maxDamage = Math.max(1, Math.ceil(base * 1.1));
+  const minBossDmg = !skill ? getBossMinimumDamage(target) : 0;
+  const minFloor = minBossDmg > 0 ? minBossDmg : 1;
+
+  const minDamage = Math.max(minFloor, Math.floor(base * 0.9));
+  const maxDamage = Math.max(minDamage, Math.ceil(base * 1.1));
   const avgDamage = Math.round((minDamage + maxDamage) / 2);
 
   // Consider active shields when previewing target HP after hit
@@ -195,8 +218,11 @@ export function rollActualDamage(
     };
   }
 
+  const minBossDmg = !skill ? getBossMinimumDamage(target) : 0;
+  const minFloor = minBossDmg > 0 ? minBossDmg : 1;
+
   const factor = 0.9 + Math.random() * 0.2;
-  const finalDamage = Math.max(1, Math.round(base * factor));
+  const finalDamage = Math.max(minFloor, Math.round(base * factor));
   const isKill = target.currentHp - finalDamage <= 0;
 
   return {

@@ -20,6 +20,7 @@ import {
   Swords,
   Package,
   Building2,
+  ChevronRight,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 
@@ -36,6 +37,7 @@ interface LevelSelectProps {
   onOpenItemBestiary?: () => void;
   onOpenItemCatalog?: () => void;
   onOpenBaseUpgrades?: () => void;
+  onOpenChangelog?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -51,6 +53,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onOpenItemBestiary,
   onOpenItemCatalog,
   onOpenBaseUpgrades,
+  onOpenChangelog,
 }) => {
   const openCatalogHandler = onOpenItemCatalog || onOpenItemBestiary;
   const activeAdv = progress.activeAdventure;
@@ -165,6 +168,20 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 </span>
               </button>
             )}
+
+            {onOpenChangelog && (
+              <button
+                onClick={onOpenChangelog}
+                className="px-3.5 py-2 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-[#10B981] text-[#10B981] font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                title="Ver log de atualizações recentes do jogo"
+              >
+                <Sparkles size={16} />
+                <span>Atualizações</span>
+                <span className="bg-[#10B981]/20 text-[#10B981] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#10B981]/30">
+                  v1.4
+                </span>
+              </button>
+            )}
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-[#343B50]/60">
@@ -186,6 +203,74 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
               <Users size={16} />
               <span>{activeAdv ? 'Recrutar / Ver Equipe' : 'Alterar Equipe'}</span>
             </button>
+          </div>
+        </div>
+
+        {/* Log de Atualizações Resumido (Página Inicial) */}
+        <div className="bg-[#1B2030]/90 border border-[#D4AD65]/40 rounded-2xl p-4 shadow-xl space-y-3 relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#343B50] pb-2.5">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-[#D4AD65]/15 text-[#D4AD65] border border-[#D4AD65]/30">
+                <Sparkles size={16} />
+              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                    Log de Atualizações
+                  </h3>
+                  <span className="text-[10px] font-black px-2 py-0.2 rounded-full bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                    v1.4 Recente
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#A7B0C4]">
+                  Últimas melhorias e balanceamentos aplicados na campanha
+                </p>
+              </div>
+            </div>
+
+            {onOpenChangelog && (
+              <button
+                onClick={onOpenChangelog}
+                className="self-start sm:self-center text-xs font-bold text-[#D4AD65] hover:text-[#E5C27E] flex items-center gap-1 transition-colors hover:underline cursor-pointer"
+              >
+                <span>Ver histórico completo</span>
+                <ChevronRight size={14} />
+              </button>
+            )}
+          </div>
+
+          {/* Destaques da versão mais recente */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+            <div className="bg-[#10131C] border border-[#343B50] rounded-xl p-2.5 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-[#10B981] mb-1">
+                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                Provocação com Alcance (3 Casas)
+              </div>
+              <p className="text-[11px] text-[#A7B0C4] leading-relaxed">
+                O Grito de Provocação atua em raio de até 3 casas ao redor do herói com feedback visual de &quot;Provocado!&quot;.
+              </p>
+            </div>
+
+            <div className="bg-[#10131C] border border-[#343B50] rounded-xl p-2.5 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-[#4C8DFF] mb-1">
+                <span className="w-2 h-2 rounded-full bg-[#4C8DFF]" />
+                Duração de Provocação: 1 Turno
+              </div>
+              <p className="text-[11px] text-[#A7B0C4] leading-relaxed">
+                Taunt ajustado para 1 turno, cobrindo com precisão toda a fase de ataque dos inimigos.
+              </p>
+            </div>
+
+            <div className="bg-[#10131C] border border-[#343B50] rounded-xl p-2.5 text-xs">
+              <div className="flex items-center gap-1.5 font-bold text-[#F0B44D] mb-1">
+                <span className="w-2 h-2 rounded-full bg-[#F0B44D]" />
+                Dano Mínimo contra Chefes (2% / 1%)
+              </div>
+              <p className="text-[11px] text-[#A7B0C4] leading-relaxed">
+                Ataques normais causam dano mínimo de 2% da vida do boss nos 2 primeiros chefes (até Fase 10) e 1% nos seguintes.
+              </p>
+            </div>
           </div>
         </div>
 

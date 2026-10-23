@@ -220,8 +220,12 @@ export function decideMonsterAction(
           }
         }
 
-        // Taunt mechanic: prioritize taunting targets, penalize others if a taunting hero exists
-        const tauntingHero = allAlivePlayers.find((p) => p.statusEffects?.some((e) => e.type === 'taunt' && e.duration > 0));
+        // Taunt mechanic: prioritize taunting targets, penalize others if a taunting hero exists within 3 tiles of distance
+        const tauntingHero = allAlivePlayers.find((p) => {
+          if (!p.statusEffects?.some((e) => e.type === 'taunt' && e.duration > 0)) return false;
+          const dist = Math.max(Math.abs(monster.x - p.x), Math.abs(monster.y - p.y));
+          return dist <= 3;
+        });
         if (tauntingHero) {
           if (target.id === tauntingHero.id) {
             score += 1500;
@@ -260,18 +264,28 @@ export function decideMonsterAction(
     }
   }
 
-  // If no target can be reached, move closer to nearest player unit
+  // If no target can be reached, move closer to nearest player unit (or taunting hero if within 3 tiles)
   if (!bestChoice) {
     let closestTarget: Unit | null = null;
     let minDist = Infinity;
 
-    playerUnits.forEach((p) => {
-      const d = manhattanDistance({ x: monster.x, y: monster.y }, { x: p.x, y: p.y });
-      if (d < minDist) {
-        minDist = d;
-        closestTarget = p;
-      }
+    const nearbyTauntingHero = playerUnits.find((p) => {
+      if (!p.statusEffects?.some((e) => e.type === 'taunt' && e.duration > 0)) return false;
+      const dist = Math.max(Math.abs(monster.x - p.x), Math.abs(monster.y - p.y));
+      return dist <= 3;
     });
+
+    if (nearbyTauntingHero) {
+      closestTarget = nearbyTauntingHero;
+    } else {
+      playerUnits.forEach((p) => {
+        const d = manhattanDistance({ x: monster.x, y: monster.y }, { x: p.x, y: p.y });
+        if (d < minDist) {
+          minDist = d;
+          closestTarget = p;
+        }
+      });
+    }
 
     if (closestTarget) {
       const targetUnit: Unit = closestTarget;

@@ -59,17 +59,17 @@ export const SKILLS: Record<string, Skill> = {
   provocacao: {
     id: 'provocacao',
     name: 'Grito de Provocação',
-    description: 'Ruge furiosamente contra os inimigos, atraindo a atenção total das ameaças (Provocação por 2 turnos).',
+    description: 'Ruge furiosamente contra os inimigos em um raio de até 3 casas de distância, atraindo a atenção total das ameaças próximas (Provocação por 1 turno).',
     damageType: 'healing',
     category: 'defense',
     power: 0,
     rangeMin: 0,
-    rangeMax: 0,
-    aoeRadius: 0,
+    rangeMax: 3,
+    aoeRadius: 3,
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'taunt', duration: 2, value: 1 },
+    statusEffect: { type: 'taunt', duration: 1, value: 1 },
     requiredLevel: 3,
     iconName: 'AlertTriangle',
   },
@@ -128,7 +128,7 @@ export const SKILLS: Record<string, Skill> = {
   grito_de_guerra: {
     id: 'grito_de_guerra',
     name: 'Presença Intimidante',
-    description: 'Ruge como um monstro de cerco, ganhando +20% de ataque por 2 turnos e forçando os inimigos próximos a focarem seus ataques em você.',
+    description: 'Ruge como um monstro de cerco, ganhando +20% de ataque por 2 turnos e forçando os inimigos próximos a focarem seus ataques em você (Provocação por 1 turno).',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -139,7 +139,7 @@ export const SKILLS: Record<string, Skill> = {
     currentCooldown: 0,
     targetType: 'self',
     statusEffect: { type: 'buff_atk', duration: 2, value: 20 },
-    secondaryStatusEffect: { type: 'taunt', duration: 2, value: 1 },
+    secondaryStatusEffect: { type: 'taunt', duration: 1, value: 1 },
     requiredLevel: 6,
     iconName: 'Flame',
   },
@@ -163,7 +163,7 @@ export const SKILLS: Record<string, Skill> = {
   resistencia_suprema: {
     id: 'resistencia_suprema',
     name: 'Fortaleza Inabalável (Suprema)',
-    description: 'Habilidade suprema: Regenera 50% da vida máxima instantaneamente e retém todo o agro inimigo com Provocação por 2 turnos.',
+    description: 'Habilidade suprema: Regenera 50% da vida máxima instantaneamente e retém todo o agro inimigo com Provocação por 1 turno.',
     damageType: 'healing',
     category: 'defense',
     power: 0.5,
@@ -173,7 +173,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'taunt', duration: 2, value: 1 },
+    statusEffect: { type: 'taunt', duration: 1, value: 1 },
     requiredLevel: 8,
     iconName: 'HeartPulse',
   },
@@ -2902,7 +2902,7 @@ export const SKILLS: Record<string, Skill> = {
   aura_de_retribuicao: {
     id: 'aura_de_retribuicao',
     name: 'Aura de Desafio Sagrado',
-    description: 'Irradia glória radiante forçando todos os inimigos a focarem seus ataques no Paladino (Provocação por 2 turnos).',
+    description: 'Irradia glória radiante forçando todos os inimigos a focarem seus ataques no Paladino (Provocação por 1 turno).',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -2912,7 +2912,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'taunt', duration: 2, value: 1 },
+    statusEffect: { type: 'taunt', duration: 1, value: 1 },
     requiredLevel: 3,
     iconName: 'AlertTriangle',
   },
@@ -2953,7 +2953,7 @@ export const SKILLS: Record<string, Skill> = {
   imposicao_da_justica: {
     id: 'imposicao_da_justica',
     name: 'Imposição da Justiça (Suprema)',
-    description: 'Habilidade suprema: Desfere um golpe devastador de justiça sagrada contra o inimigo (alcance até 2), causando 180% de dano físico e ativando Provocação por 2 turnos.',
+    description: 'Habilidade suprema: Desfere um golpe devastador de justiça sagrada contra o inimigo (alcance até 2), causando 180% de dano físico e ativando Provocação por 1 turno.',
     damageType: 'physical',
     category: 'attack',
     power: 1.8,
@@ -2963,7 +2963,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
-    casterStatusEffect: { type: 'taunt', duration: 2, value: 1 },
+    casterStatusEffect: { type: 'taunt', duration: 1, value: 1 },
     requiredLevel: 8,
     iconName: 'ShieldCheck',
   },
@@ -3491,7 +3491,7 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
       clone.cooldownMax = 3;
     }
 
-  // Aumento de efeito de status (+5% no valor por nível até o Nv. 5; nunca altera duração de stun/slow)
+  // Aumento de efeito de status (+5% no valor por nível até o Nv. 5; nunca altera duração de stun/slow/taunt)
   if (clone.statusEffect) {
     const isDurationEffect = clone.statusEffect.type === 'stun' || clone.statusEffect.type === 'slow' || clone.statusEffect.type === 'taunt';
     const isStatBuffDebuff = clone.statusEffect.type === 'buff_atk' || clone.statusEffect.type === 'debuff_def';
@@ -3501,7 +3501,11 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     const calculatedValue = isPoisonBurn ? 2 : isSlow ? 1 : (canonicalBase.statusEffect!.value + bonus);
     clone.statusEffect = {
       ...clone.statusEffect,
-      duration: (isStatBuffDebuff || isPoisonBurn || isSlow) ? Math.min(2, clone.statusEffect.duration) : clone.statusEffect.duration,
+      duration: (isStatBuffDebuff || isPoisonBurn || isSlow)
+        ? Math.min(2, clone.statusEffect.duration)
+        : clone.statusEffect.type === 'taunt'
+        ? 1
+        : clone.statusEffect.duration,
       value: isStatBuffDebuff ? Math.min(20, calculatedValue) : (isPoisonBurn ? 2 : isSlow ? 1 : calculatedValue),
     };
   }
@@ -3528,7 +3532,19 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
         duration: Math.min(2, clone.secondaryStatusEffect.duration),
         value: 1,
       };
+    } else if (clone.secondaryStatusEffect.type === 'taunt') {
+      clone.secondaryStatusEffect = {
+        ...clone.secondaryStatusEffect,
+        duration: 1,
+      };
     }
+  }
+
+  if (clone.casterStatusEffect && clone.casterStatusEffect.type === 'taunt') {
+    clone.casterStatusEffect = {
+      ...clone.casterStatusEffect,
+      duration: 1,
+    };
   }
 
   // Penetração de armadura/defesa (limite máximo fixo de 30% da armadura do alvo)

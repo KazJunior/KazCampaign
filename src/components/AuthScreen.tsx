@@ -10,6 +10,7 @@ import {
   Check,
   ShieldAlert,
   ArrowLeft,
+  Sparkles,
 } from 'lucide-react';
 import { login, register, recoverPassword } from '../utils/api';
 import type { AuthUser } from '../utils/api';
@@ -17,9 +18,10 @@ import type { AuthUser } from '../utils/api';
 interface AuthScreenProps {
   onAuthenticated: (user: AuthUser) => void;
   onOpenLeaderboard: () => void;
+  onOpenChangelog?: () => void;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onOpenLeaderboard }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onOpenLeaderboard, onOpenChangelog }) => {
   const [mode, setMode] = useState<'login' | 'register' | 'recover'>('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -281,14 +283,27 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onOpenL
           )}
         </div>
 
-        <button
-          id="auth-open-leaderboard"
-          type="button"
-          onClick={onOpenLeaderboard}
-          className="w-full py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-[#D4AD65] border border-[#D4AD65]/30 bg-[#D4AD65]/5 hover:bg-[#D4AD65]/15 transition-colors flex items-center justify-center gap-2"
-        >
-          <Trophy size={16} /> Ver ranking global
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            id="auth-open-leaderboard"
+            type="button"
+            onClick={onOpenLeaderboard}
+            className="flex-1 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-[#D4AD65] border border-[#D4AD65]/30 bg-[#D4AD65]/5 hover:bg-[#D4AD65]/15 transition-colors flex items-center justify-center gap-2"
+          >
+            <Trophy size={16} /> Ver ranking global
+          </button>
+          {onOpenChangelog && (
+            <button
+              id="auth-open-changelog"
+              type="button"
+              onClick={onOpenChangelog}
+              className="py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider text-[#10B981] border border-[#10B981]/30 bg-[#10B981]/5 hover:bg-[#10B981]/15 transition-colors flex items-center justify-center gap-1.5"
+              title="Notas de Atualização"
+            >
+              <Sparkles size={16} /> v1.4
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Modal de Exibição da Recovery Key */}

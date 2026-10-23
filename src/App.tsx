@@ -79,9 +79,10 @@ import { ItemLootModal } from './components/ItemLootModal';
 import { EquipmentModal } from './components/EquipmentModal';
 import { ItemBestiaryModal } from './components/ItemBestiaryModal';
 import { BaseUpgradeModal } from './components/BaseUpgradeModal';
+import { ChangelogModal } from './components/ChangelogModal';
 import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
 import type { AuthUser } from './utils/api';
-import { LogOut, Trophy, User as UserIcon, Loader2 } from 'lucide-react';
+import { LogOut, Trophy, User as UserIcon, Loader2, Sparkles } from 'lucide-react';
 
 function consolidateDiscoveredItems(
   existingDiscovered: string[] = [],
@@ -131,6 +132,7 @@ export function App() {
   const [showEquipment, setShowEquipment] = useState(false);
   const [showItemBestiary, setShowItemBestiary] = useState(false);
   const [showBaseUpgrades, setShowBaseUpgrades] = useState(false);
+  const [showChangelog, setShowChangelog] = useState(false);
   const [pendingLootItems, setPendingLootItems] = useState<ItemDefinition[] | null>(null);
 
   const authUserRef = useRef<AuthUser | null>(null);
@@ -328,6 +330,7 @@ export function App() {
         statusEffects: (u.statusEffects || []).map((eff) => {
           if (eff.type === 'slow') return { ...eff, value: Math.min(1, eff.value || 1) };
           if (eff.type === 'excess_heal' || eff.type === 'excess_shield') return { ...eff, duration: Math.min(1, eff.duration) };
+          if (eff.type === 'taunt') return { ...eff, duration: Math.min(1, eff.duration) };
           return eff;
         }),
       }));
@@ -543,6 +546,7 @@ export function App() {
         statusEffects: (u.statusEffects || []).map((eff) => {
           if (eff.type === 'slow') return { ...eff, value: Math.min(1, eff.value || 1) };
           if (eff.type === 'excess_heal' || eff.type === 'excess_shield') return { ...eff, duration: Math.min(1, eff.duration) };
+          if (eff.type === 'taunt') return { ...eff, duration: Math.min(1, eff.duration) };
           return eff;
         }),
       }))
@@ -1627,7 +1631,7 @@ export function App() {
     if (skill && skill.targetType === 'self') {
       soundManager.playHeal();
       if (boardRef.current) {
-        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', 0, skill);
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', skill.aoeRadius || 0, skill);
       }
 
       let currentUnitHp = selectedUnit.currentHp;
@@ -1695,6 +1699,16 @@ export function App() {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Invisível!', 'status', '#8B5CF6');
         } else if (eff.type === 'taunt') {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Provocando Inimigos!', 'status', '#EF4444');
+          // Mostra feedback visual nos inimigos dentro do alcance de até 3 casas
+          const affectedMonsters = units.filter(
+            (u) =>
+              u.faction === 'enemy' &&
+              !u.isDead &&
+              Math.max(Math.abs(u.x - selectedUnit.x), Math.abs(u.y - selectedUnit.y)) <= 3
+          );
+          affectedMonsters.forEach((m) => {
+            addFloatingNumber(m.x, m.y, 'Provocado!', 'status', '#EF4444');
+          });
         }
         updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), eff];
       };
@@ -2669,11 +2683,16 @@ export function App() {
               }
             }
           }
-          // Player status effects and cooldowns decrement when player ends their turn
+          // Taunt on player units decrements after the enemy turn has concluded
+          const updatedEffects = (u.statusEffects || [])
+            .map((e) => (e.type === 'taunt' ? { ...e, duration: e.duration - 1 } : e))
+            .filter((e) => e.duration > 0);
+
           return {
             ...u,
             currentHp,
             isDead,
+            statusEffects: updatedEffects,
             hasMoved: false,
             hasAttacked: false,
           };
@@ -2727,8 +2746,9 @@ export function App() {
     setUnits((prev) => {
       nextUnitsState = prev.map((u) => {
         if (u.faction === 'player' && !u.isDead) {
+          // Taunt is active against the upcoming enemy phase, so it decrements after the enemy turn ends
           const updatedEffects = (u.statusEffects || [])
-            .map((e) => ({ ...e, duration: e.duration - 1 }))
+            .map((e) => (e.type === 'taunt' ? e : { ...e, duration: e.duration - 1 }))
             .filter((e) => e.duration > 0);
 
           return {
@@ -3206,8 +3226,13 @@ export function App() {
   if (!authUser) {
     return (
       <>
-        <AuthScreen onAuthenticated={syncUserCloudProgress} onOpenLeaderboard={() => setShowLeaderboard(true)} />
+        <AuthScreen
+          onAuthenticated={syncUserCloudProgress}
+          onOpenLeaderboard={() => setShowLeaderboard(true)}
+          onOpenChangelog={() => setShowChangelog(true)}
+        />
         {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} />}
+        {showChangelog && <ChangelogModal onClose={() => setShowChangelog(false)} />}
       </>
     );
   }
@@ -3225,6 +3250,13 @@ export function App() {
               </span>
             )}
           </span>
+          <button
+            id="open-changelog"
+            onClick={() => setShowChangelog(true)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#10B981]/10 text-[#10B981] font-bold hover:bg-[#10B981]/20 transition-colors"
+          >
+            <Sparkles size={14} /> Atualizações
+          </button>
           <button
             id="open-leaderboard"
             onClick={() => setShowLeaderboard(true)}
@@ -3255,8 +3287,12 @@ export function App() {
           onOpenEquipment={() => setShowEquipment(true)}
           onOpenItemBestiary={() => setShowItemBestiary(true)}
           onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
+          onOpenChangelog={() => setShowChangelog(true)}
         />
 
+        {showChangelog && (
+          <ChangelogModal onClose={() => setShowChangelog(false)} />
+        )}
         {showLeaderboard && (
           <LeaderboardModal currentUsername={authUser.username} onClose={() => setShowLeaderboard(false)} />
         )}
