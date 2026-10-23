@@ -28,6 +28,9 @@ import {
   CheckCircle2,
   Music,
 } from 'lucide-react';
+import type { PetDefinition, PetActiveSkill } from '../types/game';
+import { PET_RARITY_CONFIG } from '../data/pets';
+import { PetIcon } from './PetIcon';
 
 interface SkillsPanelProps {
   selectedUnit: Unit | null;
@@ -35,6 +38,12 @@ interface SkillsPanelProps {
   onSelectSkill: (skill: Skill) => void;
   onClearSkill: () => void;
   isPlayerTurn: boolean;
+  equippedPet?: PetDefinition | null;
+  activePetSkill?: PetActiveSkill | null;
+  onSelectPetSkill?: (skill: PetActiveSkill) => void;
+  onClearPetSkill?: () => void;
+  turnNumber?: number;
+  usedPetSkillIds?: string[];
 }
 
 export const SkillsPanel: React.FC<SkillsPanelProps> = ({
@@ -43,17 +52,114 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
   onSelectSkill,
   onClearSkill,
   isPlayerTurn,
+  equippedPet,
+  activePetSkill,
+  onSelectPetSkill,
+  onClearPetSkill,
+  turnNumber = 1,
+  usedPetSkillIds = [],
 }) => {
+  const isTurn3OrMore = turnNumber >= 3;
+
   if (!selectedUnit) {
     return (
-      <aside className="hidden lg:flex w-80 bg-[#1B2030] border-r border-[#343B50] p-4 flex-col items-center justify-center text-center text-[#A7B0C4] shadow-xl select-none">
-        <div className="w-14 h-14 rounded-2xl bg-[#10131C] border border-[#343B50] flex items-center justify-center mb-3 shadow-inner">
-          <Sparkles className="text-[#D4AD65]/50" size={28} />
+      <aside className="hidden lg:flex w-80 bg-[#1B2030] border-r border-[#343B50] p-4 flex-col justify-between text-[#A7B0C4] shadow-xl select-none h-full z-10 overflow-y-auto custom-scrollbar">
+        <div className="flex flex-col items-center justify-center text-center py-6">
+          <div className="w-14 h-14 rounded-2xl bg-[#10131C] border border-[#343B50] flex items-center justify-center mb-3 shadow-inner">
+            <Sparkles className="text-[#D4AD65]/50" size={28} />
+          </div>
+          <p className="font-bold text-sm text-[#F3F4F8]">Menu de Habilidades</p>
+          <p className="text-xs text-[#A7B0C4]/70 mt-1 max-w-[220px] leading-relaxed">
+            Selecione uma unidade no tabuleiro para utilizar suas habilidades de combate.
+          </p>
         </div>
-        <p className="font-bold text-sm text-[#F3F4F8]">Menu de Habilidades</p>
-        <p className="text-xs text-[#A7B0C4]/70 mt-1 max-w-[220px] leading-relaxed">
-          Selecione uma unidade no tabuleiro para visualizar e utilizar suas habilidades de combate.
-        </p>
+
+        {/* Pet Companion Card when no unit selected */}
+        {equippedPet && (
+          <div className="bg-[#10131C] border border-amber-500/40 rounded-2xl p-3.5 space-y-3 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-12 h-12 rounded-xl border flex items-center justify-center shrink-0 shadow-md"
+                style={{
+                  borderColor: PET_RARITY_CONFIG[equippedPet.rarity].color,
+                  backgroundColor: '#161A26',
+                  color: equippedPet.color,
+                }}
+              >
+                <PetIcon iconName={equippedPet.iconName} size={24} />
+              </div>
+              <div className="min-w-0">
+                <span
+                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                    PET_RARITY_CONFIG[equippedPet.rarity].badgeBg
+                  }`}
+                >
+                  {PET_RARITY_CONFIG[equippedPet.rarity].label}
+                </span>
+                <h4 className="font-bold text-sm text-[#F3F4F8] truncate mt-0.5">
+                  {equippedPet.name}
+                </h4>
+              </div>
+            </div>
+
+            {/* Active Skills of Pet */}
+            {equippedPet.activeSkills.length > 0 && onSelectPetSkill && (
+              <div className="space-y-2 pt-1 border-t border-[#343B50]/60">
+                <div className="flex items-center justify-between text-xs font-bold text-[#F3F4F8]">
+                  <span className="flex items-center gap-1.5 text-amber-400">
+                    <Zap size={14} /> Habilidades do Pet
+                  </span>
+                  <span className={`text-[10px] ${isTurn3OrMore ? 'text-emerald-400' : 'text-[#A7B0C4]'}`}>
+                    Turno {turnNumber} (Req. 3+)
+                  </span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {equippedPet.activeSkills.map((sk) => {
+                    const isUsed = usedPetSkillIds.includes(sk.id);
+                    const isSelected = activePetSkill?.id === sk.id;
+                    const canActivate = isPlayerTurn && isTurn3OrMore && !isUsed;
+
+                    return (
+                      <button
+                        key={sk.id}
+                        disabled={!canActivate && !isSelected}
+                        onClick={() => {
+                          if (isSelected && onClearPetSkill) onClearPetSkill();
+                          else onSelectPetSkill(sk);
+                        }}
+                        className={`w-full p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 text-xs ${
+                          isSelected
+                            ? 'bg-amber-500/20 border-amber-400 text-white shadow-lg ring-1 ring-amber-400'
+                            : !canActivate
+                            ? 'bg-[#161A26]/50 border-[#343B50]/50 opacity-60 cursor-not-allowed'
+                            : 'bg-[#161A26] border-[#343B50] hover:border-amber-400 hover:bg-[#1E2538] text-[#F3F4F8]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between font-bold">
+                          <span className="flex items-center gap-1.5">
+                            <Zap size={12} className="text-amber-400" />
+                            <span>{sk.name}</span>
+                          </span>
+                          {isUsed ? (
+                            <span className="text-[10px] text-red-400 font-semibold">Já Usada</span>
+                          ) : !isTurn3OrMore ? (
+                            <span className="text-[10px] text-[#A7B0C4]">No Turno 3</span>
+                          ) : isSelected ? (
+                            <span className="text-[10px] text-amber-300 font-black">Mirando...</span>
+                          ) : (
+                            <span className="text-[10px] text-emerald-400 font-bold">Pronto</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-[#A7B0C4] line-clamp-2">{sk.description}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </aside>
     );
   }
@@ -286,6 +392,65 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
           })
         )}
       </div>
+
+      {/* Pet Active Skills Section */}
+      {equippedPet && equippedPet.activeSkills.length > 0 && onSelectPetSkill && (
+        <div className="p-3 border-t border-[#343B50] bg-[#121520] space-y-2 shrink-0">
+          <div className="flex items-center justify-between text-xs font-bold text-[#F3F4F8]">
+            <span className="flex items-center gap-1.5 text-amber-400">
+              <Zap size={13} /> {equippedPet.name}
+            </span>
+            <span className={`text-[10px] ${isTurn3OrMore ? 'text-emerald-400' : 'text-[#A7B0C4]'}`}>
+              {isTurn3OrMore ? 'Turno 3+ (Disponível)' : `Disponível no Turno 3 (${turnNumber}/3)`}
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            {equippedPet.activeSkills.map((sk) => {
+              const isUsed = usedPetSkillIds.includes(sk.id);
+              const isSelected = activePetSkill?.id === sk.id;
+              const canActivate = isPlayerTurn && isTurn3OrMore && !isUsed;
+
+              return (
+                <button
+                  key={sk.id}
+                  disabled={!canActivate && !isSelected}
+                  onClick={() => {
+                    if (isSelected && onClearPetSkill) onClearPetSkill();
+                    else onSelectPetSkill(sk);
+                  }}
+                  className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between gap-2 text-xs ${
+                    isSelected
+                      ? 'bg-amber-500/20 border-amber-400 text-white shadow-lg ring-1 ring-amber-400'
+                      : !canActivate
+                      ? 'bg-[#161A26]/50 border-[#343B50]/50 opacity-60 cursor-not-allowed'
+                      : 'bg-[#161A26] border-[#343B50] hover:border-amber-400 hover:bg-[#1E2538] text-[#F3F4F8]'
+                  }`}
+                >
+                  <div className="min-w-0">
+                    <div className="font-bold truncate text-[#F3F4F8] flex items-center gap-1.5">
+                      <Zap size={11} className="text-amber-400 shrink-0" />
+                      <span>{sk.name}</span>
+                    </div>
+                    <p className="text-[10px] text-[#A7B0C4] truncate">{sk.description}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    {isUsed ? (
+                      <span className="text-[9px] text-red-400 font-semibold bg-red-500/10 px-1.5 py-0.5 rounded">Usada</span>
+                    ) : !isTurn3OrMore ? (
+                      <span className="text-[9px] text-[#A7B0C4]">T3+</span>
+                    ) : isSelected ? (
+                      <span className="text-[9px] text-amber-300 font-black bg-amber-500/20 px-1.5 py-0.5 rounded">Mirando</span>
+                    ) : (
+                      <span className="text-[9px] text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded">Usar</span>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Footer Helper */}
       {isAlly && (

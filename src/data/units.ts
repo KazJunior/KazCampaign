@@ -484,7 +484,7 @@ export function createPlayerUnit(
   equippedItemIds: string[] = [],
   itemUpgrades?: Record<string, number>,
   classUpgradeBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number },
-  globalBonus?: { hp?: number }
+  globalBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number; mov?: number; range?: number }
 ): Unit {
   const targetClassKey = className === 'engenheiro' ? 'druida' : className;
   const def = CLASS_DEFINITIONS[targetClassKey] || CLASS_DEFINITIONS[className] || CLASS_DEFINITIONS['guerreiro'];
@@ -517,15 +517,21 @@ export function createPlayerUnit(
 
   const cBonus = classUpgradeBonus || { hp: 0, atk: 0, mag: 0, def: 0, res: 0 };
   const gHp = globalBonus?.hp || 0;
+  const gAtk = globalBonus?.atk || 0;
+  const gMag = globalBonus?.mag || 0;
+  const gDef = globalBonus?.def || 0;
+  const gRes = globalBonus?.res || 0;
+  const gMov = globalBonus?.mov || 0;
+  const gRange = globalBonus?.range || 0;
 
   const hpBonus = levelOffsets * growth.hp + bonusHp + itemHp + (cBonus.hp || 0) + gHp;
   const maxHp = def.maxHp + hpBonus;
-  const atk = def.atk + levelOffsets * growth.atk + bonusAtk + itemAtk + (cBonus.atk || 0);
-  const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag + (cBonus.mag || 0);
-  const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef + (cBonus.def || 0);
-  const res = def.res + levelOffsets * growth.res + bonusRes + itemRes + (cBonus.res || 0);
-  const mov = def.mov + itemMov;
-  const range = def.range + itemRange;
+  const atk = def.atk + levelOffsets * growth.atk + bonusAtk + itemAtk + (cBonus.atk || 0) + gAtk;
+  const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag + (cBonus.mag || 0) + gMag;
+  const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef + (cBonus.def || 0) + gDef;
+  const res = def.res + levelOffsets * growth.res + bonusRes + itemRes + (cBonus.res || 0) + gRes;
+  const mov = def.mov + itemMov + gMov;
+  const range = def.range + itemRange + gRange;
 
   // Max 5 skills total: baseSkill + up to 4 learnedSkillIds
   const skillListIds = Array.from(new Set([def.baseSkillId, ...learnedSkillIds])).slice(0, 5);

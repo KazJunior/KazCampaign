@@ -15,11 +15,44 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.5',
+    date: '23 de Outubro de 2026',
+    title: 'Santuário dos Pets: Ovos, Incubação & Companheiros de Batalha',
+    isLatest: true,
+    tag: 'Grande Atualização',
+    changes: [
+      {
+        highlight: 'Sistema de Pets & Ovos de Companheiro',
+        description: 'Os jogadores agora podem obter ovos derrotando monstros (1% de chance em monstros comuns, 100% garantido ao derrotar Chefes). Limite de até 20 ovos no ninho.',
+        type: 'new',
+      },
+      {
+        highlight: 'Raridades de Ovos & Chances',
+        description: 'Ovos com raridades visuais distintas: Branco (Comum - 40%), Verde (Incomum - 30%), Azul (Raro - 20%), Roxo (Épico - 9%) e Dourado (Lendário - 1%).',
+        type: 'new',
+      },
+      {
+        highlight: 'Incubadora por Raridade & Chocar com Ouro',
+        description: 'Tempo de incubação balanceado por raridade: Comum (1h), Incomum (2h), Raro (3h), Épico (5h) e Lendário (8h), ou chocado imediatamente por 10.000 de Ouro. Pets repetidos são convertidos em ouro.',
+        type: 'new',
+      },
+      {
+        highlight: 'Efeitos Bônus & Habilidades Ativas com Maior Status do Grupo',
+        description: 'Equipe um pet antes das expedições! Suas habilidades ativas agora escalam diretamente com o maior status da equipe (maior Ataque, maior Magia ou maior Defesa entre os heróis vivos). Ativáveis a partir do Turno 3 (1 uso por batalha).',
+        type: 'buff',
+      },
+      {
+        highlight: 'Almanaque de Pets (41 Exemplares)',
+        description: 'Catálogo completo no Santuário contendo 15 Comuns, 10 Incomuns, 8 Raros, 5 Épicos e 3 Lendários com detalhes, filtros de coleção e lore.',
+        type: 'new',
+      },
+    ],
+  },
+  {
     version: 'v1.4',
     date: '23 de Outubro de 2026',
     title: 'Alcance de Provocação & Dano Mínimo em Chefes',
-    isLatest: true,
-    tag: 'Atualização Atual',
+    tag: 'Balanceamento',
     changes: [
       {
         highlight: 'Provocação com Alcance (3 Casas)',

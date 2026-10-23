@@ -1,13 +1,16 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Award, Coins, Sparkles, RefreshCw, ChevronRight, Skull, ArrowUpRight, ShieldCheck, Home } from 'lucide-react';
-import type { Unit } from '../types/game';
+import { Award, Coins, Sparkles, RefreshCw, ChevronRight, Skull, ArrowUpRight, ShieldCheck, Home, Egg } from 'lucide-react';
+import type { Unit, PetEgg } from '../types/game';
+import { PET_RARITY_CONFIG } from '../data/pets';
+import { EggDisplay } from './PetIcon';
 
-interface LevelSummary {
+export interface LevelSummary {
   xpGained: number;
   goldGained: number;
   survivingUnits: Unit[];
   levelUps: { unitName: string; oldLevel: number; newLevel: number }[];
+  droppedEggs?: PetEgg[];
 }
 
 interface VictoryDefeatModalProps {
@@ -108,6 +111,32 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
                     </span>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {summary.droppedEggs && summary.droppedEggs.length > 0 && (
+              <div className="bg-[#10131C] p-3 rounded-xl border border-amber-500/40 space-y-2">
+                <div className="text-[11px] font-bold text-amber-400 uppercase flex items-center gap-1.5 justify-center">
+                  <Egg size={14} className="text-amber-400" />
+                  <span>Ovo de Companheiro Descoberto!</span>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {summary.droppedEggs.map((egg, idx) => {
+                    const cfg = PET_RARITY_CONFIG[egg.rarity];
+                    return (
+                      <div
+                        key={idx}
+                        className="bg-[#1B2030] border px-2.5 py-1.5 rounded-xl flex items-center gap-2 shadow"
+                        style={{ borderColor: cfg.color }}
+                      >
+                        <EggDisplay rarity={egg.rarity} size="sm" />
+                        <span className="text-xs font-bold" style={{ color: cfg.color }}>
+                          Ovo {cfg.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

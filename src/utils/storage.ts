@@ -1,5 +1,6 @@
 import type { AudioSettings, PlayerProgress, ActiveBattleState } from '../types/game';
 import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
+import { getHatchDuration } from '../data/pets';
 import { saveCloudProgress } from './api';
 
 const PROGRESS_KEY = 'rpg_tactics_progress_v4';
@@ -43,6 +44,9 @@ export const DEFAULT_PROGRESS: PlayerProgress = {
   classUpgrades: {},
   generalUpgrades: {},
   itemUpgrades: {},
+  unlockedPetIds: [],
+  equippedPetId: null,
+  eggs: [],
 };
 
 export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -173,6 +177,14 @@ export function loadPlayerProgress(): PlayerProgress {
       classUpgrades: parsed.classUpgrades && typeof parsed.classUpgrades === 'object' ? parsed.classUpgrades : {},
       generalUpgrades: parsed.generalUpgrades && typeof parsed.generalUpgrades === 'object' ? parsed.generalUpgrades : {},
       itemUpgrades: parsed.itemUpgrades && typeof parsed.itemUpgrades === 'object' ? parsed.itemUpgrades : {},
+      unlockedPetIds: Array.isArray(parsed.unlockedPetIds) ? parsed.unlockedPetIds : [],
+      equippedPetId: typeof parsed.equippedPetId === 'string' ? parsed.equippedPetId : null,
+      eggs: Array.isArray(parsed.eggs)
+        ? parsed.eggs.map((e: any) => ({
+            ...e,
+            hatchDurationMs: getHatchDuration(e.rarity),
+          }))
+        : [],
     };
   } catch (err) {
     console.error('Failed to load progress from localStorage:', err);

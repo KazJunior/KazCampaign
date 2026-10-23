@@ -287,6 +287,68 @@ export interface PlayerProgress {
   classUpgrades?: Record<string, number>; // className -> level (0..5)
   generalUpgrades?: Record<string, number>; // upgradeId -> level (0..3)
   itemUpgrades?: Record<string, number>; // itemId -> level (0..3, +5% stat per level)
+
+  // Pets & Eggs system:
+  unlockedPetIds?: string[]; // IDs of unlocked pets in the Pet Almanac
+  equippedPetId?: string | null; // ID of currently equipped pet
+  eggs?: PetEgg[]; // Up to 20 eggs in egg inventory/nest
+}
+
+export type PetRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+export interface PetPassiveEffect {
+  id: string;
+  name: string;
+  description: string;
+  type: 'stat_boost' | 'gold_boost' | 'shield_start' | 'hp_regen';
+  stat?: 'hp' | 'atk' | 'def' | 'mag' | 'res' | 'mov' | 'range';
+  value: number;
+}
+
+export interface PetActiveSkill {
+  id: string;
+  name: string;
+  description: string;
+  iconName: string;
+  damageType?: DamageType;
+  power?: number;
+  scalingStat?: 'atk' | 'mag' | 'def' | 'res' | 'hp';
+  healMultiplier?: number;
+  shieldMultiplier?: number;
+  rangeMin: number;
+  rangeMax: number;
+  aoeRadius: number;
+  aoeType?: AoEType;
+  targetType: 'enemy' | 'ally' | 'any' | 'empty_tile' | 'self';
+  statusEffect?: StatusEffect;
+  healAmount?: number;
+  shieldAmount?: number;
+  buffAtkAmount?: number;
+  buffDuration?: number;
+  defenseIgnoreRatio?: number;
+  knockback?: number;
+  cleansesDebuffs?: boolean;
+}
+
+export interface PetDefinition {
+  id: string;
+  name: string;
+  species: string;
+  rarity: PetRarity;
+  description: string;
+  lore: string;
+  iconName: string;
+  color: string;
+  passives: PetPassiveEffect[];
+  activeSkills: PetActiveSkill[];
+}
+
+export interface PetEgg {
+  id: string;
+  rarity: PetRarity;
+  acquiredAt: number; // Date.now()
+  incubatingStartedAt?: number | null; // Date.now() when incubation began
+  hatchDurationMs: number; // 5 hours in ms = 18_000_000
 }
 
 export interface AudioSettings {

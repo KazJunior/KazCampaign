@@ -63,7 +63,7 @@ import { DeploymentBanner } from './components/DeploymentBanner';
 import { ObjectivesModal } from './components/ObjectivesModal';
 import { SettingsModal } from './components/SettingsModal';
 import { TutorialModal } from './components/TutorialModal';
-import { VictoryDefeatModal } from './components/VictoryDefeatModal';
+import { VictoryDefeatModal, type LevelSummary } from './components/VictoryDefeatModal';
 import { LevelSelect } from './components/LevelSelect';
 import { PartySelectionModal } from './components/PartySelectionModal';
 import { SkillChoiceModal } from './components/SkillChoiceModal';
@@ -80,9 +80,26 @@ import { EquipmentModal } from './components/EquipmentModal';
 import { ItemBestiaryModal } from './components/ItemBestiaryModal';
 import { BaseUpgradeModal } from './components/BaseUpgradeModal';
 import { ChangelogModal } from './components/ChangelogModal';
+import { PetModal } from './components/PetModal';
+import { getPetById, calculatePetPassives, createNewEgg, MAX_EGGS_LIMIT } from './data/pets';
+import type { PetActiveSkill, PetEgg } from './types/game';
 import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
 import type { AuthUser } from './utils/api';
 import { LogOut, Trophy, User as UserIcon, Loader2, Sparkles } from 'lucide-react';
+
+function getGlobalHeroBonus(prog: PlayerProgress) {
+  const equippedPet = getPetById(prog.equippedPetId);
+  const petPassives = calculatePetPassives(equippedPet);
+  return {
+    hp: getGeneralBonusHp(prog.generalUpgrades?.globalHp || 0) + petPassives.stats.hp,
+    atk: petPassives.stats.atk,
+    mag: petPassives.stats.mag,
+    def: petPassives.stats.def,
+    res: petPassives.stats.res,
+    mov: petPassives.stats.mov,
+    range: petPassives.stats.range,
+  };
+}
 
 function consolidateDiscoveredItems(
   existingDiscovered: string[] = [],
@@ -133,6 +150,9 @@ export function App() {
   const [showItemBestiary, setShowItemBestiary] = useState(false);
   const [showBaseUpgrades, setShowBaseUpgrades] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
+  const [showPetsModal, setShowPetsModal] = useState(false);
+  const [activePetSkill, setActivePetSkill] = useState<PetActiveSkill | null>(null);
+  const [usedPetSkillIds, setUsedPetSkillIds] = useState<string[]>([]);
   const [pendingLootItems, setPendingLootItems] = useState<ItemDefinition[] | null>(null);
 
   const authUserRef = useRef<AuthUser | null>(null);
@@ -384,12 +404,7 @@ export function App() {
     return null;
   });
 
-  const [victorySummary, setVictorySummary] = useState<{
-    xpGained: number;
-    goldGained: number;
-    survivingUnits: Unit[];
-    levelUps: { unitName: string; oldLevel: number; newLevel: number }[];
-  } | null>(null);
+  const [victorySummary, setVictorySummary] = useState<LevelSummary | null>(null);
 
   // Flag to block input during animations
   const [isAnimatingAction, setIsAnimatingAction] = useState(false);
@@ -443,7 +458,7 @@ export function App() {
           if (itemId) equippedItemIds.push(itemId);
         });
       }
-      return createPlayerUnit(
+      const createdUnit = createPlayerUnit(
         cKey as any,
         `player_${cKey}`,
         spawnPt.x,
@@ -460,8 +475,20 @@ export function App() {
         equippedItemIds,
         progress.itemUpgrades,
         getClassCumulativeBonus(cKey, progress.classUpgrades?.[cKey] || 0),
-        { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
+        getGlobalHeroBonus(progress)
       );
+
+      const equippedPet = getPetById(progress.equippedPetId);
+      const petPassives = calculatePetPassives(equippedPet);
+      if (petPassives.shieldStart > 0) {
+        createdUnit.statusEffects.push({
+          type: 'shield',
+          duration: 99,
+          value: petPassives.shieldStart,
+        });
+      }
+
+      return createdUnit;
     });
 
     const enemyUnits: Unit[] = lvlConfig.enemySpawns.map((spawn, idx) =>
@@ -481,6 +508,8 @@ export function App() {
     setSelectedUnitId(null);
     setSelectedAction('none');
     setActiveSkill(null);
+    setActivePetSkill(null);
+    setUsedPetSkillIds([]);
     setTargetUnitId(null);
     setDamagePreview(null);
     setFloatingNumbers([]);
@@ -866,7 +895,7 @@ export function App() {
           equippedIds,
           progress.itemUpgrades,
           getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
-          { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
+          getGlobalHeroBonus(progress)
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -930,7 +959,7 @@ export function App() {
           equippedIds,
           progress.itemUpgrades,
           getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
-          { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
+          getGlobalHeroBonus(progress)
         );
         return {
           ...recomputed,
@@ -994,7 +1023,7 @@ export function App() {
           equippedIds,
           nextP.itemUpgrades,
           getClassCumulativeBonus(className, nextLvl),
-          { hp: getGeneralBonusHp(nextP.generalUpgrades?.globalHp || 0) }
+          getGlobalHeroBonus(nextP)
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -1054,7 +1083,7 @@ export function App() {
             equippedIds,
             nextP.itemUpgrades,
             getClassCumulativeBonus(u.className, nextP.classUpgrades?.[u.className] || 0),
-            { hp: getGeneralBonusHp(nextLvl) }
+            getGlobalHeroBonus(nextP)
           );
           const hpDiff = recomputed.maxHp - u.maxHp;
           return {
@@ -1116,7 +1145,7 @@ export function App() {
           equippedIds,
           updatedItemUpgrades,
           getClassCumulativeBonus(u.className, nextP.classUpgrades?.[u.className] || 0),
-          { hp: getGeneralBonusHp(nextP.generalUpgrades?.globalHp || 0) }
+          getGlobalHeroBonus(nextP)
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -1142,6 +1171,29 @@ export function App() {
   }, [selectedUnit, phase, selectedAction, grid, units, isAnimatingAction]);
 
   const attackableTiles: Point[] = React.useMemo(() => {
+    if (activePetSkill) {
+      if (phase !== 'player_turn' || isAnimatingAction) return [];
+      const livingAllies = units.filter((u) => u.faction === 'player' && !u.isDead);
+      const targetSet = new Set<string>();
+      const result: Point[] = [];
+      livingAllies.forEach((ally) => {
+        const tiles = getAttackableTiles(
+          { x: ally.x, y: ally.y },
+          activePetSkill.rangeMin,
+          activePetSkill.rangeMax,
+          grid[0]?.length || 0,
+          grid.length
+        );
+        tiles.forEach((pt) => {
+          const key = `${pt.x},${pt.y}`;
+          if (!targetSet.has(key)) {
+            targetSet.add(key);
+            result.push(pt);
+          }
+        });
+      });
+      return result;
+    }
     if (
       !selectedUnit ||
       phase !== 'player_turn' ||
@@ -1167,9 +1219,16 @@ export function App() {
       return getAttackableTiles({ x: selectedUnit.x, y: selectedUnit.y }, rangeMin, rangeMax, grid[0].length, grid.length);
     }
     return [];
-  }, [selectedUnit, phase, selectedAction, activeSkill, grid, units, isAnimatingAction]);
+  }, [selectedUnit, phase, selectedAction, activeSkill, activePetSkill, grid, units, isAnimatingAction]);
 
   const aoeTiles: Point[] = React.useMemo(() => {
+    if (activePetSkill && activePetSkill.aoeRadius > 0) {
+      const aoeType = activePetSkill.aoeType || 'circle';
+      if (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y)) {
+        return getAoETiles(hoveredTile, activePetSkill.aoeRadius, grid[0].length, grid.length, aoeType, null);
+      }
+      return [];
+    }
     if (!activeSkill || activeSkill.aoeRadius === 0) return [];
     const aoeType = activeSkill.aoeType || 'circle';
     const origin = selectedUnit ? { x: selectedUnit.x, y: selectedUnit.y } : null;
@@ -1185,7 +1244,7 @@ export function App() {
       return getAoETiles(hoveredTile, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin);
     }
     return [];
-  }, [activeSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles, selectedUnit]);
+  }, [activeSkill, activePetSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles, selectedUnit]);
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
@@ -1287,6 +1346,191 @@ export function App() {
     }
 
     if (phase !== 'player_turn') return;
+
+    // =========================================================================
+    // EXECUTE ACTIVE PET SKILL
+    // =========================================================================
+    if (activePetSkill) {
+      const isTargetable = attackableTiles.some((t) => t.x === x && t.y === y);
+      if (!isTargetable) return;
+
+      setIsAnimatingAction(true);
+      const petSkill = activePetSkill;
+      const aoeType = petSkill.aoeType || 'circle';
+      const affectedPoints =
+        petSkill.aoeRadius > 0
+          ? getAoETiles({ x, y }, petSkill.aoeRadius, grid[0].length, grid.length, aoeType, null)
+          : [{ x, y }];
+
+      let updatedUnits = [...units];
+      const isHealingOrSupport = petSkill.damageType === 'healing' || (petSkill.healAmount || 0) > 0 || (petSkill.shieldAmount || 0) > 0 || (petSkill.healMultiplier || 0) > 0 || (petSkill.shieldMultiplier || 0) > 0;
+      const isOffensive = petSkill.damageType === 'physical' || petSkill.damageType === 'magical' || (petSkill.power || 0) > 0;
+
+      // Calculate the highest party stats among living heroes
+      const livingPlayers = units.filter((u) => u.faction === 'player' && !u.isDead);
+      const partyCandidates = livingPlayers.length > 0 ? livingPlayers : units.filter((u) => u.faction === 'player');
+
+      const getEffectiveStat = (u: Unit, stat: 'atk' | 'mag' | 'def' | 'res') => {
+        let val = u[stat] || 0;
+        if (stat === 'atk') {
+          const atkBuff = u.statusEffects?.find((e) => e.type === 'buff_atk' && e.duration > 0);
+          if (atkBuff) val = Math.round(val * (1 + atkBuff.value / 100));
+        }
+        return val;
+      };
+
+      const highestPartyAtk = Math.max(1, ...partyCandidates.map((u) => getEffectiveStat(u, 'atk')));
+      const highestPartyMag = Math.max(1, ...partyCandidates.map((u) => getEffectiveStat(u, 'mag')));
+      const highestPartyDef = Math.max(1, ...partyCandidates.map((u) => getEffectiveStat(u, 'def')));
+      const highestPartyRes = Math.max(1, ...partyCandidates.map((u) => getEffectiveStat(u, 'res')));
+
+      // Primary stat based on scalingStat or damageType
+      let primaryStat = highestPartyMag;
+      if (petSkill.scalingStat === 'atk' || petSkill.damageType === 'physical') {
+        primaryStat = highestPartyAtk;
+      } else if (petSkill.scalingStat === 'def') {
+        primaryStat = highestPartyDef;
+      } else if (petSkill.scalingStat === 'res') {
+        primaryStat = highestPartyRes;
+      } else if (petSkill.scalingStat === 'mag' || petSkill.damageType === 'magical') {
+        primaryStat = highestPartyMag;
+      }
+
+      if (isHealingOrSupport) {
+        soundManager.playHeal();
+      } else {
+        soundManager.playMagicSpell();
+      }
+
+      updatedUnits = updatedUnits.map((u) => {
+        if (u.isDead) return u;
+        const isHit = affectedPoints.some((pt) => pt.x === u.x && pt.y === u.y);
+        if (!isHit) return u;
+
+        // Healing / Shield / Buff for allies
+        if (u.faction === 'player' && (isHealingOrSupport || petSkill.targetType === 'any' || petSkill.targetType === 'ally')) {
+          let newHp = u.currentHp;
+          let newEffects = [...u.statusEffects];
+
+          if (petSkill.cleansesDebuffs) {
+            newEffects = newEffects.filter((e) => e.type !== 'poison' && e.type !== 'burn' && e.type !== 'stun' && e.type !== 'slow' && e.type !== 'debuff_def');
+            addFloatingNumber(u.x, u.y, 'Purificado!', 'status', '#56E59A');
+          }
+
+          // Calculate heal scaling with highest party magic
+          let healVal = 0;
+          if (petSkill.healMultiplier) {
+            healVal = Math.round(highestPartyMag * petSkill.healMultiplier);
+          } else if (petSkill.healAmount) {
+            healVal = petSkill.healAmount;
+          } else if (petSkill.damageType === 'healing' && petSkill.power) {
+            healVal = Math.round(highestPartyMag * petSkill.power);
+          }
+
+          if (healVal > 0) {
+            newHp = Math.min(u.maxHp, u.currentHp + healVal);
+            const healedVal = newHp - u.currentHp;
+            if (healedVal > 0) addFloatingNumber(u.x, u.y, `+${healedVal}`, 'healing', '#43C878');
+          }
+
+          // Calculate shield scaling with highest party stat
+          let shieldVal = 0;
+          if (petSkill.shieldMultiplier) {
+            const statForShield = petSkill.scalingStat === 'def' ? highestPartyDef : highestPartyMag;
+            shieldVal = Math.round(statForShield * petSkill.shieldMultiplier);
+          } else if (petSkill.shieldAmount) {
+            shieldVal = petSkill.shieldAmount;
+          } else if (petSkill.damageType === 'healing' && !petSkill.healMultiplier && !petSkill.healAmount && petSkill.power) {
+            shieldVal = Math.round(highestPartyMag * petSkill.power);
+          }
+
+          if (shieldVal > 0) {
+            const currentShield = newEffects.find((e) => e.type === 'shield')?.value || 0;
+            const updatedShield = currentShield + shieldVal;
+            newEffects = newEffects.filter((e) => e.type !== 'shield');
+            newEffects.push({ type: 'shield', duration: 2, value: updatedShield });
+            addFloatingNumber(u.x, u.y, `+${shieldVal} Escudo`, 'shield', '#60A5FA');
+          }
+
+          if (petSkill.statusEffect) {
+            newEffects.push({ ...petSkill.statusEffect });
+            if (petSkill.statusEffect.type === 'invisible') {
+              addFloatingNumber(u.x, u.y, 'Invisível!', 'status', '#A855F7');
+            }
+          }
+
+          if (petSkill.buffAtkAmount) {
+            newEffects.push({ type: 'buff_atk', duration: petSkill.buffDuration || 1, value: petSkill.buffAtkAmount });
+            addFloatingNumber(u.x, u.y, `+${petSkill.buffAtkAmount}% Dano`, 'status', '#F97316');
+          }
+
+          return {
+            ...u,
+            currentHp: newHp,
+            statusEffects: newEffects,
+          };
+        }
+
+        // Damage / Debuffs for enemies
+        if (u.faction === 'enemy' && (isOffensive || petSkill.targetType === 'any' || petSkill.targetType === 'enemy')) {
+          const powerMultiplier = petSkill.power || 1.5;
+          const rawDmg = Math.round(primaryStat * powerMultiplier);
+          const defIgnore = Math.min(0.7, petSkill.defenseIgnoreRatio || 0);
+          const effectiveDef = petSkill.damageType === 'magical' ? u.res : u.def;
+          const defDebuff = u.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+          const mitigatedDef = defDebuff ? Math.round(effectiveDef * (1 - defDebuff.value / 100)) : effectiveDef;
+          const finalDef = Math.round(mitigatedDef * (1 - defIgnore));
+          const dmg = Math.max(5, Math.round(rawDmg - (finalDef * 0.4)));
+
+          let remainingDmg = dmg;
+          let newEffects = [...u.statusEffects];
+
+          // Shield absorption
+          const shieldIdx = newEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+          if (shieldIdx >= 0) {
+            const sVal = newEffects[shieldIdx].value;
+            if (sVal >= remainingDmg) {
+              newEffects[shieldIdx] = { ...newEffects[shieldIdx], value: sVal - remainingDmg };
+              addFloatingNumber(u.x, u.y, `-${remainingDmg}`, 'shield', '#60A5FA');
+              remainingDmg = 0;
+            } else {
+              remainingDmg -= sVal;
+              newEffects.splice(shieldIdx, 1);
+              addFloatingNumber(u.x, u.y, `-${sVal} (Quebrou!)`, 'shield', '#60A5FA');
+            }
+          }
+
+          const finalHp = Math.max(0, u.currentHp - remainingDmg);
+          if (remainingDmg > 0) {
+            addFloatingNumber(u.x, u.y, `-${remainingDmg}`, petSkill.damageType || 'magical', '#EF4444');
+          }
+
+          if (petSkill.statusEffect && finalHp > 0) {
+            newEffects.push({ ...petSkill.statusEffect });
+            if (petSkill.statusEffect.type === 'stun') addFloatingNumber(u.x, u.y, 'Atordoado!', 'status', '#FACC15');
+            else if (petSkill.statusEffect.type === 'burn') addFloatingNumber(u.x, u.y, 'Queimando!', 'status', '#F97316');
+            else if (petSkill.statusEffect.type === 'slow') addFloatingNumber(u.x, u.y, 'Lentidão!', 'status', '#38BDF8');
+            else if (petSkill.statusEffect.type === 'debuff_def') addFloatingNumber(u.x, u.y, '-Defesa!', 'status', '#F87171');
+          }
+
+          return {
+            ...u,
+            currentHp: finalHp,
+            isDead: finalHp <= 0,
+            statusEffects: newEffects,
+          };
+        }
+
+        return u;
+      });
+
+      setUsedPetSkillIds((prev) => [...prev, petSkill.id]);
+      setActivePetSkill(null);
+      setUnits(updatedUnits);
+      setIsAnimatingAction(false);
+      setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 200);
+      return;
+    }
 
     // Movement execution
     if (selectedAction === 'move' && selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasMoved) {
@@ -2781,7 +3025,10 @@ export function App() {
 
     const xpReward = Math.round(currentLevel.rewards.xpPerUnit);
 
-    const goldMultiplier = 1 + getGeneralGoldMultiplier(progress.generalUpgrades?.goldBoost || 0);
+    const equippedPet = getPetById(progress.equippedPetId);
+    const petPassives = calculatePetPassives(equippedPet);
+    const goldMultiplier =
+      1 + getGeneralGoldMultiplier(progress.generalUpgrades?.goldBoost || 0) + (petPassives.goldBoostPercent / 100);
     const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);
 
     // Todos os heróis da equipe recebem o XP e evoluem de nível, mesmo que tenham caído em combate
@@ -2899,6 +3146,22 @@ export function App() {
       };
     }
 
+    // Drop de ovos de companheiro: 1% para monstros normais, 100% para chefes (não mini-chefes)
+    let updatedEggs = [...(progress.eggs || [])];
+    const newDroppedEggs: PetEgg[] = [];
+
+    currentLevel.enemySpawns.forEach((spawn) => {
+      const isBoss = Boolean(spawn.isBoss && !spawn.isMiniBoss);
+      const dropChance = isBoss ? 1.0 : 0.01;
+      if (Math.random() < dropChance) {
+        if (updatedEggs.length < MAX_EGGS_LIMIT) {
+          const egg = createNewEgg();
+          updatedEggs.push(egg);
+          newDroppedEggs.push(egg);
+        }
+      }
+    });
+
     const newProgress: PlayerProgress = {
       ...progress,
       unlockedLevel: nextUnlocked,
@@ -2909,6 +3172,7 @@ export function App() {
       activeAdventure: updatedActiveAdventure,
       adventureHistory: updatedHistory,
       discoveredItemIds: newDiscoveredItems,
+      eggs: updatedEggs,
     };
     setProgress(newProgress);
     savePlayerProgress(newProgress);
@@ -2919,7 +3183,13 @@ export function App() {
       );
     }
 
-    setVictorySummary({ xpGained: xpReward, goldGained: goldReward, survivingUnits: partyUnits, levelUps });
+    setVictorySummary({
+      xpGained: xpReward,
+      goldGained: goldReward,
+      survivingUnits: partyUnits,
+      levelUps,
+      droppedEggs: newDroppedEggs,
+    });
     if (statChoiceQueue.length > 0) setPendingStatChoices(statChoiceQueue);
     if (newlyUnlocked.length > 0) setPendingUnlockClasses(newlyUnlocked);
     if (droppedItems.length > 0) setPendingLootItems(droppedItems);
@@ -3011,7 +3281,7 @@ export function App() {
       equippedItemIds,
       progress.itemUpgrades,
       getClassCumulativeBonus(pendingUnit.className, progress.classUpgrades?.[pendingUnit.className] || 0),
-      { hp: getGeneralBonusHp(progress.generalUpgrades?.globalHp || 0) }
+      getGlobalHeroBonus(progress)
     );
   }, [pendingSkillChoices, progress.unitsState, progress.activeAdventure?.equipment, progress.itemUpgrades, progress.classUpgrades, progress.generalUpgrades]);
 
@@ -3288,6 +3558,7 @@ export function App() {
           onOpenItemBestiary={() => setShowItemBestiary(true)}
           onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
           onOpenChangelog={() => setShowChangelog(true)}
+          onOpenPets={() => setShowPetsModal(true)}
         />
 
         {showChangelog && (
@@ -3392,6 +3663,7 @@ export function App() {
         onOpenEquipment={() => setShowEquipment(true)}
         onOpenItemCatalog={() => setShowItemBestiary(true)}
         onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
+        onOpenPets={() => setShowPetsModal(true)}
         onOpenRiddle={currentLevel?.id === 10 && hasPedestalBeenStruck ? () => setShowSecretRiddle(true) : undefined}
         onSaveAndExit={() => {
           if (currentLevel && units.length > 0) {
@@ -3427,6 +3699,17 @@ export function App() {
             setTargetAoEPoint(null);
           }}
           isPlayerTurn={phase === 'player_turn'}
+          equippedPet={getPetById(progress.equippedPetId)}
+          activePetSkill={activePetSkill}
+          onSelectPetSkill={(sk) => {
+            setSelectedUnitId(null);
+            setSelectedAction('none');
+            setActiveSkill(null);
+            setActivePetSkill(sk);
+          }}
+          onClearPetSkill={() => setActivePetSkill(null)}
+          turnNumber={turnNumber}
+          usedPetSkillIds={usedPetSkillIds}
         />
 
         {/* CENTER: 3D Tactical Battlefield */}
@@ -3506,6 +3789,16 @@ export function App() {
             setTargetUnitId(null);
           }}
           onEndTurn={handleEndPlayerTurn}
+          equippedPet={getPetById(progress.equippedPetId)}
+          activePetSkill={activePetSkill}
+          onSelectPetSkill={(sk) => {
+            setSelectedUnitId(null);
+            setSelectedAction('none');
+            setActiveSkill(null);
+            setActivePetSkill(sk);
+          }}
+          onClearPetSkill={() => setActivePetSkill(null)}
+          usedPetSkillIds={usedPetSkillIds}
         />
       </div>
 
@@ -3649,6 +3942,16 @@ export function App() {
           onUpgradeGeneral={handleUpgradeGeneral}
           onUpgradeItem={handleUpgradeItem}
           onClose={() => setShowBaseUpgrades(false)}
+        />
+      )}
+      {showPetsModal && (
+        <PetModal
+          progress={progress}
+          onUpdateProgress={(newProgress) => {
+            setProgress(newProgress);
+            savePlayerProgress(newProgress);
+          }}
+          onClose={() => setShowPetsModal(false)}
         />
       )}
     </div>

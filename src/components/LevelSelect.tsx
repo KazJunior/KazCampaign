@@ -21,8 +21,11 @@ import {
   Package,
   Building2,
   ChevronRight,
+  Egg,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
+import { getPetById } from '../data/pets';
+import { PetIcon } from './PetIcon';
 
 interface LevelSelectProps {
   progress: PlayerProgress;
@@ -38,6 +41,7 @@ interface LevelSelectProps {
   onOpenItemCatalog?: () => void;
   onOpenBaseUpgrades?: () => void;
   onOpenChangelog?: () => void;
+  onOpenPets?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -54,10 +58,12 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onOpenItemCatalog,
   onOpenBaseUpgrades,
   onOpenChangelog,
+  onOpenPets,
 }) => {
   const openCatalogHandler = onOpenItemCatalog || onOpenItemBestiary;
   const activeAdv = progress.activeAdventure;
   const currentStageNum = activeAdv ? activeAdv.currentLevelId : 1;
+  const equippedPet = getPetById(progress.equippedPetId);
 
   // Default act based on active adventure or act 1
   const defaultAct = Math.min(5, Math.max(1, Math.ceil(currentStageNum / 10)));
@@ -169,6 +175,20 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
               </button>
             )}
 
+            {onOpenPets && (
+              <button
+                onClick={onOpenPets}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 to-yellow-600/25 border-2 border-amber-400 hover:border-amber-300 text-amber-300 hover:text-white font-black text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-md shadow-amber-500/15"
+                title="Santuário de Pets: Choque ovos, equipe companheiros e consulte o Almanaque"
+              >
+                <Egg size={16} className="text-amber-400" />
+                <span>Pets & Ninho</span>
+                <span className="bg-amber-400 text-black px-1.5 py-0.2 rounded-full text-[10px] font-black">
+                  {progress.eggs?.length || 0}/20
+                </span>
+              </button>
+            )}
+
             {onOpenChangelog && (
               <button
                 onClick={onOpenChangelog}
@@ -178,13 +198,24 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 <Sparkles size={16} />
                 <span>Atualizações</span>
                 <span className="bg-[#10B981]/20 text-[#10B981] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#10B981]/30">
-                  v1.4
+                  v1.5
                 </span>
               </button>
             )}
           </div>
 
           <div className="flex flex-wrap sm:flex-nowrap items-center justify-between sm:justify-end gap-2 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-[#343B50]/60">
+            {equippedPet && onOpenPets && (
+              <button
+                onClick={onOpenPets}
+                className="flex items-center gap-1.5 text-xs text-amber-300 font-bold bg-[#10131C] px-3 py-1.5 rounded-xl border border-amber-400/40 hover:border-amber-400 transition-all cursor-pointer"
+                title={`Pet Equipado: ${equippedPet.name} (${equippedPet.species})`}
+              >
+                <PetIcon iconName={equippedPet.iconName} size={14} className="text-amber-400" />
+                <span className="truncate max-w-[110px]">{equippedPet.name}</span>
+              </button>
+            )}
+
             <div className="flex items-center gap-1.5 text-xs text-[#F0B44D] font-bold bg-[#10131C] px-3 py-1.5 rounded-xl border border-[#343B50]">
               <Coins size={16} />
               <span className="hidden sm:inline">Ouro:</span>

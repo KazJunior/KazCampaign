@@ -16,6 +16,7 @@ import {
   Scroll,
   Menu,
   X,
+  Egg,
 } from 'lucide-react';
 import type { BattlePhase, Unit } from '../types/game';
 
@@ -40,6 +41,7 @@ interface TopBarProps {
   onOpenBaseUpgrades?: () => void;
   onOpenRiddle?: () => void;
   onSaveAndExit?: () => void;
+  onOpenPets?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -63,6 +65,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenBaseUpgrades,
   onOpenRiddle,
   onSaveAndExit,
+  onOpenPets,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isPlayerTurn = phase === 'player_turn';
@@ -245,6 +248,16 @@ export const TopBar: React.FC<TopBarProps> = ({
           >
             <Settings size={16} />
           </button>
+
+          {onOpenPets && (
+            <button
+              onClick={onOpenPets}
+              className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-amber-400 text-[#A7B0C4] hover:text-amber-400 transition-colors cursor-pointer"
+              title="Santuário de Pets & Ninho"
+            >
+              <Egg size={16} />
+            </button>
+          )}
 
           {onSaveAndExit && (
             <button
@@ -466,6 +479,19 @@ export const TopBar: React.FC<TopBarProps> = ({
                   >
                     <Sparkles size={17} />
                     <span>Catálogo Itens</span>
+                  </button>
+                )}
+
+                {onOpenPets && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenPets();
+                    }}
+                    className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-amber-400 text-amber-300 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Egg size={17} />
+                    <span>Pets & Ninho</span>
                   </button>
                 )}
 

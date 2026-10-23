@@ -14,6 +14,8 @@ import {
   Play,
   Zap,
 } from 'lucide-react';
+import type { PetDefinition, PetActiveSkill } from '../types/game';
+import { PetIcon } from './PetIcon';
 
 interface MobileBattleHUDProps {
   selectedUnit: Unit | null;
@@ -27,6 +29,11 @@ interface MobileBattleHUDProps {
   onWaitUnit: () => void;
   onCancelSelection: () => void;
   onEndTurn: () => void;
+  equippedPet?: PetDefinition | null;
+  activePetSkill?: PetActiveSkill | null;
+  onSelectPetSkill?: (skill: PetActiveSkill) => void;
+  onClearPetSkill?: () => void;
+  usedPetSkillIds?: string[];
 }
 
 export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
@@ -34,14 +41,21 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
   selectedAction,
   activeSkill,
   phase,
-  turnNumber,
+  turnNumber = 1,
   onSelectAction,
   onSelectSkill,
   onClearSkill,
   onWaitUnit,
   onCancelSelection,
   onEndTurn,
+  equippedPet,
+  activePetSkill,
+  onSelectPetSkill,
+  onClearPetSkill,
+  usedPetSkillIds = [],
 }) => {
+  const isTurn3OrMore = turnNumber >= 3;
+  const [showPetDrawer, setShowPetDrawer] = useState(false);
   const [activeTab, setActiveTab] = useState<'actions' | 'skills' | 'stats'>('actions');
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -63,8 +77,76 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
 
   // 1. If NO unit is selected: show non-intrusive floating action pill
   if (!selectedUnit) {
+    if (activePetSkill) {
+      return (
+        <div className="lg:hidden absolute bottom-3 inset-x-3 z-30 pointer-events-none flex flex-col items-center gap-2">
+          <div className="pointer-events-auto bg-[#161B29]/95 backdrop-blur-md border border-amber-400 px-4 py-2.5 rounded-2xl shadow-2xl flex items-center justify-between gap-3 max-w-sm w-full">
+            <div className="flex items-center gap-2 text-xs text-amber-300 font-bold truncate">
+              <Zap size={16} className="text-amber-400 shrink-0 animate-bounce" />
+              <span className="truncate">Mirando Habilidade: {activePetSkill.name}</span>
+            </div>
+            {onClearPetSkill && (
+              <button
+                onClick={onClearPetSkill}
+                className="px-2.5 py-1 rounded-xl bg-red-600/90 text-white font-bold text-xs shrink-0 flex items-center gap-1 active:scale-95"
+              >
+                <X size={12} /> Cancelar
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="lg:hidden absolute bottom-3 inset-x-3 z-30 pointer-events-none flex flex-col items-center gap-2">
+        {showPetDrawer && equippedPet && equippedPet.activeSkills.length > 0 && onSelectPetSkill && (
+          <div className="pointer-events-auto bg-[#161A26]/95 backdrop-blur-md border border-amber-500/50 p-3 rounded-2xl shadow-2xl max-w-sm w-full space-y-2 animate-scaleUp">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-300 border-b border-[#343B50] pb-1.5">
+              <span className="flex items-center gap-1.5">
+                <PetIcon iconName={equippedPet.iconName} size={14} className="text-amber-400" />
+                <span>{equippedPet.name} (Habilidades)</span>
+              </span>
+              <span className={`text-[10px] ${isTurn3OrMore ? 'text-emerald-400' : 'text-[#A7B0C4]'}`}>
+                {isTurn3OrMore ? 'Turno 3+ (Pronto)' : `Turno ${turnNumber} (Req. 3+)`}
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {equippedPet.activeSkills.map((sk) => {
+                const isUsed = usedPetSkillIds.includes(sk.id);
+                const canActivate = isPlayerTurn && isTurn3OrMore && !isUsed;
+
+                return (
+                  <button
+                    key={sk.id}
+                    disabled={!canActivate}
+                    onClick={() => {
+                      setShowPetDrawer(false);
+                      onSelectPetSkill(sk);
+                    }}
+                    className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between gap-2 text-xs ${
+                      !canActivate
+                        ? 'bg-[#10131C] border-[#343B50]/40 opacity-50 cursor-not-allowed text-[#A7B0C4]'
+                        : 'bg-[#10131C] border-amber-500/40 text-[#F3F4F8] hover:border-amber-400 active:scale-95'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="font-bold truncate text-[#F3F4F8] flex items-center gap-1">
+                        <Zap size={11} className="text-amber-400 shrink-0" />
+                        <span>{sk.name}</span>
+                      </div>
+                      <p className="text-[10px] text-[#A7B0C4] truncate">{sk.description}</p>
+                    </div>
+                    <span className="text-[9px] font-bold shrink-0">
+                      {isUsed ? 'Usada' : !isTurn3OrMore ? 'T3+' : 'Usar'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="pointer-events-auto bg-[#1B2030]/95 backdrop-blur-md border border-[#343B50] px-4 py-2 rounded-2xl shadow-2xl flex items-center justify-between gap-3 max-w-sm w-full">
           <div className="flex items-center gap-2 text-xs">
             <span
@@ -76,19 +158,32 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
               {phase === 'deployment'
                 ? 'Toque em um herói para reposicionar'
                 : isPlayerTurn
-                ? (turnNumber ? `Turno ${turnNumber}: Toque em um herói` : 'Toque em um herói para comandar')
-                : 'Turno do Inimigo aguardando...'}
+                ? (turnNumber ? `Turno ${turnNumber}: Comande a equipe` : 'Toque em um herói')
+                : 'Turno do Inimigo...'}
             </span>
           </div>
 
-          {isPlayerTurn && (
-            <button
-              onClick={onEndTurn}
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#4C8DFF] to-[#2563EB] text-white font-black text-xs uppercase tracking-wider flex items-center gap-1 shadow active:scale-95 shrink-0 border border-[#6BA0FF]/40 cursor-pointer"
-            >
-              <Play size={12} fill="currentColor" /> Fim de Turno
-            </button>
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            {isPlayerTurn && equippedPet && equippedPet.activeSkills.length > 0 && onSelectPetSkill && (
+              <button
+                onClick={() => setShowPetDrawer(!showPetDrawer)}
+                className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-300 font-black text-xs flex items-center gap-1 active:scale-95 cursor-pointer"
+                title="Habilidades do Pet"
+              >
+                <PetIcon iconName={equippedPet.iconName} size={12} className="text-amber-400" />
+                <span>Pet</span>
+              </button>
+            )}
+
+            {isPlayerTurn && (
+              <button
+                onClick={onEndTurn}
+                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#4C8DFF] to-[#2563EB] text-white font-black text-xs uppercase tracking-wider flex items-center gap-1 shadow active:scale-95 shrink-0 border border-[#6BA0FF]/40 cursor-pointer"
+              >
+                <Play size={12} fill="currentColor" /> Fim
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
