@@ -244,6 +244,16 @@ export function App() {
           classUpgrades: mergeLevelMaps(progress.classUpgrades, cloudP.classUpgrades),
           generalUpgrades: mergeLevelMaps(progress.generalUpgrades, cloudP.generalUpgrades),
           itemUpgrades: mergeLevelMaps(progress.itemUpgrades, cloudP.itemUpgrades),
+          unlockedPetIds: Array.from(new Set([
+            ...(Array.isArray(cloudP.unlockedPetIds) ? cloudP.unlockedPetIds : []),
+            ...(Array.isArray(progress.unlockedPetIds) ? progress.unlockedPetIds : []),
+          ])),
+          equippedPetId: (typeof cloudP.equippedPetId === 'string' && cloudP.equippedPetId)
+            ? cloudP.equippedPetId
+            : (progress.equippedPetId || null),
+          eggs: (Array.isArray(cloudP.eggs) && cloudP.eggs.length > 0)
+            ? cloudP.eggs
+            : (Array.isArray(progress.eggs) ? progress.eggs : []),
         };
 
         setProgress(merged);

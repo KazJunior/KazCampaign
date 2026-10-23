@@ -137,7 +137,10 @@ async function ensureProgressSchema(sql: ReturnType<typeof getSql>): Promise<voi
       ADD COLUMN IF NOT EXISTS class_upgrades JSONB DEFAULT '{}'::jsonb,
       ADD COLUMN IF NOT EXISTS general_upgrades JSONB DEFAULT '{}'::jsonb,
       ADD COLUMN IF NOT EXISTS item_upgrades JSONB DEFAULT '{}'::jsonb,
-      ADD COLUMN IF NOT EXISTS discovered_item_ids JSONB DEFAULT '[]'::jsonb;
+      ADD COLUMN IF NOT EXISTS discovered_item_ids JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS unlocked_pet_ids JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS equipped_pet_id TEXT DEFAULT NULL,
+      ADD COLUMN IF NOT EXISTS pet_eggs JSONB DEFAULT '[]'::jsonb;
     `;
     progressSchemaEnsured = true;
   } catch (e) {
@@ -156,7 +159,8 @@ export async function GET(req: Request): Promise<Response> {
     const rows = await sql`
       SELECT gold, unlocked_classes, selected_party_classes, units_state, 
              discovered_monster_ids, discovered_item_ids, active_adventure, adventure_history, combat_speed,
-             class_upgrades, general_upgrades, item_upgrades
+             class_upgrades, general_upgrades, item_upgrades,
+             unlocked_pet_ids, equipped_pet_id, pet_eggs
       FROM player_progress
       WHERE user_id = ${auth.uid}
       LIMIT 1`;
@@ -178,6 +182,9 @@ export async function GET(req: Request): Promise<Response> {
       class_upgrades?: Record<string, number>;
       general_upgrades?: Record<string, number>;
       item_upgrades?: Record<string, number>;
+      unlocked_pet_ids?: string[];
+      equipped_pet_id?: string | null;
+      pet_eggs?: any[];
     };
 
     const lbRows = await sql`SELECT highest_level, party FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
@@ -218,6 +225,9 @@ export async function GET(req: Request): Promise<Response> {
         classUpgrades: row.class_upgrades && typeof row.class_upgrades === 'object' ? row.class_upgrades : {},
         generalUpgrades: row.general_upgrades && typeof row.general_upgrades === 'object' ? row.general_upgrades : {},
         itemUpgrades: row.item_upgrades && typeof row.item_upgrades === 'object' ? row.item_upgrades : {},
+        unlockedPetIds: Array.isArray(row.unlocked_pet_ids) ? row.unlocked_pet_ids : [],
+        equippedPetId: typeof row.equipped_pet_id === 'string' ? row.equipped_pet_id : null,
+        eggs: Array.isArray(row.pet_eggs) ? row.pet_eggs : [],
       },
     });
   } catch (err) {
@@ -273,17 +283,22 @@ export async function POST(req: Request): Promise<Response> {
     const classUpgradesJson = JSON.stringify(body.classUpgrades && typeof body.classUpgrades === 'object' ? body.classUpgrades : {});
     const generalUpgradesJson = JSON.stringify(body.generalUpgrades && typeof body.generalUpgrades === 'object' ? body.generalUpgrades : {});
     const itemUpgradesJson = JSON.stringify(body.itemUpgrades && typeof body.itemUpgrades === 'object' ? body.itemUpgrades : {});
+    const unlockedPetIdsJson = JSON.stringify(Array.isArray(body.unlockedPetIds) ? body.unlockedPetIds : []);
+    const equippedPetId = typeof body.equippedPetId === 'string' && body.equippedPetId.trim() ? body.equippedPetId.trim() : null;
+    const petEggsJson = JSON.stringify(Array.isArray(body.eggs) ? body.eggs : []);
 
     await sql`
       INSERT INTO player_progress (
         user_id, gold, unlocked_classes, selected_party_classes, units_state,
         discovered_monster_ids, discovered_item_ids, active_adventure, adventure_history, combat_speed,
-        class_upgrades, general_upgrades, item_upgrades, updated_at
+        class_upgrades, general_upgrades, item_upgrades,
+        unlocked_pet_ids, equipped_pet_id, pet_eggs, updated_at
       )
       VALUES (
         ${auth.uid}, ${gold}, ${unlockedClassesJson}::jsonb, ${selectedPartyClassesJson}::jsonb, ${unitsStateJson}::jsonb,
         ${discoveredMonsterIdsJson}::jsonb, ${discoveredItemIdsJson}::jsonb, ${activeAdventureJson}::jsonb, ${adventureHistoryJson}::jsonb, ${combatSpeed},
-        ${classUpgradesJson}::jsonb, ${generalUpgradesJson}::jsonb, ${itemUpgradesJson}::jsonb, NOW()
+        ${classUpgradesJson}::jsonb, ${generalUpgradesJson}::jsonb, ${itemUpgradesJson}::jsonb,
+        ${unlockedPetIdsJson}::jsonb, ${equippedPetId}, ${petEggsJson}::jsonb, NOW()
       )
       ON CONFLICT (user_id) DO UPDATE SET
         gold = EXCLUDED.gold,
@@ -298,6 +313,9 @@ export async function POST(req: Request): Promise<Response> {
         class_upgrades = EXCLUDED.class_upgrades,
         general_upgrades = EXCLUDED.general_upgrades,
         item_upgrades = EXCLUDED.item_upgrades,
+        unlocked_pet_ids = EXCLUDED.unlocked_pet_ids,
+        equipped_pet_id = EXCLUDED.equipped_pet_id,
+        pet_eggs = EXCLUDED.pet_eggs,
         updated_at = NOW()`;
 
     return json({ ok: true });
