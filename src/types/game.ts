@@ -29,6 +29,7 @@ export interface StatusEffect {
   duration: number;
   value: number;
   appliedTurn?: number; // Turno em que o efeito foi aplicado
+  reflectRatio?: number; // Fração do dano absorvido pelo escudo refletida ao atacante (ex: 0.5 para 50%)
 }
 
 export type AoEType =
@@ -38,6 +39,7 @@ export type AoEType =
   | 'line'
   | 'cone'
   | 'cross'
+  | 'long_cross'
   | 'cleave'
   | 't_shape';
 
@@ -71,6 +73,7 @@ export interface Skill {
   createsObstacle?: ObstacleType; // Spawns an obstacle on targeted tile (Mago de Gelo)
   knockback?: number; // Pushes hit targets back N tiles away from caster (Disparo de Impacto)
   casterStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to the caster upon using this skill
+  scalesWithDefRes?: boolean; // Causa dano com base em 0.75 da armadura (defesa) + 0.75 da resistência
   iconName: string;
   isPassive?: boolean;
   level?: number; // Skill evolution level (1, 2, 3...)

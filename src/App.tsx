@@ -1936,7 +1936,11 @@ export function App() {
           } else {
             addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo', 'status', '#F59E0B');
           }
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+          if (eff.reflectRatio) {
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
+          } else {
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+          }
         } else if (eff.type === 'buff_atk') {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value}% Dano`, 'status', '#F97316');
         } else if (eff.type === 'invisible') {
@@ -2137,22 +2141,30 @@ export function App() {
       }
 
       if (dmgResult.damageType !== 'healing' && actualDmg > 0) {
+        let absorbedDamage = 0;
+        let reflectPercent = 0;
         for (let i = 0; i < currentEffects.length; i++) {
           if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
             const sh = currentEffects[i];
-            if (sh.value >= actualDmg) {
-              addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
-              sh.value -= actualDmg;
-              actualDmg = 0;
-              break;
-            } else {
-              addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
-              actualDmg -= sh.value;
-              sh.value = 0;
+            const dmgAbsorbed = Math.min(sh.value, actualDmg);
+            if (sh.reflectRatio) {
+              reflectPercent = Math.max(reflectPercent, sh.reflectRatio);
             }
+            absorbedDamage += dmgAbsorbed;
+            sh.value -= dmgAbsorbed;
+            actualDmg -= dmgAbsorbed;
+            addFloatingNumber(t.x, t.y, `-${dmgAbsorbed} (Escudo)`, 'shield', '#38BDF8');
+            if (actualDmg === 0) break;
           }
         }
         currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+
+        if (absorbedDamage > 0 && reflectPercent > 0) {
+          const reflectedDmg = Math.max(1, Math.round(absorbedDamage * reflectPercent));
+          currentAttackerHp = Math.max(1, currentAttackerHp - reflectedDmg);
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `-${reflectedDmg} (Espinhos)`, 'physical', '#F97316');
+          soundManager.playPhysicalAttack();
+        }
       }
 
       let newHp = t.currentHp;
@@ -2200,7 +2212,11 @@ export function App() {
             } else {
               addFloatingNumber(t.x, t.y, 'Escudo excessivo', 'status', '#F59E0B');
             }
-            addFloatingNumber(t.x, t.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+            if (eff.reflectRatio) {
+              addFloatingNumber(t.x, t.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
+            } else {
+              addFloatingNumber(t.x, t.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+            }
           } else if (eff.type === 'buff_atk') {
             addFloatingNumber(t.x, t.y, `+${eff.value}% Dano`, 'status', '#F97316');
           } else if (eff.type === 'invisible') {
@@ -2711,6 +2727,7 @@ export function App() {
                 await boardRef.current.playAttackAnimation(freshAttacker.id, freshTarget.id, dmgType, skill?.aoeRadius, skill);
               }
 
+              let finalMonsterHp = freshAttacker.currentHp;
               const aoeRad = skill?.aoeRadius || 0;
               let enemyTargets: Unit[] = [];
               if (aoeRad > 0) {
@@ -2741,23 +2758,37 @@ export function App() {
                 const damageType = res.damageType;
 
                 let currentEffects = [...(t.statusEffects || [])];
+                let absorbedDamage = 0;
+                let reflectPercent = 0;
                 if (actualDmg > 0) {
                   for (let i = 0; i < currentEffects.length; i++) {
                     if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
                       const sh = currentEffects[i];
-                      if (sh.value >= actualDmg) {
-                        addFloatingNumber(t.x, t.y, `-${actualDmg} (Escudo)`, 'shield', '#38BDF8');
-                        sh.value -= actualDmg;
-                        actualDmg = 0;
-                        break;
-                      } else {
-                        addFloatingNumber(t.x, t.y, `-${sh.value} (Escudo)`, 'shield', '#38BDF8');
-                        actualDmg -= sh.value;
-                        sh.value = 0;
+                      const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                      if (sh.reflectRatio) {
+                        reflectPercent = Math.max(reflectPercent, sh.reflectRatio);
                       }
+                      absorbedDamage += dmgAbsorbed;
+                      sh.value -= dmgAbsorbed;
+                      actualDmg -= dmgAbsorbed;
+                      addFloatingNumber(t.x, t.y, `-${dmgAbsorbed} (Escudo)`, 'shield', '#38BDF8');
+                      if (actualDmg === 0) break;
                     }
                   }
                   currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+
+                  if (absorbedDamage > 0 && reflectPercent > 0) {
+                    const reflectedDmg = Math.max(1, Math.round(absorbedDamage * reflectPercent));
+                    finalMonsterHp = Math.max(0, finalMonsterHp - reflectedDmg);
+                    addFloatingNumber(freshAttacker.x, freshAttacker.y, `-${reflectedDmg} (Espinhos)`, 'physical', '#F97316');
+                    soundManager.playPhysicalAttack();
+                    if (finalMonsterHp === 0) {
+                      soundManager.playDeath();
+                      if (boardRef.current) {
+                        await boardRef.current.playDeathAnimation(freshAttacker.id);
+                      }
+                    }
+                  }
                 }
 
                 const newHp = Math.max(0, t.currentHp - actualDmg);
@@ -2799,7 +2830,6 @@ export function App() {
               }
 
               // Monster / AI Lifesteal & Golpe Sagrado
-              let finalMonsterHp = freshAttacker.currentHp;
               let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
               const aiIsGolpeSagrado = skill?.id === 'golpe_sagrado' || skill?.id?.startsWith('golpe_sagrado');
               const aiLifestealPct =
@@ -2849,10 +2879,10 @@ export function App() {
                 finalMonsterEffects = [...finalMonsterEffects.filter((e) => e.type !== cEff.type), cEff];
               }
 
-              // Update freshAttacker position, HP and status effects
+              // Update freshAttacker position, HP, status effects and isDead
               currentUnits = currentUnits.map((u) =>
                 u.id === freshAttacker.id
-                  ? { ...u, x: finalMonsterX, y: finalMonsterY, currentHp: finalMonsterHp, statusEffects: finalMonsterEffects }
+                  ? { ...u, x: finalMonsterX, y: finalMonsterY, currentHp: finalMonsterHp, isDead: finalMonsterHp === 0, statusEffects: finalMonsterEffects }
                   : u
               );
             }

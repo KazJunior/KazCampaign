@@ -222,7 +222,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               )}
               {activeShield && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#38BDF8]/20 border border-[#38BDF8]/40 text-[#38BDF8] flex items-center gap-1">
-                  🛡️ Escudo ({activeShield.value} HP)
+                  🛡️ Escudo ({activeShield.value} HP{activeShield.reflectRatio ? ` - Espinhos ${Math.round(activeShield.reflectRatio * 100)}%` : ''})
                 </span>
               )}
               {activeBuffAtk && (

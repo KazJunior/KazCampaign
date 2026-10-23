@@ -351,7 +351,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       {skill.statusEffect.type === 'poison' && `☠️ Veneno (-${skill.statusEffect.value}% Vida Máx)`}
                       {skill.statusEffect.type === 'stun' && '⚡ Atordoa (1 Turno)'}
                       {skill.statusEffect.type === 'slow' && `👣 Lentidão (-${skill.statusEffect.value || 1} Mov)`}
-                      {skill.statusEffect.type === 'shield' && `🛡️ Concede +${skill.statusEffect.value} Escudo`}
+                      {skill.statusEffect.type === 'shield' && `🛡️ Concede +${skill.statusEffect.value} Escudo${skill.statusEffect.reflectRatio ? ` (Reflete ${Math.round(skill.statusEffect.reflectRatio * 100)}%)` : ''}`}
                       {skill.statusEffect.type === 'buff_atk' && `⚔️ Aumenta Dano em +${skill.statusEffect.value}%`}
                       <span className="text-[#A7B0C4] text-[9px]">({skill.statusEffect.duration}T)</span>
                     </span>

@@ -112,7 +112,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
             <span className="font-bold text-[#F97316]">
               {preview.skill.statusEffect.type === 'buff_atk' && `🔥 +${preview.skill.statusEffect.value}% Dano (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'shield' &&
-                `🛡️ +${targetHasExcessShield ? Math.max(1, Math.round(preview.skill.statusEffect.value * 0.5)) : preview.skill.statusEffect.value} Escudo ${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.statusEffect.duration}T)`}
+                `🛡️ +${targetHasExcessShield ? Math.max(1, Math.round(preview.skill.statusEffect.value * 0.5)) : preview.skill.statusEffect.value} Escudo ${preview.skill.statusEffect.reflectRatio ? `(Espinhos ${Math.round(preview.skill.statusEffect.reflectRatio * 100)}%) ` : ''}${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'invisible' && `👁️ Invisibilidade (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'stun' && (

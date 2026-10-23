@@ -66,6 +66,9 @@ export function calculateBaseDamage(
     }
 
     let attackStat = damageType === 'physical' ? attacker.atk : attacker.mag;
+    if (skill.scalesWithDefRes || skill.id === 'impacto_blindado' || skill.id === 'provocacao') {
+      attackStat = Math.round(attacker.def * 0.75 + attacker.res * 0.75);
+    }
     const atkBuff = attacker.statusEffects?.find((e) => e.type === 'buff_atk' && e.duration > 0);
     if (atkBuff) {
       attackStat = Math.round(attackStat * (1 + atkBuff.value / 100));

@@ -257,6 +257,25 @@ export function getAoETiles(
       break;
     }
 
+    case 'long_cross': {
+      // Cruz com cabo: 3 braços de raio padrão (laterais e retaguarda) e 1 braço estendido em +2 na direção do disparo
+      addTile(targetTile.x, targetTile.y);
+      // Braços perpendiculares (laterais)
+      for (let p = 1; p <= aoeRadius; p++) {
+        addTile(targetTile.x + p * perpX, targetTile.y + p * perpY);
+        addTile(targetTile.x - p * perpX, targetTile.y - p * perpY);
+      }
+      // Braço traseiro (em direção à origem/retaguarda)
+      for (let b = 1; b <= aoeRadius; b++) {
+        addTile(targetTile.x - b * dirX, targetTile.y - b * dirY);
+      }
+      // Braço frontal estendido em +2 (penetração formando a cruz com cabo)
+      for (let f = 1; f <= aoeRadius + 2; f++) {
+        addTile(targetTile.x + f * dirX, targetTile.y + f * dirY);
+      }
+      break;
+    }
+
     case 'line': {
       // Directional line penetrating along the attack axis
       for (let k = -aoeRadius; k <= aoeRadius; k++) {
@@ -349,6 +368,8 @@ export function getAoELabel(skill?: Skill | null): string {
       return 'Cone Frontal (3 Fileiras)';
     case 'cross':
       return 'Cruz (+)';
+    case 'long_cross':
+      return 'Cruz com Cabo';
     case 'cleave':
       return 'Varredura (3)';
     case 't_shape':
