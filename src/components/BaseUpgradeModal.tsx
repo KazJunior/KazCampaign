@@ -35,6 +35,7 @@ interface BaseUpgradeModalProps {
   generalUpgrades: Record<string, number>;
   itemUpgrades: Record<string, number>;
   discoveredItemIds: string[];
+  unlockedClasses?: string[];
   onUpgradeClass: (className: string) => void;
   onUpgradeGeneral: (upgradeId: string) => void;
   onUpgradeItem: (itemId: string) => void;
@@ -48,6 +49,7 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
   generalUpgrades = {},
   itemUpgrades = {},
   discoveredItemIds = [],
+  unlockedClasses = [],
   onUpgradeClass,
   onUpgradeGeneral,
   onUpgradeItem,
@@ -71,6 +73,10 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
   const currentClassTiers = CLASS_UPGRADES[selectedClass] || [];
   const currentClassLevel = classUpgrades[selectedClass] || 0;
   const currentClassCumulativeBonus = getClassCumulativeBonus(selectedClass, currentClassLevel);
+
+  const isSelectedSecret = Boolean(currentClassDef?.isSecret);
+  const isSelectedUnlocked = unlockedClasses.includes(selectedClass);
+  const isSelectedHiddenSecret = isSelectedSecret && !isSelectedUnlocked;
 
   // Forja do Catálogo
   const discoveredSet = new Set(discoveredItemIds);
@@ -240,6 +246,12 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                   if (!def) return null;
                   const lvl = classUpgrades[cName] || 0;
                   const isSelected = selectedClass === cName;
+                  const isSecret = Boolean(def.isSecret);
+                  const isUnlocked = unlockedClasses.includes(cName);
+                  const isHiddenSecret = isSecret && !isUnlocked;
+
+                  const displayName = isHiddenSecret ? 'Classe oculta' : def.name;
+                  const displayRole = isHiddenSecret ? 'Classe Secreta' : def.role;
 
                   return (
                     <button
@@ -251,7 +263,11 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                       }}
                       className={`w-auto md:w-full shrink-0 p-2.5 sm:p-3 rounded-xl border text-left transition-all flex items-center justify-between gap-3 ${
                         isSelected
-                          ? 'bg-[#10131C] border-[#D4AD65] shadow-lg scale-[1.01]'
+                          ? isHiddenSecret
+                            ? 'bg-[#181126] border-[#9D4EDD] shadow-lg shadow-[#9D4EDD]/25 scale-[1.01]'
+                            : 'bg-[#10131C] border-[#D4AD65] shadow-lg scale-[1.01]'
+                          : isHiddenSecret
+                          ? 'bg-[#140E20]/80 border-[#7B2CBF]/40 hover:bg-[#1B112B] hover:border-[#9D4EDD]/60'
                           : 'bg-[#141824]/80 border-[#343B50] hover:bg-[#1B2030] hover:border-[#71788E]'
                       }`}
                     >
@@ -259,16 +275,22 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                         <div
                           className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-sm shrink-0 border"
                           style={{
-                            backgroundColor: `${def.color}25`,
-                            color: def.color,
-                            borderColor: `${def.color}66`,
+                            backgroundColor: isHiddenSecret ? '#3C096C40' : `${def.color}25`,
+                            color: isHiddenSecret ? '#C77DFF' : def.color,
+                            borderColor: isHiddenSecret ? '#7B2CBF66' : `${def.color}66`,
                           }}
                         >
-                          {def.name.charAt(0)}
+                          {isHiddenSecret ? '?' : def.name.charAt(0)}
                         </div>
                         <div className="truncate">
-                          <div className="font-bold text-xs text-[#F3F4F8] truncate">{def.name}</div>
-                          <div className="text-[10px] text-[#A7B0C4]">{def.role}</div>
+                          <div
+                            className={`font-bold text-xs truncate ${
+                              isHiddenSecret ? 'text-[#C77DFF]' : 'text-[#F3F4F8]'
+                            }`}
+                          >
+                            {displayName}
+                          </div>
+                          <div className="text-[10px] text-[#A7B0C4]">{displayRole}</div>
                         </div>
                       </div>
 
@@ -278,7 +300,9 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                             lvl >= MAX_CLASS_UPGRADE_LEVEL
                               ? 'bg-[#43C878]/20 text-[#43C878] border-[#43C878]/40'
                               : lvl > 0
-                              ? 'bg-[#D4AD65]/20 text-[#D4AD65] border-[#D4AD65]/40'
+                              ? isHiddenSecret
+                                ? 'bg-[#9D4EDD]/20 text-[#C77DFF] border-[#9D4EDD]/40'
+                                : 'bg-[#D4AD65]/20 text-[#D4AD65] border-[#D4AD65]/40'
                               : 'bg-[#343B50]/40 text-[#71788E] border-[#343B50]'
                           }`}
                         >
@@ -290,7 +314,7 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                             <div
                               key={dot}
                               className={`w-1.5 h-1.5 rounded-full ${
-                                dot <= lvl ? 'bg-[#D4AD65]' : 'bg-[#343B50]'
+                                dot <= lvl ? (isHiddenSecret ? 'bg-[#9D4EDD]' : 'bg-[#D4AD65]') : 'bg-[#343B50]'
                               }`}
                             />
                           ))}
@@ -304,24 +328,38 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
               {/* Right Column: Selected Class Progression Path (5 Tiers) */}
               <div className="md:col-span-8 flex flex-col gap-4 overflow-y-auto max-h-[65vh] pr-1">
                 {currentClassDef && (
-                  <div className="p-4 rounded-xl bg-[#10131C] border border-[#343B50] flex flex-wrap items-center justify-between gap-4">
+                  <div
+                    className={`p-4 rounded-xl border flex flex-wrap items-center justify-between gap-4 ${
+                      isSelectedHiddenSecret
+                        ? 'bg-[#120D1D] border-[#7B2CBF]/50 shadow-inner shadow-[#7B2CBF]/10'
+                        : 'bg-[#10131C] border-[#343B50]'
+                    }`}
+                  >
                     <div className="flex items-center gap-3">
                       <div
                         className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg border shadow-inner"
                         style={{
-                          backgroundColor: `${currentClassDef.color}25`,
-                          color: currentClassDef.color,
-                          borderColor: `${currentClassDef.color}88`,
+                          backgroundColor: isSelectedHiddenSecret ? '#3C096C40' : `${currentClassDef.color}25`,
+                          color: isSelectedHiddenSecret ? '#C77DFF' : currentClassDef.color,
+                          borderColor: isSelectedHiddenSecret ? '#7B2CBF88' : `${currentClassDef.color}88`,
                         }}
                       >
-                        {currentClassDef.name.charAt(0)}
+                        {isSelectedHiddenSecret ? '?' : currentClassDef.name.charAt(0)}
                       </div>
                       <div>
                         <h3 className="font-black text-base text-[#F3F4F8] flex items-center gap-2">
-                          {currentClassDef.name}
-                          <span className="text-xs font-normal text-[#A7B0C4]">({currentClassDef.role})</span>
+                          <span className={isSelectedHiddenSecret ? 'text-[#C77DFF]' : 'text-[#F3F4F8]'}>
+                            {isSelectedHiddenSecret ? 'Classe oculta' : currentClassDef.name}
+                          </span>
+                          <span className="text-xs font-normal text-[#A7B0C4]">
+                            ({isSelectedHiddenSecret ? 'Classe Secreta' : currentClassDef.role})
+                          </span>
                         </h3>
-                        <p className="text-xs text-[#A7B0C4]">{currentClassDef.description}</p>
+                        <p className="text-xs text-[#A7B0C4]">
+                          {isSelectedHiddenSecret
+                            ? 'Uma classe secreta ainda não descoberta. Encontre os segredos ocultos da campanha para revelar sua verdadeira identidade.'
+                            : currentClassDef.description}
+                        </p>
                       </div>
                     </div>
 
@@ -373,6 +411,10 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                     const isLocked = index > currentClassLevel;
                     const canAfford = gold >= tier.cost;
 
+                    const tierName = isSelectedHiddenSecret
+                      ? `Aprimoramento Oculto ${tier.level}`
+                      : tier.name;
+
                     return (
                       <div
                         key={tier.level}
@@ -380,7 +422,9 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                           isPurchased
                             ? 'bg-[#10131C]/60 border-[#43C878]/40 shadow-sm'
                             : isNextToBuy
-                            ? 'bg-[#10131C] border-[#D4AD65] shadow-md shadow-[#D4AD65]/10'
+                            ? isSelectedHiddenSecret
+                              ? 'bg-[#120D1D] border-[#9D4EDD] shadow-md shadow-[#9D4EDD]/15'
+                              : 'bg-[#10131C] border-[#D4AD65] shadow-md shadow-[#D4AD65]/10'
                             : 'bg-[#141824]/40 border-[#343B50]/50 opacity-60'
                         }`}
                       >
@@ -390,7 +434,9 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                               isPurchased
                                 ? 'bg-[#43C878]/20 border-[#43C878] text-[#43C878]'
                                 : isNextToBuy
-                                ? 'bg-[#D4AD65]/20 border-[#D4AD65] text-[#D4AD65]'
+                                ? isSelectedHiddenSecret
+                                  ? 'bg-[#9D4EDD]/20 border-[#9D4EDD] text-[#C77DFF]'
+                                  : 'bg-[#D4AD65]/20 border-[#D4AD65] text-[#D4AD65]'
                                 : 'bg-[#1B2030] border-[#343B50] text-[#71788E]'
                             }`}
                           >
@@ -400,7 +446,7 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                           <div>
                             <div className="flex items-center gap-2">
                               <h4 className="font-bold text-sm text-[#F3F4F8]">
-                                Grau {tier.level}: {tier.name}
+                                Grau {tier.level}: {tierName}
                               </h4>
                               {isPurchased && (
                                 <span className="text-[10px] font-black text-[#43C878] bg-[#43C878]/15 px-2 py-0.5 rounded-full border border-[#43C878]/30">
@@ -425,7 +471,9 @@ export const BaseUpgradeModal: React.FC<BaseUpgradeModalProps> = ({
                               disabled={!canAfford}
                               className={`px-4 py-2 rounded-xl font-black text-xs flex items-center gap-2 transition-all ${
                                 canAfford
-                                  ? 'bg-gradient-to-r from-[#D4AD65] to-[#F0B44D] text-[#10131C] hover:scale-105 active:scale-95 shadow-md shadow-[#D4AD65]/25 cursor-pointer'
+                                  ? isSelectedHiddenSecret
+                                    ? 'bg-gradient-to-r from-[#7B2CBF] to-[#9D4EDD] text-white hover:scale-105 active:scale-95 shadow-md shadow-[#9D4EDD]/25 cursor-pointer'
+                                    : 'bg-gradient-to-r from-[#D4AD65] to-[#F0B44D] text-[#10131C] hover:scale-105 active:scale-95 shadow-md shadow-[#D4AD65]/25 cursor-pointer'
                                   : 'bg-[#10131C] border border-[#343B50] text-[#71788E] cursor-not-allowed opacity-80'
                               }`}
                             >

@@ -109,7 +109,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Uma criatura gelatinosa translúcida que salta alegremente acompanhando seus passos.',
     lore: 'Nascida nos vales úmidos, essa gosma transmite calor e vigor revigorante para quem a acolhe.',
-    iconName: 'Droplet',
+    iconName: 'gosma_verde',
     color: '#84CC16',
     passives: [
       {
@@ -130,7 +130,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Pequenino e emplumado, com uma atitude marcial inabalável e olhar focado.',
     lore: 'Treinado por veteranos que perderam seus cães de caça, ele bica o chão com postura militar.',
-    iconName: 'Bird',
+    iconName: 'pintinho_guerreiro',
     color: '#FBBF24',
     passives: [
       {
@@ -151,7 +151,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Filhote curioso com orelhas pontudas e cauda inquieta.',
     lore: 'Seus uivos afinados ressoam com a magia ambiente, despertando a sensibilidade arcana do grupo.',
-    iconName: 'Dog',
+    iconName: 'filhote_lobo',
     color: '#94A3B8',
     passives: [
       {
@@ -172,7 +172,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Pelugem macia e focinho sempre farejando tesouros no solo.',
     lore: 'Conhecido por acumular moedas brilhantes em suas tocas subterrâneas.',
-    iconName: 'Rabbit',
+    iconName: 'coelho_saltador',
     color: '#F59E0B',
     passives: [
       {
@@ -192,7 +192,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Pousa suavemente nos ombros do líder e solta pequenos estalos de radar.',
     lore: 'As ondas sônicas deste companheiro dissipam ondas hostis de magia espectral.',
-    iconName: 'Moon',
+    iconName: 'morceguinho_cavernoso',
     color: '#64748B',
     passives: [
       {
@@ -213,7 +213,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Carrega um casco espesso formado por pequenos pedregulhos incrustados.',
     lore: 'Ensina os aventureiros a se posicionarem com paciência inquebrável diante do perigo.',
-    iconName: 'Shield',
+    iconName: 'mini_tartaruga',
     color: '#10B981',
     passives: [
       {
@@ -234,7 +234,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Rápido, silencioso e muito inteligente, sempre encontra passagens secretas.',
     lore: 'Nenhuma bolsa de monstros derrotados escapa ao saque desse roedor engenhoso.',
-    iconName: 'Coins',
+    iconName: 'rato_sagaz',
     color: '#D97706',
     passives: [
       {
@@ -254,7 +254,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Suas escamas secas absorvem a radiação solar para fortalecer quem o toca.',
     lore: 'Capaz de sobreviver semanas sem água nas terras mais desoladas do reino.',
-    iconName: 'Sun',
+    iconName: 'lagarto_areias',
     color: '#F97316',
     passives: [
       {
@@ -275,7 +275,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Um inseto grande com carapaça reluzente semelhante a bronze polido.',
     lore: 'Sua carapaça foi estudada por armeiros antigos para criar os primeiros escudos redondos.',
-    iconName: 'Bug',
+    iconName: 'besouro_bronze',
     color: '#B45309',
     passives: [
       {
@@ -296,7 +296,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Caminha de lado com duas pinças prontas para beliscar quem ameaçar a equipe.',
     lore: 'Suas conchas resistem ao bater das ondas e das tempestades oceânicas.',
-    iconName: 'Anchor',
+    iconName: 'caranguejinho_blindado',
     color: '#EF4444',
     passives: [
       {
@@ -317,7 +317,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Usa uma máscara natural de pelos escuros e olha para tudo que reluz.',
     lore: 'Consegue bater carteiras de orcs mesmo em meio ao caos das batalhas campais.',
-    iconName: 'Sparkles',
+    iconName: 'guaxinim_ladino',
     color: '#78716C',
     passives: [
       {
@@ -337,7 +337,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Gira a cabeça 270 graus mantendo guarda constante mesmo dormindo.',
     lore: 'Sua sabedoria intuitiva canaliza a concentração mágica dos conjuradores aliados.',
-    iconName: 'Eye',
+    iconName: 'corujinha_vigia',
     color: '#6366F1',
     passives: [
       {
@@ -358,7 +358,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Pequena ave de plumagem amarela vívida cujo chilreio aquece os corações.',
     lore: 'Inspirava os antigos guerreiros durante marchas exaustivas através das neves.',
-    iconName: 'Feather',
+    iconName: 'passaro_cantador',
     color: '#EAB308',
     passives: [
       {
@@ -379,7 +379,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Nunca recua, mesmo diante de monstros dez vezes maiores que ele.',
     lore: 'Sua teimosia lendária concede proteção mística contra venenos e feitiços.',
-    iconName: 'ShieldAlert',
+    iconName: 'texugo_valente',
     color: '#71717A',
     passives: [
       {
@@ -400,7 +400,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'common',
     description: 'Um cogumelinho bípede que solta poeira cintilante a cada passo que dá.',
     lore: 'Esporos simpáticos que aumentam a regeneração e vitalidade celular de quem respira.',
-    iconName: 'Flower2',
+    iconName: 'cogumelo_saltarico',
     color: '#EC4899',
     passives: [
       {
@@ -425,7 +425,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Sua cauda queima como uma tocha aconchegante que nunca queima seus aliados.',
     lore: 'Criaturas míticas que farejam minérios e atiçam o fervor bélico dos heróis.',
-    iconName: 'Flame',
+    iconName: 'raposa_chamas',
     color: '#EA580C',
     passives: [
       {
@@ -453,7 +453,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Pequenas pedras unidas por energia magnética terrestre.',
     lore: 'Erguido nos templos das montanhas para vigiar os altares de oferendas sagradas.',
-    iconName: 'Mountain',
+    iconName: 'golem_seixo',
     color: '#65A30D',
     passives: [
       {
@@ -482,7 +482,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Corta o ar com asas afiadas e visão de longo alcance inigualável.',
     lore: 'Voa alto nas correntes termais canalizando a pureza do éter para a equipe.',
-    iconName: 'Wind',
+    iconName: 'falcao_ventos',
     color: '#0284C7',
     passives: [
       {
@@ -511,7 +511,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Desliza suavemente pelo ar deixando rastros de vapor esmeralda.',
     lore: 'Habitante dos pântanos nevoentos que confunde agressores com movimentos ilusórios.',
-    iconName: 'Waves',
+    iconName: 'serpente_nevoa',
     color: '#10B981',
     passives: [
       {
@@ -540,7 +540,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Robusto, atarracado e com duas presas afiadas que quebram troncos ao meio.',
     lore: 'Sua imponência impulsiona os combatentes a avançarem com vigor renovado.',
-    iconName: 'ShieldCheck',
+    iconName: 'javali_blindado',
     color: '#B45309',
     passives: [
       {
@@ -569,7 +569,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Tece fios brilhantes que captam reflexos de ouro e poder místico.',
     lore: 'Suas teias não capturam moscas, mas sim lampejos de fortuna e essência mágica.',
-    iconName: 'Sparkles',
+    iconName: 'aranha_tecela',
     color: '#8B5CF6',
     passives: [
       {
@@ -597,7 +597,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Brilha com luz tênue e emite pequenos risos harmoniosos.',
     lore: 'Bênçãos feéricas que afastam feitiços maléficos e concedem serenidade curativa.',
-    iconName: 'Heart',
+    iconName: 'fada_floresta',
     color: '#14B8A6',
     passives: [
       {
@@ -626,7 +626,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Rasteja sobre brasas sem queimar e irradia calor destrutivo.',
     lore: 'Incentiva a fusão entre a força bruta das armas e o calor de magias ofensivas.',
-    iconName: 'Zap',
+    iconName: 'salamandra_fogo',
     color: '#F43F5E',
     passives: [
       {
@@ -655,7 +655,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Possui placas ósseas nas costas que parecem ferro fundido.',
     lore: 'Dureza inabalável que resiste a lâminas pesadas e feitiços de impacto.',
-    iconName: 'Shield',
+    iconName: 'texugo_ferro',
     color: '#475569',
     passives: [
       {
@@ -684,7 +684,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'uncommon',
     description: 'Patinhas grossas e pelo denso impermeável ao frio congelante.',
     lore: 'O calor deste filhote sustenta os heróis através de combates prolongados e extenuantes.',
-    iconName: 'Snowflake',
+    iconName: 'urso_polar_filhote',
     color: '#38BDF8',
     passives: [
       {
@@ -717,7 +717,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Cabeça e asas de águia majestosa com o corpo dourado de um leão jovem.',
     lore: 'Despenca dos céus em rasantes impressionantes para salvar aliados cercados.',
-    iconName: 'Feather',
+    iconName: 'grifo_celestial',
     color: '#3B82F6',
     passives: [
       {
@@ -753,7 +753,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Fluido e cristalino, assume a forma de uma lontra límpida feita de água pura.',
     lore: 'As nascentes sagradas concedem pureza absoluta capaz de lavar feridas e aflições.',
-    iconName: 'Droplets',
+    iconName: 'espirito_rio',
     color: '#06B6D4',
     passives: [
       {
@@ -791,7 +791,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Pelagem azul-elétrica que estala pequenas faíscas contínuas no ar.',
     lore: 'Canaliza trovões das nuvens de tempestade para sobrecarregar as defesas de monstros.',
-    iconName: 'Zap',
+    iconName: 'lobo_trovao',
     color: '#6366F1',
     passives: [
       {
@@ -831,7 +831,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Move-se sem emitir nenhum som e parece desaparecer nos cantos escuros.',
     lore: 'Caça nos limiares do mundo espiritual, trazendo fortunas sombrias aos seus mestres.',
-    iconName: 'EyeOff',
+    iconName: 'pantera_espectral',
     color: '#8B5CF6',
     passives: [
       {
@@ -870,7 +870,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Um pássaro carmim em chamas vivas cujas penas exalam aroma de incenso.',
     lore: 'Nascido de brasas sagradas que recusam a morte, protege seus aliados com calor imortal.',
-    iconName: 'Flame',
+    iconName: 'fenix_mirim',
     color: '#F97316',
     passives: [
       {
@@ -907,7 +907,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Olhos de esmeralda luminosa que intimidam qualquer criatura que cruzar seu olhar.',
     lore: 'Uma raça rara de basiliscos que jurou lealdade aos campeões das ordens táticas.',
-    iconName: 'ShieldAlert',
+    iconName: 'basilisco_jade',
     color: '#10B981',
     passives: [
       {
@@ -947,7 +947,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Asas de pedra translúcida e coração de cristal pulsante.',
     lore: 'Projetada para proteger santuários arcanos contra invasões de feras selvagens.',
-    iconName: 'ShieldCheck',
+    iconName: 'gargula_quartzo',
     color: '#A855F7',
     passives: [
       {
@@ -984,7 +984,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'rare',
     description: 'Um pequeno tronco vivo com brotos verdes florescendo na cabeça.',
     lore: 'Conecta-se com a terra viva para prender as pernas dos invasores com raízes fortes.',
-    iconName: 'Trees',
+    iconName: 'guardiao_bosque',
     color: '#15803D',
     passives: [
       {
@@ -1028,7 +1028,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'epic',
     description: 'Um jovem dragão que exala fumaça sulfurosa e calor avassalador.',
     lore: 'Nascido nas caldeiras dos vulcões mais profundos, seu poder aquece o espírito combativo.',
-    iconName: 'Flame',
+    iconName: 'draco_incandescente',
     color: '#DC2626',
     passives: [
       {
@@ -1077,7 +1077,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'epic',
     description: 'Corpo leonino com asas de morcego e cauda de serpente com escamas arroxeadas.',
     lore: 'Sua presença enfraquece o ânimo de qualquer oponente que ouse erguer armas.',
-    iconName: 'Skull',
+    iconName: 'quimera_sombras',
     color: '#9333EA',
     passives: [
       {
@@ -1120,7 +1120,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'epic',
     description: 'Formado por vidro vulcânico negro indestrutível com runas douradas cravadas.',
     lore: 'As lendas contam que este pequeno titã foi lapidado no coração do núcleo do mundo.',
-    iconName: 'Shield',
+    iconName: 'tita_obsidiana',
     color: '#312E81',
     passives: [
       {
@@ -1169,7 +1169,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'epic',
     description: 'Corpo ondulante de matéria escura cintilando como um pedaço do céu estrelado.',
     lore: 'Despreza as leis da física tradicional, atravessando defesas materiais sem esforço.',
-    iconName: 'Moon',
+    iconName: 'serpente_vazio',
     color: '#6366F1',
     passives: [
       {
@@ -1213,7 +1213,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'epic',
     description: 'Asas facetadas em quartzo puríssimo que refratam luz solar em arcos-íris fulgurantes.',
     lore: 'Mensageira dos picos celestes, sua presença concede mobilidade e clareza divina.',
-    iconName: 'Sun',
+    iconName: 'aguia_cristal',
     color: '#0EA5E9',
     passives: [
       {
@@ -1263,7 +1263,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'legendary',
     description: 'Um dragão imponente envolto em cortinas de luz esmeralda, anil e dourada.',
     lore: 'Soberano das altas atmosferas celestes. O bater de suas asas reorganiza o fluxo da vida e da morte no tabuleiro.',
-    iconName: 'Crown',
+    iconName: 'dragao_aurora',
     color: '#EAB308',
     passives: [
       {
@@ -1333,7 +1333,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'legendary',
     description: 'Um titã quadrúpede colossal recoberto de florestas seculares e rochas sagradas.',
     lore: 'Existia antes do surgimento das primeiras montanhas. O som de seus passos acalma tremores e fortifica os corações mortais.',
-    iconName: 'Shield',
+    iconName: 'behemoth_ancestral',
     color: '#D97706',
     passives: [
       {
@@ -1400,7 +1400,7 @@ export const PETS: PetDefinition[] = [
     rarity: 'legendary',
     description: 'Navega pelo vácuo entre as galáxias, emitindo canções astrais que manipulam o espaço.',
     lore: 'Entidade primordial venerada pelos primeiros arcanistas. Permite dobrar o alcance das armas e magias dos campeões.',
-    iconName: 'Sparkles',
+    iconName: 'leviata_estelar',
     color: '#8B5CF6',
     passives: [
       {

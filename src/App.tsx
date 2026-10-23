@@ -3650,6 +3650,7 @@ export function App() {
             generalUpgrades={progress.generalUpgrades || {}}
             itemUpgrades={progress.itemUpgrades || {}}
             discoveredItemIds={progress.discoveredItemIds || []}
+            unlockedClasses={progress.unlockedClasses || []}
             onUpgradeClass={handleUpgradeClass}
             onUpgradeGeneral={handleUpgradeGeneral}
             onUpgradeItem={handleUpgradeItem}
@@ -3990,6 +3991,7 @@ export function App() {
           generalUpgrades={progress.generalUpgrades || {}}
           itemUpgrades={progress.itemUpgrades || {}}
           discoveredItemIds={progress.discoveredItemIds || []}
+          unlockedClasses={progress.unlockedClasses || []}
           onUpgradeClass={handleUpgradeClass}
           onUpgradeGeneral={handleUpgradeGeneral}
           onUpgradeItem={handleUpgradeItem}

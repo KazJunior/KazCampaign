@@ -104,7 +104,7 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
           <div className="pointer-events-auto bg-[#161A26]/95 backdrop-blur-md border border-amber-500/50 p-3 rounded-2xl shadow-2xl max-w-sm w-full space-y-2 animate-scaleUp">
             <div className="flex items-center justify-between text-xs font-bold text-amber-300 border-b border-[#343B50] pb-1.5">
               <span className="flex items-center gap-1.5">
-                <PetIcon iconName={equippedPet.iconName} size={14} className="text-amber-400" />
+                <PetIcon iconName={equippedPet.iconName} petId={equippedPet.id} size={14} className="text-amber-400" />
                 <span>{equippedPet.name} (Habilidades)</span>
               </span>
               <span className={`text-[10px] ${isTurn3OrMore ? 'text-emerald-400' : 'text-[#A7B0C4]'}`}>
@@ -170,7 +170,7 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                 className="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-300 font-black text-xs flex items-center gap-1 active:scale-95 cursor-pointer"
                 title="Habilidades do Pet"
               >
-                <PetIcon iconName={equippedPet.iconName} size={12} className="text-amber-400" />
+                <PetIcon iconName={equippedPet.iconName} petId={equippedPet.id} size={12} className="text-amber-400" />
                 <span>Pet</span>
               </button>
             )}

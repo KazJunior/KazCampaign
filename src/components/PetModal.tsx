@@ -307,7 +307,7 @@ export const PetModal: React.FC<PetModalProps> = ({
           {equippedPet && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold">
               <span className="text-[10px] uppercase tracking-wider text-amber-400/80">Equipado:</span>
-              <PetIcon iconName={equippedPet.iconName} size={14} className="text-amber-400" />
+              <PetIcon iconName={equippedPet.iconName} petId={equippedPet.id} size={14} className="text-amber-400" />
               <span className="truncate max-w-[140px]">{equippedPet.name}</span>
             </div>
           )}
@@ -335,7 +335,7 @@ export const PetModal: React.FC<PetModalProps> = ({
                           color: equippedPet.color,
                         }}
                       >
-                        <PetIcon iconName={equippedPet.iconName} size={42} />
+                        <PetIcon iconName={equippedPet.iconName} petId={equippedPet.id} size={42} />
                       </div>
                     ) : (
                       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl border-2 border-dashed border-[#343B50] flex flex-col items-center justify-center text-[#A7B0C4] shrink-0 bg-[#10131C]">
@@ -481,7 +481,7 @@ export const PetModal: React.FC<PetModalProps> = ({
                                 color: pet.color,
                               }}
                             >
-                              <PetIcon iconName={pet.iconName} size={28} />
+                              <PetIcon iconName={pet.iconName} petId={pet.id} size={28} />
                             </div>
 
                             <div className="flex-1 min-w-0">
@@ -921,7 +921,7 @@ export const PetModal: React.FC<PetModalProps> = ({
                             color: pet.color,
                           }}
                         >
-                          <PetIcon iconName={pet.iconName} size={28} />
+                          <PetIcon iconName={pet.iconName} petId={pet.id} size={28} />
                         </div>
 
                         <div className="flex-1 min-w-0">

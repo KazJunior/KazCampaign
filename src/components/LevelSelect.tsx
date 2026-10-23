@@ -211,7 +211,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 className="flex items-center gap-1.5 text-xs text-amber-300 font-bold bg-[#10131C] px-3 py-1.5 rounded-xl border border-amber-400/40 hover:border-amber-400 transition-all cursor-pointer"
                 title={`Pet Equipado: ${equippedPet.name} (${equippedPet.species})`}
               >
-                <PetIcon iconName={equippedPet.iconName} size={14} className="text-amber-400" />
+                <PetIcon iconName={equippedPet.iconName} petId={equippedPet.id} size={14} className="text-amber-400" />
                 <span className="truncate max-w-[110px]">{equippedPet.name}</span>
               </button>
             )}

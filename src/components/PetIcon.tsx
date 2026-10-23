@@ -35,13 +35,31 @@ import {
   HelpCircle,
 } from 'lucide-react';
 
+import { PET_CUSTOM_ICONS, LUCIDE_NAME_TO_PET_ID } from './PetCustomIcons';
+
 interface PetIconProps {
-  iconName: string;
+  iconName?: string;
+  petId?: string;
   size?: number;
   className?: string;
 }
 
-export const PetIcon: React.FC<PetIconProps> = ({ iconName, size = 20, className = '' }) => {
+export const PetIcon: React.FC<PetIconProps> = ({ iconName = '', petId, size = 20, className = '' }) => {
+  // 1. Direct match by petId or iconName in custom icons
+  const directKey = petId || iconName;
+  if (directKey && PET_CUSTOM_ICONS[directKey]) {
+    const CustomIcon = PET_CUSTOM_ICONS[directKey];
+    return <CustomIcon size={size} className={className} />;
+  }
+
+  // 2. Fallback match from Lucide name to custom pet icon
+  if (iconName && LUCIDE_NAME_TO_PET_ID[iconName] && PET_CUSTOM_ICONS[LUCIDE_NAME_TO_PET_ID[iconName]]) {
+    const mappedPetId = LUCIDE_NAME_TO_PET_ID[iconName];
+    const CustomIcon = PET_CUSTOM_ICONS[mappedPetId];
+    return <CustomIcon size={size} className={className} />;
+  }
+
+  // 3. Fallback to classic Lucide icons
   switch (iconName) {
     case 'Droplet': return <Droplet size={size} className={className} />;
     case 'Droplets': return <Droplets size={size} className={className} />;

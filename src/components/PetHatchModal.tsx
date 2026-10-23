@@ -84,7 +84,7 @@ export const PetHatchModal: React.FC<PetHatchModalProps> = ({
                   color: pet.color,
                 }}
               >
-                <PetIcon iconName={pet.iconName} size={48} />
+                <PetIcon iconName={pet.iconName} petId={pet.id} size={48} />
               </div>
             </div>
 

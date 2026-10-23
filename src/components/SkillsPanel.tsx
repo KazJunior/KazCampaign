@@ -86,7 +86,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                   color: equippedPet.color,
                 }}
               >
-                <PetIcon iconName={equippedPet.iconName} size={24} />
+                <PetIcon iconName={equippedPet.iconName} petId={equippedPet.id} size={24} />
               </div>
               <div className="min-w-0">
                 <span
