@@ -816,7 +816,7 @@ export const SKILLS: Record<string, Skill> = {
   mortalha_das_sombras: {
     id: 'mortalha_das_sombras',
     name: 'Mortalha de Furtividade',
-    description: 'Dissolve-se na escuridão, tornando-se Invisível por 2 turnos para reposicionamento seguro e recebendo +20% de dano por 2 turnos.',
+    description: 'Dissolve-se na escuridão, tornando-se Invisível por 1 turno para reposicionamento seguro e recebendo +20% de dano por 2 turnos.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -826,7 +826,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'self',
-    statusEffect: { type: 'invisible', duration: 2, value: 1 },
+    statusEffect: { type: 'invisible', duration: 1, value: 1 },
     secondaryStatusEffect: { type: 'buff_atk', duration: 2, value: 20 },
     requiredLevel: 5,
     iconName: 'EyeOff',

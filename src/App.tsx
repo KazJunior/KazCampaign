@@ -1453,7 +1453,7 @@ export function App() {
           }
 
           if (petSkill.statusEffect) {
-            newEffects.push({ ...petSkill.statusEffect });
+            newEffects.push({ ...petSkill.statusEffect, appliedTurn: turnNumberRef.current });
             if (petSkill.statusEffect.type === 'invisible') {
               addFloatingNumber(u.x, u.y, 'Invisível!', 'status', '#A855F7');
             }
@@ -1837,11 +1837,11 @@ export function App() {
 
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
       if (skill.statusEffect) {
-        const eff = skill.statusEffect;
+        const eff = { ...skill.statusEffect, appliedTurn: turnNumberRef.current };
         if (eff.type === 'buff_atk') {
           addFloatingNumber(destX, destY, `+${eff.value}% Poder Mágico`, 'status', '#F97316');
         }
-        updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), { ...eff }];
+        updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), eff];
       }
 
       const updatedSkills = selectedUnit.skills.map((s) =>
@@ -1927,7 +1927,7 @@ export function App() {
 
       const handleSelfStatusEffect = (effToProcess?: StatusEffect) => {
         if (!effToProcess) return;
-        const eff = { ...effToProcess };
+        const eff = { ...effToProcess, appliedTurn: turnNumberRef.current };
         if (eff.type === 'shield') {
           givesShield = true;
           if (hadExcessShield) {
@@ -2191,7 +2191,7 @@ export function App() {
         // Support status effects for allies in healing/support skills (Shield, Buff Atk, Invisible, Taunt, etc.)
         const applyTargetSupportEffect = (effToProcess?: StatusEffect) => {
           if (!effToProcess) return;
-          const eff = { ...effToProcess };
+          const eff = { ...effToProcess, appliedTurn: turnNumberRef.current };
           if (eff.type === 'shield') {
             isShielded = true;
             if (hadExcessShield) {
@@ -2421,7 +2421,7 @@ export function App() {
 
     // Caster Status Effect (e.g. self-shield, stealth, or buff on attack)
     if (skill?.casterStatusEffect) {
-      const cEff = { ...skill.casterStatusEffect };
+      const cEff = { ...skill.casterStatusEffect, appliedTurn: turnNumberRef.current };
       if (cEff.type === 'shield') {
         const hadExcessShield = finalAttackerEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
         if (hadExcessShield) {
@@ -2991,8 +2991,19 @@ export function App() {
       nextUnitsState = prev.map((u) => {
         if (u.faction === 'player' && !u.isDead) {
           // Taunt is active against the upcoming enemy phase, so it decrements after the enemy turn ends
+          // Invisibility protects against the upcoming enemy phase AND persists until their next turn!
+          // Therefore, if it was applied on the current turn, do NOT decrement it at the end of the current turn.
           const updatedEffects = (u.statusEffects || [])
-            .map((e) => (e.type === 'taunt' ? e : { ...e, duration: e.duration - 1 }))
+            .map((e) => {
+              if (e.type === 'taunt') return e;
+              if (e.type === 'invisible') {
+                if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
+                  return { ...e, appliedTurn: currentTurn };
+                }
+                return { ...e, duration: e.duration - 1 };
+              }
+              return { ...e, duration: e.duration - 1 };
+            })
             .filter((e) => e.duration > 0);
 
           return {

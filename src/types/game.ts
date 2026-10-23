@@ -28,6 +28,7 @@ export interface StatusEffect {
   type: StatusEffectType;
   duration: number;
   value: number;
+  appliedTurn?: number; // Turno em que o efeito foi aplicado
 }
 
 export type AoEType =

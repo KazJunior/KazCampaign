@@ -192,7 +192,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               )}
               {isStealthed && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#8B5CF6]/20 border border-[#8B5CF6]/40 text-[#A78BFA] flex items-center gap-1">
-                  👁️‍🗨️ Invisível
+                  👁️‍🗨️ Invisível ({selectedUnit.statusEffects?.find((e) => e.type === 'invisible')?.duration}T)
                 </span>
               )}
               {isDefDebuffed && (
