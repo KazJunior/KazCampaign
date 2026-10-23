@@ -3614,6 +3614,16 @@ export function App() {
             onClose={() => setShowBaseUpgrades(false)}
           />
         )}
+        {showPetsModal && (
+          <PetModal
+            progress={progress}
+            onUpdateProgress={(newProgress) => {
+              setProgress(newProgress);
+              savePlayerProgress(newProgress);
+            }}
+            onClose={() => setShowPetsModal(false)}
+          />
+        )}
       </>
     );
   }
