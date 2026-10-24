@@ -371,6 +371,11 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       🎯 Ignora {Math.round(Math.min(0.30, skill.defenseIgnoreRatio!)) * 100}% Armadura
                     </span>
                   )}
+                  {Boolean(skill.ignoresShield) && (
+                    <span className="text-[10px] font-medium text-[#C084FC]">
+                      🛡️⚡ Ignora Escudos
+                    </span>
+                  )}
                   {(skill.knockback ?? 0) > 0 && (
                     <span className="text-[10px] font-medium text-[#38BDF8]">
                       💨 Empurrão ({skill.knockback} casa)

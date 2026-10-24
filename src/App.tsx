@@ -2185,29 +2185,33 @@ export function App() {
       }
 
       if (dmgResult.damageType !== 'healing' && actualDmg > 0) {
-        let absorbedDamage = 0;
-        let reflectPercent = 0;
-        for (let i = 0; i < currentEffects.length; i++) {
-          if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
-            const sh = currentEffects[i];
-            const dmgAbsorbed = Math.min(sh.value, actualDmg);
-            if (sh.reflectRatio) {
-              reflectPercent = Math.max(reflectPercent, sh.reflectRatio);
+        if (skill?.ignoresShield) {
+          addFloatingNumber(t.x, t.y, 'Ignorou Escudo!', 'status', '#A855F7');
+        } else {
+          let absorbedDamage = 0;
+          let reflectPercent = 0;
+          for (let i = 0; i < currentEffects.length; i++) {
+            if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+              const sh = currentEffects[i];
+              const dmgAbsorbed = Math.min(sh.value, actualDmg);
+              if (sh.reflectRatio) {
+                reflectPercent = Math.max(reflectPercent, sh.reflectRatio);
+              }
+              absorbedDamage += dmgAbsorbed;
+              sh.value -= dmgAbsorbed;
+              actualDmg -= dmgAbsorbed;
+              addFloatingNumber(t.x, t.y, `-${dmgAbsorbed} (Escudo)`, 'shield', '#38BDF8');
+              if (actualDmg === 0) break;
             }
-            absorbedDamage += dmgAbsorbed;
-            sh.value -= dmgAbsorbed;
-            actualDmg -= dmgAbsorbed;
-            addFloatingNumber(t.x, t.y, `-${dmgAbsorbed} (Escudo)`, 'shield', '#38BDF8');
-            if (actualDmg === 0) break;
           }
-        }
-        currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+          currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
 
-        if (absorbedDamage > 0 && reflectPercent > 0) {
-          const reflectedDmg = Math.max(1, Math.round(absorbedDamage * reflectPercent));
-          currentAttackerHp = Math.max(1, currentAttackerHp - reflectedDmg);
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, `-${reflectedDmg} (Espinhos)`, 'physical', '#F97316');
-          soundManager.playPhysicalAttack();
+          if (absorbedDamage > 0 && reflectPercent > 0) {
+            const reflectedDmg = Math.max(1, Math.round(absorbedDamage * reflectPercent));
+            currentAttackerHp = Math.max(1, currentAttackerHp - reflectedDmg);
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, `-${reflectedDmg} (Espinhos)`, 'physical', '#F97316');
+            soundManager.playPhysicalAttack();
+          }
         }
       }
 

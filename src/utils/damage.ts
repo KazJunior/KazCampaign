@@ -178,10 +178,12 @@ export function getDamagePreview(
   const maxDamage = Math.max(minDamage, Math.ceil(base * 1.1));
   const avgDamage = Math.round((minDamage + maxDamage) / 2);
 
-  // Consider active shields when previewing target HP after hit
-  const targetShield = target.statusEffects
-    ?.filter((e) => e.type === 'shield' && e.value > 0)
-    .reduce((sum, e) => sum + e.value, 0) || 0;
+  // Consider active shields when previewing target HP after hit (unless skill ignores shields)
+  const targetShield = skill?.ignoresShield
+    ? 0
+    : (target.statusEffects
+        ?.filter((e) => e.type === 'shield' && e.value > 0)
+        .reduce((sum, e) => sum + e.value, 0) || 0);
 
   const effectiveMaxDamage = Math.max(0, maxDamage - targetShield);
   const effectiveMinDamage = Math.max(0, minDamage - targetShield);

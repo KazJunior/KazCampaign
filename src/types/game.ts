@@ -59,6 +59,7 @@ export interface Skill {
   lastUsedTurn?: number; // Turno em que a habilidade foi utilizada (o cooldown só reduz a partir do turno seguinte)
   targetType: 'enemy' | 'ally' | 'any' | 'self' | 'empty_tile';
   defenseIgnoreRatio?: number;
+  ignoresShield?: boolean; // Ignora barreiras e escudos do alvo, causando dano direto à vida
   requiredLevel?: number;
   statusEffect?: StatusEffect;
   secondaryStatusEffect?: StatusEffect;

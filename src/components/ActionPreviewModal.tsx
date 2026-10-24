@@ -240,7 +240,14 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
         {preview.skill?.defenseIgnoreRatio && preview.skill.defenseIgnoreRatio > 0 && (
           <div className="flex items-center justify-between text-xs bg-[#1E293B] p-2.5 rounded-lg border border-[#64748B]">
             <span className="text-[#94A3B8]">Dano Perfurante:</span>
-            <span className="font-bold text-[#F1F5F9]">🎯 Ignora {Math.round(preview.skill.defenseIgnoreRatio * 100)}% da Defesa</span>
+            <span className="font-bold text-[#F1F5F9]">🎯 Ignora {Math.round(Math.min(0.30, preview.skill.defenseIgnoreRatio) * 100)}% da Defesa</span>
+          </div>
+        )}
+
+        {preview.skill?.ignoresShield && (
+          <div className="flex items-center justify-between text-xs bg-[#4C1D95]/40 p-2.5 rounded-lg border border-[#A855F7]/40">
+            <span className="text-[#E9D5FF]">Penetração Direta:</span>
+            <span className="font-bold text-[#C084FC]">🛡️⚡ Ignora Escudos (Dano Direto na Vida)</span>
           </div>
         )}
 
