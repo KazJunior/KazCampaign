@@ -3,6 +3,7 @@ import type { Unit, Skill } from '../types/game';
 import { getAoELabel } from '../utils/pathfinding';
 import {
   Sparkles,
+  Wind,
   Flame,
   Swords,
   Target,
@@ -380,7 +381,9 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                   )}
                   {(skill.knockback ?? 0) > 0 && (
                     <span className="text-[10px] font-medium text-[#38BDF8]">
-                      💨 Empurrão ({skill.knockback} casa)
+                      {skill.targetType === 'ally'
+                        ? `💨 Impulso em Aliado (${skill.knockback} casas)`
+                        : `💨 Empurrão (${skill.knockback} casas + Colisão)`}
                     </span>
                   )}
                   {Boolean(skill.resetsActionOnKill) && (
@@ -479,6 +482,8 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
 
 function getSkillIcon(iconName: string, size = 16) {
   switch (iconName) {
+    case 'Wind':
+      return <Wind size={size} />;
     case 'Sword':
     case 'warrior':
       return <Swords size={size} />;

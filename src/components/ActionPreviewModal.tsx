@@ -208,7 +208,11 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
         {preview.skill?.knockback && preview.skill.knockback > 0 && (
           <div className="flex items-center justify-between text-xs bg-[#0C4A6E]/40 p-2.5 rounded-lg border border-[#38BDF8]/40">
             <span className="text-[#BAE6FD] font-semibold">Impacto Cinético:</span>
-            <span className="font-bold text-[#38BDF8]">💨 Empurra o alvo {preview.skill.knockback} casa(s)</span>
+            <span className="font-bold text-[#38BDF8]">
+              {preview.target?.faction === 'player'
+                ? `💨 Projeta o aliado ${preview.skill.knockback} casa(s) com segurança`
+                : `💨 Empurra o alvo ${preview.skill.knockback} casa(s) (+Dano de Colisão)`}
+            </span>
           </div>
         )}
 

@@ -2402,8 +2402,17 @@ export function App() {
       let finalTargetX = t.x;
       let finalTargetY = t.y;
       if (skill?.knockback && skill.knockback > 0 && newHp > 0) {
-        const dx = t.x - finalAttackerX;
-        const dy = t.y - finalAttackerY;
+        // Determine push origin: for ground AoE skills, push outward from the impact center
+        const originX =
+          skill.canTargetGround && aoeCenter && (t.x !== aoeCenter.x || t.y !== aoeCenter.y)
+            ? aoeCenter.x
+            : finalAttackerX;
+        const originY =
+          skill.canTargetGround && aoeCenter && (t.x !== aoeCenter.x || t.y !== aoeCenter.y)
+            ? aoeCenter.y
+            : finalAttackerY;
+        const dx = t.x - originX;
+        const dy = t.y - originY;
         let pushX = 0;
         let pushY = 0;
         if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
@@ -2430,9 +2439,41 @@ export function App() {
             stepsPushed++;
           } else {
             if (t.faction !== 'player') {
-              const colDmg = Math.max(1, Math.round(selectedUnit.atk * 0.20));
+              // Caster's primary stat for scaling collision damage
+              const statPower = skill.damageType === 'magical'
+                ? (selectedUnit.mag || selectedUnit.atk)
+                : (selectedUnit.atk || selectedUnit.mag);
+              // Substantial collision damage: 40% of caster's primary stat + baseline
+              const colDmg = Math.max(6, Math.round(statPower * 0.40));
               newHp = Math.max(0, newHp - colDmg);
-              addFloatingNumber(t.x, t.y, `Impacto! -${colDmg}`, 'physical', '#F97316');
+              totalDmgDone += colDmg;
+              soundManager.playPhysicalAttack();
+              addFloatingNumber(currX, currY, `💥 Colisão! -${colDmg}`, 'physical', '#F97316');
+
+              // If collided into another enemy unit, that obstacle unit also takes impact shock!
+              if (inBounds && isOccupied) {
+                const collidedWith = updatedUnits.find((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+                if (collidedWith && collidedWith.faction !== 'player') {
+                  const secondaryColDmg = Math.max(4, Math.round(colDmg * 0.75));
+                  const nextColHp = Math.max(0, collidedWith.currentHp - secondaryColDmg);
+                  const colDead = nextColHp === 0;
+                  totalDmgDone += secondaryColDmg;
+                  addFloatingNumber(nextX, nextY, `💥 Impacto! -${secondaryColDmg}`, 'physical', '#F97316');
+                  
+                  updatedUnits = updatedUnits.map((u) =>
+                    u.id === collidedWith.id ? { ...u, currentHp: nextColHp, isDead: colDead } : u
+                  );
+
+                  if (colDead) {
+                    soundManager.playDeath();
+                    totalKills++;
+                    if (boardRef.current) {
+                      boardRef.current.playDeathAnimation(collidedWith.id);
+                    }
+                  }
+                }
+              }
+
               if (newHp === 0) {
                 soundManager.playDeath();
                 totalKills++;
