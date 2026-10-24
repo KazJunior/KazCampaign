@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { ItemDefinition } from '../types/game';
 import { RARITY_INFO, CATEGORY_INFO } from '../data/items';
 import { MONSTER_DEFINITIONS } from '../data/monsters';
@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Compass,
   Check,
+  Package,
 } from 'lucide-react';
 import { ItemIcon } from './ItemIcon';
 
@@ -24,14 +25,28 @@ interface ItemLootModalProps {
   items: ItemDefinition[];
   onSelectItem: (item: ItemDefinition) => void;
   levelNumber: number;
+  onOpenInventory?: () => void;
 }
 
 export const ItemLootModal: React.FC<ItemLootModalProps> = ({
   items,
   onSelectItem,
   levelNumber,
+  onOpenInventory,
 }) => {
   const [selectedItem, setSelectedItem] = useState<ItemDefinition | null>(items[0] || null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.key === 'i' || e.key === 'I') && onOpenInventory) {
+        e.preventDefault();
+        soundManager.playSelect();
+        onOpenInventory();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onOpenInventory]);
 
   const handleConfirm = () => {
     if (!selectedItem) return;
@@ -63,8 +78,24 @@ export const ItemLootModal: React.FC<ItemLootModalProps> = ({
       <div className="w-full max-w-2xl bg-[#1B2030] border-2 border-[#D4AD65]/60 rounded-2xl shadow-2xl p-4 sm:p-6 text-center animate-in fade-in zoom-in-95 duration-200 max-h-[92vh] overflow-y-auto">
         {/* Header */}
         <div className="mb-4 sm:mb-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AD65]/20 border border-[#D4AD65]/50 text-[#D4AD65] text-xs font-bold uppercase tracking-wider mb-2">
-            <Sparkles size={14} /> Espólios de Batalha — Fase {levelNumber}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#D4AD65]/20 border border-[#D4AD65]/50 text-[#D4AD65] text-xs font-bold uppercase tracking-wider">
+              <Sparkles size={14} /> Espólios de Batalha — Fase {levelNumber}
+            </div>
+
+            {onOpenInventory && (
+              <button
+                type="button"
+                onClick={() => {
+                  soundManager.playSelect();
+                  onOpenInventory();
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#10131C] hover:bg-[#D4AD65]/20 text-[#D4AD65] hover:text-[#F3F4F8] border border-[#D4AD65]/40 hover:border-[#D4AD65] text-xs font-bold transition-all shadow-sm active:scale-95"
+                title="Checar Inventário & Equipamentos da Equipe (I)"
+              >
+                <Package size={14} /> Checar Inventário (I)
+              </button>
+            )}
           </div>
           <h2 className="text-lg sm:text-xl font-black text-[#F3F4F8]">
             Escolha sua Recompensa de Equipamento
@@ -201,14 +232,29 @@ export const ItemLootModal: React.FC<ItemLootModalProps> = ({
           })}
         </div>
 
-        {/* Action Button */}
-        <button
-          onClick={handleConfirm}
-          disabled={!selectedItem}
-          className="w-full py-3 px-6 rounded-xl bg-gradient-to-r from-[#D4AD65] via-[#E5C27E] to-[#B88E43] hover:from-[#E5C27E] hover:to-[#A77E36] disabled:opacity-50 text-[#10131C] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
-        >
-          Confirmar e Coletar {selectedItem?.name} <ChevronRight size={18} />
-        </button>
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2.5">
+          {onOpenInventory && (
+            <button
+              type="button"
+              onClick={() => {
+                soundManager.playSelect();
+                onOpenInventory();
+              }}
+              className="sm:w-2/5 py-3 px-4 rounded-xl bg-[#10131C] hover:bg-[#343B50] text-[#D4AD65] hover:text-[#F3F4F8] border border-[#D4AD65]/40 hover:border-[#D4AD65] font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md transition-all active:scale-95"
+            >
+              <Package size={17} /> Checar Inventário
+            </button>
+          )}
+
+          <button
+            onClick={handleConfirm}
+            disabled={!selectedItem}
+            className="flex-1 py-3 px-6 rounded-xl bg-gradient-to-r from-[#D4AD65] via-[#E5C27E] to-[#B88E43] hover:from-[#E5C27E] hover:to-[#A77E36] disabled:opacity-50 text-[#10131C] font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+          >
+            Confirmar e Coletar {selectedItem?.name} <ChevronRight size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

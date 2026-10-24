@@ -1183,7 +1183,15 @@ export function App() {
   };
 
   const reachableTiles: Point[] = React.useMemo(() => {
-    if (!selectedUnit || phase !== 'player_turn' || selectedUnit.faction !== 'player' || selectedUnit.hasMoved || isAnimatingAction) return [];
+    if (
+      !selectedUnit ||
+      phase !== 'player_turn' ||
+      selectedUnit.faction !== 'player' ||
+      selectedUnit.hasMoved ||
+      isAnimatingAction ||
+      selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)
+    )
+      return [];
     if (selectedAction === 'move') return getReachableTiles(selectedUnit, grid, units);
     return [];
   }, [selectedUnit, phase, selectedAction, grid, units, isAnimatingAction]);
@@ -1550,13 +1558,52 @@ export function App() {
       return;
     }
 
-    // Movement execution
-    if (selectedAction === 'move' && selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasMoved) {
-      if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
-        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+    // =========================================================================
+    // STUNNED UNIT HANDLING
+    // If the currently selected unit is stunned, it cannot move, attack, or target skills.
+    // Clicking another unit selects that unit; clicking an empty tile deselects.
+    // =========================================================================
+    const isSelectedUnitStunned = Boolean(
+      selectedUnit &&
+      selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)
+    );
+
+    if (isSelectedUnitStunned && selectedUnit) {
+      if (clickedUnit) {
+        if (clickedUnit.id === selectedUnit.id) {
+          // Re-clicked the stunned unit itself: show feedback and keep selected
+          soundManager.playSelect();
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+          return;
+        }
+        // Clicked another unit: seamlessly select that unit
+        setSelectedUnitId(clickedUnit.id);
         setSelectedAction('none');
+        setActiveSkill(null);
+        setDamagePreview(null);
+        setTargetTeleportPoint(null);
+        setTargetAoEPoint(null);
+        setTargetUnitId(null);
+        soundManager.playSelect();
+        if (clickedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+          addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Atordoado!', 'status', '#FACC15');
+        }
+        return;
+      } else {
+        // Clicked any empty tile or ground: deselect the stunned unit
+        setSelectedUnitId(null);
+        setSelectedAction('none');
+        setActiveSkill(null);
+        setDamagePreview(null);
+        setTargetTeleportPoint(null);
+        setTargetAoEPoint(null);
+        setTargetUnitId(null);
         return;
       }
+    }
+
+    // Movement execution
+    if (selectedAction === 'move' && selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasMoved) {
       const isReachable = reachableTiles.some((t) => t.x === x && t.y === y);
       if (isReachable && !clickedUnit) {
         setIsAnimatingAction(true);
@@ -1661,12 +1708,6 @@ export function App() {
 
     // Attack / Skill targeting execution
     if (selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasAttacked) {
-      if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
-        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
-        setSelectedAction('none');
-        setActiveSkill(null);
-        return;
-      }
       // Empty-tile targeting (e.g. Teleporte Místico)
       if (activeSkill && (activeSkill.isTeleport || activeSkill.targetType === 'empty_tile')) {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
@@ -1848,6 +1889,9 @@ export function App() {
       setTargetAoEPoint(null);
       setTargetUnitId(null);
       soundManager.playSelect();
+      if (clickedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
+        addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Atordoado!', 'status', '#FACC15');
+      }
     } else {
       setSelectedUnitId(null);
       setSelectedAction('none');
@@ -3253,7 +3297,7 @@ export function App() {
               const aoeRad = skill?.aoeRadius || 0;
               let enemyTargets: Unit[] = [];
               if (aoeRad > 0) {
-                const origin = { x: freshAttacker.x, y: freshAttacker.y };
+                const origin = { x: finalMonsterX, y: finalMonsterY };
                 const hitTiles = getAoETiles(
                   { x: freshTarget.x, y: freshTarget.y },
                   aoeRad,
@@ -4449,6 +4493,7 @@ export function App() {
             items={pendingLootItems}
             levelNumber={currentLevel?.id || 1}
             onSelectItem={handleSelectLootItem}
+            onOpenInventory={() => setShowEquipment(true)}
           />
         )}
 

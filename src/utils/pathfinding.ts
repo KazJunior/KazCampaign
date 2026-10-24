@@ -280,8 +280,18 @@ export function getAoETiles(
 
     case 'line': {
       // Directional line penetrating along the attack axis
-      for (let k = -aoeRadius; k <= aoeRadius; k++) {
-        addTile(targetTile.x + k * dirX, targetTile.y + k * dirY);
+      if (originTile) {
+        const diffProj = (targetTile.x - originTile.x) * dirX + (targetTile.y - originTile.y) * dirY;
+        const kMin = Math.max(-aoeRadius, 1 - diffProj);
+        const totalTiles = aoeRadius * 2 + 1;
+        for (let i = 0; i < totalTiles; i++) {
+          const k = kMin + i;
+          addTile(targetTile.x + k * dirX, targetTile.y + k * dirY);
+        }
+      } else {
+        for (let k = -aoeRadius; k <= aoeRadius; k++) {
+          addTile(targetTile.x + k * dirX, targetTile.y + k * dirY);
+        }
       }
       break;
     }
@@ -361,24 +371,26 @@ export function getAoELabel(skill?: Skill | null): string {
   if (!skill || !skill.aoeRadius || skill.aoeRadius === 0) return 'Alvo Único';
   switch (skill.aoeType) {
     case 'row':
-      return `Linha de ${skill.aoeRadius * 2 + 1}`;
+      return `Linha Horizontal de ${skill.aoeRadius * 2 + 1}`;
     case 'column':
-      return `Coluna de ${skill.aoeRadius * 2 + 1}`;
+      return `Coluna Vertical de ${skill.aoeRadius * 2 + 1}`;
     case 'line':
-      return `Linha Reta (${skill.aoeRadius * 2 + 1})`;
+      return `Linha Reta (${skill.aoeRadius * 2 + 1} casas)`;
     case 'cone':
       return 'Cone Frontal (3 Fileiras)';
     case 'cross':
-      return 'Cruz (+)';
+      return skill.aoeRadius > 1 ? `Cruz Grande (+${skill.aoeRadius * 2 + 1})` : 'Cruz (+)';
     case 'long_cross':
       return 'Cruz com Cabo';
     case 'cleave':
-      return 'Varredura (3)';
+      return 'Varredura (3 casas)';
     case 't_shape':
       return 'Formato em T';
     case 'circle':
-    default:
-      return skill.canTargetGround ? 'Área 3x3 (Solo)' : 'Área 3x3';
+    default: {
+      const dim = skill.aoeRadius * 2 + 1;
+      return skill.canTargetGround ? `Área ${dim}x${dim} (Solo)` : `Área ${dim}x${dim}`;
+    }
   }
 }
 

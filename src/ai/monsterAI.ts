@@ -1,6 +1,6 @@
 import type { Skill, TileData, Unit, Point } from '../types/game';
 import { calculateBaseDamage } from '../utils/damage';
-import { getAttackableTiles, getReachableTiles, manhattanDistance } from '../utils/pathfinding';
+import { getAttackableTiles, getReachableTiles, manhattanDistance, getAoETiles } from '../utils/pathfinding';
 
 export interface AIActionChoice {
   monster: Unit;
@@ -203,12 +203,17 @@ export function decideMonsterAction(
           score += 60;
           if (act.skill.statusEffect) score += 70;
           if (act.skill.aoeRadius && act.skill.aoeRadius > 0) {
+            const hitTiles = getAoETiles(
+              { x: target.x, y: target.y },
+              act.skill.aoeRadius,
+              grid[0].length,
+              grid.length,
+              act.skill.aoeType || 'circle',
+              moveTile
+            );
             for (const other of playerUnits) {
               if (other.id === target.id) continue;
-              if (
-                Math.abs(other.x - target.x) <= act.skill.aoeRadius &&
-                Math.abs(other.y - target.y) <= act.skill.aoeRadius
-              ) {
+              if (hitTiles.some((pt) => pt.x === other.x && pt.y === other.y)) {
                 const { base: splashDmg } = calculateBaseDamage(
                   { ...monster, x: moveTile.x, y: moveTile.y },
                   other,

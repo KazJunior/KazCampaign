@@ -129,7 +129,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans"
+      className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans"
       onClick={onClose}
     >
       <div

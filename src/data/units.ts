@@ -616,21 +616,21 @@ export function createPlayerUnit(
         evolved.id === 'dreno_de_seiva' ||
         evolved.id === 'sedenta_de_runas'
       ) {
-        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
+        evolved.cooldownMax = Math.max(4, evolved.cooldownMax);
       }
       if (
         evolved.statusEffect?.type === 'taunt' ||
         evolved.secondaryStatusEffect?.type === 'taunt' ||
         evolved.casterStatusEffect?.type === 'taunt'
       ) {
-        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
+        evolved.cooldownMax = Math.max(4, evolved.cooldownMax);
       }
       if (
         evolved.statusEffect?.type === 'stun' ||
         evolved.secondaryStatusEffect?.type === 'stun' ||
         evolved.casterStatusEffect?.type === 'stun'
       ) {
-        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
+        evolved.cooldownMax = Math.max(4, evolved.cooldownMax);
       }
       if (
         evolved.statusEffect?.type === 'slow' ||

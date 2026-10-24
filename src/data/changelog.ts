@@ -15,10 +15,38 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.6',
+    date: '24 de Outubro de 2026',
+    title: 'Recargas Táticas, Formatos de AoE de Chefes & Melhorias de QoL',
+    isLatest: true,
+    tag: 'Balanceamento & QoL',
+    changes: [
+      {
+        highlight: 'Cooldown Mínimo de Stun, Cura e Taunt (4 Turnos)',
+        description: 'Todas as habilidades de atordoamento (stun), cura/sustentação/roubo de vida e provocação (taunt) agora possuem tempo de recarga mínimo de 4 turnos para todas as classes, monstros e chefes.',
+        type: 'nerf',
+      },
+      {
+        highlight: 'Padrões Únicos de AoE para Chefes',
+        description: 'Habilidades em área dos chefes foram redesenhadas com alcances e formatos táticos distintos: Cones direcionais, Cruzes ampliadas, Linhas de 5 casas e Clivagens (Cleave), aprofundando o posicionamento no tabuleiro.',
+        type: 'new',
+      },
+      {
+        highlight: 'Seleção Direta em Unidades Estunadas',
+        description: 'Corrigida a trava de controle ao clicar em uma unidade atordoada, permitindo agora selecionar normalmente outros heróis ou casas livres do tabuleiro sem precisar apertar Esc.',
+        type: 'fix',
+      },
+      {
+        highlight: 'Checar Inventário na Escolha de Equipamento',
+        description: 'Adicionado botão dedicado e atalho rápido (tecla I) na tela de escolha de recompensas de combate, permitindo abrir o inventário com sobreposição clara para comparar itens antes de escolher.',
+        type: 'new',
+      },
+    ],
+  },
+  {
     version: 'v1.5',
     date: '23 de Outubro de 2026',
     title: 'Santuário dos Pets: Ovos, Incubação & Companheiros de Batalha',
-    isLatest: true,
     tag: 'Grande Atualização',
     changes: [
       {
