@@ -29,6 +29,7 @@ export interface ClassDefinition {
   statGrowth: StatGrowth;
   isSecret?: boolean;
   goldCost?: number;
+  isDropOnly?: boolean;
 }
 
 export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
@@ -292,6 +293,60 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     statGrowth: { hp: 8, atk: 1, mag: 5, def: 1, res: 4 },
     goldCost: 100000,
   },
+  sniper: {
+    className: 'sniper',
+    name: 'Sniper',
+    role: 'Franco-Atirador de Elite & Dano Letal à Distância',
+    maxHp: 70,
+    atk: 32,
+    mag: 5,
+    def: 5,
+    res: 5,
+    mov: 1,
+    range: 5,
+    color: '#059669',
+    avatarKey: 'sniper',
+    baseSkillId: 'tiro_de_elite',
+    description: 'Especialista em tiro de precisão extrema a distâncias colossais. Possui mobilidade mínima (apenas 1 de movimento), compensada por alcance extraordinário (5 casas), aniquilação cirúrgica de alvos únicos e disparos perfurantes de altíssimo calibre.',
+    statGrowth: { hp: 9, atk: 5, mag: 1, def: 2, res: 2 },
+    isDropOnly: true,
+  },
+  mago_eletrico: {
+    className: 'mago_eletrico',
+    name: 'Mago Elétrico',
+    role: 'Eletromancia, Dano em Cadeia & Paralisia',
+    maxHp: 68,
+    atk: 8,
+    mag: 31,
+    def: 5,
+    res: 13,
+    mov: 2,
+    range: 3,
+    color: '#EAB308',
+    avatarKey: 'electric_mage',
+    baseSkillId: 'centelha_eletrica',
+    description: 'Mestre dos arcos voltaicos e correntes de alta voltagem. Causa dano elétrico em cadeia que salta entre múltiplos inimigos próximos e aplica atordoamento e paralisia incapacitante.',
+    statGrowth: { hp: 8, atk: 1, mag: 5, def: 1, res: 3 },
+    goldCost: 10000,
+  },
+  mago_vento: {
+    className: 'mago_vento',
+    name: 'Mago de Vento',
+    role: 'Aeromancia, Repulsão Tática & Aceleração',
+    maxHp: 72,
+    atk: 9,
+    mag: 28,
+    def: 6,
+    res: 12,
+    mov: 3,
+    range: 3,
+    color: '#14B8A6',
+    avatarKey: 'wind_mage',
+    baseSkillId: 'rajada_de_vento',
+    description: 'Controlador das correntes aéreas e vendavais repulsores. Especialista em empurrar inimigos contra obstáculos, reposicionar aliados no tabuleiro e conceder bônus maciços de movimentação.',
+    statGrowth: { hp: 9, atk: 1, mag: 4, def: 2, res: 3 },
+    goldCost: 10000,
+  },
 };
 
 export const INITIAL_CLASSES: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
@@ -408,6 +463,16 @@ export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: strin
     goldCost: 100000,
     name: 'Mago de Gelo',
     description: 'Compre o Mago de Gelo por 100.000 moedas de ouro.',
+  },
+  mago_eletrico: {
+    goldCost: 10000,
+    name: 'Mago Elétrico',
+    description: 'Compre o Mago Elétrico por 10.000 moedas de ouro.',
+  },
+  mago_vento: {
+    goldCost: 10000,
+    name: 'Mago de Vento',
+    description: 'Compre o Mago de Vento por 10.000 moedas de ouro.',
   },
 };
 
@@ -541,20 +606,29 @@ export function createPlayerUnit(
     .map((sk) => {
       const skLevel = skillLevels[sk.id] || 1;
       const evolved = getEvolvedSkill(sk, skLevel);
-      if (evolved.damageType === 'healing' || evolved.statusEffect?.type === 'shield') {
-        evolved.cooldownMax = Math.max(2, evolved.cooldownMax);
-      }
       if (
+        evolved.damageType === 'healing' ||
+        evolved.statusEffect?.type === 'shield' ||
+        evolved.id === 'cura' ||
+        evolved.id.includes('cura') ||
         (evolved.lifestealPercent && evolved.lifestealPercent > 0) ||
         evolved.id === 'dreno_de_vida' ||
         evolved.id === 'dreno_de_seiva' ||
         evolved.id === 'sedenta_de_runas'
       ) {
-        evolved.cooldownMax = Math.max(2, evolved.cooldownMax);
+        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
+      }
+      if (
+        evolved.statusEffect?.type === 'taunt' ||
+        evolved.secondaryStatusEffect?.type === 'taunt' ||
+        evolved.casterStatusEffect?.type === 'taunt'
+      ) {
+        evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
       }
       if (
         evolved.statusEffect?.type === 'stun' ||
-        evolved.secondaryStatusEffect?.type === 'stun'
+        evolved.secondaryStatusEffect?.type === 'stun' ||
+        evolved.casterStatusEffect?.type === 'stun'
       ) {
         evolved.cooldownMax = Math.max(3, evolved.cooldownMax);
       }

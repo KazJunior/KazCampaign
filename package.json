@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "reset-password": "node scripts/reset-password.mjs",
-    "give-gold": "node scripts/give-gold.mjs"
+    "give-gold": "node scripts/give-gold.mjs",
+    "give-egg": "node scripts/give-egg.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",

@@ -34,6 +34,9 @@ const ALL_VALID_CLASSES = new Set<string>([
   'lanceiro',
   'bardo',
   'mago_gelo',
+  'sniper',
+  'mago_eletrico',
+  'mago_vento',
 ]);
 
 function calculateMaxCompleted(

@@ -348,13 +348,17 @@ export function App() {
         skills: u.skills.map((s) => {
           const base = SKILLS[s.id];
           const evolved = base ? getEvolvedSkill(base, s.level || 1) : s;
+          const isHealing = evolved.damageType === 'healing' || evolved.id === 'cura' || evolved.id.includes('cura') || evolved.statusEffect?.type === 'shield';
+          const isTaunt = evolved.statusEffect?.type === 'taunt' || evolved.secondaryStatusEffect?.type === 'taunt' || evolved.casterStatusEffect?.type === 'taunt';
+          const isStun = evolved.statusEffect?.type === 'stun' || evolved.secondaryStatusEffect?.type === 'stun' || evolved.casterStatusEffect?.type === 'stun';
+          let cd = Math.max(evolved.cooldownMax, s.cooldownMax || 0);
+          if (isHealing) cd = Math.max(2, cd);
+          if (isTaunt) cd = Math.max(3, cd);
+          if (isStun) cd = Math.max(3, cd);
           return {
             ...evolved,
             currentCooldown: s.currentCooldown ?? 0,
-            cooldownMax:
-              evolved.statusEffect?.type === 'stun' || evolved.secondaryStatusEffect?.type === 'stun'
-                ? Math.max(3, evolved.cooldownMax)
-                : evolved.cooldownMax,
+            cooldownMax: cd,
           };
         }),
         statusEffects: (u.statusEffects || []).map((eff) => {
@@ -573,13 +577,17 @@ export function App() {
         skills: u.skills.map((s) => {
           const base = SKILLS[s.id];
           const evolved = base ? getEvolvedSkill(base, s.level || 1) : s;
+          const isHealing = evolved.damageType === 'healing' || evolved.id === 'cura' || evolved.id.includes('cura') || evolved.statusEffect?.type === 'shield';
+          const isTaunt = evolved.statusEffect?.type === 'taunt' || evolved.secondaryStatusEffect?.type === 'taunt' || evolved.casterStatusEffect?.type === 'taunt';
+          const isStun = evolved.statusEffect?.type === 'stun' || evolved.secondaryStatusEffect?.type === 'stun' || evolved.casterStatusEffect?.type === 'stun';
+          let cd = Math.max(evolved.cooldownMax, s.cooldownMax || 0);
+          if (isHealing) cd = Math.max(2, cd);
+          if (isTaunt) cd = Math.max(3, cd);
+          if (isStun) cd = Math.max(3, cd);
           return {
             ...evolved,
             currentCooldown: s.currentCooldown ?? 0,
-            cooldownMax:
-              evolved.statusEffect?.type === 'stun' || evolved.secondaryStatusEffect?.type === 'stun'
-                ? Math.max(3, evolved.cooldownMax)
-                : evolved.cooldownMax,
+            cooldownMax: cd,
           };
         }),
         statusEffects: (u.statusEffects || []).map((eff) => {
@@ -2107,7 +2115,33 @@ export function App() {
 
     const aoeRadius = skill?.aoeRadius || 0;
     let targetsToHit: Unit[] = [];
-    if (aoeRadius > 0) {
+    if (skill?.chainCount && skill.chainCount > 1) {
+      const chainTargets: Unit[] = [target];
+      let currentLink = target;
+      const maxChains = skill.chainCount;
+      const maxDist = skill.chainRange || 3;
+      const matchFaction = target.faction;
+
+      for (let c = 1; c < maxChains; c++) {
+        const available = units.filter(
+          (u) =>
+            u.faction === matchFaction &&
+            !u.isDead &&
+            !chainTargets.some((ct) => ct.id === u.id) &&
+            Math.abs(u.x - currentLink.x) + Math.abs(u.y - currentLink.y) <= maxDist
+        );
+        if (available.length === 0) break;
+        available.sort(
+          (a, b) =>
+            (Math.abs(a.x - currentLink.x) + Math.abs(a.y - currentLink.y)) -
+            (Math.abs(b.x - currentLink.x) + Math.abs(b.y - currentLink.y))
+        );
+        const nextTarget = available[0];
+        chainTargets.push(nextTarget);
+        currentLink = nextTarget;
+      }
+      targetsToHit = chainTargets;
+    } else if (aoeRadius > 0) {
       const matchFaction = skill?.targetType === 'ally' ? 'player' : 'enemy';
       const origin = { x: selectedUnit.x, y: selectedUnit.y };
       const hitTiles = getAoETiles(
@@ -2229,6 +2263,8 @@ export function App() {
             }
           } else if (eff.type === 'buff_atk') {
             addFloatingNumber(t.x, t.y, `+${eff.value}% Dano`, 'status', '#F97316');
+          } else if (eff.type === 'buff_mov') {
+            addFloatingNumber(t.x, t.y, `+${eff.value} Movimento!`, 'status', '#38BDF8');
           } else if (eff.type === 'invisible') {
             addFloatingNumber(t.x, t.y, 'Invisível!', 'status', '#8B5CF6');
           } else if (eff.type === 'taunt') {
@@ -2324,7 +2360,7 @@ export function App() {
         }
       }
 
-      // Knockback displacement (Disparo de Impacto)
+      // Knockback displacement (Disparo de Impacto, Habilidades de Vento)
       let finalTargetX = t.x;
       let finalTargetY = t.y;
       if (skill?.knockback && skill.knockback > 0 && newHp > 0) {
@@ -2338,31 +2374,46 @@ export function App() {
           pushY = Math.sign(dy);
         }
 
-        const destX = t.x + pushX;
-        const destY = t.y + pushY;
-        const inBounds = destX >= 0 && destX < grid[0].length && destY >= 0 && destY < grid.length;
-        const isWalkable = inBounds && grid[destY][destX].isWalkable;
-        const isOccupied = inBounds && updatedUnits.some((u) => !u.isDead && u.id !== t.id && u.x === destX && u.y === destY);
+        let currX = t.x;
+        let currY = t.y;
+        let stepsPushed = 0;
+        const maxSteps = skill.knockback;
 
-        if (inBounds && isWalkable && !isOccupied) {
-          finalTargetX = destX;
-          finalTargetY = destY;
-          if (boardRef.current) {
-            await boardRef.current.playMoveAnimation(t.id, t.x, t.y, destX, destY);
-          }
-          addFloatingNumber(destX, destY, 'Recuo Forçado!', 'status', '#38BDF8');
-        } else {
-          // Blocked by wall, obstacle or another unit -> Impact collision damage!
-          const colDmg = Math.max(1, Math.round(selectedUnit.atk * 0.20));
-          newHp = Math.max(0, newHp - colDmg);
-          addFloatingNumber(t.x, t.y, `Impacto! -${colDmg}`, 'physical', '#F97316');
-          if (newHp === 0) {
-            soundManager.playDeath();
-            totalKills++;
-            if (boardRef.current) {
-              await boardRef.current.playDeathAnimation(t.id);
+        for (let s = 0; s < maxSteps; s++) {
+          const nextX = currX + pushX;
+          const nextY = currY + pushY;
+          const inBounds = nextX >= 0 && nextX < grid[0].length && nextY >= 0 && nextY < grid.length;
+          const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+          const isOccupied = inBounds && updatedUnits.some((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+
+          if (inBounds && isWalkable && !isOccupied) {
+            currX = nextX;
+            currY = nextY;
+            stepsPushed++;
+          } else {
+            if (t.faction !== 'player') {
+              const colDmg = Math.max(1, Math.round(selectedUnit.atk * 0.20));
+              newHp = Math.max(0, newHp - colDmg);
+              addFloatingNumber(t.x, t.y, `Impacto! -${colDmg}`, 'physical', '#F97316');
+              if (newHp === 0) {
+                soundManager.playDeath();
+                totalKills++;
+                if (boardRef.current) {
+                  await boardRef.current.playDeathAnimation(t.id);
+                }
+              }
             }
+            break;
           }
+        }
+
+        if (stepsPushed > 0) {
+          finalTargetX = currX;
+          finalTargetY = currY;
+          if (boardRef.current) {
+            await boardRef.current.playMoveAnimation(t.id, t.x, t.y, currX, currY);
+          }
+          addFloatingNumber(currX, currY, t.faction === 'player' ? 'Impulso de Vento!' : 'Recuo Forçado!', 'status', '#38BDF8');
         }
       }
 
@@ -3139,6 +3190,12 @@ export function App() {
       if (allMelee) {
         newlyUnlocked.push('carrasco_vazio');
       }
+    }
+
+    // RARE DROP CLASS UNLOCK: Sniper
+    // Condição: 1% de chance de drop raro ao vencer qualquer fase
+    if (!currentUnlocked.includes('sniper') && Math.random() < 0.01) {
+      newlyUnlocked.push('sniper');
     }
 
     const finalUnlockedClasses = Array.from(new Set([...currentUnlocked, ...newlyUnlocked]));

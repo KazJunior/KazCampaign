@@ -85,7 +85,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
               Evolua 1 Habilidade de {unit.name}
             </h2>
             <p className="text-xs text-[#A7B0C4] max-w-xl mx-auto">
-              Seu herói atingiu o limite de 5 habilidades ativas! Escolha uma das 5 habilidades abaixo para evoluir, aumentando permanentemente seu dano, efeitos e reduzindo recargas.
+              Seu herói atingiu o limite de 5 habilidades ativas! Escolha uma das 5 habilidades abaixo para evoluir, aumentando permanentemente seu dano e efeitos.
             </p>
           </div>
 
@@ -96,6 +96,21 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
               const nextLvl = currentLvl + 1;
               const evolved = getEvolvedSkill(skill, nextLvl);
               const isHeal = skill.damageType === 'healing';
+              const isRestrictedCooldown =
+                skill.damageType === 'healing' ||
+                skill.id === 'cura' ||
+                skill.id.includes('cura') ||
+                skill.statusEffect?.type === 'shield' ||
+                skill.statusEffect?.type === 'taunt' ||
+                skill.secondaryStatusEffect?.type === 'taunt' ||
+                skill.casterStatusEffect?.type === 'taunt' ||
+                skill.statusEffect?.type === 'stun' ||
+                skill.secondaryStatusEffect?.type === 'stun' ||
+                skill.casterStatusEffect?.type === 'stun';
+
+              const effectiveEvolvedCd = isRestrictedCooldown
+                ? Math.max(skill.cooldownMax, evolved.cooldownMax)
+                : evolved.cooldownMax;
 
               return (
                 <div
@@ -141,8 +156,8 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                         <span className="text-[#A7B0C4]">Recarga:</span>
                         <span>
                           {skill.cooldownMax}T
-                          {evolved.cooldownMax < skill.cooldownMax ? (
-                            <strong className="text-[#56E59A]"> → {evolved.cooldownMax}T (-1T)</strong>
+                          {effectiveEvolvedCd < skill.cooldownMax ? (
+                            <strong className="text-[#56E59A]"> → {effectiveEvolvedCd}T (-1T)</strong>
                           ) : (
                             <span className="text-[#A7B0C4]"> (Inalterada)</span>
                           )}

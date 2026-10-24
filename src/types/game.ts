@@ -22,7 +22,7 @@ export type DamageType = 'physical' | 'magical' | 'healing';
 
 export type SkillCategory = 'attack' | 'defense' | 'support' | 'passive';
 
-export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield';
+export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'buff_mov' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -72,6 +72,8 @@ export interface Skill {
   grantsExtraTurn?: boolean; // Grants target ally an immediate additional turn (Bardo)
   createsObstacle?: ObstacleType; // Spawns an obstacle on targeted tile (Mago de Gelo)
   knockback?: number; // Pushes hit targets back N tiles away from caster (Disparo de Impacto)
+  chainCount?: number; // Number of targets lightning chains to (Mago Elétrico)
+  chainRange?: number; // Max distance between chained links
   casterStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to the caster upon using this skill
   scalesWithDefRes?: boolean; // Causa dano com base em 0.75 da armadura (defesa) + 0.75 da resistência
   iconName: string;

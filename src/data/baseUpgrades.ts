@@ -127,6 +127,27 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 4, cost: 80000, bonus: { hp: 36, mag: 5, def: 1, res: 2 }, name: 'Zero Criogênico', description: '+36 HP, +5 MAG, +1 DEF e +2 RES permanente.' },
     { level: 5, cost: 100000, bonus: { hp: 50, mag: 8, res: 4, def: 2 }, name: 'Arquimago do Permafrost', description: '+50 HP, +8 MAG, +4 RES e +2 DEF permanente.' },
   ],
+  sniper: [
+    { level: 1, cost: 10000, bonus: { hp: 14, atk: 2 }, name: 'Calibração Óptica', description: '+14 HP e +2 ATK permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 20, atk: 3, def: 1 }, name: 'Estabilizador de Cano', description: '+20 HP, +3 ATK e +1 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 26, atk: 4, def: 1 }, name: 'Munição Perfurante', description: '+26 HP, +4 ATK e +1 DEF permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 36, atk: 5, res: 2 }, name: 'Camuflagem Espectral', description: '+36 HP, +5 ATK e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 50, atk: 8, def: 2, res: 2 }, name: 'Lenda do Tiro Fantasma', description: '+50 HP, +8 ATK, +2 DEF e +2 RES permanente.' },
+  ],
+  mago_eletrico: [
+    { level: 1, cost: 10000, bonus: { hp: 14, mag: 2 }, name: 'Centelha Primordial', description: '+14 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 20, mag: 3, res: 1 }, name: 'Bobina de Tesla', description: '+20 HP, +3 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 26, mag: 4, res: 2 }, name: 'Supercondutor Rúnico', description: '+26 HP, +4 MAG e +2 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 36, mag: 5, def: 1, res: 2 }, name: 'Manto do Trovão', description: '+36 HP, +5 MAG, +1 DEF e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 50, mag: 8, res: 4, def: 2 }, name: 'Soberano das Tormentas', description: '+50 HP, +8 MAG, +4 RES e +2 DEF permanente.' },
+  ],
+  mago_vento: [
+    { level: 1, cost: 10000, bonus: { hp: 15, mag: 2 }, name: 'Brisa Silfídea', description: '+15 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 22, mag: 3, res: 1 }, name: 'Vento de Cauda', description: '+22 HP, +3 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 28, mag: 4, def: 1, res: 1 }, name: 'Cúpula Aerodinâmica', description: '+28 HP, +4 MAG, +1 DEF e +1 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 38, mag: 5, res: 2 }, name: 'Olho do Vendaval', description: '+38 HP, +5 MAG e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 52, mag: 8, res: 3, def: 3 }, name: 'Lorde dos Tempestuosos', description: '+52 HP, +8 MAG, +3 RES e +3 DEF permanente.' },
+  ],
 };
 
 export function getClassCumulativeBonus(className: string, level = 0): { hp: number; atk: number; mag: number; def: number; res: number } {

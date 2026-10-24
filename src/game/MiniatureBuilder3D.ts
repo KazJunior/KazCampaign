@@ -136,6 +136,15 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'ice_mage':
       buildIceMageMini(char);
       break;
+    case 'sniper':
+      buildSniperMini(char);
+      break;
+    case 'electric_mage':
+      buildElectricMageMini(char);
+      break;
+    case 'wind_mage':
+      buildWindMageMini(char);
+      break;
     case 'goblin':
       buildGoblinMini(char);
       break;
@@ -1192,6 +1201,189 @@ function buildIceMageMini(group: THREE.Group) {
   iceOrb.position.set(0.26, 0.98, 0.08);
   iceOrb.name = 'spinningOrb';
   group.add(iceOrb);
+}
+
+// -------------------------------------------------------------
+// 12B. SNIPER (Franco-Atirador de Elite)
+// -------------------------------------------------------------
+function buildSniperMini(group: THREE.Group) {
+  const camoMat = new THREE.MeshStandardMaterial({ color: 0x1e3a29, roughness: 0.8 }); // Camo green
+  const darkCamoMat = new THREE.MeshStandardMaterial({ color: 0x14281d, roughness: 0.9 });
+  const tacticalArmor = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.5, metalness: 0.4 });
+  const rifleMetal = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.2, metalness: 0.85 });
+  const scopeLens = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 0.8 });
+
+  // Legs in tactical combat gear
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.26, 6), tacticalArmor);
+  legL.position.set(-0.09, 0.13, 0);
+  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.04, 0.26, 6), tacticalArmor);
+  legR.position.set(0.09, 0.13, 0);
+  group.add(legL, legR);
+
+  // Torso with tactical vest & ghillie harness
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.32, 0.18), tacticalArmor);
+  torso.position.y = 0.38;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Ghillie / Camo Cloak behind
+  const cloak = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.46, 8), camoMat);
+  cloak.position.set(0, 0.35, -0.07);
+  cloak.scale.set(1.1, 1, 0.5);
+  group.add(cloak);
+
+  // Head in Camo Hood
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), darkCamoMat);
+  head.position.set(0, 0.62, 0);
+  group.add(head);
+
+  // Camo Hood Peak
+  const hood = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.28, 8), camoMat);
+  hood.position.set(0, 0.72, -0.03);
+  hood.rotation.x = -Math.PI / 10;
+  group.add(hood);
+
+  // Glowing Green Tactical Night-Vision / Eye Scope
+  const eyeLens = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.05, 6), scopeLens);
+  eyeLens.rotation.x = Math.PI / 2;
+  eyeLens.position.set(0.04, 0.62, 0.12);
+  group.add(eyeLens);
+
+  // Long Heavy Anti-Material Sniper Rifle (Held in Two Hands)
+  const rifleBody = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.44), rifleMetal);
+  rifleBody.position.set(0.16, 0.42, 0.16);
+  group.add(rifleBody);
+
+  const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.65, 8), rifleMetal);
+  barrel.rotation.x = Math.PI / 2;
+  barrel.position.set(0.16, 0.44, 0.52);
+  group.add(barrel);
+
+  // Muzzle Break / Silencer
+  const muzzle = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.1, 8), tacticalArmor);
+  muzzle.rotation.x = Math.PI / 2;
+  muzzle.position.set(0.16, 0.44, 0.86);
+  group.add(muzzle);
+
+  // Telescopic Scope on Top of Rifle
+  const scope = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.18, 8), tacticalArmor);
+  scope.rotation.x = Math.PI / 2;
+  scope.position.set(0.16, 0.49, 0.16);
+  group.add(scope);
+}
+
+// -------------------------------------------------------------
+// 12C. MAGO ELÉTRICO (Eletromante)
+// -------------------------------------------------------------
+function buildElectricMageMini(group: THREE.Group) {
+  const electricRobes = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.5 }); // Midnight indigo
+  const goldTrim = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 });
+  const plasmaCore = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x38bdf8,
+    emissiveIntensity: 0.9,
+    roughness: 0.1,
+  });
+
+  // Flowing Electro Robe
+  const robe = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.58, 12), electricRobes);
+  robe.position.y = 0.32;
+  robe.castShadow = true;
+  group.add(robe);
+
+  // Golden Electric Hem
+  const hemGeo = new THREE.TorusGeometry(0.24, 0.02, 6, 16);
+  hemGeo.rotateX(Math.PI / 2);
+  const hem = new THREE.Mesh(hemGeo, goldTrim);
+  hem.position.y = 0.06;
+  group.add(hem);
+
+  // Head with Cowl
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshStandardMaterial({ color: 0xbae6fd }));
+  head.position.y = 0.58;
+  group.add(head);
+
+  // Electric Cowl / Hood
+  const cowl = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 8), electricRobes);
+  cowl.position.set(0, 0.72, -0.04);
+  cowl.rotation.x = -Math.PI / 12;
+  group.add(cowl);
+
+  // Floating Rotating Lightning Spark Rings (Orbiting Shoulders)
+  const sparkRing = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.018, 4, 16), plasmaCore);
+  sparkRing.rotation.set(Math.PI / 3, Math.PI / 6, 0);
+  sparkRing.position.set(0, 0.52, 0);
+  sparkRing.name = 'spinningOrb';
+  group.add(sparkRing);
+
+  // Tesla Lightning Rod (Staff)
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.92, 8), goldTrim);
+  staff.position.set(0.24, 0.48, 0.08);
+  staff.castShadow = true;
+  group.add(staff);
+
+  // Crackling Electric Plasma Crystal atop staff
+  const lightningOrb = new THREE.Mesh(new THREE.DodecahedronGeometry(0.08), plasmaCore);
+  lightningOrb.position.set(0.24, 0.98, 0.08);
+  group.add(lightningOrb);
+}
+
+// -------------------------------------------------------------
+// 12D. MAGO DE VENTO (Aeromante)
+// -------------------------------------------------------------
+function buildWindMageMini(group: THREE.Group) {
+  const windRobes = new THREE.MeshStandardMaterial({ color: 0x0d9488, roughness: 0.6 }); // Teal / Aero green
+  const whiteTrim = new THREE.MeshStandardMaterial({ color: 0xccfbf1, roughness: 0.3 });
+  const windGlow = new THREE.MeshStandardMaterial({
+    color: 0x2dd4bf,
+    emissive: 0x2dd4bf,
+    emissiveIntensity: 0.7,
+    transparent: true,
+    opacity: 0.85,
+  });
+
+  // Flowing Aeromancer Robe
+  const robe = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.6, 12), windRobes);
+  robe.position.y = 0.33;
+  robe.castShadow = true;
+  group.add(robe);
+
+  // Swirling Wind Vortex Ring at base
+  const vortexGeo = new THREE.TorusGeometry(0.25, 0.025, 6, 16);
+  vortexGeo.rotateX(Math.PI / 2);
+  const vortex = new THREE.Mesh(vortexGeo, windGlow);
+  vortex.position.y = 0.08;
+  group.add(vortex);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshStandardMaterial({ color: 0xf0fdfa }));
+  head.position.y = 0.58;
+  group.add(head);
+
+  // Feathered Circlet
+  const circlet = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.02, 6, 16), whiteTrim);
+  circlet.position.set(0, 0.62, 0);
+  circlet.rotation.x = Math.PI / 2;
+  group.add(circlet);
+
+  // Feather wings / plumes on shoulders
+  [-1, 1].forEach((side) => {
+    const plume = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.22, 4), whiteTrim);
+    plume.position.set(side * 0.2, 0.52, 0);
+    plume.rotation.z = side * (Math.PI / 3);
+    group.add(plume);
+  });
+
+  // Zephyr Wind Scepter / Staff
+  const scepter = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.022, 0.88, 8), whiteTrim);
+  scepter.position.set(0.25, 0.48, 0.08);
+  group.add(scepter);
+
+  // Floating Spinning Aero Orb
+  const aeroOrb = new THREE.Mesh(new THREE.OctahedronGeometry(0.085), windGlow);
+  aeroOrb.position.set(0.25, 0.96, 0.08);
+  aeroOrb.name = 'spinningOrb';
+  group.add(aeroOrb);
 }
 
 // -------------------------------------------------------------

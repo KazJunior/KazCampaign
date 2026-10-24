@@ -19,6 +19,8 @@ import {
   Sun,
   Crosshair,
   TreePine,
+  Wind,
+  Zap,
   X,
 } from 'lucide-react';
 
@@ -121,6 +123,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             const goldCost = classDef.goldCost;
             const isPurchasable = typeof goldCost === 'number';
             const canAfford = isPurchasable && playerGold >= goldCost;
+            const isDropOnly = !!(classDef as any).isDropOnly || cKey === 'sniper';
 
             return (
               <div
@@ -130,6 +133,8 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   !isUnlocked
                     ? isSecret
                       ? 'bg-[#120D1D]/90 border-[#7B2CBF]/40 opacity-75 cursor-not-allowed shadow-inner shadow-[#7B2CBF]/10'
+                      : isDropOnly
+                      ? 'bg-[#081b24]/90 border-[#06B6D4]/40 shadow-sm shadow-[#06B6D4]/10'
                       : isPurchasable
                       ? 'bg-[#161B26]/95 border-[#F0B44D]/40 hover:border-[#F0B44D] shadow-sm shadow-[#F0B44D]/10'
                       : 'bg-[#0B0D13]/90 border-[#343B50]/50 opacity-60 cursor-not-allowed'
@@ -151,9 +156,13 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                           <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#7B2CBF]/30 border border-[#9D4EDD]/60 text-[#C77DFF]">
                             Oculta
                           </span>
+                        ) : isDropOnly ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#06B6D4]/20 border border-[#06B6D4]/60 text-[#38BDF8]">
+                            Drop Raro (1%)
+                          </span>
                         ) : isPurchasable ? (
                           <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#F0B44D]/20 border border-[#F0B44D]/60 text-[#F0B44D]">
-                            100.000 🪙
+                            {goldCost.toLocaleString('pt-BR')} 🪙
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#E65353]/20 border border-[#E65353]/50 text-[#E65353]">
@@ -239,8 +248,12 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                         }`}
                       >
                         <Coins size={14} />
-                        {canAfford ? 'Comprar (100k 🪙)' : '100.000 Ouro'}
+                        {canAfford ? `Comprar (${goldCost >= 1000 ? `${goldCost / 1000}k` : goldCost} 🪙)` : `${goldCost.toLocaleString('pt-BR')} Ouro`}
                       </button>
+                    ) : isDropOnly ? (
+                      <div className="p-2 rounded-xl text-[10px] leading-tight bg-[#042f2e]/50 border border-[#0d9488]/60 text-[#5eead4]">
+                        🎯 Drop Raro: 1% de chance de obtenção ao vencer qualquer fase!
+                      </div>
                     ) : (
                       <div
                         className={`p-2 rounded-xl text-[10px] leading-tight ${
@@ -343,6 +356,12 @@ function getClassIcon(avatarKey: string, size = 20) {
       return <Music size={size} />;
     case 'ice_mage':
       return <Snowflake size={size} />;
+    case 'sniper':
+      return <Crosshair size={size} />;
+    case 'electric_mage':
+      return <Zap size={size} />;
+    case 'wind_mage':
+      return <Wind size={size} />;
     default:
       return <Sparkles size={size} />;
   }

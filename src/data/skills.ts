@@ -594,7 +594,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 1,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'ally',
     iconName: 'Heart',
@@ -626,7 +626,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'ally',
     statusEffect: { type: 'shield', duration: 3, value: 60 },
@@ -643,7 +643,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'ally',
     cleansesDebuffs: true,
@@ -1070,7 +1070,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 60,
@@ -1405,7 +1405,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 100,
@@ -2081,7 +2081,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 100,
@@ -2253,7 +2253,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 100,
@@ -2305,7 +2305,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 3,
     aoeRadius: 1,
     canTargetGround: true,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 75,
@@ -2723,7 +2723,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 80,
@@ -2777,7 +2777,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'enemy',
     hpCostPercent: 25,
@@ -2909,7 +2909,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
     lifestealPercent: 30,
@@ -3335,6 +3335,334 @@ export const SKILLS: Record<string, Skill> = {
     requiredLevel: 8,
     iconName: 'Snowflake',
   },
+
+  // ==========================================
+  // 16. SNIPER SKILLS (Franco-Atirador de Elite)
+  // Mobilidade mínima (1 MOV), alcance colossal e aniquilação letal de alvo único.
+  // ==========================================
+  tiro_de_elite: {
+    id: 'tiro_de_elite',
+    name: 'Disparo de Precisão Extrema',
+    description: 'Disparo cirúrgico de altíssimo calibre e alcance descomunal (até 5 casas), causando 165% de dano físico a um alvo único e ignorando 20% da armadura.',
+    damageType: 'physical',
+    category: 'attack',
+    power: 1.65,
+    rangeMin: 2,
+    rangeMax: 5,
+    aoeRadius: 0,
+    cooldownMax: 1,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    defenseIgnoreRatio: 0.20,
+    iconName: 'Target',
+  },
+  mira_telescopica: {
+    id: 'mira_telescopica',
+    name: 'Mira Telescópica Estabilizada',
+    description: 'Trava a mira óptica de alta resolução ajustando vento e gravidade. Concede +25% de dano por 2 turnos para disparos cirúrgicos.',
+    damageType: 'healing',
+    category: 'support',
+    power: 0,
+    rangeMin: 0,
+    rangeMax: 0,
+    aoeRadius: 0,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'self',
+    statusEffect: { type: 'buff_atk', duration: 2, value: 25 },
+    requiredLevel: 2,
+    iconName: 'Crosshair',
+  },
+  disparo_concussivo: {
+    id: 'disparo_concussivo',
+    name: 'Projétil Cinético Concussivo',
+    description: 'Dispara uma munição de impacto maciço a longa distância (alcance até 5), causando 160% de dano físico e empurrando o alvo 2 casas para longe!',
+    damageType: 'physical',
+    category: 'attack',
+    power: 1.6,
+    rangeMin: 2,
+    rangeMax: 5,
+    aoeRadius: 0,
+    knockback: 2,
+    cooldownMax: 3,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    requiredLevel: 3,
+    iconName: 'Target',
+  },
+  bala_perfuradora_de_blindagem: {
+    id: 'bala_perfuradora_de_blindagem',
+    name: 'Projétil de Tungstênio Anti-Blindagem',
+    description: 'Disparo perfurante de blindagem com núcleo denso de tungstênio (alcance até 6), causando 180% de dano físico e ignorando 45% da defesa do alvo.',
+    damageType: 'physical',
+    category: 'attack',
+    power: 1.8,
+    rangeMin: 2,
+    rangeMax: 6,
+    aoeRadius: 0,
+    defenseIgnoreRatio: 0.45,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    requiredLevel: 4,
+    iconName: 'Crosshair',
+  },
+  tiro_no_ponto_vital: {
+    id: 'tiro_no_ponto_vital',
+    name: 'Tiro no Ponto Vital (Headshot)',
+    description: 'Atinge com precisão milimétrica o ponto mais vulnerável do alvo (alcance até 6), causando 195% de dano físico e reduzindo a defesa inimiga em 30% por 2 turnos.',
+    damageType: 'physical',
+    category: 'attack',
+    power: 1.95,
+    rangeMin: 2,
+    rangeMax: 6,
+    aoeRadius: 0,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    statusEffect: { type: 'debuff_def', duration: 2, value: 30 },
+    requiredLevel: 6,
+    iconName: 'Skull',
+  },
+  tiro_do_juizo_final: {
+    id: 'tiro_do_juizo_final',
+    name: 'Bala do Juízo Final (Suprema)',
+    description: 'Habilidade suprema: Disparo lendário de calibre anti-material do horizonte (alcance colossal de até 7 casas!). Causa aniquiladores 220% de dano físico em alvo único e ignora 50% de qualquer defesa ou couraça.',
+    damageType: 'physical',
+    category: 'attack',
+    power: 2.2,
+    rangeMin: 2,
+    rangeMax: 7,
+    aoeRadius: 0,
+    defenseIgnoreRatio: 0.50,
+    cooldownMax: 5,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    requiredLevel: 8,
+    iconName: 'Target',
+  },
+
+  // ==========================================
+  // 17. MAGO ELÉTRICO SKILLS (Eletromancia & Paralisia)
+  // Dano em cadeia entre múltiplos inimigos e aplicação de atordoamento/paralisia.
+  // ==========================================
+  centelha_eletrica: {
+    id: 'centelha_eletrica',
+    name: 'Centelha Voltaica em Cadeia',
+    description: 'Dispara um arco voltaico inicial que atinge o alvo e salta para um segundo inimigo próximo (cadeia de 2 alvos), causando 135% de dano mágico a cada um.',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.35,
+    rangeMin: 1,
+    rangeMax: 3,
+    aoeRadius: 0,
+    chainCount: 2,
+    cooldownMax: 1,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    iconName: 'Zap',
+  },
+  raio_paralisante: {
+    id: 'raio_paralisante',
+    name: 'Choque Neural Paralisante',
+    description: 'Dispara um relâmpago de alta voltagem direto no sistema nervoso do alvo (alcance até 3), causando 145% de dano mágico e aplicando Atordoamento/Paralisia por 1 turno.',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.45,
+    rangeMin: 1,
+    rangeMax: 3,
+    aoeRadius: 0,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    statusEffect: { type: 'stun', duration: 1, value: 1 },
+    requiredLevel: 2,
+    iconName: 'Zap',
+  },
+  relampago_em_cadeia: {
+    id: 'relampago_em_cadeia',
+    name: 'Relâmpago em Cadeia',
+    description: 'Descarrega um potente raio que atinge o alvo inicial e salta violentamente entre até 3 inimigos próximos em cadeia (alcance até 4), desferindo 150% de dano mágico em cada um.',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.5,
+    rangeMin: 1,
+    rangeMax: 4,
+    aoeRadius: 0,
+    chainCount: 3,
+    cooldownMax: 3,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    requiredLevel: 3,
+    iconName: 'Zap',
+  },
+  escudo_de_plasma_estatico: {
+    id: 'escudo_de_plasma_estatico',
+    name: 'Barreira de Plasma Estático',
+    description: 'Envolve-se em uma cúpula de eletricidade estática reativa, obtendo 60 de escudo protetor e aumentando o poder de dano mágico em +20% por 2 turnos.',
+    damageType: 'healing',
+    category: 'defense',
+    power: 0,
+    rangeMin: 0,
+    rangeMax: 0,
+    aoeRadius: 0,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'self',
+    statusEffect: { type: 'shield', duration: 2, value: 60 },
+    secondaryStatusEffect: { type: 'buff_atk', duration: 2, value: 20 },
+    requiredLevel: 4,
+    iconName: 'ShieldCheck',
+  },
+  tempestade_eletromagnetica: {
+    id: 'tempestade_eletromagnetica',
+    name: 'Tempestade Eletromagnética',
+    description: 'Conflagra uma tempestade de raios em cadeia para até 4 inimigos (alcance até 4), causando 160% de dano mágico e despedaçando defesas (-20% de defesa por 2 turnos).',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.6,
+    rangeMin: 1,
+    rangeMax: 4,
+    aoeRadius: 0,
+    chainCount: 4,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    statusEffect: { type: 'debuff_def', duration: 2, value: 20 },
+    requiredLevel: 6,
+    iconName: 'CloudLightning',
+  },
+  apocalipse_eletrico: {
+    id: 'apocalipse_eletrico',
+    name: 'Ira de Trovões em Cadeia (Suprema)',
+    description: 'Habilidade suprema: Canaliza a força máxima dos céus, desencadeando um supercondutor elétrico que salta por até 5 inimigos em cadeia, causando 175% de dano mágico em cada um e paralisando/atordoando todos os atingidos por 1 turno!',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.75,
+    rangeMin: 1,
+    rangeMax: 4,
+    aoeRadius: 0,
+    chainCount: 5,
+    cooldownMax: 5,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    statusEffect: { type: 'stun', duration: 1, value: 1 },
+    requiredLevel: 8,
+    iconName: 'Zap',
+  },
+
+  // ==========================================
+  // 18. MAGO DE VENTO SKILLS (Aeromancia & Repulsão)
+  // Empurrão de inimigos e aliados, criação de espaço tático e concessão de mobilidade.
+  // ==========================================
+  rajada_de_vento: {
+    id: 'rajada_de_vento',
+    name: 'Lufada de Vento Repulsora',
+    description: 'Dispara um forte golpe de vento comprimido à distância (alcance até 3), causando 135% de dano mágico e empurrando o alvo 1 casa para trás.',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.35,
+    rangeMin: 1,
+    rangeMax: 3,
+    aoeRadius: 0,
+    knockback: 1,
+    cooldownMax: 1,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    iconName: 'Wind',
+  },
+  brisa_aceleradora: {
+    id: 'brisa_aceleradora',
+    name: 'Brisa Aceleradora dos Céus',
+    description: 'Cria uma corrente de vento favorável sob os pés de um aliado ou de si mesmo (alcance até 3), concedendo +1 de Movimento por 2 turnos e purificando penalidades de lentidão.',
+    damageType: 'healing',
+    category: 'support',
+    power: 0,
+    rangeMin: 0,
+    rangeMax: 3,
+    aoeRadius: 0,
+    cooldownMax: 3,
+    currentCooldown: 0,
+    targetType: 'ally',
+    statusEffect: { type: 'buff_mov', duration: 2, value: 1 },
+    cleansesDebuffs: true,
+    requiredLevel: 2,
+    iconName: 'Footprints',
+  },
+  vendaval_repulsor: {
+    id: 'vendaval_repulsor',
+    name: 'Vendaval Repulsor Direcional',
+    description: 'Projétil aerodinâmico versátil (alcance até 3): se for inimigo, causa 145% de dano mágico e empurra 2 casas; se for aliado, impulsiona-o com segurança 2 casas à frente e concede +1 de Movimento por 1 turno!',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.45,
+    rangeMin: 1,
+    rangeMax: 3,
+    aoeRadius: 0,
+    knockback: 2,
+    cooldownMax: 3,
+    currentCooldown: 0,
+    targetType: 'any',
+    statusEffect: { type: 'buff_mov', duration: 1, value: 1 },
+    requiredLevel: 3,
+    iconName: 'Wind',
+  },
+  manto_dos_ventos: {
+    id: 'manto_dos_ventos',
+    name: 'Manto de Ciclone Protetor',
+    description: 'Cria uma redoma aerodinâmica protetora em um aliado ou em si mesmo (alcance até 3), concedendo um escudo de 50 pontos e +2 de Movimento por 2 turnos.',
+    damageType: 'healing',
+    category: 'defense',
+    power: 0,
+    rangeMin: 0,
+    rangeMax: 3,
+    aoeRadius: 0,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'ally',
+    statusEffect: { type: 'shield', duration: 2, value: 50 },
+    secondaryStatusEffect: { type: 'buff_mov', duration: 2, value: 2 },
+    requiredLevel: 4,
+    iconName: 'Shield',
+  },
+  vortice_cortante: {
+    id: 'vortice_cortante',
+    name: 'Vórtice Aerodinâmico de Pressão',
+    description: 'Invoca um tufão giratório em área de 3x3 no solo (alcance até 4), causando 155% de dano mágico a todos os inimigos e repelindo-os 1 casa para fora do centro.',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.55,
+    rangeMin: 1,
+    rangeMax: 4,
+    aoeRadius: 1,
+    canTargetGround: true,
+    knockback: 1,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    requiredLevel: 6,
+    iconName: 'RotateCcw',
+  },
+  furacao_devastador: {
+    id: 'furacao_devastador',
+    name: 'Furacão Devastador da Tempestade (Suprema)',
+    description: 'Habilidade suprema: Desencadeia um ciclone gigante em formato de cruz (+) no solo. Causa estrondosos 180% de dano mágico nos inimigos, empurra todos 2 casas para longe e concede ao próprio conjurador +2 de Movimento por 2 turnos!',
+    damageType: 'magical',
+    category: 'attack',
+    power: 1.8,
+    rangeMin: 1,
+    rangeMax: 4,
+    aoeRadius: 1,
+    aoeType: 'cross',
+    canTargetGround: true,
+    knockback: 2,
+    casterStatusEffect: { type: 'buff_mov', duration: 2, value: 2 },
+    cooldownMax: 5,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    requiredLevel: 8,
+    iconName: 'Wind',
+  },
 };
 
 export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
@@ -3389,6 +3717,15 @@ export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
   mago_gelo: [
     'armadura_glacial', 'estaca_de_gelo', 'nevasca', 'sepultura_de_gelo', 'zero_absoluto'
   ],
+  sniper: [
+    'mira_telescopica', 'disparo_concussivo', 'bala_perfuradora_de_blindagem', 'tiro_no_ponto_vital', 'tiro_do_juizo_final'
+  ],
+  mago_eletrico: [
+    'raio_paralisante', 'relampago_em_cadeia', 'escudo_de_plasma_estatico', 'tempestade_eletromagnetica', 'apocalipse_eletrico'
+  ],
+  mago_vento: [
+    'brisa_aceleradora', 'vendaval_repulsor', 'manto_dos_ventos', 'vortice_cortante', 'furacao_devastador'
+  ],
 };
 
 /** Nível máximo de evolução de cada habilidade */
@@ -3399,16 +3736,31 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
   const effectiveLevel = Math.min(MAX_SKILL_LEVEL, Math.max(1, level));
   if (effectiveLevel <= 1) {
     const clone = { ...baseSkill, level: 1 };
+    // Habilidades de cura, escudos e roubo de vida possuem cooldown mínimo de 3
     if (
+      clone.damageType === 'healing' ||
+      clone.id === 'cura' ||
+      clone.id.includes('cura') ||
+      clone.statusEffect?.type === 'shield' ||
       (clone.lifestealPercent && clone.lifestealPercent > 0) ||
       clone.id === 'dreno_de_vida' ||
+      clone.id === 'dreno_de_seiva' ||
       clone.id === 'sedenta_de_runas'
     ) {
-      clone.cooldownMax = Math.max(2, clone.cooldownMax);
+      clone.cooldownMax = Math.max(3, clone.cooldownMax);
+    }
+    // Habilidades de provocação (taunt) possuem cooldown mínimo de 3
+    if (
+      clone.statusEffect?.type === 'taunt' ||
+      clone.secondaryStatusEffect?.type === 'taunt' ||
+      clone.casterStatusEffect?.type === 'taunt'
+    ) {
+      clone.cooldownMax = Math.max(3, clone.cooldownMax);
     }
     if (
       clone.statusEffect?.type === 'stun' ||
-      clone.secondaryStatusEffect?.type === 'stun'
+      clone.secondaryStatusEffect?.type === 'stun' ||
+      clone.casterStatusEffect?.type === 'stun'
     ) {
       clone.cooldownMax = Math.max(3, clone.cooldownMax);
     }
@@ -3455,7 +3807,7 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     if (clone.secondaryStatusEffect?.type === 'slow') {
       clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 1 };
     }
-    if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0.30) {
+    if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0.30 && !clone.id.includes('bala') && !clone.id.includes('tiro')) {
       clone.defenseIgnoreRatio = 0.30;
     }
     return clone;
@@ -3475,25 +3827,41 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
   }
 
   // Melhorias de recarga (cooldown) NÃO devem ser fornecidas
-  clone.cooldownMax = canonicalBase.cooldownMax;
+  clone.cooldownMax = Math.max(canonicalBase.cooldownMax, baseSkill.cooldownMax || 0);
 
-  // Habilidades de roubo de vida (lifesteal) possuem cooldown mínimo de 3
-  if (
-      (clone.lifestealPercent && clone.lifestealPercent > 0) ||
-      clone.id === 'dreno_de_vida' ||
-      clone.id === 'sedenta_de_runas'
-    ) {
-      clone.cooldownMax = Math.max(2, clone.cooldownMax);
-    }
+  // Bloqueio rigoroso: Nenhuma habilidade de cura, taunt ou stun pode ter o cooldown diminuído por upgrade/nível
+  const isHealing =
+    clone.damageType === 'healing' ||
+    clone.id === 'cura' ||
+    clone.id.includes('cura') ||
+    clone.statusEffect?.type === 'shield' ||
+    (clone.lifestealPercent && clone.lifestealPercent > 0) ||
+    clone.id === 'dreno_de_vida' ||
+    clone.id === 'dreno_de_seiva' ||
+    clone.id === 'sedenta_de_runas';
 
-  // Habilidades que causam atordoamento (stun) possuem cooldown mínimo de 4 turnos
+  const isTaunt =
+    clone.statusEffect?.type === 'taunt' ||
+    clone.secondaryStatusEffect?.type === 'taunt' ||
+    clone.casterStatusEffect?.type === 'taunt';
+
+  const isStun =
+    clone.statusEffect?.type === 'stun' ||
+    clone.secondaryStatusEffect?.type === 'stun' ||
+    clone.casterStatusEffect?.type === 'stun';
+
+  if (isHealing) {
+    clone.cooldownMax = Math.max(3, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
+  }
+  if (isTaunt) {
+    clone.cooldownMax = Math.max(3, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
+  }
+  if (isStun) {
+    clone.cooldownMax = Math.max(3, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
+  }
+
+  // Demais restrições de cooldown por debuffs
   if (
-      clone.statusEffect?.type === 'stun' ||
-      clone.secondaryStatusEffect?.type === 'stun'
-    ) {
-      clone.cooldownMax = Math.max(3, clone.cooldownMax);
-    }
-    if (
       clone.statusEffect?.type === 'slow' ||
       clone.secondaryStatusEffect?.type === 'slow' ||
       clone.statusEffect?.type === 'buff_atk' ||
@@ -3581,10 +3949,11 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     };
   }
 
-  // Penetração de armadura/defesa (limite máximo fixo de 30% da armadura do alvo)
+  // Penetração de armadura/defesa
   if (canonicalBase.defenseIgnoreRatio && canonicalBase.defenseIgnoreRatio > 0) {
+    const maxAllowed = Math.max(0.30, canonicalBase.defenseIgnoreRatio);
     clone.defenseIgnoreRatio = Math.min(
-      0.30,
+      Math.max(0.60, maxAllowed),
       Math.round((canonicalBase.defenseIgnoreRatio + 0.02 * (effectiveLevel - 1)) * 100) / 100
     );
   }

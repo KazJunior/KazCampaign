@@ -75,7 +75,9 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const slowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
   const isSlowed = !!slowEffect;
   const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
-  const effectiveMov = isStunned ? 0 : isSlowed ? Math.max(1, selectedUnit.mov - slowPenalty) : selectedUnit.mov;
+  const buffMovEffect = selectedUnit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
+  const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
+  const effectiveMov = isStunned ? 0 : Math.max(1, (selectedUnit.mov + movBonus) - slowPenalty);
   const burnEffect = selectedUnit.statusEffects?.find((e) => e.type === 'burn' && e.duration > 0);
   const isBurned = !!burnEffect;
   const poisonEffect = selectedUnit.statusEffects?.find((e) => e.type === 'poison' && e.duration > 0);
@@ -228,6 +230,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               {activeBuffAtk && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F97316]/20 border border-[#F97316]/40 text-[#F97316] flex items-center gap-1">
                   🔥 Fúria (+{activeBuffAtk.value}% Dano)
+                </span>
+              )}
+              {buffMovEffect && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#0D9488]/20 border border-[#0D9488]/40 text-[#2DD4BF] flex items-center gap-1">
+                  💨 Aceleração (+{buffMovEffect.value} Mov, {buffMovEffect.duration}T)
                 </span>
               )}
               {excessHealEffect && (

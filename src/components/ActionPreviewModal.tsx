@@ -111,6 +111,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
             <span className="text-[#A7B0C4]">Efeito Concedido:</span>
             <span className="font-bold text-[#F97316]">
               {preview.skill.statusEffect.type === 'buff_atk' && `🔥 +${preview.skill.statusEffect.value}% Dano (${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'buff_mov' && `💨 +${preview.skill.statusEffect.value} Movimento (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'shield' &&
                 `🛡️ +${targetHasExcessShield ? Math.max(1, Math.round(preview.skill.statusEffect.value * 0.5)) : preview.skill.statusEffect.value} Escudo ${preview.skill.statusEffect.reflectRatio ? `(Espinhos ${Math.round(preview.skill.statusEffect.reflectRatio * 100)}%) ` : ''}${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'invisible' && `👁️ Invisibilidade (${preview.skill.statusEffect.duration}T)`}
@@ -166,6 +167,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.secondaryStatusEffect.type === 'shield' &&
                 `🛡️ +${targetHasExcessShield ? Math.max(1, Math.round(preview.skill.secondaryStatusEffect.value * 0.5)) : preview.skill.secondaryStatusEffect.value} Escudo ${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'buff_atk' && `⚔️ +${preview.skill.secondaryStatusEffect.value}% Dano (${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'buff_mov' && `💨 +${preview.skill.secondaryStatusEffect.value} Movimento (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.secondaryStatusEffect.value || 1} Mov, ${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.secondaryStatusEffect.value}% (${preview.skill.secondaryStatusEffect.duration}T)`}
@@ -208,6 +210,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </div>
         )}
 
+        {preview.skill?.chainCount && preview.skill.chainCount > 1 && (
+          <div className="flex items-center justify-between text-xs bg-[#422006]/40 p-2.5 rounded-lg border border-[#EAB308]/40">
+            <span className="text-[#FDE047] font-semibold">Dano em Cadeia:</span>
+            <span className="font-bold text-[#FACC15]">⚡ Salta em até {preview.skill.chainCount} alvos</span>
+          </div>
+        )}
+
         {preview.skill?.resetsActionOnKill && (
           <div className="flex items-center justify-between text-xs bg-[#581C87]/40 p-2.5 rounded-lg border border-[#A855F7]/40">
             <span className="text-[#E9D5FF] font-semibold">Execução em Cadeia:</span>
@@ -222,6 +231,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.casterStatusEffect.type === 'shield' && `🛡️ Ganha Escudo (+${preview.skill.casterStatusEffect.value})`}
               {preview.skill.casterStatusEffect.type === 'invisible' && `👤 Fica Invisível (${preview.skill.casterStatusEffect.duration}T)`}
               {preview.skill.casterStatusEffect.type === 'buff_atk' && `⚔️ +${preview.skill.casterStatusEffect.value}% Dano (${preview.skill.casterStatusEffect.duration}T)`}
+              {preview.skill.casterStatusEffect.type === 'buff_mov' && `💨 +${preview.skill.casterStatusEffect.value} Movimento (${preview.skill.casterStatusEffect.duration}T)`}
               {preview.skill.casterStatusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.casterStatusEffect.duration}T)`}
             </span>
           </div>
@@ -230,7 +240,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
         {preview.skill?.defenseIgnoreRatio && preview.skill.defenseIgnoreRatio > 0 && (
           <div className="flex items-center justify-between text-xs bg-[#1E293B] p-2.5 rounded-lg border border-[#64748B]">
             <span className="text-[#94A3B8]">Dano Perfurante:</span>
-            <span className="font-bold text-[#F1F5F9]">🎯 Ignora {Math.round(Math.min(0.30, preview.skill.defenseIgnoreRatio) * 100)}% da Defesa</span>
+            <span className="font-bold text-[#F1F5F9]">🎯 Ignora {Math.round(preview.skill.defenseIgnoreRatio * 100)}% da Defesa</span>
           </div>
         )}
 

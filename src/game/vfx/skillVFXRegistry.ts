@@ -309,8 +309,25 @@ export function resolveSkillVFX(
   }
 
   // 4. Lightning
-  if (skillId.includes('raio') || skillId.includes('relampago') || skillId.includes('trovao') || skillName.includes('raio')) {
+  if (skillId.includes('raio') || skillId.includes('relampago') || skillId.includes('trovao') || skillId.includes('eletric') || skillId.includes('voltaic') || skillId.includes('plasma') || skillName.includes('raio') || skillName.includes('elétric')) {
     return SKILL_VFX_REGISTRY.relampago;
+  }
+
+  // 4B. Wind / Aero
+  if (skillId.includes('vento') || skillId.includes('vendaval') || skillId.includes('furacao') || skillId.includes('brisa') || skillId.includes('vortice') || skillName.includes('vento') || skillName.includes('furacão')) {
+    return {
+      id: 'vento',
+      type: 'generic_magic',
+      durationMs: 460,
+      cast: { durationMs: 90, color: 0x2dd4bf },
+      impact: {
+        shockwave: true,
+        shockwaveColor: 0x5eead4,
+        particleBurstCount: 22,
+        particleType: 'sparks',
+      },
+      screenShake: { intensity: 0.12, durationMs: 180, delayMs: 80 },
+    };
   }
 
   // 5. Void / Shadows

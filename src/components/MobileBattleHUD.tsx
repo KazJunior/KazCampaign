@@ -549,6 +549,7 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                           {eff.type === 'stun' && `⚡ Atordoado (${eff.duration}T)`}
                           {eff.type === 'slow' && `👣 Lentidão (-${eff.value || 1} Mov)`}
                           {eff.type === 'buff_atk' && `⚔️ Buff ATK +${eff.value}%`}
+                          {eff.type === 'buff_mov' && `💨 Movimento +${eff.value} (${eff.duration}T)`}
                           {eff.type === 'invisible' && `👁️ Invisível (${eff.duration}T)`}
                           {eff.type === 'debuff_def' && `🛡️ Defesa -${eff.value}%`}
                           {eff.type === 'taunt' && `📢 Provocação (${eff.duration}T)`}
