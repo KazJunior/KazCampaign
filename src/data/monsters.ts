@@ -1257,6 +1257,12 @@ export function createMonsterUnit(
         clone.power = Math.max(2.0, clone.power);
         const pct = Math.round(clone.power * 100);
         clone.description = clone.description.replace(/\d+%/g, `${pct}%`);
+      } else if (!def.isBoss && !def.isMiniBoss && levelOffset >= 9 && clone.power > 0 && clone.damageType !== 'healing') {
+        // Aumento de dano das habilidades dos inimigos normais em 20% a partir da Fase 10
+        const oldPct = Math.round(clone.power * 100);
+        clone.power = Math.round(clone.power * 1.20 * 100) / 100;
+        const newPct = Math.round(clone.power * 100);
+        clone.description = clone.description.replace(new RegExp(`${oldPct}%`, 'g'), `${newPct}%`);
       }
 
       if (clone.damageType === 'healing' || clone.statusEffect?.type === 'shield') {

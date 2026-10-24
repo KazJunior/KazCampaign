@@ -41,6 +41,16 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         description: 'Adicionado botão dedicado e atalho rápido (tecla I) na tela de escolha de recompensas de combate, permitindo abrir o inventário com sobreposição clara para comparar itens antes de escolher.',
         type: 'new',
       },
+      {
+        highlight: 'Dano de Habilidades de Inimigos Normais (+20% na Fase 10+)',
+        description: 'Inimigos comuns a partir da Fase 10 agora têm o multiplicador de dano de suas habilidades aumentado em 20% (ex: 100% vai para 120%, 150% para 180%), com atualização dinâmica da descrição.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Áreas de Efeito Táticas para Inimigos Normais',
+        description: 'Inimigos normais com habilidades em área agora possuem formatos únicos de alcance tático como Cones, Cruzes de 5 casas, Linhas Perfurantes e Varreduras Frontais (Cleave).',
+        type: 'new',
+      },
     ],
   },
   {
