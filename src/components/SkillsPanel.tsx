@@ -353,6 +353,7 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       {skill.statusEffect.type === 'slow' && `👣 Lentidão (-${skill.statusEffect.value || 1} Mov)`}
                       {skill.statusEffect.type === 'shield' && `🛡️ Concede +${skill.statusEffect.value} Escudo${skill.statusEffect.reflectRatio ? ` (Reflete ${Math.round(skill.statusEffect.reflectRatio * 100)}%)` : ''}`}
                       {skill.statusEffect.type === 'buff_atk' && `⚔️ Aumenta Dano em +${skill.statusEffect.value}%`}
+                      {skill.statusEffect.type === 'electrified' && '⚡ Eletrificado (1% Vida Máx/casa)'}
                       <span className="text-[#A7B0C4] text-[9px]">({skill.statusEffect.duration}T)</span>
                     </span>
                   )}
@@ -363,12 +364,13 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       {skill.secondaryStatusEffect.type === 'stun' && '⚡ Atordoa (1 Turno)'}
                       {skill.secondaryStatusEffect.type === 'slow' && `👣 Lentidão (-${skill.secondaryStatusEffect.value || 1} Mov)`}
                       {skill.secondaryStatusEffect.type === 'debuff_def' && `🛡️ Defesa -${skill.secondaryStatusEffect.value}%`}
+                      {skill.secondaryStatusEffect.type === 'electrified' && '⚡ Eletrificado (1% Vida Máx/casa)'}
                       <span className="text-[#A7B0C4] text-[9px]">({skill.secondaryStatusEffect.duration}T)</span>
                     </span>
                   )}
                   {(skill.defenseIgnoreRatio ?? 0) > 0 && (
                     <span className="text-[10px] font-medium text-[#F0B44D]">
-                      🎯 Ignora {Math.round(Math.min(0.30, skill.defenseIgnoreRatio!)) * 100}% Armadura
+                      🎯 Ignora {Math.round(Math.min(0.20, skill.defenseIgnoreRatio!)) * 100}% Armadura
                     </span>
                   )}
                   {Boolean(skill.ignoresShield) && (

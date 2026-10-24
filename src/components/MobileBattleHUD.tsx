@@ -555,6 +555,7 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                           {eff.type === 'taunt' && `📢 Provocação (${eff.duration}T)`}
                           {eff.type === 'excess_heal' && `💔 Cura excessiva (-50%, ${eff.duration}T)`}
                           {eff.type === 'excess_shield' && `🛡️ Escudo excessivo (-50%, ${eff.duration}T)`}
+                          {eff.type === 'electrified' && `⚡ Eletrificado (1% Vida/casa, ${eff.duration}T)`}
                         </span>
                       ))}
                     </div>

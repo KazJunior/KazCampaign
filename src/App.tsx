@@ -49,7 +49,7 @@ import {
   clearLiveBattleState,
 } from './utils/storage';
 import { soundManager } from './utils/audio';
-import { getAttackableTiles, getAoETiles, getReachableTiles } from './utils/pathfinding';
+import { getAttackableTiles, getAoETiles, getReachableTiles, getPathTo } from './utils/pathfinding';
 import { getDamagePreview, rollActualDamage } from './utils/damage';
 import { decideMonsterAction } from './ai/monsterAI';
 import { BoardRenderer3D } from './game/BoardRenderer3D';
@@ -1493,7 +1493,7 @@ export function App() {
         if (u.faction === 'enemy' && (isOffensive || petSkill.targetType === 'any' || petSkill.targetType === 'enemy')) {
           const powerMultiplier = petSkill.power || 1.5;
           const rawDmg = Math.round(primaryStat * powerMultiplier);
-          const defIgnore = Math.min(0.7, petSkill.defenseIgnoreRatio || 0);
+          const defIgnore = Math.min(0.20, petSkill.defenseIgnoreRatio || 0);
           const effectiveDef = petSkill.damageType === 'magical' ? u.res : u.def;
           const defDebuff = u.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
           const mitigatedDef = defDebuff ? Math.round(effectiveDef * (1 - defDebuff.value / 100)) : effectiveDef;
@@ -1560,10 +1560,42 @@ export function App() {
       const isReachable = reachableTiles.some((t) => t.x === x && t.y === y);
       if (isReachable && !clickedUnit) {
         setIsAnimatingAction(true);
+        const fromX = selectedUnit.x;
+        const fromY = selectedUnit.y;
         if (boardRef.current) {
-          await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, x, y);
+          await boardRef.current.playMoveAnimation(selectedUnit.id, fromX, fromY, x, y);
         }
-        setUnits((prev) => prev.map((u) => (u.id === selectedUnit.id ? { ...u, x, y, hasMoved: true } : u)));
+
+        const elecEffect = selectedUnit.statusEffects?.find((e) => e.type === 'electrified' && e.duration > 0);
+        let updatedHp = selectedUnit.currentHp;
+        let unitDead = false;
+
+        if (elecEffect) {
+          const path = getPathTo({ x: fromX, y: fromY }, { x, y }, grid, units, selectedUnit.faction);
+          const steps = path.length > 0 ? path.length : Math.max(1, Math.abs(x - fromX) + Math.abs(y - fromY));
+          const dmgPerTile = Math.max(1, Math.round(selectedUnit.maxHp * ((elecEffect.value || 1) / 100)));
+          const totalDmg = dmgPerTile * steps;
+          updatedHp = Math.max(0, selectedUnit.currentHp - totalDmg);
+          unitDead = updatedHp === 0;
+
+          soundManager.playMagicSpell();
+          addFloatingNumber(x, y, `-${totalDmg} Choque (${steps}x)`, 'status', '#FACC15');
+
+          if (unitDead) {
+            soundManager.playDeath();
+            if (boardRef.current) {
+              await boardRef.current.playDeathAnimation(selectedUnit.id);
+            }
+          }
+        }
+
+        setUnits((prev) =>
+          prev.map((u) =>
+            u.id === selectedUnit.id
+              ? { ...u, x, y, hasMoved: true, currentHp: updatedHp, isDead: unitDead }
+              : u
+          )
+        );
         setSelectedAction('none');
         soundManager.playStep();
         setIsAnimatingAction(false);
@@ -2339,6 +2371,7 @@ export function App() {
             else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
             else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
             else if (eff.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
+            else if (eff.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
           }
         }
 
@@ -2360,6 +2393,7 @@ export function App() {
             else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
             else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
             else if (eff2.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
+            else if (eff2.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
           }
         }
       }
@@ -2418,6 +2452,20 @@ export function App() {
             await boardRef.current.playMoveAnimation(t.id, t.x, t.y, currX, currY);
           }
           addFloatingNumber(currX, currY, t.faction === 'player' ? 'Impulso de Vento!' : 'Recuo Forçado!', 'status', '#38BDF8');
+
+          const elecEff = currentEffects.find((e) => e.type === 'electrified' && e.duration > 0);
+          if (elecEff && newHp > 0) {
+            const elecDmg = Math.max(1, Math.round(t.maxHp * ((elecEff.value || 1) / 100))) * stepsPushed;
+            newHp = Math.max(0, newHp - elecDmg);
+            addFloatingNumber(currX, currY, `-${elecDmg} Choque (${stepsPushed}x)`, 'status', '#FACC15');
+            if (newHp === 0) {
+              soundManager.playDeath();
+              totalKills++;
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(t.id);
+              }
+            }
+          }
         }
       }
 
@@ -2636,14 +2684,49 @@ export function App() {
       const choice = decideMonsterAction(freshMonster, grid, currentUnits);
       if (choice) {
         if (choice.moveTo && (choice.moveTo.x !== freshMonster.x || choice.moveTo.y !== freshMonster.y)) {
+          const fromX = freshMonster.x;
+          const fromY = freshMonster.y;
+          const toX = choice.moveTo.x;
+          const toY = choice.moveTo.y;
+
           if (boardRef.current) {
-            await boardRef.current.playMoveAnimation(freshMonster.id, freshMonster.x, freshMonster.y, choice.moveTo.x, choice.moveTo.y);
+            await boardRef.current.playMoveAnimation(freshMonster.id, fromX, fromY, toX, toY);
           }
+
+          let updatedHp = freshMonster.currentHp;
+          let monsterDiedFromShock = false;
+
+          const elecEffect = freshMonster.statusEffects?.find((e) => e.type === 'electrified' && e.duration > 0);
+          if (elecEffect) {
+            const path = getPathTo({ x: fromX, y: fromY }, { x: toX, y: toY }, grid, currentUnits, freshMonster.faction);
+            const steps = path.length > 0 ? path.length : Math.max(1, Math.abs(toX - fromX) + Math.abs(toY - fromY));
+            const dmgPerTile = Math.max(1, Math.round(freshMonster.maxHp * ((elecEffect.value || 1) / 100)));
+            const totalDmg = dmgPerTile * steps;
+            updatedHp = Math.max(0, freshMonster.currentHp - totalDmg);
+            monsterDiedFromShock = updatedHp === 0;
+
+            soundManager.playMagicSpell();
+            addFloatingNumber(toX, toY, `-${totalDmg} Choque (${steps}x)`, 'status', '#FACC15');
+
+            if (monsterDiedFromShock) {
+              soundManager.playDeath();
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(freshMonster.id);
+              }
+            }
+          }
+
           currentUnits = currentUnits.map((u) =>
-            u.id === freshMonster.id ? { ...u, x: choice.moveTo.x, y: choice.moveTo.y } : u
+            u.id === freshMonster.id ? { ...u, x: toX, y: toY, currentHp: updatedHp, isDead: monsterDiedFromShock } : u
           );
           setUnits([...currentUnits]);
           soundManager.playStep();
+
+          if (monsterDiedFromShock) {
+            await new Promise((r) => setTimeout(r, 300 * delayMult));
+            continue;
+          }
+
           await new Promise((r) => setTimeout(r, 200 * delayMult));
         }
 
@@ -2877,6 +2960,7 @@ export function App() {
                     else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
                     else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
                     else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+                    else if (eff.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
                   }
 
                   if (choice.skillToUse?.secondaryStatusEffect) {

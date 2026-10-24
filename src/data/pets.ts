@@ -1193,7 +1193,7 @@ export const PETS: PetDefinition[] = [
       {
         id: 'pet_fenda_vazio',
         name: 'Fenda do Vazio',
-        description: 'Abre uma distorção singular em um inimigo (alcance 5) causando 180% do maior Poder Mágico da equipe como dano com 50% de perfuração de armadura e resistência.',
+        description: 'Abre uma distorção singular em um inimigo (alcance 5) causando 180% do maior Poder Mágico da equipe como dano com 20% de perfuração de armadura e resistência.',
         iconName: 'Sparkles',
         damageType: 'magical',
         power: 1.8,
@@ -1202,7 +1202,7 @@ export const PETS: PetDefinition[] = [
         rangeMax: 5,
         aoeRadius: 0,
         targetType: 'enemy',
-        defenseIgnoreRatio: 0.5,
+        defenseIgnoreRatio: 0.20,
       },
     ],
   },

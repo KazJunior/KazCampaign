@@ -129,6 +129,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.statusEffect.type === 'poison' && `☠️ Veneno (-${preview.skill.statusEffect.value}% Vida Máx, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.statusEffect.value || 1} Mov, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.statusEffect.value}% (${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'electrified' && `⚡ Eletrificado (1% Vida Máx por casa movida, ${preview.skill.statusEffect.duration}T)`}
             </span>
           </div>
         )}
@@ -171,6 +172,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.secondaryStatusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.secondaryStatusEffect.value || 1} Mov, ${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.secondaryStatusEffect.value}% (${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'electrified' && `⚡ Eletrificado (1% Vida Máx por casa movida, ${preview.skill.secondaryStatusEffect.duration}T)`}
             </span>
           </div>
         )}
@@ -240,7 +242,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
         {preview.skill?.defenseIgnoreRatio && preview.skill.defenseIgnoreRatio > 0 && (
           <div className="flex items-center justify-between text-xs bg-[#1E293B] p-2.5 rounded-lg border border-[#64748B]">
             <span className="text-[#94A3B8]">Dano Perfurante:</span>
-            <span className="font-bold text-[#F1F5F9]">🎯 Ignora {Math.round(Math.min(0.30, preview.skill.defenseIgnoreRatio) * 100)}% da Defesa</span>
+            <span className="font-bold text-[#F1F5F9]">🎯 Ignora {Math.round(Math.min(0.20, preview.skill.defenseIgnoreRatio) * 100)}% da Defesa</span>
           </div>
         )}
 

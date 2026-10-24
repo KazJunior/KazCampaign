@@ -1191,6 +1191,23 @@ function createStatusAuras(unit: Unit): THREE.Group {
     auraGroup.add(shieldDebuffMesh);
   }
 
+  // 10. Electrified (Crackling bright yellow/amber ring at base)
+  const hasElectrified = unit.statusEffects?.some((e) => e.type === 'electrified' && e.duration > 0);
+  if (hasElectrified) {
+    const elecGeo = new THREE.RingGeometry(0.33, 0.44, 12);
+    elecGeo.rotateX(-Math.PI / 2);
+    const elecMat = new THREE.MeshBasicMaterial({
+      color: 0xfacc15,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+    });
+    const elecMesh = new THREE.Mesh(elecGeo, elecMat);
+    elecMesh.position.y = 0.058;
+    elecMesh.name = 'auraRing';
+    auraGroup.add(elecMesh);
+  }
+
   return auraGroup;
 }
 

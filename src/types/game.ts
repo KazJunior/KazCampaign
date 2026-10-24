@@ -22,7 +22,7 @@ export type DamageType = 'physical' | 'magical' | 'healing';
 
 export type SkillCategory = 'attack' | 'defense' | 'support' | 'passive';
 
-export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'buff_mov' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield';
+export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'buff_mov' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield' | 'electrified';
 
 export interface StatusEffect {
   type: StatusEffectType;
