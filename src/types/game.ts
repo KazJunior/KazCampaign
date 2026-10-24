@@ -123,6 +123,9 @@ export interface Unit {
   isMiniBoss?: boolean;
   bossPhase?: number; // 1, 2, 3
   lastStunTurn?: number; // Turno da batalha em que a unidade foi atordoada por último (impede stun em turnos consecutivos em chefes)
+  monsterTypeId?: string;
+  halfHpTriggerTurn?: number; // Turno em que a vida do boss caiu para <= 50%
+  hasUsedHalfHpSkill?: boolean; // Se a habilidade única de 50% HP já foi utilizada (ativa apenas 1 vez por combate)
 
   damageDealt: number;
   kills: number;

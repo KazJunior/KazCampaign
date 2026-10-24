@@ -2340,6 +2340,18 @@ export function App() {
       }
 
       let newLastStunTurn = t.lastStunTurn;
+      let newHalfHpTriggerTurn = t.halfHpTriggerTurn;
+      if (
+        t.isBoss &&
+        !t.isMiniBoss &&
+        !t.hasUsedHalfHpSkill &&
+        t.halfHpTriggerTurn === undefined &&
+        newHp > 0 &&
+        newHp <= t.maxHp * 0.5
+      ) {
+        newHalfHpTriggerTurn = turnNumberRef.current;
+        addFloatingNumber(t.x, t.y, '⚠️ 50% HP: Fúria Despertando!', 'status', '#EF4444');
+      }
       const isBossMonster = Boolean(t.isBoss || t.isMiniBoss);
       const isBossStunImmune =
         isBossMonster &&
@@ -2520,6 +2532,7 @@ export function App() {
               isDead: newHp === 0,
               statusEffects: currentEffects,
               lastStunTurn: newLastStunTurn,
+              halfHpTriggerTurn: newHalfHpTriggerTurn,
               hasMoved: allyHasMoved,
               hasAttacked: allyHasAttacked,
             }
@@ -2703,6 +2716,24 @@ export function App() {
       await new Promise((r) => setTimeout(r, 300 * delayMult));
     }
 
+    // Registra bosses cuja vida atingiu <= 50% para ativação no turno posterior
+    currentUnits = currentUnits.map((u) => {
+      if (
+        u.faction === 'enemy' &&
+        u.isBoss &&
+        !u.isMiniBoss &&
+        !u.isDead &&
+        u.currentHp > 0 &&
+        u.currentHp <= u.maxHp * 0.5 &&
+        u.halfHpTriggerTurn === undefined &&
+        !u.hasUsedHalfHpSkill
+      ) {
+        addFloatingNumber(u.x, u.y, '⚠️ 50% HP: Fúria Despertando!', 'status', '#EF4444');
+        return { ...u, halfHpTriggerTurn: turnNumberRef.current };
+      }
+      return u;
+    });
+
     const aliveEnemiesAtStart = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
     if (aliveEnemiesAtStart.length === 0) {
       handleVictory(currentUnits);
@@ -2719,6 +2750,308 @@ export function App() {
       if (isStunned) {
         addFloatingNumber(freshMonster.x, freshMonster.y, 'Atordoado!', 'status', '#FACC15');
         await new Promise((r) => setTimeout(r, 200 * delayMult));
+        continue;
+      }
+
+      // Boss Threshold Skill (50% HP): Ativa no turno posterior a suas vidas chegarem a 50%, exatamente 1 vez por combate
+      const isBossThresholdReady =
+        freshMonster.isBoss &&
+        !freshMonster.isMiniBoss &&
+        !freshMonster.hasUsedHalfHpSkill &&
+        freshMonster.halfHpTriggerTurn !== undefined &&
+        turnNumberRef.current > freshMonster.halfHpTriggerTurn;
+
+      if (isBossThresholdReady) {
+        const bossType = freshMonster.monsterTypeId ||
+          (freshMonster.name.toLowerCase().includes('astaroth') ? 'astaroth' :
+           freshMonster.name.toLowerCase().includes('vulcanus') ? 'tita_forjador' :
+           freshMonster.name.toLowerCase().includes('valgar') ? 'valgar_sanguinario' :
+           freshMonster.name.toLowerCase().includes('leviat') ? 'leviata_vazio' :
+           freshMonster.name.toLowerCase().includes('malakor') ? 'cronos_abissal' : 'astaroth');
+
+        let bossSkill: Skill;
+        if (bossType === 'astaroth') {
+          bossSkill = SKILLS.boss_astaroth_cataclismo;
+        } else if (bossType === 'tita_forjador') {
+          bossSkill = SKILLS.boss_vulcanus_terremoto;
+        } else if (bossType === 'valgar_sanguinario') {
+          bossSkill = SKILLS.boss_valgar_banquete_sangue;
+        } else if (bossType === 'leviata_vazio') {
+          bossSkill = SKILLS.boss_leviata_singularidade;
+        } else {
+          bossSkill = SKILLS.boss_malakor_colapso_temporal;
+        }
+
+        const livingPlayers = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+
+        if (bossType === 'astaroth') {
+          // Fase 10: 200% de dano mágico em todos os inimigos no mapa
+          addFloatingNumber(freshMonster.x, freshMonster.y, '💥 CATACLISMO DO ABISMO (200%)!', 'status', '#9333EA');
+          soundManager.playMagicSpell();
+
+          for (const target of livingPlayers) {
+            if (boardRef.current) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, target.id, 'magical', 0, bossSkill);
+            }
+            const res = rollActualDamage(freshMonster, target, bossSkill);
+            let actualDmg = res.finalDamage;
+            let currentEffects = [...(target.statusEffects || [])];
+
+            for (let i = 0; i < currentEffects.length; i++) {
+              if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                const sh = currentEffects[i];
+                const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                sh.value -= dmgAbsorbed;
+                actualDmg -= dmgAbsorbed;
+                addFloatingNumber(target.x, target.y, '-' + dmgAbsorbed + ' (Escudo)', 'shield', '#38BDF8');
+                if (actualDmg === 0) break;
+              }
+            }
+            currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+
+            const newHp = Math.max(0, target.currentHp - actualDmg);
+            if (actualDmg > 0) {
+              addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#B58AFF');
+            }
+            if (newHp === 0) {
+              soundManager.playDeath();
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(target.id);
+              }
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+            );
+          }
+        } else if (bossType === 'tita_forjador') {
+          // Fase 20: Stunar todos os inimigos por 2 turnos e causar dano a um alvo único
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🔨 TERREMOTO DA FORJA TITÂNICA!', 'status', '#EA580C');
+          soundManager.playPhysicalAttack();
+
+          // 1. Stun em todos os inimigos por 2 turnos
+          for (const target of livingPlayers) {
+            const currentEffects = [
+              ...(target.statusEffects || []).filter((e) => e.type !== 'stun'),
+              { type: 'stun' as const, duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+            ];
+            addFloatingNumber(target.x, target.y, 'Atordoado (2 turnos)!', 'status', '#FACC15');
+            currentUnits = currentUnits.map((u) =>
+              u.id === target.id ? { ...u, statusEffects: currentEffects } : u
+            );
+          }
+
+          // 2. Dano a um alvo único (o jogador mais próximo do titã)
+          const singleTarget = livingPlayers.slice().sort((a, b) =>
+            (Math.abs(a.x - freshMonster.x) + Math.abs(a.y - freshMonster.y)) -
+            (Math.abs(b.x - freshMonster.x) + Math.abs(b.y - freshMonster.y))
+          )[0];
+
+          if (singleTarget) {
+            if (boardRef.current) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, singleTarget.id, 'physical', 0, bossSkill);
+            }
+            const res = rollActualDamage(freshMonster, singleTarget, bossSkill);
+            let actualDmg = res.finalDamage;
+            const updatedTarget = currentUnits.find((u) => u.id === singleTarget.id) || singleTarget;
+            let currentEffects = [...(updatedTarget.statusEffects || [])];
+
+            for (let i = 0; i < currentEffects.length; i++) {
+              if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                const sh = currentEffects[i];
+                const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                sh.value -= dmgAbsorbed;
+                actualDmg -= dmgAbsorbed;
+                addFloatingNumber(updatedTarget.x, updatedTarget.y, '-' + dmgAbsorbed + ' (Escudo)', 'shield', '#38BDF8');
+                if (actualDmg === 0) break;
+              }
+            }
+            currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+
+            const newHp = Math.max(0, updatedTarget.currentHp - actualDmg);
+            if (actualDmg > 0) {
+              addFloatingNumber(updatedTarget.x, updatedTarget.y, '-' + actualDmg, 'physical', '#FF5252');
+            }
+            if (newHp === 0) {
+              soundManager.playDeath();
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(updatedTarget.id);
+              }
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === updatedTarget.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+            );
+          }
+        } else if (bossType === 'valgar_sanguinario') {
+          // Fase 30: Valgar - 160% de dano físico a todos, 100% de roubo de vida e sangramento (burn) por 2 turnos
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🩸 BANQUETE SANGUINÁRIO (160% + Dreno)!', 'status', '#DC2626');
+          soundManager.playPhysicalAttack();
+
+          let totalValgarDmg = 0;
+          for (const target of livingPlayers) {
+            if (boardRef.current) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, target.id, 'physical', 0, bossSkill);
+            }
+            const res = rollActualDamage(freshMonster, target, bossSkill);
+            let actualDmg = res.finalDamage;
+            let currentEffects = [...(target.statusEffects || [])];
+
+            for (let i = 0; i < currentEffects.length; i++) {
+              if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                const sh = currentEffects[i];
+                const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                sh.value -= dmgAbsorbed;
+                actualDmg -= dmgAbsorbed;
+                addFloatingNumber(target.x, target.y, '-' + dmgAbsorbed + ' (Escudo)', 'shield', '#38BDF8');
+                if (actualDmg === 0) break;
+              }
+            }
+            currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+
+            const newHp = Math.max(0, target.currentHp - actualDmg);
+            if (actualDmg > 0) {
+              totalValgarDmg += actualDmg;
+              addFloatingNumber(target.x, target.y, '-' + actualDmg, 'physical', '#FF5252');
+            }
+
+            // Sangramento / Queimadura por 2 turnos
+            currentEffects = [
+              ...currentEffects.filter((e) => e.type !== 'burn'),
+              { type: 'burn' as const, duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+            ];
+            addFloatingNumber(target.x, target.y, '🩸 Sangramento (2T)!', 'status', '#DC2626');
+
+            if (newHp === 0) {
+              soundManager.playDeath();
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(target.id);
+              }
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+            );
+          }
+
+          // Cura de 100% do dano causado para Valgar
+          if (totalValgarDmg > 0) {
+            const healedHp = Math.min(freshMonster.maxHp, freshMonster.currentHp + totalValgarDmg);
+            const actualHealed = healedHp - freshMonster.currentHp;
+            if (actualHealed > 0) {
+              addFloatingNumber(freshMonster.x, freshMonster.y, '+' + actualHealed + ' (Banquete de Sangue)', 'healing', '#10B981');
+              soundManager.playHeal();
+              currentUnits = currentUnits.map((u) =>
+                u.id === freshMonster.id ? { ...u, currentHp: healedHp } : u
+              );
+            }
+          }
+        } else if (bossType === 'leviata_vazio') {
+          // Fase 40: Leviatã do Vazio - 175% de dano mágico em todos, reduz defesa em 20% e lentidão por 2 turnos
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🌌 SINGULARIDADE DO VAZIO (175%)!', 'status', '#6366F1');
+          soundManager.playMagicSpell();
+
+          for (const target of livingPlayers) {
+            if (boardRef.current) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, target.id, 'magical', 0, bossSkill);
+            }
+            const res = rollActualDamage(freshMonster, target, bossSkill);
+            let actualDmg = res.finalDamage;
+            let currentEffects = [...(target.statusEffects || [])];
+
+            for (let i = 0; i < currentEffects.length; i++) {
+              if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                const sh = currentEffects[i];
+                const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                sh.value -= dmgAbsorbed;
+                actualDmg -= dmgAbsorbed;
+                addFloatingNumber(target.x, target.y, '-' + dmgAbsorbed + ' (Escudo)', 'shield', '#38BDF8');
+                if (actualDmg === 0) break;
+              }
+            }
+            currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+
+            const newHp = Math.max(0, target.currentHp - actualDmg);
+            if (actualDmg > 0) {
+              addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#B58AFF');
+            }
+
+            // Debuff Def -20% e Slow por 2 turnos
+            currentEffects = [
+              ...currentEffects.filter((e) => e.type !== 'debuff_def' && e.type !== 'slow'),
+              { type: 'debuff_def' as const, duration: 2, value: 20, appliedTurn: turnNumberRef.current },
+              { type: 'slow' as const, duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+            ];
+            addFloatingNumber(target.x, target.y, 'Defesa -20% & Lentidão (2T)!', 'status', '#818CF8');
+
+            if (newHp === 0) {
+              soundManager.playDeath();
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(target.id);
+              }
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+            );
+          }
+        } else {
+          // Fase 50: Malakor (cronos_abissal) - 220% de dano mágico em todos ignorando escudos + Stun de 2 turnos no alvo de maior ataque
+          addFloatingNumber(freshMonster.x, freshMonster.y, '⌛ COLAPSO TEMPORAL ETERNO (220% Direto)!', 'status', '#B91C1C');
+          soundManager.playMagicSpell();
+
+          for (const target of livingPlayers) {
+            if (boardRef.current) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, target.id, 'magical', 0, bossSkill);
+            }
+            const res = rollActualDamage(freshMonster, target, bossSkill);
+            const actualDmg = res.finalDamage;
+            addFloatingNumber(target.x, target.y, 'Perfurou Escudos!', 'status', '#EF4444');
+
+            const newHp = Math.max(0, target.currentHp - actualDmg);
+            if (actualDmg > 0) {
+              addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#F43F5E');
+            }
+            if (newHp === 0) {
+              soundManager.playDeath();
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(target.id);
+              }
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0 } : u
+            );
+          }
+
+          // Stun por 2 turnos no jogador com maior ataque/poder mágico
+          const highestDpsPlayer = livingPlayers.slice().sort((a, b) =>
+            Math.max(b.atk, b.mag) - Math.max(a.atk, a.mag)
+          )[0];
+
+          if (highestDpsPlayer) {
+            const updatedDps = currentUnits.find((u) => u.id === highestDpsPlayer.id);
+            if (updatedDps && !updatedDps.isDead) {
+              const currentEffects = [
+                ...(updatedDps.statusEffects || []).filter((e) => e.type !== 'stun'),
+                { type: 'stun' as const, duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+              ];
+              addFloatingNumber(updatedDps.x, updatedDps.y, '⏳ Estase Temporal (Atordoado 2T)!', 'status', '#FACC15');
+              currentUnits = currentUnits.map((u) =>
+                u.id === updatedDps.id ? { ...u, statusEffects: currentEffects } : u
+              );
+            }
+          }
+        }
+
+        // Marca que o boss utilizou sua habilidade única de 50% HP (ativa 1 única vez por combate)
+        currentUnits = currentUnits.map((u) =>
+          u.id === freshMonster.id ? { ...u, hasUsedHalfHpSkill: true } : u
+        );
+        setUnits([...currentUnits]);
+
+        const playerLivingAfter = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+        if (playerLivingAfter.length === 0) {
+          handleDefeat();
+          return;
+        }
+
+        await new Promise((r) => setTimeout(r, 400 * delayMult));
         continue;
       }
 

@@ -1310,6 +1310,7 @@ export function createMonsterUnit(
     name: def.name,
     className: def.name,
     faction: 'enemy',
+    monsterTypeId: typeId,
     monsterRole: def.role || 'attacker',
     level,
     xp: 0,
