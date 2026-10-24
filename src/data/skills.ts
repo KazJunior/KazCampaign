@@ -564,10 +564,10 @@ export const SKILLS: Record<string, Skill> = {
   cataclismo_infernal: {
     id: 'cataclismo_infernal',
     name: 'Cataclismo Infernal (Suprema)',
-    description: 'Habilidade suprema: Invoca o fogo primordial em uma enorme área de 3x3 no solo, causando estrondosos 150% de dano mágico e incinerando todos os inimigos com Queimadura devastadora (-2% da vida máxima por 2 turnos).',
+    description: 'Habilidade suprema: Invoca o fogo primordial em uma enorme área de 3x3 no solo, causando estrondosos 180% de dano mágico e incinerando todos os inimigos com Queimadura devastadora (-2% da vida máxima por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
-    power: 1.5,
+    power: 1.8,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 1,
