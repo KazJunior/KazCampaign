@@ -56,6 +56,11 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         description: 'Corrigido o debuff de cura excessiva e escudo excessivo que eram removidos prematuramente no fim do turno. Agora persistem devidamente para o turno consecutivo, reduzindo a cura e o escudo em 50% caso o mesmo aliado seja curado/protegido repetidamente.',
         type: 'fix',
       },
+      {
+        highlight: 'Ajuste de Preço dos Magos Elementais',
+        description: 'Corrigido o valor de recrutamento do Mago Elétrico e do Mago de Vento para 100.000 de Ouro, padronizando o custo com o Mago de Gelo e as demais classes avançadas compráveis.',
+        type: 'fix',
+      },
     ],
   },
   {

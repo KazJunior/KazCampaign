@@ -327,7 +327,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     baseSkillId: 'centelha_eletrica',
     description: 'Mestre dos arcos voltaicos e correntes de alta voltagem. Causa dano elétrico em cadeia que salta entre múltiplos inimigos próximos e aplica atordoamento e paralisia incapacitante.',
     statGrowth: { hp: 8, atk: 1, mag: 5, def: 1, res: 3 },
-    goldCost: 10000,
+    goldCost: 100000,
   },
   mago_vento: {
     className: 'mago_vento',
@@ -345,7 +345,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     baseSkillId: 'rajada_de_vento',
     description: 'Controlador das correntes aéreas e vendavais repulsores. Especialista em empurrar inimigos contra obstáculos, reposicionar aliados no tabuleiro e conceder bônus maciços de movimentação.',
     statGrowth: { hp: 9, atk: 1, mag: 4, def: 2, res: 3 },
-    goldCost: 10000,
+    goldCost: 100000,
   },
 };
 
@@ -465,14 +465,14 @@ export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: strin
     description: 'Compre o Mago de Gelo por 100.000 moedas de ouro.',
   },
   mago_eletrico: {
-    goldCost: 10000,
+    goldCost: 100000,
     name: 'Mago Elétrico',
-    description: 'Compre o Mago Elétrico por 10.000 moedas de ouro.',
+    description: 'Compre o Mago Elétrico por 100.000 moedas de ouro.',
   },
   mago_vento: {
-    goldCost: 10000,
+    goldCost: 100000,
     name: 'Mago de Vento',
-    description: 'Compre o Mago de Vento por 10.000 moedas de ouro.',
+    description: 'Compre o Mago de Vento por 100.000 moedas de ouro.',
   },
 };
 
