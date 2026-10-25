@@ -1454,9 +1454,20 @@ export function App() {
           }
 
           if (healVal > 0) {
+            const hadExcessHeal = newEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
+            if (hadExcessHeal) {
+              healVal = Math.max(1, Math.round(healVal * 0.5));
+              addFloatingNumber(u.x, u.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+            } else {
+              addFloatingNumber(u.x, u.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+            }
             newHp = Math.min(u.maxHp, u.currentHp + healVal);
             const healedVal = newHp - u.currentHp;
             if (healedVal > 0) addFloatingNumber(u.x, u.y, `+${healedVal}`, 'healing', '#43C878');
+            newEffects = [
+              ...newEffects.filter((e) => e.type !== 'excess_heal'),
+              { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+            ];
           }
 
           // Calculate shield scaling with highest party stat
@@ -1471,10 +1482,21 @@ export function App() {
           }
 
           if (shieldVal > 0) {
+            const hadExcessShield = newEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+            if (hadExcessShield) {
+              shieldVal = Math.max(1, Math.round(shieldVal * 0.5));
+              addFloatingNumber(u.x, u.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+            } else {
+              addFloatingNumber(u.x, u.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
+            }
             const currentShield = newEffects.find((e) => e.type === 'shield')?.value || 0;
             const updatedShield = currentShield + shieldVal;
             newEffects = newEffects.filter((e) => e.type !== 'shield');
             newEffects.push({ type: 'shield', duration: 2, value: updatedShield });
+            newEffects = [
+              ...newEffects.filter((e) => e.type !== 'excess_shield'),
+              { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+            ];
             addFloatingNumber(u.x, u.y, `+${shieldVal} Escudo`, 'shield', '#60A5FA');
           }
 
@@ -1999,7 +2021,7 @@ export function App() {
           healAmt = Math.max(1, Math.round(healAmt * 0.5));
           addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
         } else {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva', 'status', '#F59E0B');
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
         }
         currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
         addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt} (${Math.round(ratio * 100)}% HP)`, 'healing', '#56E59A');
@@ -2010,7 +2032,7 @@ export function App() {
           healAmt = Math.max(1, Math.round(healAmt * 0.5));
           addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
         } else {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva', 'status', '#F59E0B');
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
         }
         currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
         addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt}`, 'healing', '#56E59A');
@@ -2028,7 +2050,7 @@ export function App() {
             eff.value = Math.max(1, Math.round(eff.value * 0.5));
             addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
           } else {
-            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo', 'status', '#F59E0B');
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
           }
           if (eff.reflectRatio) {
             addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
@@ -2061,14 +2083,14 @@ export function App() {
       if (isHealSkill) {
         updatedEffects = [
           ...updatedEffects.filter((e) => e.type !== 'excess_heal'),
-          { type: 'excess_heal', duration: 1, value: 50 },
+          { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
         ];
       }
 
       if (givesShield) {
         updatedEffects = [
           ...updatedEffects.filter((e) => e.type !== 'excess_shield'),
-          { type: 'excess_shield', duration: 1, value: 50 },
+          { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
         ];
       }
 
@@ -2312,7 +2334,7 @@ export function App() {
           if (hadExcessHeal) {
             addFloatingNumber(t.x, t.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
           } else {
-            addFloatingNumber(t.x, t.y, 'Cura excessiva', 'status', '#F59E0B');
+            addFloatingNumber(t.x, t.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
           }
         }
 
@@ -2334,7 +2356,7 @@ export function App() {
               eff.value = Math.max(1, Math.round(eff.value * 0.5));
               addFloatingNumber(t.x, t.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
             } else {
-              addFloatingNumber(t.x, t.y, 'Escudo excessivo', 'status', '#F59E0B');
+              addFloatingNumber(t.x, t.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
             }
             if (eff.reflectRatio) {
               addFloatingNumber(t.x, t.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
@@ -2364,14 +2386,14 @@ export function App() {
         if (isHealed) {
           currentEffects = [
             ...currentEffects.filter((e) => e.type !== 'excess_heal'),
-            { type: 'excess_heal', duration: 1, value: 50 },
+            { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
           ];
         }
 
         if (isShielded) {
           currentEffects = [
             ...currentEffects.filter((e) => e.type !== 'excess_shield'),
-            { type: 'excess_shield', duration: 1, value: 50 },
+            { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
           ];
         }
       } else {
@@ -2614,7 +2636,7 @@ export function App() {
         healAmt = Math.max(1, Math.round(healAmt * 0.5));
         addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
       } else {
-        addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva', 'status', '#F59E0B');
+        addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva aplicada!', 'status', '#F59E0B');
       }
 
       const newHp = Math.min(selectedUnit.maxHp, finalAttackerHp + healAmt);
@@ -2632,7 +2654,7 @@ export function App() {
 
       finalAttackerEffects = [
         ...finalAttackerEffects.filter((e) => e.type !== 'excess_heal'),
-        { type: 'excess_heal', duration: 1, value: 50 },
+        { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
       ];
     }
 
@@ -2655,9 +2677,13 @@ export function App() {
           cEff.value = Math.max(1, Math.round(cEff.value * 0.5));
           addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
         } else {
-          addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo', 'status', '#F59E0B');
+          addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
         }
         addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+        finalAttackerEffects = [
+          ...finalAttackerEffects.filter((e) => e.type !== 'excess_shield'),
+          { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+        ];
       } else if (cEff.type === 'buff_atk') {
         addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value}% Dano`, 'status', '#F97316');
       } else if (cEff.type === 'invisible') {
@@ -3192,7 +3218,7 @@ export function App() {
                   healAmount = Math.max(1, Math.round(healAmount * 0.5));
                   addFloatingNumber(freshTarget.x, freshTarget.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
                 } else {
-                  addFloatingNumber(freshTarget.x, freshTarget.y, 'Cura excessiva', 'status', '#F59E0B');
+                  addFloatingNumber(freshTarget.x, freshTarget.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
                 }
                 newHp = Math.min(freshTarget.maxHp, freshTarget.currentHp + healAmount);
                 addFloatingNumber(freshTarget.x, freshTarget.y, `+${healAmount}`, 'healing', '#56E59A');
@@ -3200,14 +3226,14 @@ export function App() {
 
               const applyMonsterSupportEffect = (effToProcess?: StatusEffect) => {
                 if (!effToProcess) return;
-                const eff = { ...effToProcess };
+                const eff = { ...effToProcess, appliedTurn: turnNumberRef.current };
                 if (eff.type === 'shield') {
                   isShielded = true;
                   if (hadExcessShield) {
                     eff.value = Math.max(1, Math.round(eff.value * 0.5));
                     addFloatingNumber(freshTarget.x, freshTarget.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
                   } else {
-                    addFloatingNumber(freshTarget.x, freshTarget.y, 'Escudo excessivo', 'status', '#F59E0B');
+                    addFloatingNumber(freshTarget.x, freshTarget.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
                   }
                   addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
                 } else if (eff.type === 'buff_atk') {
@@ -3226,14 +3252,14 @@ export function App() {
               if (isHealed) {
                 currentEffects = [
                   ...currentEffects.filter((e) => e.type !== 'excess_heal'),
-                  { type: 'excess_heal', duration: 1, value: 50 },
+                  { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
                 ];
               }
 
               if (isShielded) {
                 currentEffects = [
                   ...currentEffects.filter((e) => e.type !== 'excess_shield'),
-                  { type: 'excess_shield', duration: 1, value: 50 },
+                  { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
                 ];
               }
 
@@ -3417,7 +3443,7 @@ export function App() {
                   healAmt = Math.max(1, Math.round(healAmt * 0.5));
                   addFloatingNumber(finalMonsterX, finalMonsterY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
                 } else {
-                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Cura excessiva', 'status', '#F59E0B');
+                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Cura excessiva aplicada!', 'status', '#F59E0B');
                 }
                 const newHp = Math.min(freshAttacker.maxHp, finalMonsterHp + healAmt);
                 const actualHealed = newHp - finalMonsterHp;
@@ -3432,14 +3458,25 @@ export function App() {
                 }
                 finalMonsterEffects = [
                   ...finalMonsterEffects.filter((e) => e.type !== 'excess_heal'),
-                  { type: 'excess_heal', duration: 1, value: 50 },
+                  { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
                 ];
               }
 
               if (choice.skillToUse?.casterStatusEffect) {
-                const cEff = { ...choice.skillToUse.casterStatusEffect };
+                const cEff = { ...choice.skillToUse.casterStatusEffect, appliedTurn: turnNumberRef.current };
                 if (cEff.type === 'shield') {
+                  const hadExcessShield = finalMonsterEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+                  if (hadExcessShield) {
+                    cEff.value = Math.max(1, Math.round(cEff.value * 0.5));
+                    addFloatingNumber(finalMonsterX, finalMonsterY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+                  } else {
+                    addFloatingNumber(finalMonsterX, finalMonsterY, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
+                  }
                   addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+                  finalMonsterEffects = [
+                    ...finalMonsterEffects.filter((e) => e.type !== 'excess_shield'),
+                    { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+                  ];
                 } else if (cEff.type === 'taunt') {
                   addFloatingNumber(finalMonsterX, finalMonsterY, 'Provocando!', 'status', '#EF4444');
                 }
@@ -3540,7 +3577,15 @@ export function App() {
         } else {
           // Enemy units: AI turn has ended, decrement status effects & cooldowns
           const updatedEffects = (u.statusEffects || [])
-            .map((e) => ({ ...e, duration: e.duration - 1 }))
+            .map((e) => {
+              if (e.type === 'excess_heal' || e.type === 'excess_shield') {
+                if (e.appliedTurn === undefined || e.appliedTurn === aiTurnNumber) {
+                  return { ...e, appliedTurn: aiTurnNumber };
+                }
+                return { ...e, duration: e.duration - 1 };
+              }
+              return { ...e, duration: e.duration - 1 };
+            })
             .filter((e) => e.duration > 0);
 
           return {
@@ -3594,6 +3639,12 @@ export function App() {
             .map((e) => {
               if (e.type === 'taunt') return e;
               if (e.type === 'invisible') {
+                if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
+                  return { ...e, appliedTurn: currentTurn };
+                }
+                return { ...e, duration: e.duration - 1 };
+              }
+              if (e.type === 'excess_heal' || e.type === 'excess_shield') {
                 if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
                   return { ...e, appliedTurn: currentTurn };
                 }

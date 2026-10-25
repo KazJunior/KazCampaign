@@ -51,6 +51,11 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         description: 'Inimigos normais com habilidades em área agora possuem formatos únicos de alcance tático como Cones, Cruzes de 5 casas, Linhas Perfurantes e Varreduras Frontais (Cleave).',
         type: 'new',
       },
+      {
+        highlight: 'Correção de Cura e Escudo Excessivos',
+        description: 'Corrigido o debuff de cura excessiva e escudo excessivo que eram removidos prematuramente no fim do turno. Agora persistem devidamente para o turno consecutivo, reduzindo a cura e o escudo em 50% caso o mesmo aliado seja curado/protegido repetidamente.',
+        type: 'fix',
+      },
     ],
   },
   {
