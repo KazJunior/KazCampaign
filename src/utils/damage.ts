@@ -80,6 +80,10 @@ export function calculateBaseDamage(
     if (atkBuff) {
       attackStat = Math.round(attackStat * (1 + atkBuff.value / 100));
     }
+    const atkDebuff = attacker.statusEffects?.find((e) => e.type === 'debuff_atk' && e.duration > 0);
+    if (atkDebuff) {
+      attackStat = Math.round(attackStat * Math.max(0.1, 1 - (atkDebuff.value || 30) / 100));
+    }
     const invisBuff = attacker.statusEffects?.find((e) => e.type === 'invisible' && e.duration > 0);
     if (invisBuff) {
       attackStat = Math.round(attackStat * (1 + invisBuff.value / 100));
@@ -119,6 +123,10 @@ export function calculateBaseDamage(
   const atkBuff = attacker.statusEffects?.find((e) => e.type === 'buff_atk' && e.duration > 0);
   if (atkBuff) {
     attackStat = Math.round(attackStat * (1 + atkBuff.value / 100));
+  }
+  const atkDebuff = attacker.statusEffects?.find((e) => e.type === 'debuff_atk' && e.duration > 0);
+  if (atkDebuff) {
+    attackStat = Math.round(attackStat * Math.max(0.1, 1 - (atkDebuff.value || 30) / 100));
   }
   const invisBuff = attacker.statusEffects?.find((e) => e.type === 'invisible' && e.duration > 0);
   if (invisBuff) {

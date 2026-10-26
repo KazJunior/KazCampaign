@@ -43,9 +43,9 @@ export function getReachableTiles(
     return [];
   }
 
-  // Slow reduces movement points by slow penalty value (maximum 1 tile penalty, minimum 1 tile remaining)
+  // Slow reduces movement points by slow penalty value (minimum 1 tile remaining)
   const slowEffect = unit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
-  const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
+  const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
   const buffMovEffect = unit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
   const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
   const effectiveMov = Math.min(5, Math.max(1, (unit.mov + movBonus) - slowPenalty));
@@ -83,6 +83,54 @@ export function getReachableTiles(
   }
 
   return reachable;
+}
+
+/**
+ * Calculates a map of shortest walkable path distances (BFS) from a target tile
+ * to all reachable tiles on the grid, correctly navigating around terrain obstacles.
+ */
+export function getGridDistanceMap(
+  target: Point,
+  grid: TileData[][]
+): Map<string, number> {
+  const width = grid[0].length;
+  const height = grid.length;
+  const distMap = new Map<string, number>();
+
+  if (isOutOfBounds(target.x, target.y, width, height)) {
+    return distMap;
+  }
+
+  const queue: { x: number; y: number; dist: number }[] = [{ x: target.x, y: target.y, dist: 0 }];
+  distMap.set(`${target.x},${target.y}`, 0);
+
+  const directions = [
+    { x: 1, y: 0 },
+    { x: -1, y: 0 },
+    { x: 0, y: 1 },
+    { x: 0, y: -1 },
+  ];
+
+  while (queue.length > 0) {
+    const curr = queue.shift()!;
+    for (const dir of directions) {
+      const nx = curr.x + dir.x;
+      const ny = curr.y + dir.y;
+
+      if (isOutOfBounds(nx, ny, width, height)) continue;
+
+      const key = `${nx},${ny}`;
+      if (distMap.has(key)) continue;
+
+      const tile = grid[ny][nx];
+      if (tile.obstacle !== 'none') continue;
+
+      distMap.set(key, curr.dist + 1);
+      queue.push({ x: nx, y: ny, dist: curr.dist + 1 });
+    }
+  }
+
+  return distMap;
 }
 
 export function getPathTo(

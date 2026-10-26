@@ -74,7 +74,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
   const slowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
   const isSlowed = !!slowEffect;
-  const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
+  const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
   const buffMovEffect = selectedUnit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
   const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
   const effectiveMov = isStunned ? 0 : Math.min(5, Math.max(1, (selectedUnit.mov + movBonus) - slowPenalty));
@@ -84,6 +84,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isPoisoned = !!poisonEffect;
   const isStealthed = selectedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
   const isDefDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+  const isAtkDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_atk' && e.duration > 0);
   const excessHealEffect = selectedUnit.statusEffects?.find((e) => e.type === 'excess_heal' && e.duration > 0);
   const excessShieldEffect = selectedUnit.statusEffects?.find((e) => e.type === 'excess_shield' && e.duration > 0);
   const isBossMonster = Boolean(selectedUnit.isBoss || selectedUnit.isMiniBoss);
@@ -200,6 +201,11 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               {isDefDebuffed && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#EF4444]/20 border border-[#EF4444]/40 text-[#F87171] flex items-center gap-1">
                   🛡️ Defesa -{isDefDebuffed.value}%
+                </span>
+              )}
+              {isAtkDebuffed && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#EF4444]/20 border border-[#EF4444]/40 text-[#F87171] flex items-center gap-1">
+                  ⚔️ Dano -{isAtkDebuffed.value}% ({isAtkDebuffed.duration}T)
                 </span>
               )}
               {isBurned && (

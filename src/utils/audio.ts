@@ -151,6 +151,30 @@ class SoundSynthesizer {
     osc.stop(now + 0.3);
   }
 
+  public playShield() {
+    this.initCtx();
+    if (!this.ctx) return;
+    const vol = this.getEffectiveVolume(0.5);
+    if (vol <= 0) return;
+
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(220, now);
+    osc.frequency.exponentialRampToValueAtTime(550, now + 0.15);
+
+    gain.gain.setValueAtTime(vol * 0.8, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start();
+    osc.stop(now + 0.25);
+  }
+
   public playHeal() {
     this.initCtx();
     if (!this.ctx) return;

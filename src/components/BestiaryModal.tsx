@@ -388,12 +388,12 @@ export const BestiaryModal: React.FC<BestiaryModalProps> = ({
                             </span>
                             {skill.statusEffect && (
                               <span className="text-[#F0B44D] font-semibold">
-                                Efeito: {skill.statusEffect.type === 'burn' ? '🔥 Queimadura (-2%)' : skill.statusEffect.type === 'poison' ? '☠️ Veneno (-2%)' : skill.statusEffect.type === 'stun' ? '⚡ Atordoamento' : skill.statusEffect.type === 'slow' ? '👣 Lentidão' : skill.statusEffect.type === 'shield' ? '🛡️ Escudo' : skill.statusEffect.type === 'buff_atk' ? '⚔️ Fúria' : skill.statusEffect.type} ({skill.statusEffect.duration}T)
+                                Efeito: {skill.statusEffect.type === 'burn' ? '🔥 Queimadura (-2%)' : skill.statusEffect.type === 'poison' ? '☠️ Veneno (-2%)' : skill.statusEffect.type === 'stun' ? '⚡ Atordoamento' : skill.statusEffect.type === 'slow' ? '👣 Lentidão' : skill.statusEffect.type === 'shield' ? '🛡️ Escudo' : skill.statusEffect.type === 'buff_atk' ? '⚔️ Fúria' : skill.statusEffect.type === 'debuff_atk' ? `⚔️ Debuff Dano (-${skill.statusEffect.value}%)` : skill.statusEffect.type} ({skill.statusEffect.duration}T)
                               </span>
                             )}
                             {skill.secondaryStatusEffect && (
                               <span className="text-[#38BDF8] font-semibold">
-                                Secundário: {skill.secondaryStatusEffect.type === 'burn' ? '🔥 Queimadura (-2%)' : skill.secondaryStatusEffect.type === 'poison' ? '☠️ Veneno (-2%)' : skill.secondaryStatusEffect.type === 'stun' ? '⚡ Atordoamento' : skill.secondaryStatusEffect.type === 'slow' ? '👣 Lentidão' : skill.secondaryStatusEffect.type === 'debuff_def' ? '🛡️ Quebra de Defesa' : skill.secondaryStatusEffect.type} ({skill.secondaryStatusEffect.duration}T)
+                                Secundário: {skill.secondaryStatusEffect.type === 'burn' ? '🔥 Queimadura (-2%)' : skill.secondaryStatusEffect.type === 'poison' ? '☠️ Veneno (-2%)' : skill.secondaryStatusEffect.type === 'stun' ? '⚡ Atordoamento' : skill.secondaryStatusEffect.type === 'slow' ? '👣 Lentidão' : skill.secondaryStatusEffect.type === 'debuff_def' ? '🛡️ Quebra de Defesa' : skill.secondaryStatusEffect.type === 'debuff_atk' ? `⚔️ Debuff Dano (-${skill.secondaryStatusEffect.value}%)` : skill.secondaryStatusEffect.type} ({skill.secondaryStatusEffect.duration}T)
                               </span>
                             )}
                           </div>

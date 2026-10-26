@@ -340,6 +340,8 @@ export function App() {
     }
     return [];
   });
+  const gridRef = useRef<TileData[][]>(grid);
+  gridRef.current = grid;
   const [units, setUnits] = useState<Unit[]>(() => {
     const liveBattle = loadLiveBattleState();
     const loadedProg = loadPlayerProgress();
@@ -363,7 +365,7 @@ export function App() {
           };
         }),
         statusEffects: (u.statusEffects || []).map((eff) => {
-          if (eff.type === 'slow') return { ...eff, value: Math.min(1, eff.value || 1) };
+          if (eff.type === 'slow') return { ...eff, value: Math.min(3, eff.value || 1) };
           if (eff.type === 'excess_heal' || eff.type === 'excess_shield') return { ...eff, duration: Math.min(1, eff.duration) };
           if (eff.type === 'taunt') return { ...eff, duration: Math.min(1, eff.duration) };
           return eff;
@@ -512,7 +514,7 @@ export function App() {
         `enemy_${spawn.monsterTypeId}_${idx}`,
         spawn.x,
         spawn.y,
-        spawn.levelOffset || 0
+        spawn.levelOffset !== undefined ? spawn.levelOffset : Math.max(0, lvlConfig.id - 1)
       )
     );
 
@@ -592,7 +594,7 @@ export function App() {
           };
         }),
         statusEffects: (u.statusEffects || []).map((eff) => {
-          if (eff.type === 'slow') return { ...eff, value: Math.min(1, eff.value || 1) };
+          if (eff.type === 'slow') return { ...eff, value: Math.min(3, eff.value || 1) };
           if (eff.type === 'excess_heal' || eff.type === 'excess_shield') return { ...eff, duration: Math.min(1, eff.duration) };
           if (eff.type === 'taunt') return { ...eff, duration: Math.min(1, eff.duration) };
           return eff;
@@ -2887,6 +2889,57 @@ export function App() {
               u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
             );
           }
+
+          // Puxa todos os heróis sobreviventes para casas adjacentes a Astaroth (sem deixar poças)
+          const survivingHeroes = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+          if (survivingHeroes.length > 0) {
+            const adjacentOffsets = [
+              { dx: 0, dy: -1 },
+              { dx: 1, dy: 0 },
+              { dx: 0, dy: 1 },
+              { dx: -1, dy: 0 },
+              { dx: 1, dy: -1 },
+              { dx: 1, dy: 1 },
+              { dx: -1, dy: 1 },
+              { dx: -1, dy: -1 },
+            ];
+
+            const assignedPositions: { id: string; x: number; y: number }[] = [];
+
+            for (const hero of survivingHeroes) {
+              const freeAdjacent = adjacentOffsets
+                .map((off) => ({ x: freshMonster.x + off.dx, y: freshMonster.y + off.dy }))
+                .filter(
+                  (pt) =>
+                    pt.x >= 0 &&
+                    pt.x < grid[0].length &&
+                    pt.y >= 0 &&
+                    pt.y < grid.length &&
+                    grid[pt.y][pt.x].isWalkable &&
+                    !currentUnits.some((u) => !u.isDead && u.id !== hero.id && u.x === pt.x && u.y === pt.y) &&
+                    !assignedPositions.some((ap) => ap.x === pt.x && ap.y === pt.y)
+                );
+
+              if (freeAdjacent.length > 0) {
+                freeAdjacent.sort(
+                  (a, b) =>
+                    Math.hypot(a.x - hero.x, a.y - hero.y) -
+                    Math.hypot(b.x - hero.x, b.y - hero.y)
+                );
+                const bestTile = freeAdjacent[0];
+                assignedPositions.push({ id: hero.id, x: bestTile.x, y: bestTile.y });
+
+                if (boardRef.current && (hero.x !== bestTile.x || hero.y !== bestTile.y)) {
+                  await boardRef.current.playMoveAnimation(hero.id, hero.x, hero.y, bestTile.x, bestTile.y);
+                }
+
+                currentUnits = currentUnits.map((u) =>
+                  u.id === hero.id ? { ...u, x: bestTile.x, y: bestTile.y } : u
+                );
+                addFloatingNumber(bestTile.x, bestTile.y, '🌀 Vórtice: Puxado ao Boss!', 'status', '#9333EA');
+              }
+            }
+          }
         } else if (bossType === 'tita_forjador') {
           // Fase 20: Stunar todos os inimigos por 2 turnos e causar dano a um alvo único
           addFloatingNumber(freshMonster.x, freshMonster.y, '🔨 TERREMOTO DA FORJA TITÂNICA!', 'status', '#EA580C');
@@ -3249,6 +3302,26 @@ export function App() {
               if (skill.secondaryStatusEffect) {
                 applyMonsterSupportEffect(skill.secondaryStatusEffect);
               }
+              if (skill.casterStatusEffect) {
+                applyMonsterSupportEffect(skill.casterStatusEffect);
+              }
+
+              if (skill.debuffsAllPlayersAtk) {
+                const debuffVal = skill.debuffsAllPlayersAtk;
+                const debuffDur = skill.debuffDuration || 2;
+                currentUnits = currentUnits.map((u) => {
+                  if (u.faction === 'player' && !u.isDead) {
+                    const uEffects = [
+                      ...(u.statusEffects || []).filter((e) => e.type !== 'debuff_atk'),
+                      { type: 'debuff_atk' as const, duration: debuffDur, value: debuffVal, appliedTurn: turnNumberRef.current },
+                    ];
+                    addFloatingNumber(u.x, u.y, `🔨 Dano -${debuffVal}% (2 turnos)!`, 'status', '#EF4444');
+                    return { ...u, statusEffects: uEffects };
+                  }
+                  return u;
+                });
+                soundManager.playPhysicalAttack();
+              }
 
               if (isHealed) {
                 currentEffects = [
@@ -3323,9 +3396,57 @@ export function App() {
               let finalMonsterHp = freshAttacker.currentHp;
               const aoeRad = skill?.aoeRadius || 0;
               let enemyTargets: Unit[] = [];
-              if (aoeRad > 0) {
+              let hitTiles: { x: number; y: number }[] = [];
+
+              if (skill?.isCardinalArms) {
                 const origin = { x: finalMonsterX, y: finalMonsterY };
-                const hitTiles = getAoETiles(
+                const reach = skill.rangeMax || 3;
+                const dirs = [
+                  { dx: 0, dy: -1 }, // Norte
+                  { dx: 0, dy: 1 },  // Sul
+                  { dx: 1, dy: 0 },  // Leste
+                  { dx: -1, dy: 0 }, // Oeste
+                ];
+                for (const d of dirs) {
+                  for (let r = 1; r <= reach; r++) {
+                    const nx = origin.x + d.dx * r;
+                    const ny = origin.y + d.dy * r;
+                    if (nx >= 0 && nx < grid[0].length && ny >= 0 && ny < grid.length) {
+                      hitTiles.push({ x: nx, y: ny });
+                    }
+                  }
+                }
+                enemyTargets = currentUnits.filter(
+                  (u) =>
+                    u.faction === 'player' &&
+                    !u.isDead &&
+                    hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+                );
+              } else if (skill?.aoeCenteredOnCaster) {
+                const origin = { x: finalMonsterX, y: finalMonsterY };
+                const rad = skill.aoeRadius || 1;
+                for (let dy = -rad; dy <= rad; dy++) {
+                  for (let dx = -rad; dx <= rad; dx++) {
+                    if (dx === 0 && dy === 0) continue;
+                    const nx = origin.x + dx;
+                    const ny = origin.y + dy;
+                    if (nx >= 0 && nx < grid[0].length && ny >= 0 && ny < grid.length) {
+                      hitTiles.push({ x: nx, y: ny });
+                    }
+                  }
+                }
+                enemyTargets = currentUnits.filter(
+                  (u) =>
+                    u.faction === 'player' &&
+                    !u.isDead &&
+                    hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+                );
+              } else if (aoeRad >= 90) {
+                enemyTargets = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+                hitTiles = [];
+              } else if (aoeRad > 0) {
+                const origin = { x: finalMonsterX, y: finalMonsterY };
+                hitTiles = getAoETiles(
                   { x: freshTarget.x, y: freshTarget.y },
                   aoeRad,
                   grid[0].length,
@@ -3341,9 +3462,31 @@ export function App() {
                 );
               } else {
                 enemyTargets = [freshTarget];
+                hitTiles = [{ x: freshTarget.x, y: freshTarget.y }];
+              }
+
+              // Deixar poças de corrupção se a habilidade configurar leavesCorruptionPuddle (Fase 10 - Astaroth)
+              if (skill?.leavesCorruptionPuddle && hitTiles.length > 0) {
+                setGrid((prevGrid) => {
+                  const nextGrid = prevGrid.map((row, rY) =>
+                    row.map((cell, cX) => {
+                      if (hitTiles.some((pt) => pt.x === cX && pt.y === rY)) {
+                        return {
+                          ...cell,
+                          corruptionTurns: 3,
+                        };
+                      }
+                      return cell;
+                    })
+                  );
+                  gridRef.current = nextGrid;
+                  return nextGrid;
+                });
+                soundManager.playMagicSpell();
               }
 
               let totalAiDmgDone = 0;
+              let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
 
               for (const t of enemyTargets) {
                 const res = rollActualDamage(freshAttacker, t, skill);
@@ -3351,34 +3494,55 @@ export function App() {
                 const damageType = res.damageType;
 
                 let currentEffects = [...(t.statusEffects || [])];
+
+                // Shield Steal (e.g. Vulcanus Golpe Esmaga-Escudo)
+                if (skill?.stealsShield) {
+                  const shIndex = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+                  if (shIndex >= 0) {
+                    const stolenShieldVal = currentEffects[shIndex].value;
+                    currentEffects.splice(shIndex, 1);
+                    addFloatingNumber(t.x, t.y, `🛡️ Escudo Roubado (${stolenShieldVal})!`, 'status', '#38BDF8');
+                    soundManager.playShield();
+                    finalMonsterEffects = [
+                      ...finalMonsterEffects.filter((e) => e.type !== 'shield'),
+                      { type: 'shield', duration: 3, value: stolenShieldVal, appliedTurn: turnNumberRef.current },
+                    ];
+                    addFloatingNumber(finalMonsterX, finalMonsterY, `+${stolenShieldVal} Escudo Roubado!`, 'shield', '#38BDF8');
+                  }
+                }
+
                 let absorbedDamage = 0;
                 let reflectPercent = 0;
                 if (actualDmg > 0) {
-                  for (let i = 0; i < currentEffects.length; i++) {
-                    if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
-                      const sh = currentEffects[i];
-                      const dmgAbsorbed = Math.min(sh.value, actualDmg);
-                      if (sh.reflectRatio) {
-                        reflectPercent = Math.max(reflectPercent, sh.reflectRatio);
+                  if (skill?.ignoresShield) {
+                    addFloatingNumber(t.x, t.y, 'Ignorou Escudo!', 'status', '#A855F7');
+                  } else {
+                    for (let i = 0; i < currentEffects.length; i++) {
+                      if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                        const sh = currentEffects[i];
+                        const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                        if (sh.reflectRatio) {
+                          reflectPercent = Math.max(reflectPercent, sh.reflectRatio);
+                        }
+                        absorbedDamage += dmgAbsorbed;
+                        sh.value -= dmgAbsorbed;
+                        actualDmg -= dmgAbsorbed;
+                        addFloatingNumber(t.x, t.y, `-${dmgAbsorbed} (Escudo)`, 'shield', '#38BDF8');
+                        if (actualDmg === 0) break;
                       }
-                      absorbedDamage += dmgAbsorbed;
-                      sh.value -= dmgAbsorbed;
-                      actualDmg -= dmgAbsorbed;
-                      addFloatingNumber(t.x, t.y, `-${dmgAbsorbed} (Escudo)`, 'shield', '#38BDF8');
-                      if (actualDmg === 0) break;
                     }
-                  }
-                  currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+                    currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
 
-                  if (absorbedDamage > 0 && reflectPercent > 0) {
-                    const reflectedDmg = Math.max(1, Math.round(absorbedDamage * reflectPercent));
-                    finalMonsterHp = Math.max(0, finalMonsterHp - reflectedDmg);
-                    addFloatingNumber(freshAttacker.x, freshAttacker.y, `-${reflectedDmg} (Espinhos)`, 'physical', '#F97316');
-                    soundManager.playPhysicalAttack();
-                    if (finalMonsterHp === 0) {
-                      soundManager.playDeath();
-                      if (boardRef.current) {
-                        await boardRef.current.playDeathAnimation(freshAttacker.id);
+                    if (absorbedDamage > 0 && reflectPercent > 0) {
+                      const reflectedDmg = Math.max(1, Math.round(absorbedDamage * reflectPercent));
+                      finalMonsterHp = Math.max(0, finalMonsterHp - reflectedDmg);
+                      addFloatingNumber(freshAttacker.x, freshAttacker.y, `-${reflectedDmg} (Espinhos)`, 'physical', '#F97316');
+                      soundManager.playPhysicalAttack();
+                      if (finalMonsterHp === 0) {
+                        soundManager.playDeath();
+                        if (boardRef.current) {
+                          await boardRef.current.playDeathAnimation(freshAttacker.id);
+                        }
                       }
                     }
                   }
@@ -3391,6 +3555,144 @@ export function App() {
                   totalAiDmgDone += actualDmg;
                 }
 
+                // Monster Knockback (e.g. Vulcanus Fissura Tectônica)
+                let finalTargetX = t.x;
+                let finalTargetY = t.y;
+                if (skill?.knockback && skill.knockback > 0 && newHp > 0) {
+                  const originX = finalMonsterX;
+                  const originY = finalMonsterY;
+                  const dx = t.x - originX;
+                  const dy = t.y - originY;
+                  let pushX = 0;
+                  let pushY = 0;
+                  if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+                    pushX = Math.sign(dx);
+                  } else if (dy !== 0) {
+                    pushY = Math.sign(dy);
+                  } else {
+                    pushY = 1;
+                  }
+
+                  let currX = t.x;
+                  let currY = t.y;
+                  let stepsPushed = 0;
+                  const maxSteps = skill.knockback;
+
+                  for (let s = 0; s < maxSteps; s++) {
+                    const nextX = currX + pushX;
+                    const nextY = currY + pushY;
+                    const inBounds = nextX >= 0 && nextX < grid[0].length && nextY >= 0 && nextY < grid.length;
+                    const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+                    const isOccupied = inBounds && currentUnits.some((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+
+                    if (inBounds && isWalkable && !isOccupied) {
+                      currX = nextX;
+                      currY = nextY;
+                      stepsPushed++;
+                    } else {
+                      break;
+                    }
+                  }
+
+                  if (stepsPushed > 0 && (currX !== t.x || currY !== t.y)) {
+                    if (boardRef.current) {
+                      await boardRef.current.playMoveAnimation(t.id, t.x, t.y, currX, currY);
+                    }
+                    finalTargetX = currX;
+                    finalTargetY = currY;
+                    addFloatingNumber(currX, currY, `Empurrado (${stepsPushed})!`, 'status', '#60A5FA');
+                  }
+                }
+
+                // Monster Pull (e.g. Astaroth Garras do Vazio - puxa 2 casas em direção ao boss)
+                if (skill?.pull && skill.pull > 0 && newHp > 0) {
+                  const originX = finalMonsterX;
+                  const originY = finalMonsterY;
+                  const dx = originX - finalTargetX;
+                  const dy = originY - finalTargetY;
+                  let pullDirX = 0;
+                  let pullDirY = 0;
+                  if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+                    pullDirX = Math.sign(dx);
+                  } else if (dy !== 0) {
+                    pullDirY = Math.sign(dy);
+                  }
+
+                  let currX = finalTargetX;
+                  let currY = finalTargetY;
+                  let stepsPulled = 0;
+                  const maxPullSteps = skill.pull;
+
+                  for (let s = 0; s < maxPullSteps; s++) {
+                    const nextX = currX + pullDirX;
+                    const nextY = currY + pullDirY;
+                    if (nextX === originX && nextY === originY) break;
+
+                    const inBounds = nextX >= 0 && nextX < grid[0].length && nextY >= 0 && nextY < grid.length;
+                    const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+                    const isOccupied = inBounds && currentUnits.some((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+
+                    if (inBounds && isWalkable && !isOccupied) {
+                      currX = nextX;
+                      currY = nextY;
+                      stepsPulled++;
+                    } else {
+                      break;
+                    }
+                  }
+
+                  if (stepsPulled > 0 && (currX !== finalTargetX || currY !== finalTargetY)) {
+                    if (boardRef.current) {
+                      await boardRef.current.playMoveAnimation(t.id, finalTargetX, finalTargetY, currX, currY);
+                    }
+                    finalTargetX = currX;
+                    finalTargetY = currY;
+                    addFloatingNumber(currX, currY, `Puxado (${stepsPulled})!`, 'status', '#A855F7');
+                    soundManager.playStep();
+                  }
+                }
+
+                // Monster Pull to Adjacent (e.g. Astaroth Cataclismo do Abismo)
+                if (skill?.pullToAdjacent && newHp > 0) {
+                  const originX = finalMonsterX;
+                  const originY = finalMonsterY;
+                  const isAlreadyAdj = Math.abs(finalTargetX - originX) <= 1 && Math.abs(finalTargetY - originY) <= 1;
+                  if (!isAlreadyAdj) {
+                    const adjCandidates = [
+                      { x: originX, y: originY - 1 },
+                      { x: originX + 1, y: originY },
+                      { x: originX, y: originY + 1 },
+                      { x: originX - 1, y: originY },
+                      { x: originX + 1, y: originY - 1 },
+                      { x: originX + 1, y: originY + 1 },
+                      { x: originX - 1, y: originY + 1 },
+                      { x: originX - 1, y: originY - 1 },
+                    ].filter((p) => {
+                      const inB = p.x >= 0 && p.x < grid[0].length && p.y >= 0 && p.y < grid.length;
+                      if (!inB) return false;
+                      if (!grid[p.y][p.x].isWalkable) return false;
+                      const occ = currentUnits.some((u) => !u.isDead && u.id !== t.id && u.x === p.x && u.y === p.y);
+                      return !occ;
+                    });
+
+                    if (adjCandidates.length > 0) {
+                      adjCandidates.sort((a, b) => {
+                        const distA = Math.hypot(a.x - finalTargetX, a.y - finalTargetY);
+                        const distB = Math.hypot(b.x - finalTargetX, b.y - finalTargetY);
+                        return distA - distB;
+                      });
+                      const bestAdj = adjCandidates[0];
+                      if (boardRef.current) {
+                        await boardRef.current.playMoveAnimation(t.id, finalTargetX, finalTargetY, bestAdj.x, bestAdj.y);
+                      }
+                      finalTargetX = bestAdj.x;
+                      finalTargetY = bestAdj.y;
+                      addFloatingNumber(bestAdj.x, bestAdj.y, 'Arrastado para o Abismo!', 'status', '#9333EA');
+                      soundManager.playStep();
+                    }
+                  }
+                }
+
                 if (newHp === 0) {
                   soundManager.playDeath();
                   if (boardRef.current) {
@@ -3400,31 +3702,32 @@ export function App() {
                   if (choice.skillToUse?.statusEffect) {
                     const eff = choice.skillToUse.statusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-                    if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
-                    else if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-                    else if (eff.type === 'stun') addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
-                    else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
-                    else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
-                    else if (eff.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
+                    if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, 'Em Chamas!', 'status', '#F97316');
+                    else if (eff.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
+                    else if (eff.type === 'stun') addFloatingNumber(finalTargetX, finalTargetY, 'Atordoado!', 'status', '#FACC15');
+                    else if (eff.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff.value || 1} Mov)!`, 'status', '#60A5FA');
+                    else if (eff.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+                    else if (eff.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff.value}%!`, 'status', '#EF4444');
+                    else if (eff.type === 'electrified') addFloatingNumber(finalTargetX, finalTargetY, '⚡ Eletrificado!', 'status', '#FACC15');
                   }
 
                   if (choice.skillToUse?.secondaryStatusEffect) {
                     const eff2 = choice.skillToUse.secondaryStatusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-                    if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
-                    else if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-                    else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
-                    else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+                    if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, 'Em Chamas!', 'status', '#F97316');
+                    else if (eff2.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
+                    else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
+                    else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
+                    else if (eff2.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff2.value || 1} Mov)!`, 'status', '#60A5FA');
                   }
                 }
 
                 currentUnits = currentUnits.map((u) =>
-                  u.id === t.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+                  u.id === t.id ? { ...u, x: finalTargetX, y: finalTargetY, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
                 );
               }
 
               // Monster / AI Lifesteal & Golpe Sagrado
-              let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
               const aiIsGolpeSagrado = skill?.id === 'golpe_sagrado' || skill?.id?.startsWith('golpe_sagrado');
               const aiLifestealPct =
                 skill?.lifestealPercent ??
@@ -3532,6 +3835,29 @@ export function App() {
       return t + 1;
     });
 
+    // Decrement corruption puddles on the grid at turn start
+    setGrid((prevGrid) => {
+      let hasCorruption = false;
+      const nextGrid = prevGrid.map((row) =>
+        row.map((cell) => {
+          if (cell.corruptionTurns && cell.corruptionTurns > 0) {
+            hasCorruption = true;
+            const newTurns = cell.corruptionTurns - 1;
+            return {
+              ...cell,
+              corruptionTurns: newTurns > 0 ? newTurns : undefined,
+            };
+          }
+          return cell;
+        })
+      );
+      if (hasCorruption) {
+        gridRef.current = nextGrid;
+        return nextGrid;
+      }
+      return prevGrid;
+    });
+
     let anyPlayerDiedFromDoT = false;
     setUnits((prev) => {
       return prev.map((u) => {
@@ -3559,6 +3885,19 @@ export function App() {
                 isDead = currentHp === 0;
                 if (isDead) anyPlayerDiedFromDoT = true;
                 addFloatingNumber(u.x, u.y, `-${pDmg} Veneno (2%)`, 'status', '#A855F7');
+              }
+            }
+
+            // Corruption Puddle tick (Poça de Corrupção): Se um herói no início de seu turno estiver em cima de uma poça, ele sofre 10% da vida máxima como dano verdadeiro. O boss não é afetado por esse efeito.
+            if (!isDead) {
+              const standingTile = gridRef.current?.[u.y]?.[u.x];
+              if (standingTile && standingTile.corruptionTurns && standingTile.corruptionTurns > 0) {
+                const corrDmg = Math.max(1, Math.round(u.maxHp * 0.10));
+                currentHp = Math.max(0, currentHp - corrDmg);
+                isDead = currentHp === 0;
+                if (isDead) anyPlayerDiedFromDoT = true;
+                addFloatingNumber(u.x, u.y, `-${corrDmg} Corrupção (10% Dano Verdadeiro)`, 'status', '#C084FC');
+                soundManager.playMagicSpell();
               }
             }
           }
@@ -4425,6 +4764,12 @@ export function App() {
 
         {/* CENTER: 3D Tactical Battlefield */}
         <main className="flex-1 flex items-center justify-center p-0 md:p-2 overflow-hidden relative w-full h-full">
+          {hoveredTile && grid[hoveredTile.y]?.[hoveredTile.x]?.corruptionTurns ? (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/90 border border-purple-500/60 backdrop-blur-md shadow-lg shadow-purple-900/50 text-purple-200 text-xs font-semibold animate-pulse">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
+              Poça de Corrupção ({grid[hoveredTile.y][hoveredTile.x].corruptionTurns} turnos restantes) - 10% Vida Máxima de Dano Verdadeiro
+            </div>
+          ) : null}
           <BoardRenderer3D
             ref={boardRef}
             grid={grid}

@@ -979,9 +979,15 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 3,
     color: '#4A148C',
     avatarKey: 'astaroth_boss',
-    skillId: 'lanca_do_abismo',
-    skillIds: ['lanca_do_abismo', 'despertar_sombrio', 'ruina_absoluta', 'vortice_obscuro'],
-    description: 'BOSS PODEROSO (FASE 10): Soberano supremo do abismo em 3 fases de transformação devastadoras.',
+    skillId: 'astaroth_cone_abissal',
+    skillIds: [
+      'astaroth_cone_abissal',
+      'astaroth_cruz_apocaliptica',
+      'astaroth_bracos_cardinais',
+      'astaroth_emanacao_abissal',
+      'boss_astaroth_cataclismo',
+    ],
+    description: 'BOSS PODEROSO (FASE 10): Soberano supremo do abismo armado com cone sombrio, cruz massiva, garras cardinais que puxam, emanação ao redor e poças de corrupção.',
     isBoss: true,
   },
   arauto_espectral: {
@@ -1017,8 +1023,14 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 2,
     color: '#FF3D00',
     avatarKey: 'forge_titan_boss',
-    skillId: 'golpe_esmagador',
-    skillIds: ['golpe_esmagador', 'impacto_abissal', 'chama_sombria', 'terremoto_basalto'],
+    skillId: 'vulcanus_golpe_esmagador',
+    skillIds: [
+      'vulcanus_golpe_esmagador',
+      'vulcanus_baforada_fogo',
+      'vulcanus_bigorna_forja',
+      'vulcanus_fissura_cruz',
+      'vulcanus_investida_titanica',
+    ],
     description: 'BOSS PODEROSO (FASE 20): Colosso mecânico incandescente forjado no coração vulcânico.',
     isBoss: true,
   },
@@ -1027,7 +1039,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Arquimago das Runas',
     role: 'support',
     act: 3,
-    maxHp: 6200,
+    maxHp: 55000,
     atk: 34,
     mag: 55,
     def: 59,
@@ -1140,7 +1152,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
 
 export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
   tita_forjador: 5000,
-  mestre_runico: 6200,
+  mestre_runico: 55000,
   valgar_sanguinario: 7600,
   quimera_venenosa: 9200,
   leviata_vazio: 11000,
@@ -1150,16 +1162,17 @@ export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
 
 export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, number>> = {
   tita_forjador: {
-    golpe_esmagador: 2.00,
-    impacto_abissal: 2.00,
-    chama_sombria: 2.00,
-    terremoto_basalto: 2.00,
+    vulcanus_golpe_esmagador: 2.30,
+    vulcanus_baforada_fogo: 2.00,
+    vulcanus_bigorna_forja: 1.00,
+    vulcanus_fissura_cruz: 2.00,
+    vulcanus_investida_titanica: 2.10,
   },
   mestre_runico: {
     runa_de_choque: 2.10,
     glifo_incandescente: 2.10,
     runa_de_protecao: 2.10,
-    vortice_obscuro: 2.15,
+    vortice_obscuro: 2.50,
   },
   valgar_sanguinario: {
     golpe_selvagem: 2.20,
@@ -1333,7 +1346,8 @@ export function createMonsterUnit(
     mag,
     def: unitDef,
     res,
-    mov: def.mov,
+    // Aumento do alcance de movimentação a partir da Fase 10 (+1 MOV tanto para bosses quanto monstros normais)
+    mov: Math.min(5, def.mov + (levelOffset >= 9 ? 1 : 0)),
     range: def.range,
     x,
     y,

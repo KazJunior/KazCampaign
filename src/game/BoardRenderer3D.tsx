@@ -421,6 +421,26 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         if (tile.isTelegraphedHazard) {
           addTileHighlight(x, y, 0xe65353, 0.55, 0xff2222, true, 0.053);
         }
+        // Poças de Corrupção Abissal (Fase 10 - Astaroth)
+        if (tile.corruptionTurns && tile.corruptionTurns > 0) {
+          addTileHighlight(x, y, 0x3b0764, 0.75, 0xc084fc, true, 0.052);
+          const puddleGeo = new THREE.CircleGeometry(0.30, 16);
+          puddleGeo.rotateX(-Math.PI / 2);
+          const puddleMat = new THREE.MeshBasicMaterial({
+            color: 0x581c87,
+            transparent: true,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            polygonOffset: true,
+            polygonOffsetFactor: -3,
+            polygonOffsetUnits: -3,
+          });
+          const puddleMesh = new THREE.Mesh(puddleGeo, puddleMat);
+          puddleMesh.position.set(x + 0.5, 0.054, y + 0.5);
+          puddleMesh.name = 'pulseRing';
+          group.add(puddleMesh);
+        }
       }
     }
 

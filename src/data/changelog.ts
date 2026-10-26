@@ -22,6 +22,31 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
     tag: 'Balanceamento & QoL',
     changes: [
       {
+        highlight: 'Reformulação Completa das Habilidades de Vulcanus (Boss da Fase 20)',
+        description: 'Vulcanus, Titã das Forjas, recebeu um conjunto de habilidades reformulado: 1° Golpe Esmaga-Escudo (230% de dano físico e rouba o escudo do alvo); 2° Baforada Vulcânica em cone (200% de dano físico, queima e -2 Movimento); 3° Bigorna Incandescente (+300 de escudo e reduz o dano de todos os heróis em 30% por 2 ataques/turnos); 4° Fissura Tectônica em cruz (200% de dano físico e arremessa os heróis para as bordas do mapa); 5° Investida Sísmica (salto até o inimigo mais distante, 210% de dano e atordoamento); e mantida a habilidade suprema Terremoto Primordial ativada com metade da vida.',
+        type: 'buff',
+      },
+      {
+        highlight: 'IA dos Monstros & Navegação de Obstáculos (Pathfinding Inteligente)',
+        description: 'Corrigida a inteligência artificial dos monstros que ficavam presos atrás de pedras e pilares sem se mover ou atacar. A IA agora calcula rotas reais contornando obstáculos via busca em largura (BFS), permitindo que contornem rochas para alcançar os heróis.',
+        type: 'fix',
+      },
+      {
+        highlight: 'Espaçamento Tático dos Monstros nas Fases',
+        description: 'Monstros redistribuídos nas fases para eliminar agrupamentos colados que facilitavam dano em área excessivo. Cada monstro agora mantém ao menos 2 casas de distância dos demais, posicionando tanques na linha de frente e suportes/arqueiros na retaguarda.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Ajustes no Mini Boss da Fase 25 (Arquimago das Runas)',
+        description: 'A vida do Arquimago das Runas foi aumentada para 55.000 HP, seu Vórtice do Vazio agora possui 250% de escalonamento, o Selo de Bloqueio Concussivo atordoa em formato de cruz (+) e o Raio Rúnico Perfurante ignora escudos. Além disso, dois Tecelões de Glifos foram posicionados nas pontas para acompanhá-lo no combate.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Alcance de Movimentação dos Monstros (+1 MOV na Fase 10+)',
+        description: 'A partir da Fase 10, todos os monstros e chefes tiveram seu alcance de movimentação aumentado em +1 casa (respeitando o teto global de 5 casas).',
+        type: 'buff',
+      },
+      {
         highlight: 'Restauração de Bônus de Movimento com Teto Máximo (5 Casas)',
         description: 'Os bônus de movimento em itens e pets (incluindo o Voo Celestial da Águia de Cristal) foram restabelecidos, agora com uma trava global de equilíbrio: a movimentação de qualquer personagem não pode ultrapassar 5 casas no tabuleiro.',
         type: 'buff',

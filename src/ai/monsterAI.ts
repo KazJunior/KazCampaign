@@ -1,6 +1,6 @@
 import type { Skill, TileData, Unit, Point } from '../types/game';
 import { calculateBaseDamage } from '../utils/damage';
-import { getAttackableTiles, getReachableTiles, manhattanDistance, getAoETiles } from '../utils/pathfinding';
+import { getAttackableTiles, getReachableTiles, manhattanDistance, getAoETiles, getGridDistanceMap } from '../utils/pathfinding';
 
 export interface AIActionChoice {
   monster: Unit;
@@ -77,7 +77,12 @@ export function decideMonsterAction(
         const hasActiveBuff = monster.statusEffects?.some((e) => e.type === 'buff_atk' && e.duration > 0);
         const hpRatio = monster.currentHp / monster.maxHp;
 
-        if (effect?.type === 'shield') {
+        if (act.skill.debuffsAllPlayersAtk) {
+          const anyPlayerUndebuffed = allAlivePlayers.some((p) => !p.statusEffects?.some((e) => e.type === 'debuff_atk' && e.duration > 0));
+          if (anyPlayerUndebuffed || !hasActiveShield) {
+            score = 260;
+          }
+        } else if (effect?.type === 'shield' || act.skill.casterStatusEffect?.type === 'shield') {
           // Never recast shield if unit already has active shield
           if (!hasActiveShield) {
             if (role === 'tank') {
@@ -182,8 +187,17 @@ export function decideMonsterAction(
 
       // 3. ENEMY-TARGET ACTIONS (Attacks, offensive skills, debuffs on player units)
       for (const target of playerUnits) {
-        const inRange = attackableTiles.some((t) => t.x === target.x && t.y === target.y);
-        if (!inRange) continue;
+        // Se a habilidade for de braços cardinais, o alvo primário precisa estar em uma das 4 linhas cardinais (N, S, L, O)
+        if (act.skill?.isCardinalArms) {
+          const isCardinal =
+            (target.x === moveTile.x || target.y === moveTile.y) &&
+            manhattanDistance(moveTile, target) <= (act.skill.rangeMax || 3) &&
+            manhattanDistance(moveTile, target) >= act.rangeMin;
+          if (!isCardinal) continue;
+        } else {
+          const inRange = attackableTiles.some((t) => t.x === target.x && t.y === target.y);
+          if (!inRange) continue;
+        }
 
         const { base: damage } = calculateBaseDamage(
           { ...monster, x: moveTile.x, y: moveTile.y },
@@ -202,7 +216,52 @@ export function decideMonsterAction(
         if (act.skill) {
           score += 60;
           if (act.skill.statusEffect) score += 70;
-          if (act.skill.aoeRadius && act.skill.aoeRadius > 0) {
+          if (act.skill.pull) score += 80;
+          if (act.skill.leavesCorruptionPuddle) score += 90;
+
+          if (act.skill.isCardinalArms) {
+            // Braços nas 4 direções cardinais a partir de moveTile
+            const armRange = act.skill.rangeMax || 3;
+            const cardinalTiles: Point[] = [];
+            for (let s = 1; s <= armRange; s++) {
+              if (moveTile.y - s >= 0) cardinalTiles.push({ x: moveTile.x, y: moveTile.y - s });
+              if (moveTile.y + s < grid.length) cardinalTiles.push({ x: moveTile.x, y: moveTile.y + s });
+              if (moveTile.x + s < grid[0].length) cardinalTiles.push({ x: moveTile.x + s, y: moveTile.y });
+              if (moveTile.x - s >= 0) cardinalTiles.push({ x: moveTile.x - s, y: moveTile.y });
+            }
+            for (const other of playerUnits) {
+              if (other.id === target.id) continue;
+              if (cardinalTiles.some((pt) => pt.x === other.x && pt.y === other.y)) {
+                const { base: splashDmg } = calculateBaseDamage(
+                  { ...monster, x: moveTile.x, y: moveTile.y },
+                  other,
+                  act.skill
+                );
+                score += splashDmg * 1.5 + 120;
+              }
+            }
+          } else if (act.skill.aoeCenteredOnCaster) {
+            // Explosão em volta do conjurador
+            const hitTiles = getAoETiles(
+              moveTile,
+              act.skill.aoeRadius,
+              grid[0].length,
+              grid.length,
+              'circle',
+              null
+            );
+            for (const other of playerUnits) {
+              if (other.id === target.id) continue;
+              if (hitTiles.some((pt) => pt.x === other.x && pt.y === other.y)) {
+                const { base: splashDmg } = calculateBaseDamage(
+                  { ...monster, x: moveTile.x, y: moveTile.y },
+                  other,
+                  act.skill
+                );
+                score += splashDmg * 1.5 + 100;
+              }
+            }
+          } else if (act.skill.aoeRadius && act.skill.aoeRadius > 0) {
             const hitTiles = getAoETiles(
               { x: target.x, y: target.y },
               act.skill.aoeRadius,
@@ -237,6 +296,17 @@ export function decideMonsterAction(
           } else {
             score -= 1000;
           }
+        } else {
+          // If skill targets furthest enemy (e.g. Vulcanus Investida Sísmica)
+          if (act.skill?.targetFurthestEnemy) {
+            const distFromMonster = manhattanDistance({ x: monster.x, y: monster.y }, { x: target.x, y: target.y });
+            score += distFromMonster * 150;
+          }
+        }
+
+        // Steals shield: extra incentive to strike a hero with an active shield
+        if (act.skill?.stealsShield && target.statusEffects?.some((e) => e.type === 'shield' && e.value > 0)) {
+          score += 280;
         }
 
         // Target squishies
@@ -272,7 +342,8 @@ export function decideMonsterAction(
   // If no target can be reached, move closer to nearest player unit (or taunting hero if within 3 tiles)
   if (!bestChoice) {
     let closestTarget: Unit | null = null;
-    let minDist = Infinity;
+    let targetDistMap: Map<string, number> | null = null;
+    let minPathDist = Infinity;
 
     const nearbyTauntingHero = playerUnits.find((p) => {
       if (!p.statusEffects?.some((e) => e.type === 'taunt' && e.duration > 0)) return false;
@@ -282,32 +353,45 @@ export function decideMonsterAction(
 
     if (nearbyTauntingHero) {
       closestTarget = nearbyTauntingHero;
+      targetDistMap = getGridDistanceMap({ x: nearbyTauntingHero.x, y: nearbyTauntingHero.y }, grid);
     } else {
       playerUnits.forEach((p) => {
-        const d = manhattanDistance({ x: monster.x, y: monster.y }, { x: p.x, y: p.y });
-        if (d < minDist) {
-          minDist = d;
+        const dMap = getGridDistanceMap({ x: p.x, y: p.y }, grid);
+        const walkable = dMap.get(`${monster.x},${monster.y}`);
+        const effectiveDist = walkable !== undefined ? walkable : manhattanDistance({ x: monster.x, y: monster.y }, { x: p.x, y: p.y }) + 1000;
+        if (effectiveDist < minPathDist) {
+          minPathDist = effectiveDist;
           closestTarget = p;
+          targetDistMap = dMap;
         }
       });
     }
 
-    if (closestTarget) {
+    if (closestTarget && targetDistMap) {
       const targetUnit: Unit = closestTarget;
       let bestMoveTile = { x: monster.x, y: monster.y };
-      let bestMoveDist = manhattanDistance(bestMoveTile, { x: targetUnit.x, y: targetUnit.y });
+      const currentPathDist = targetDistMap.get(`${monster.x},${monster.y}`) ?? (manhattanDistance(monster, targetUnit) + 1000);
+      let bestMoveDist = currentPathDist;
+      let bestManhattan = manhattanDistance(monster, { x: targetUnit.x, y: targetUnit.y });
 
       // Support monsters prefer to maintain casting distance (2-3 tiles away),
       // while attackers and tanks aggressively close the gap
       const desiredDist = role === 'support' ? 2 : 1;
-      let bestDiff = Math.abs(bestMoveDist - desiredDist);
+      let bestDiff = Math.abs(currentPathDist - desiredDist);
 
       for (const t of reachableTiles) {
-        const d = manhattanDistance(t, { x: targetUnit.x, y: targetUnit.y });
-        const diff = Math.abs(d - desiredDist);
-        if (diff < bestDiff || (diff === bestDiff && d < bestMoveDist)) {
+        const pathDist = targetDistMap.get(`${t.x},${t.y}`) ?? (manhattanDistance(t, { x: targetUnit.x, y: targetUnit.y }) + 1000);
+        const diff = Math.abs(pathDist - desiredDist);
+        const mDist = manhattanDistance(t, { x: targetUnit.x, y: targetUnit.y });
+
+        if (
+          diff < bestDiff ||
+          (diff === bestDiff && pathDist < bestMoveDist) ||
+          (diff === bestDiff && pathDist === bestMoveDist && mDist < bestManhattan)
+        ) {
           bestDiff = diff;
-          bestMoveDist = d;
+          bestMoveDist = pathDist;
+          bestManhattan = mDist;
           bestMoveTile = t;
         }
       }

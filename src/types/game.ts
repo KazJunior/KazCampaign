@@ -14,6 +14,7 @@ export interface TileData {
   isWalkable: boolean;
   blocksVision: boolean;
   isTelegraphedHazard?: boolean; // Danger warning tile for boss AoE
+  corruptionTurns?: number; // Duração restante da poça de corrupção (dura 3 turnos, causa 10% da vida máxima como dano verdadeiro no início do turno de heróis)
 }
 
 export type UnitFaction = 'player' | 'enemy';
@@ -22,7 +23,7 @@ export type DamageType = 'physical' | 'magical' | 'healing';
 
 export type SkillCategory = 'attack' | 'defense' | 'support' | 'passive';
 
-export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'buff_mov' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield' | 'electrified';
+export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'buff_mov' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield' | 'electrified' | 'debuff_atk';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -60,6 +61,10 @@ export interface Skill {
   targetType: 'enemy' | 'ally' | 'any' | 'self' | 'empty_tile';
   defenseIgnoreRatio?: number;
   ignoresShield?: boolean; // Ignora barreiras e escudos do alvo, causando dano direto à vida
+  stealsShield?: boolean; // Se o alvo possuir escudo ativo, rouba todo o escudo para si antes de aplicar o dano
+  debuffsAllPlayersAtk?: number; // % de redução de dano aplicada a todos os heróis no mapa
+  debuffDuration?: number; // Duração do debuff global aplicado aos heróis
+  targetFurthestEnemy?: boolean; // IA prioriza o inimigo mais distante (respeitando provocação)
   requiredLevel?: number;
   statusEffect?: StatusEffect;
   secondaryStatusEffect?: StatusEffect;
@@ -73,6 +78,11 @@ export interface Skill {
   grantsExtraTurn?: boolean; // Grants target ally an immediate additional turn (Bardo)
   createsObstacle?: ObstacleType; // Spawns an obstacle on targeted tile (Mago de Gelo)
   knockback?: number; // Pushes hit targets back N tiles away from caster (Disparo de Impacto)
+  pull?: number; // Puxa alvos atingidos N casas em direção ao atacante
+  pullToAdjacent?: boolean; // Puxa todos os heróis para casas adjacentes ao conjurador (Ultimate do Boss)
+  isCardinalArms?: boolean; // Invoca braços nas 4 direções cardinais (N, S, L, O) a partir do conjurador
+  aoeCenteredOnCaster?: boolean; // Área de efeito circular centrada no próprio conjurador (ao redor do boss)
+  leavesCorruptionPuddle?: boolean; // Cobre as casas atingidas com poças de corrupção por 3 turnos
   chainCount?: number; // Number of targets lightning chains to (Mago Elétrico)
   chainRange?: number; // Max distance between chained links
   casterStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to the caster upon using this skill
