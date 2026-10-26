@@ -4186,9 +4186,6 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
   if (canonicalBase.power > 0) {
     const powerStep = canonicalBase.id === 'resistencia_suprema' ? 0.1 : 0.2;
     clone.power = Math.round((canonicalBase.power + powerStep * (effectiveLevel - 1)) * 100) / 100;
-    if (canonicalBase.id === 'resistencia_suprema') {
-      clone.description = `Habilidade suprema: Regenera ${Math.round(clone.power * 100)}% da vida máxima instantaneamente.`;
-    }
   }
 
   // Melhorias de recarga (cooldown) NÃO devem ser fornecidas
@@ -4321,6 +4318,41 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
       Math.round((canonicalBase.defenseIgnoreRatio + 0.02 * (effectiveLevel - 1)) * 100) / 100
     );
   }
+
+  // Atualiza dinamicamente o texto descritivo da habilidade para refletir a evolução de poder, escudo e atributos
+  let evolvedDesc = canonicalBase.description || '';
+
+  // 1. Dano / Cura base percentual
+  if (canonicalBase.power > 0 && clone.power !== canonicalBase.power) {
+    const basePct = Math.round(canonicalBase.power * 100);
+    const newPct = Math.round(clone.power * 100);
+    if (canonicalBase.id === 'resistencia_suprema') {
+      evolvedDesc = `Habilidade suprema: Regenera ${newPct}% da vida máxima instantaneamente e retém todo o agro inimigo com Provocação por 1 turno.`;
+    } else if (evolvedDesc.includes(`${basePct}%`)) {
+      evolvedDesc = evolvedDesc.replace(`${basePct}%`, `${newPct}%`);
+    }
+  }
+
+  // 2. Penetração de armadura/defesa
+  if (canonicalBase.defenseIgnoreRatio && clone.defenseIgnoreRatio && clone.defenseIgnoreRatio !== canonicalBase.defenseIgnoreRatio) {
+    const baseDefPct = Math.round(canonicalBase.defenseIgnoreRatio * 100);
+    const newDefPct = Math.round(clone.defenseIgnoreRatio * 100);
+    if (evolvedDesc.includes(`${baseDefPct}% da armadura`)) {
+      evolvedDesc = evolvedDesc.replace(`${baseDefPct}% da armadura`, `${newDefPct}% da armadura`);
+    } else if (evolvedDesc.includes(`${baseDefPct}%`)) {
+      evolvedDesc = evolvedDesc.replace(`${baseDefPct}%`, `${newDefPct}%`);
+    }
+  }
+
+  // 3. Valor de absorção de escudo
+  if (canonicalBase.statusEffect?.type === 'shield' && clone.statusEffect?.value && clone.statusEffect.value !== canonicalBase.statusEffect.value) {
+    const baseShield = canonicalBase.statusEffect.value;
+    const newShield = clone.statusEffect.value;
+    const reg = new RegExp('(\\b' + baseShield + '\\b)(\\s*(?:pontos|de absorção|de escudo|de dano|de barreira))', 'i');
+    evolvedDesc = evolvedDesc.replace(reg, (_match, _val, rest) => `${newShield}${rest}`);
+  }
+
+  clone.description = evolvedDesc;
 
   return clone;
 }

@@ -135,7 +135,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                         {skill.name}
                       </h3>
                       <p className="text-[11px] text-[#A7B0C4] leading-relaxed line-clamp-3 group-hover:line-clamp-none group-hover:text-[#F3F4F8] transition-all duration-300 mt-1">
-                        {skill.description}
+                        {evolved.description}
                       </p>
                     </div>
                   </div>

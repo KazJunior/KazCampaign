@@ -465,6 +465,14 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                         <div className="flex items-center justify-between gap-2">
                           <span className="font-bold text-xs truncate">{skill.name}</span>
                           <div className="flex items-center gap-1.5 shrink-0">
+                            {skill.level && skill.level > 1 && (
+                              <span
+                                className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/50 shrink-0"
+                                title={`Nível de Evolução: ${skill.level}`}
+                              >
+                                Nv. {skill.level}
+                              </span>
+                            )}
                             <span
                               className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${badgeColor}`}
                             >

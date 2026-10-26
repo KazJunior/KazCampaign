@@ -46,6 +46,11 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         description: 'Todas as habilidades de cura do Curandeiro tiveram seus valores base de cura aumentados e arredondados para cima (Cura Sagrada: 105% MAG, Círculo de Renovação: 95% MAG, Purificação: 85% MAG, Luz Restauradora: 140% MAG, Onda Vital: 120% MAG e Milagre Supremo: 155% MAG), além de curarem um adicional fixo de +10% da vida perdida do alvo.',
         type: 'buff',
       },
+      {
+        highlight: 'Atualização Dinâmica do Texto de Habilidades Evoluídas',
+        description: 'Corrigido o problema em que o texto descritivo das habilidades permanecia com os valores iniciais (Nv. 1) após a evolução. Agora as porcentagens de dano, poder de cura, valores de escudo e penetração de armadura se atualizam dinamicamente em tempo real em todas as telas (modal de evolução, painel de habilidades e HUD de combate).',
+        type: 'fix',
+      },
     ],
   },
   {

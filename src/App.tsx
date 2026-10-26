@@ -3992,6 +3992,36 @@ export function App() {
     setProgress(updatedProgress);
     savePlayerProgress(updatedProgress);
 
+    // Atualiza imediatamente o array de unidades ativas da batalha e a unidade selecionada
+    setUnits((prevUnits) =>
+      prevUnits.map((u) => {
+        if (u.className !== className || u.faction !== 'player') return u;
+        const targetLvl = skillLevels[chosenSkill.id] || 1;
+        let unitSkills = [...u.skills];
+        if (!isEvolution) {
+          if (!unitSkills.some((s) => s.id === chosenSkill.id)) {
+            const base = SKILLS[chosenSkill.id] || chosenSkill;
+            unitSkills.push(getEvolvedSkill(base, 1));
+          }
+        }
+        unitSkills = unitSkills.map((s) => {
+          if (s.id === chosenSkill.id) {
+            const base = SKILLS[s.id] || s;
+            const evolved = getEvolvedSkill(base, targetLvl);
+            return {
+              ...evolved,
+              currentCooldown: s.currentCooldown ?? 0,
+            };
+          }
+          return s;
+        });
+        return {
+          ...u,
+          skills: unitSkills,
+        };
+      })
+    );
+
     setPendingSkillChoices((prev) => prev.slice(1));
   };
 
