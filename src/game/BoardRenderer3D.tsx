@@ -504,10 +504,10 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       figure.name = `unit_${unit.id}`;
       figure.userData = { unitId: unit.id, unitX: unit.x, unitY: unit.y };
 
-      // Invisible Hit Collider for accurate 3D click & hover picking (solves clicking offset when units are together)
+      // Invisible Hit Collider for accurate 3D click & hover picking (calibrated to miniature body)
       const isBoss = unit.isBoss || unit.isMiniBoss;
-      const colliderRadius = isBoss ? 0.55 : 0.40;
-      const colliderHeight = isBoss ? 1.5 : 1.1;
+      const colliderRadius = isBoss ? 0.50 : 0.36;
+      const colliderHeight = isBoss ? 1.1 : 0.70;
       const hitColliderGeo = new THREE.CylinderGeometry(colliderRadius, colliderRadius, colliderHeight, 16);
       const hitColliderMat = new THREE.MeshBasicMaterial({
         transparent: true,
@@ -523,8 +523,21 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       // Upgrade to 3D GLB Model (Path 1) with procedural fallback
       apply3DModelToMiniature(figure, unit);
 
-      // Tag all children with unit userData for recursive raycast lookup
+      // Tag character children with unit userData for recursive raycast lookup,
+      // explicitly SKIPPING HP bars and status auras so they never intercept clicks or block the tile above
       figure.traverse((child) => {
+        if (
+          child.name === 'hpBarBillboard' ||
+          child.name.startsWith('hpBar') ||
+          child.name === 'auraRing' ||
+          child.name === 'auraGroup' ||
+          child.name === 'spinningOrb' ||
+          child.userData?.isHpBar ||
+          child.userData?.isAura
+        ) {
+          child.raycast = () => {};
+          return;
+        }
         child.userData = { ...child.userData, unitId: unit.id, unitX: unit.x, unitY: unit.y };
       });
 
@@ -739,33 +752,73 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const groundHit = raycaster.ray.intersectPlane(plane, targetPoint);
       const groundDist = groundHit ? camera.position.distanceTo(targetPoint) : Infinity;
 
-      // 2. Raycast against unit figures (colliders, visual meshes, HP bars, pedestals)
+      let groundTile: { x: number; y: number } | null = null;
+      if (groundHit) {
+        const gx = Math.floor(targetPoint.x);
+        const gy = Math.floor(targetPoint.z);
+        if (gx >= 0 && gx < gridWidth && gy >= 0 && gy < gridHeight) {
+          groundTile = { x: gx, y: gy };
+        }
+      }
+
+      // 2. Raycast against unit figures (colliders, visual meshes, pedestals) - strictly ignoring HP bars and auras
       let hitUnitPos: { x: number; y: number } | null = null;
       if (unitsGroupRef.current && unitsGroupRef.current.children.length > 0) {
         const unitIntersects = raycaster.intersectObjects(unitsGroupRef.current.children, true);
-        if (unitIntersects.length > 0) {
-          const closest = unitIntersects[0];
-          // Unit must be closer or equal to ground distance
-          if (closest.distance <= groundDist + 0.15) {
-            let curr: THREE.Object3D | null = closest.object;
-            while (curr && curr !== unitsGroupRef.current) {
-              if (
-                curr.userData &&
-                typeof curr.userData.unitX === 'number' &&
-                typeof curr.userData.unitY === 'number'
-              ) {
-                hitUnitPos = { x: curr.userData.unitX, y: curr.userData.unitY };
-                break;
+        const validIntersects = unitIntersects.filter((hit) => {
+          let curr: THREE.Object3D | null = hit.object;
+          while (curr && curr !== unitsGroupRef.current) {
+            if (
+              curr.name === 'hpBarBillboard' ||
+              curr.name.startsWith('hpBar') ||
+              curr.name === 'auraRing' ||
+              curr.name === 'auraGroup' ||
+              curr.name === 'spinningOrb' ||
+              curr.userData?.isHpBar ||
+              curr.userData?.isAura
+            ) {
+              return false;
+            }
+            curr = curr.parent;
+          }
+          return true;
+        });
+
+        if (validIntersects.length > 0) {
+          const closest = validIntersects[0];
+          let curr: THREE.Object3D | null = closest.object;
+          let candidatePos: { x: number; y: number } | null = null;
+          while (curr && curr !== unitsGroupRef.current) {
+            if (
+              curr.userData &&
+              typeof curr.userData.unitX === 'number' &&
+              typeof curr.userData.unitY === 'number'
+            ) {
+              candidatePos = { x: curr.userData.unitX, y: curr.userData.unitY };
+              break;
+            }
+            if (curr.name && curr.name.startsWith('unit_')) {
+              const uId = curr.name.replace('unit_', '');
+              const found = units.find((u) => u.id === uId && !u.isDead);
+              if (found) {
+                candidatePos = { x: found.x, y: found.y };
               }
-              if (curr.name && curr.name.startsWith('unit_')) {
-                const uId = curr.name.replace('unit_', '');
-                const found = units.find((u) => u.id === uId && !u.isDead);
-                if (found) {
-                  hitUnitPos = { x: found.x, y: found.y };
-                }
-                break;
-              }
-              curr = curr.parent;
+              break;
+            }
+            curr = curr.parent;
+          }
+
+          if (candidatePos) {
+            // If the ground tile is directly above this unit (gy === candidatePos.y - 1)
+            // and the ray hit the top of the collider / mesh (closest.point.y > 0.65):
+            // prioritize selecting the ground tile above if it has no unit on it.
+            const isTileAbove = groundTile && groundTile.x === candidatePos.x && groundTile.y === candidatePos.y - 1;
+            const unitOnGroundTile = groundTile ? units.find((u) => !u.isDead && u.x === groundTile.x && u.y === groundTile.y) : null;
+
+            if (isTileAbove && !unitOnGroundTile && closest.point.y > 0.65) {
+              hitUnitPos = null;
+            } else if (closest.distance <= groundDist + 0.15) {
+              hitUnitPos = candidatePos;
             }
           }
         }
@@ -777,12 +830,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         }
       }
 
-      if (groundHit) {
-        const x = Math.floor(targetPoint.x);
-        const y = Math.floor(targetPoint.z);
-        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
-          return { x, y };
-        }
+      if (groundTile) {
+        return groundTile;
       }
 
       return null;
@@ -1040,6 +1089,8 @@ BoardRenderer3D.displayName = 'BoardRenderer3D';
 function createUnitHpBar(unit: Unit): THREE.Group {
   const hpGroup = new THREE.Group();
   hpGroup.name = 'hpBarBillboard';
+  hpGroup.userData = { isHpBar: true };
+  hpGroup.raycast = () => {};
 
   // Height above unit head
   const barY = unit.isBoss ? 2.15 : unit.isMiniBoss ? 1.85 : 1.48;
@@ -1049,12 +1100,18 @@ function createUnitHpBar(unit: Unit): THREE.Group {
   const bgGeo = new THREE.PlaneGeometry(0.82, 0.13);
   const bgMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide });
   const bg = new THREE.Mesh(bgGeo, bgMat);
+  bg.name = 'hpBarBg';
+  bg.userData = { isHpBar: true };
+  bg.raycast = () => {};
   hpGroup.add(bg);
 
   // Lost HP background (dark crimson)
   const lostHpGeo = new THREE.PlaneGeometry(0.78, 0.09);
   const lostHpMat = new THREE.MeshBasicMaterial({ color: 0x450a0a, side: THREE.DoubleSide });
   const lostHp = new THREE.Mesh(lostHpGeo, lostHpMat);
+  lostHp.name = 'hpBarLost';
+  lostHp.userData = { isHpBar: true };
+  lostHp.raycast = () => {};
   lostHp.position.z = 0.002;
   hpGroup.add(lostHp);
 
@@ -1069,6 +1126,9 @@ function createUnitHpBar(unit: Unit): THREE.Group {
     const fillGeo = new THREE.PlaneGeometry(hpWidth, 0.09);
     const fillMat = new THREE.MeshBasicMaterial({ color: fillColor, side: THREE.DoubleSide });
     const fill = new THREE.Mesh(fillGeo, fillMat);
+    fill.name = 'hpBarFill';
+    fill.userData = { isHpBar: true };
+    fill.raycast = () => {};
     fill.position.set(-0.39 + hpWidth / 2, 0, 0.004);
     hpGroup.add(fill);
   }
@@ -1086,9 +1146,18 @@ function createUnitHpBar(unit: Unit): THREE.Group {
       side: THREE.DoubleSide,
     });
     const shieldBar = new THREE.Mesh(shieldGeo, shieldMat);
+    shieldBar.name = 'hpBarShield';
+    shieldBar.userData = { isHpBar: true };
+    shieldBar.raycast = () => {};
     shieldBar.position.set(-0.34 + shieldWidth / 2, -0.02, 0.006);
     hpGroup.add(shieldBar);
   }
+
+  // Ensure all descendants never intercept raycasting or click detection
+  hpGroup.traverse((child) => {
+    child.raycast = () => {};
+    child.userData = { ...child.userData, isHpBar: true };
+  });
 
   return hpGroup;
 }
@@ -1277,6 +1346,11 @@ function createStatusAuras(unit: Unit): THREE.Group {
     elecMesh.name = 'auraRing';
     auraGroup.add(elecMesh);
   }
+
+  auraGroup.traverse((child) => {
+    child.raycast = () => {};
+    child.userData = { ...child.userData, isAura: true };
+  });
 
   return auraGroup;
 }

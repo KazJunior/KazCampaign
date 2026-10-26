@@ -37,8 +37,8 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         type: 'buff',
       },
       {
-        highlight: 'Precisão na Seleção e Clique de Personagens em 3D',
-        description: 'Implementado sistema de colisão e seleção 3D volumétrica nos modelos dos heróis e monstros. Corrigido o problema em que personagens posicionados em casas adjacentes sofriam desvio de clique devido à inclinação da câmera isométrica, exigindo clicar uma casa acima.',
+        highlight: 'Precisão na Seleção de Casas e Desvinculação da Barra de Vida',
+        description: 'As barras de vida flutuantes e auras visuais foram tornadas 100% transparentes ao clique (não interceptam raycasts), desvinculando-as da seleção de unidades e permitindo selecionar, movimentar ou mirar livremente na casa imediatamente acima de qualquer personagem sem interferência.',
         type: 'fix',
       },
       {
