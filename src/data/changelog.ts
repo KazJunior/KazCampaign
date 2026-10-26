@@ -17,13 +17,13 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
     version: 'v1.7',
     date: '26 de Outubro de 2026',
-    title: 'Teto de Movimentação (Máx 4 Casas) & Mira em Área',
+    title: 'Teto de Movimentação (Máx 5 Casas) & Mira em Área',
     isLatest: true,
     tag: 'Balanceamento & QoL',
     changes: [
       {
-        highlight: 'Restauração de Bônus de Movimento com Teto Máximo (4 Casas)',
-        description: 'Os bônus de movimento em itens e pets (incluindo o Voo Celestial da Águia de Cristal) foram restabelecidos, agora com uma trava global de equilíbrio: a movimentação de qualquer personagem não pode ultrapassar 4 casas no tabuleiro.',
+        highlight: 'Restauração de Bônus de Movimento com Teto Máximo (5 Casas)',
+        description: 'Os bônus de movimento em itens e pets (incluindo o Voo Celestial da Águia de Cristal) foram restabelecidos, agora com uma trava global de equilíbrio: a movimentação de qualquer personagem não pode ultrapassar 5 casas no tabuleiro.',
         type: 'buff',
       },
       {
@@ -35,6 +35,11 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         highlight: 'Buff no Assassino (Vida Base e Ataque Base)',
         description: 'A classe Assassino recebeu um aumento substancial em seus atributos base para melhorar sua durabilidade e letalidade: Vida base aumentada de 70 para 100 (+30 HP) e Ataque base aumentado de 29 para 32 (+3 ATK).',
         type: 'buff',
+      },
+      {
+        highlight: 'Precisão na Seleção e Clique de Personagens em 3D',
+        description: 'Implementado sistema de colisão e seleção 3D volumétrica nos modelos dos heróis e monstros. Corrigido o problema em que personagens posicionados em casas adjacentes sofriam desvio de clique devido à inclinação da câmera isométrica, exigindo clicar uma casa acima.',
+        type: 'fix',
       },
     ],
   },

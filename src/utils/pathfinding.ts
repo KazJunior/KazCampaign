@@ -48,7 +48,7 @@ export function getReachableTiles(
   const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
   const buffMovEffect = unit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
   const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
-  const effectiveMov = Math.min(4, Math.max(1, (unit.mov + movBonus) - slowPenalty));
+  const effectiveMov = Math.min(5, Math.max(1, (unit.mov + movBonus) - slowPenalty));
 
   while (queue.length > 0) {
     const curr = queue.shift()!;

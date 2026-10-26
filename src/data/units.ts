@@ -595,7 +595,7 @@ export function createPlayerUnit(
   const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag + (cBonus.mag || 0) + gMag;
   const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef + (cBonus.def || 0) + gDef;
   const res = def.res + levelOffsets * growth.res + bonusRes + itemRes + (cBonus.res || 0) + gRes;
-  const mov = Math.min(4, def.mov + itemMov + gMov);
+  const mov = Math.min(5, def.mov + itemMov + gMov);
   const range = def.range + itemRange + gRange;
 
   // Max 5 skills total: baseSkill + up to 4 learnedSkillIds

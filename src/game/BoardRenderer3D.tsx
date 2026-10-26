@@ -502,9 +502,31 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const figure = createOrganicMiniatureModel(unit, createUnitHpBar, createStatusAuras);
       figure.position.set(unit.x + 0.5, 0, unit.y + 0.5);
       figure.name = `unit_${unit.id}`;
+      figure.userData = { unitId: unit.id, unitX: unit.x, unitY: unit.y };
+
+      // Invisible Hit Collider for accurate 3D click & hover picking (solves clicking offset when units are together)
+      const isBoss = unit.isBoss || unit.isMiniBoss;
+      const colliderRadius = isBoss ? 0.55 : 0.40;
+      const colliderHeight = isBoss ? 1.5 : 1.1;
+      const hitColliderGeo = new THREE.CylinderGeometry(colliderRadius, colliderRadius, colliderHeight, 16);
+      const hitColliderMat = new THREE.MeshBasicMaterial({
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      });
+      const hitCollider = new THREE.Mesh(hitColliderGeo, hitColliderMat);
+      hitCollider.position.set(0, colliderHeight / 2, 0);
+      hitCollider.name = `hitCollider_${unit.id}`;
+      hitCollider.userData = { unitId: unit.id, unitX: unit.x, unitY: unit.y };
+      figure.add(hitCollider);
 
       // Upgrade to 3D GLB Model (Path 1) with procedural fallback
       apply3DModelToMiniature(figure, unit);
+
+      // Tag all children with unit userData for recursive raycast lookup
+      figure.traverse((child) => {
+        child.userData = { ...child.userData, unitId: unit.id, unitX: unit.x, unitY: unit.y };
+      });
 
       // Stealth / Invisibility Visual: make unit meshes translucent ghostly
       const isInvisible = unit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
@@ -696,6 +718,78 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     }
   };
 
+
+  // Accurate 3D Tile & Unit Picker: raycasts against unit colliders first, then ground plane
+  const getTargetTileFromPointer = useCallback(
+    (clientX: number, clientY: number): { x: number; y: number } | null => {
+      const container = mountRef.current;
+      const camera = cameraRef.current;
+      if (!container || !camera) return null;
+
+      const rect = container.getBoundingClientRect();
+      const mouseX = ((clientX - rect.left) / rect.width) * 2 - 1;
+      const mouseY = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), camera);
+
+      // 1. Raycast against ground plane y = 0
+      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+      const targetPoint = new THREE.Vector3();
+      const groundHit = raycaster.ray.intersectPlane(plane, targetPoint);
+      const groundDist = groundHit ? camera.position.distanceTo(targetPoint) : Infinity;
+
+      // 2. Raycast against unit figures (colliders, visual meshes, HP bars, pedestals)
+      let hitUnitPos: { x: number; y: number } | null = null;
+      if (unitsGroupRef.current && unitsGroupRef.current.children.length > 0) {
+        const unitIntersects = raycaster.intersectObjects(unitsGroupRef.current.children, true);
+        if (unitIntersects.length > 0) {
+          const closest = unitIntersects[0];
+          // Unit must be closer or equal to ground distance
+          if (closest.distance <= groundDist + 0.15) {
+            let curr: THREE.Object3D | null = closest.object;
+            while (curr && curr !== unitsGroupRef.current) {
+              if (
+                curr.userData &&
+                typeof curr.userData.unitX === 'number' &&
+                typeof curr.userData.unitY === 'number'
+              ) {
+                hitUnitPos = { x: curr.userData.unitX, y: curr.userData.unitY };
+                break;
+              }
+              if (curr.name && curr.name.startsWith('unit_')) {
+                const uId = curr.name.replace('unit_', '');
+                const found = units.find((u) => u.id === uId && !u.isDead);
+                if (found) {
+                  hitUnitPos = { x: found.x, y: found.y };
+                }
+                break;
+              }
+              curr = curr.parent;
+            }
+          }
+        }
+      }
+
+      if (hitUnitPos) {
+        if (hitUnitPos.x >= 0 && hitUnitPos.x < gridWidth && hitUnitPos.y >= 0 && hitUnitPos.y < gridHeight) {
+          return hitUnitPos;
+        }
+      }
+
+      if (groundHit) {
+        const x = Math.floor(targetPoint.x);
+        const y = Math.floor(targetPoint.z);
+        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
+          return { x, y };
+        }
+      }
+
+      return null;
+    },
+    [gridWidth, gridHeight, units]
+  );
+
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (activePointersRef.current.has(e.pointerId)) {
       activePointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -754,22 +848,11 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
     // Hover raycasting when not dragging (for desktop mouse hover)
     if (!isDraggingRef.current && activePointersRef.current.size <= 1) {
-      const rect = container.getBoundingClientRect();
-      const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
-      const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-      const targetPoint = new THREE.Vector3();
-      const hit = raycaster.ray.intersectPlane(plane, targetPoint);
-      if (hit) {
-        const x = Math.floor(targetPoint.x);
-        const y = Math.floor(targetPoint.z);
-        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
-          onTileHover(x, y);
-        } else {
-          onTileHover(-1, null);
-        }
+      const target = getTargetTileFromPointer(e.clientX, e.clientY);
+      if (target) {
+        onTileHover(target.x, target.y);
+      } else {
+        onTileHover(-1, null);
       }
     }
   };
@@ -803,22 +886,9 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
     // Block clicks during animations
     if (animEngineRef.current?.isAnimating) return;
 
-    const container = mountRef.current;
-    if (!container || !cameraRef.current) return;
-    const rect = container.getBoundingClientRect();
-    const mouseX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    const mouseY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(mouseX, mouseY), cameraRef.current);
-    const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const targetPoint = new THREE.Vector3();
-    const hit = raycaster.ray.intersectPlane(plane, targetPoint);
-    if (hit) {
-      const x = Math.floor(targetPoint.x);
-      const y = Math.floor(targetPoint.z);
-      if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
-        onTileClick(x, y);
-      }
+    const target = getTargetTileFromPointer(e.clientX, e.clientY);
+    if (target) {
+      onTileClick(target.x, target.y);
     }
   };
 
