@@ -1278,6 +1278,11 @@ export function createMonsterUnit(
         clone.description = clone.description.replace(new RegExp(`${oldPct}%`, 'g'), `${newPct}%`);
       }
 
+      // Bosses e Mini Bosses preservam seus cooldowns e efeitos específicos configurados
+      if (def.isBoss || def.isMiniBoss) {
+        return clone;
+      }
+
       if (clone.damageType === 'healing' || clone.statusEffect?.type === 'shield') {
         clone.cooldownMax = Math.max(4, clone.cooldownMax);
       }
