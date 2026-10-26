@@ -15,10 +15,29 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.7',
+    date: '26 de Outubro de 2026',
+    title: 'Remoção de Bônus de Movimento em Itens e Pets',
+    isLatest: true,
+    tag: 'Balanceamento',
+    changes: [
+      {
+        highlight: 'Conversão de Bônus de Movimento em Defesa e Resistência',
+        description: 'Todos os itens que concediam bônus de movimento (+1 Movimento), incluindo botas, acessórios e armas, tiveram esse bônus substituído por Defesa Física (+DEF) e Resistência Mágica (+RES) proporcionais à sua raridade (+2/+2 Comum, +3/+3 Raro, +4/+4 Épico e +6/+6 Lendário).',
+        type: 'buff',
+      },
+      {
+        highlight: 'Águia de Cristal Astral',
+        description: 'A passiva Voo Celestial (+1 Movimento) foi substituída pelas passivas Plumagem Impenetrável (+4 Defesa Física) e Aura Prismática (+4 Resistência Mágica) para toda a equipe.',
+        type: 'buff',
+      },
+    ],
+  },
+  {
     version: 'v1.6',
     date: '24 de Outubro de 2026',
     title: 'Recargas Táticas, Formatos de AoE de Chefes & Melhorias de QoL',
-    isLatest: true,
+    isLatest: false,
     tag: 'Balanceamento & QoL',
     changes: [
       {
