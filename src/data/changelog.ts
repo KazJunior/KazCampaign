@@ -17,7 +17,7 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
     version: 'v1.7',
     date: '26 de Outubro de 2026',
-    title: 'Teto de Movimentação (Máx 5 Casas) & Mira em Área',
+    title: 'Teto de Movimentação (Máx 4 Casas) & Mira em Área',
     isLatest: true,
     tag: 'Balanceamento & QoL',
     changes: [
@@ -43,12 +43,12 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
       },
       {
         highlight: 'Alcance de Movimentação dos Monstros (+1 MOV na Fase 10+)',
-        description: 'A partir da Fase 10, todos os monstros e chefes tiveram seu alcance de movimentação aumentado em +1 casa (respeitando o teto global de 5 casas).',
+        description: 'A partir da Fase 10, todos os monstros e chefes tiveram seu alcance de movimentação aumentado em +1 casa (respeitando o teto global de 4 casas).',
         type: 'buff',
       },
       {
-        highlight: 'Restauração de Bônus de Movimento com Teto Máximo (5 Casas)',
-        description: 'Os bônus de movimento em itens e pets (incluindo o Voo Celestial da Águia de Cristal) foram restabelecidos, agora com uma trava global de equilíbrio: a movimentação de qualquer personagem não pode ultrapassar 5 casas no tabuleiro.',
+        highlight: 'Restauração de Bônus de Movimento com Teto Máximo (4 Casas)',
+        description: 'Os bônus de movimento em itens e pets (incluindo o Voo Celestial da Águia de Cristal) foram restabelecidos, agora com uma trava global de equilíbrio: a movimentação de qualquer personagem não pode ultrapassar 4 casas no tabuleiro.',
         type: 'buff',
       },
       {

@@ -1346,8 +1346,8 @@ export function createMonsterUnit(
     mag,
     def: unitDef,
     res,
-    // Aumento do alcance de movimentação a partir da Fase 10 (+1 MOV tanto para bosses quanto monstros normais)
-    mov: Math.min(5, def.mov + (levelOffset >= 9 ? 1 : 0)),
+    // Aumento do alcance de movimentação a partir da Fase 10 (+1 MOV tanto para bosses quanto monstros normais, máximo de 4 casas)
+    mov: Math.min(4, def.mov + (levelOffset >= 9 ? 1 : 0)),
     range: def.range,
     x,
     y,
