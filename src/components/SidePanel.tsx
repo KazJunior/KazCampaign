@@ -77,7 +77,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
   const buffMovEffect = selectedUnit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
   const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
-  const effectiveMov = isStunned ? 0 : Math.max(1, (selectedUnit.mov + movBonus) - slowPenalty);
+  const effectiveMov = isStunned ? 0 : Math.min(4, Math.max(1, (selectedUnit.mov + movBonus) - slowPenalty));
   const burnEffect = selectedUnit.statusEffects?.find((e) => e.type === 'burn' && e.duration > 0);
   const isBurned = !!burnEffect;
   const poisonEffect = selectedUnit.statusEffects?.find((e) => e.type === 'poison' && e.duration > 0);
@@ -308,7 +308,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                   {effectiveMov} casas <span className="text-[10px] font-normal text-[#60A5FA]/80">(-{slowPenalty})</span>
                 </div>
               ) : (
-                <div className="font-black text-[#F3F4F8] text-sm">{selectedUnit.mov} casas</div>
+                <div className="font-black text-[#F3F4F8] text-sm">{effectiveMov} casas</div>
               )}
             </div>
           </div>

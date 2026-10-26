@@ -17,18 +17,23 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
     version: 'v1.7',
     date: '26 de Outubro de 2026',
-    title: 'Remoção de Bônus de Movimento em Itens e Pets',
+    title: 'Teto de Movimentação (Máx 4 Casas) & Mira em Área',
     isLatest: true,
-    tag: 'Balanceamento',
+    tag: 'Balanceamento & QoL',
     changes: [
       {
-        highlight: 'Conversão de Bônus de Movimento em Defesa e Resistência',
-        description: 'Todos os itens que concediam bônus de movimento (+1 Movimento), incluindo botas, acessórios e armas, tiveram esse bônus substituído por Defesa Física (+DEF) e Resistência Mágica (+RES) proporcionais à sua raridade (+2/+2 Comum, +3/+3 Raro, +4/+4 Épico e +6/+6 Lendário).',
+        highlight: 'Restauração de Bônus de Movimento com Teto Máximo (4 Casas)',
+        description: 'Os bônus de movimento em itens e pets (incluindo o Voo Celestial da Águia de Cristal) foram restabelecidos, agora com uma trava global de equilíbrio: a movimentação de qualquer personagem não pode ultrapassar 4 casas no tabuleiro.',
         type: 'buff',
       },
       {
-        highlight: 'Águia de Cristal Astral',
-        description: 'A passiva Voo Celestial (+1 Movimento) foi substituída pelas passivas Plumagem Impenetrável (+4 Defesa Física) e Aura Prismática (+4 Resistência Mágica) para toda a equipe.',
+        highlight: 'Mira de Magias em Área em Slots com Aliados',
+        description: 'Corrigido o bloqueio que impedia selecionar o slot onde um herói aliado está posicionado ao conjurar habilidades em área. Agora é possível mirar em qualquer casa válida dentro do alcance para atingir inimigos ou aliados ao redor do ponto escolhido.',
+        type: 'fix',
+      },
+      {
+        highlight: 'Buff no Assassino (Vida Base e Ataque Base)',
+        description: 'A classe Assassino recebeu um aumento substancial em seus atributos base para melhorar sua durabilidade e letalidade: Vida base aumentada de 70 para 100 (+30 HP) e Ataque base aumentado de 29 para 32 (+3 ATK).',
         type: 'buff',
       },
     ],

@@ -1796,44 +1796,49 @@ export function App() {
         return;
       }
 
-      // Ground-targeted AoE attack (e.g. Meteoro, Bola de Fogo, Nevasca or other AoE skills on empty ground)
-      const canSkillTargetGround = Boolean(
+      // AoE Skill Targeting (any slot in attackableTiles: empty ground, occupied by an ally, or occupied by an enemy)
+      const isAoESkill = Boolean(
         activeSkill &&
-        (activeSkill.canTargetGround ||
-          (activeSkill.aoeRadius > 0 &&
-           activeSkill.rangeMax >= 2 &&
-           activeSkill.targetType !== 'self' &&
-           activeSkill.targetType !== 'ally'))
+        activeSkill.targetType !== 'self' &&
+        (activeSkill.aoeRadius > 0 || activeSkill.canTargetGround)
       );
 
-      if (!clickedUnit && activeSkill && canSkillTargetGround) {
+      if (isAoESkill && activeSkill) {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         if (isTargetTileValid) {
           const matchFaction = activeSkill.targetType === 'ally' ? 'player' : 'enemy';
+          const aoeType = activeSkill.aoeType || 'circle';
           const origin = { x: selectedUnit.x, y: selectedUnit.y };
-          const hitTiles = getAoETiles(
-            { x, y },
-            activeSkill.aoeRadius,
-            grid[0].length,
-            grid.length,
-            activeSkill.aoeType || 'circle',
-            origin
-          );
+          const hitTiles = activeSkill.aoeRadius > 0
+            ? getAoETiles({ x, y }, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin)
+            : [{ x, y }];
+
           const affectedTargets = units.filter(
             (u) =>
-              u.faction === matchFaction &&
+              (activeSkill.targetType === 'any' || u.faction === matchFaction) &&
               !u.isDead &&
               hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
           );
 
-          if (affectedTargets.length > 0) {
+          if (affectedTargets.length > 0 || (activeSkill.createsObstacle && !clickedUnit)) {
             setTargetTeleportPoint(null);
             setTargetAoEPoint({ x, y });
-            const primaryTarget = affectedTargets[0];
+
+            // Determine primary target for preview and resolution
+            let primaryTarget: Unit;
+            if (clickedUnit && affectedTargets.some((u) => u.id === clickedUnit.id)) {
+              primaryTarget = clickedUnit;
+            } else if (affectedTargets.length > 0) {
+              primaryTarget = affectedTargets[0];
+            } else {
+              primaryTarget = selectedUnit;
+            }
+
             const preview = getDamagePreview(selectedUnit, primaryTarget, activeSkill);
             preview.aoeTargetsCount = affectedTargets.length;
-            preview.isGroundTarget = true;
+            preview.isGroundTarget = !clickedUnit || primaryTarget.id !== clickedUnit.id;
             preview.groundTargetPoint = { x, y };
+
             setDamagePreview(preview);
             setTargetUnitId(primaryTarget.id);
             soundManager.playSelect();
@@ -1846,7 +1851,7 @@ export function App() {
         }
       }
 
-      // Unit targeting (Enemy, Ally or Any)
+      // Single-target Unit targeting (Enemy, Ally or Any)
       if (clickedUnit) {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         const isFactionValid =
@@ -1861,25 +1866,6 @@ export function App() {
           const preview = getDamagePreview(selectedUnit, clickedUnit, effectiveSkill);
           preview.isGroundTarget = false;
           preview.groundTargetPoint = undefined;
-
-          if (effectiveSkill && effectiveSkill.aoeRadius > 0) {
-            const matchFaction = effectiveSkill.targetType === 'ally' ? 'player' : 'enemy';
-            const origin = { x: selectedUnit.x, y: selectedUnit.y };
-            const hitTiles = getAoETiles(
-              { x: clickedUnit.x, y: clickedUnit.y },
-              effectiveSkill.aoeRadius,
-              grid[0].length,
-              grid.length,
-              effectiveSkill.aoeType || 'circle',
-              origin
-            );
-            preview.aoeTargetsCount = units.filter(
-              (u) =>
-                u.faction === matchFaction &&
-                !u.isDead &&
-                hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
-            ).length;
-          }
 
           setDamagePreview(preview);
           setTargetUnitId(clickedUnit.id);
@@ -4487,6 +4473,7 @@ export function App() {
           onCancel={() => {
             setDamagePreview(null);
             setTargetUnitId(null);
+            setTargetAoEPoint(null);
           }}
         />
       )}

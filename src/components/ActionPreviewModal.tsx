@@ -94,7 +94,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
             }`}
           >
             {preview.isGroundTarget
-              ? `🎯 Solo (${preview.groundTargetPoint?.x ?? 0}, ${preview.groundTargetPoint?.y ?? 0})`
+              ? `🎯 Área (${preview.groundTargetPoint?.x ?? 0}, ${preview.groundTargetPoint?.y ?? 0})`
               : preview.target.name}
           </div>
           <div className="text-[11px] text-[#A7B0C4]">

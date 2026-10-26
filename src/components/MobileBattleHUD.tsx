@@ -205,7 +205,10 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
 
   const activeShield = selectedUnit.statusEffects?.find((e) => e.type === 'shield' && e.value > 0);
   const slowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
-  const effectiveMov = isStunned ? 0 : slowEffect ? Math.max(1, selectedUnit.mov - Math.min(1, slowEffect.value ?? 1)) : selectedUnit.mov;
+  const buffMovEffect = selectedUnit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
+  const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
+  const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
+  const effectiveMov = isStunned ? 0 : Math.min(4, Math.max(1, (selectedUnit.mov + movBonus) - slowPenalty));
 
   return (
     <div className="lg:hidden absolute bottom-2 inset-x-2 z-30 flex flex-col font-sans select-none animate-in slide-in-from-bottom-6 duration-200">
