@@ -26,6 +26,7 @@ import {
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import { getPetById } from '../data/pets';
 import { PetIcon } from './PetIcon';
+import { GAME_CHANGELOG } from '../data/changelog';
 
 interface LevelSelectProps {
   progress: PlayerProgress;
@@ -64,6 +65,9 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   const activeAdv = progress.activeAdventure;
   const currentStageNum = activeAdv ? activeAdv.currentLevelId : 1;
   const equippedPet = getPetById(progress.equippedPetId);
+
+  const latestChangelog = GAME_CHANGELOG[0];
+  const latestVersion = latestChangelog?.version || 'v1.7';
 
   // Default act based on active adventure or act 1
   const defaultAct = Math.min(5, Math.max(1, Math.ceil(currentStageNum / 10)));
@@ -198,7 +202,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 <Sparkles size={16} />
                 <span>Atualizações</span>
                 <span className="bg-[#10B981]/20 text-[#10B981] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#10B981]/30">
-                  v1.5
+                  {latestVersion}
                 </span>
               </button>
             )}
@@ -251,7 +255,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                   </h3>
                   <span className="text-[10px] font-black px-2 py-0.2 rounded-full bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/40 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
-                    v1.4 Recente
+                    {latestVersion} Recente
                   </span>
                 </div>
                 <p className="text-[11px] text-[#A7B0C4]">
@@ -273,35 +277,27 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
 
           {/* Destaques da versão mais recente */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5">
-            <div className="bg-[#10131C] border border-[#343B50] rounded-xl p-2.5 text-xs">
-              <div className="flex items-center gap-1.5 font-bold text-[#10B981] mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-                Provocação com Alcance (3 Casas)
-              </div>
-              <p className="text-[11px] text-[#A7B0C4] leading-relaxed">
-                O Grito de Provocação atua em raio de até 3 casas ao redor do herói com feedback visual de &quot;Provocado!&quot;.
-              </p>
-            </div>
-
-            <div className="bg-[#10131C] border border-[#343B50] rounded-xl p-2.5 text-xs">
-              <div className="flex items-center gap-1.5 font-bold text-[#4C8DFF] mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#4C8DFF]" />
-                Duração de Provocação: 1 Turno
-              </div>
-              <p className="text-[11px] text-[#A7B0C4] leading-relaxed">
-                Taunt ajustado para 1 turno, cobrindo com precisão toda a fase de ataque dos inimigos.
-              </p>
-            </div>
-
-            <div className="bg-[#10131C] border border-[#343B50] rounded-xl p-2.5 text-xs">
-              <div className="flex items-center gap-1.5 font-bold text-[#F0B44D] mb-1">
-                <span className="w-2 h-2 rounded-full bg-[#F0B44D]" />
-                Dano Mínimo contra Chefes (2% / 1%)
-              </div>
-              <p className="text-[11px] text-[#A7B0C4] leading-relaxed">
-                Ataques normais causam dano mínimo de 2% da vida do boss nos 2 primeiros chefes (até Fase 10) e 1% nos seguintes.
-              </p>
-            </div>
+            {latestChangelog?.changes.slice(0, 3).map((change, idx) => {
+              const borderStyles = [
+                { text: 'text-[#10B981]', dot: 'bg-[#10B981]' },
+                { text: 'text-[#4C8DFF]', dot: 'bg-[#4C8DFF]' },
+                { text: 'text-[#F0B44D]', dot: 'bg-[#F0B44D]' },
+              ];
+              const style = borderStyles[idx % borderStyles.length];
+              return (
+                <div key={idx} className="bg-[#10131C] border border-[#343B50] rounded-xl p-2.5 text-xs flex flex-col justify-between">
+                  <div>
+                    <div className={`flex items-center gap-1.5 font-bold ${style.text} mb-1 line-clamp-1`} title={change.highlight}>
+                      <span className={`w-2 h-2 rounded-full ${style.dot} shrink-0`} />
+                      <span className="truncate">{change.highlight}</span>
+                    </div>
+                    <p className="text-[11px] text-[#A7B0C4] leading-relaxed line-clamp-3" title={change.description}>
+                      {change.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

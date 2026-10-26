@@ -80,6 +80,7 @@ import { EquipmentModal } from './components/EquipmentModal';
 import { ItemBestiaryModal } from './components/ItemBestiaryModal';
 import { BaseUpgradeModal } from './components/BaseUpgradeModal';
 import { ChangelogModal } from './components/ChangelogModal';
+import { GAME_CHANGELOG } from './data/changelog';
 import { PetModal } from './components/PetModal';
 import { getPetById, calculatePetPassives, createNewEgg, MAX_EGGS_LIMIT } from './data/pets';
 import type { PetActiveSkill, PetEgg } from './types/game';
@@ -2014,6 +2015,13 @@ export function App() {
       } else if (skill.damageType === 'healing' && skill.power && skill.power > 0) {
         isHealSkill = true;
         let healAmt = Math.max(1, Math.round(selectedUnit.mag * skill.power));
+        const isCurandeiro =
+          (selectedUnit.className || '').toLowerCase().includes('curandeiro') ||
+          (selectedUnit.avatarKey || '').toLowerCase().includes('cleric');
+        if (isCurandeiro) {
+          const lostHp = Math.max(0, selectedUnit.maxHp - currentUnitHp);
+          healAmt += Math.round(lostHp * 0.10);
+        }
         if (hadExcessHeal) {
           healAmt = Math.max(1, Math.round(healAmt * 0.5));
           addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
@@ -3200,6 +3208,13 @@ export function App() {
               if (skill.damageType === 'healing' && skill.power > 0) {
                 isHealed = true;
                 let healAmount = Math.max(1, Math.round(freshAttacker.mag * skill.power));
+                const isCurandeiro =
+                  (freshAttacker.className || '').toLowerCase().includes('curandeiro') ||
+                  (freshAttacker.avatarKey || '').toLowerCase().includes('cleric');
+                if (isCurandeiro) {
+                  const lostHp = Math.max(0, freshTarget.maxHp - freshTarget.currentHp);
+                  healAmount += Math.round(lostHp * 0.10);
+                }
                 if (hadExcessHeal) {
                   healAmount = Math.max(1, Math.round(healAmount * 0.5));
                   addFloatingNumber(freshTarget.x, freshTarget.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
@@ -4175,9 +4190,12 @@ export function App() {
           <button
             id="open-changelog"
             onClick={() => setShowChangelog(true)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#10B981]/10 text-[#10B981] font-bold hover:bg-[#10B981]/20 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#10B981]/10 text-[#10B981] font-bold hover:bg-[#10B981]/20 transition-colors"
           >
             <Sparkles size={14} /> Atualizações
+            <span className="bg-[#10B981]/20 text-[#10B981] px-1.5 py-0.2 rounded-full text-[10px] font-black border border-[#10B981]/30">
+              {GAME_CHANGELOG[0]?.version || 'v1.7'}
+            </span>
           </button>
           <button
             id="open-leaderboard"

@@ -8,7 +8,7 @@ interface ChangelogModalProps {
 
 export const ChangelogModal: React.FC<ChangelogModalProps> = ({ onClose }) => {
   const [expandedVersions, setExpandedVersions] = useState<Record<string, boolean>>(() => ({
-    [GAME_CHANGELOG[0]?.version || 'v1.4']: true,
+    [GAME_CHANGELOG[0]?.version || 'v1.7']: true,
   }));
 
   useEffect(() => {

@@ -98,7 +98,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     color: '#56E59A',
     avatarKey: 'cleric',
     baseSkillId: 'cura',
-    description: 'Suporte de sustentação vital com foco em regeneração direta de vida (individual e área), remoção completa de penalidades e concessão de escudos protetores.',
+    description: 'Suporte de sustentação vital com foco em regeneração direta de vida (todas as suas curas curam +10% da vida perdida do alvo além do valor base), remoção completa de penalidades e concessão de escudos protetores.',
     statGrowth: { hp: 11, atk: 1, mag: 3, def: 2, res: 3 },
   },
   assassino: {

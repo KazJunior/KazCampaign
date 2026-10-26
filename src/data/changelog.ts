@@ -41,6 +41,11 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         description: 'Implementado sistema de colisão e seleção 3D volumétrica nos modelos dos heróis e monstros. Corrigido o problema em que personagens posicionados em casas adjacentes sofriam desvio de clique devido à inclinação da câmera isométrica, exigindo clicar uma casa acima.',
         type: 'fix',
       },
+      {
+        highlight: 'Buff no Curandeiro (+10% Poder Base de Cura Arredondado para Cima e +10% Vida Perdida)',
+        description: 'Todas as habilidades de cura do Curandeiro tiveram seus valores base de cura aumentados e arredondados para cima (Cura Sagrada: 105% MAG, Círculo de Renovação: 95% MAG, Purificação: 85% MAG, Luz Restauradora: 140% MAG, Onda Vital: 120% MAG e Milagre Supremo: 155% MAG), além de curarem um adicional fixo de +10% da vida perdida do alvo.',
+        type: 'buff',
+      },
     ],
   },
   {

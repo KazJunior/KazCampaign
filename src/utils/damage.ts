@@ -52,6 +52,15 @@ export function calculateBaseDamage(
         healAmount = Math.round(attacker.mag * power);
       }
 
+      // Bônus do Curandeiro: todas as curas curam além do valor já estabelecido, +10% da vida perdida do alvo
+      const isCurandeiro =
+        (attacker.className || '').toLowerCase().includes('curandeiro') ||
+        (attacker.avatarKey || '').toLowerCase().includes('cleric');
+      if (isCurandeiro && (healAmount > 0 || (skill.power && skill.power > 0))) {
+        const lostHp = Math.max(0, target.maxHp - target.currentHp);
+        healAmount += Math.round(lostHp * 0.10);
+      }
+
       // Excess Heal Debuff: heals only half (50%) if healed within duration
       const hasExcessHeal = target.statusEffects?.some(
         (e) => e.type === 'excess_heal' && e.duration > 0

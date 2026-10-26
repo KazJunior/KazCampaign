@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { login, register, recoverPassword } from '../utils/api';
 import type { AuthUser } from '../utils/api';
+import { GAME_CHANGELOG } from '../data/changelog';
 
 interface AuthScreenProps {
   onAuthenticated: (user: AuthUser) => void;
@@ -300,7 +301,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onAuthenticated, onOpenL
               className="py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider text-[#10B981] border border-[#10B981]/30 bg-[#10B981]/5 hover:bg-[#10B981]/15 transition-colors flex items-center justify-center gap-1.5"
               title="Notas de Atualização"
             >
-              <Sparkles size={16} /> v1.4
+              <Sparkles size={16} /> {GAME_CHANGELOG[0]?.version || 'v1.7'}
             </button>
           )}
         </div>
