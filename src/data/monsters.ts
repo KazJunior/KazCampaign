@@ -225,7 +225,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#FF7043',
     avatarKey: 'kobold_gunner',
     skillId: 'granada_incendiaria',
-    skillIds: ['granada_incendiaria', 'ataque_goblin'],
+    skillIds: ['granada_incendiaria', 'ataque_goblin', 'kobold_piche_grudoso'],
     description: 'Artilheiro ágil das forjas que arremessa granadas de pólvora ígnea e incinera posições.',
   },
   salamandra_magma: {
@@ -243,7 +243,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#FF3D00',
     avatarKey: 'magma_lizard',
     skillId: 'sopro_abrasador',
-    skillIds: ['sopro_abrasador', 'bote_sombrio'],
+    skillIds: ['sopro_abrasador', 'bote_sombrio', 'salamandra_lingua_magma'],
     description: 'Réptil ígneo veloz que nada pelas caldeiras e desfere baforadas abrasadoras.',
   },
   ferreiro_amaldicoado: {
@@ -261,7 +261,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#8D6E63',
     avatarKey: 'cursed_blacksmith',
     skillId: 'martelada_forjador',
-    skillIds: ['martelada_forjador', 'golpe_esmagador'],
+    skillIds: ['martelada_forjador', 'golpe_esmagador', 'ferreiro_golpe_atordoador'],
     description: 'Ferreiro corrompido que empunha malho pesado capaz de amassar defesas e armaduras.',
   },
   elemental_brasa: {
@@ -279,7 +279,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#FF9800',
     avatarKey: 'ember_elemental',
     skillId: 'chama_viva',
-    skillIds: ['chama_viva', 'chama_sombria'],
+    skillIds: ['chama_viva', 'chama_sombria', 'elemental_dreno_termico'],
     description: 'Espírito vivo do fogo vulcânico que emana pulsos térmicos em área e queima heróis.',
   },
   automato_vapor: {
@@ -297,7 +297,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#78909C',
     avatarKey: 'steam_golem',
     skillId: 'blindagem_vapor',
-    skillIds: ['blindagem_vapor', 'golpe_esmagador'],
+    skillIds: ['blindagem_vapor', 'golpe_esmagador', 'automato_vapor_debilitante'],
     description: 'Máquina colossal a vapor reforçada com bronze pesado e válvulas de blindagem.',
   },
   piromante_cultista: {
@@ -315,7 +315,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#D84315',
     avatarKey: 'pyromancer',
     skillId: 'chuva_de_meteoros_escoria',
-    skillIds: ['chuva_de_meteoros_escoria', 'chama_sombria'],
+    skillIds: ['chuva_de_meteoros_escoria', 'chama_sombria', 'piromante_onda_fraqueza'],
     description: 'Mago fanático que adora o fogo das forjas e conjura meteoros incandescentes dos céus.',
   },
   espectro_cinzento: {
@@ -333,7 +333,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#90A4AE',
     avatarKey: 'ash_specter',
     skillId: 'cinzas_sufocantes',
-    skillIds: ['cinzas_sufocantes', 'bencao_dos_espinhos'],
+    skillIds: ['cinzas_sufocantes', 'bencao_dos_espinhos', 'espectro_toque_fraqueza'],
     description: 'Entidade etérea de fumaça e fuligem que sufoca a respiração e reduz o movimento.',
   },
   verme_da_lava: {
@@ -351,7 +351,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#BF360C',
     avatarKey: 'lava_worm',
     skillId: 'jato_corrosivo_magma',
-    skillIds: ['jato_corrosivo_magma', 'acido_corrosivo'],
+    skillIds: ['jato_corrosivo_magma', 'acido_corrosivo', 'verme_constricao_mobilidade'],
     description: 'Monstro subterrâneo blindado que perfura o basalto e esguicha magma altamente corrosivo.',
   },
   gargula_ferro: {
@@ -369,7 +369,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#546E7A',
     avatarKey: 'iron_gargoyle',
     skillId: 'mergulho_ferreo',
-    skillIds: ['mergulho_ferreo', 'armadura_petrea'],
+    skillIds: ['mergulho_ferreo', 'armadura_petrea', 'gargula_dreno_ferreo'],
     description: 'Sentinela alada forjada em metal puro que mergulha dos tetos atordoando alvos.',
   },
   cao_infernal: {
@@ -387,7 +387,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#C62828',
     avatarKey: 'hell_hound',
     skillId: 'mordida_infernal',
-    skillIds: ['mordida_infernal', 'salto_espectral'],
+    skillIds: ['mordida_infernal', 'salto_espectral', 'cao_uivo_paralisante'],
     description: 'Fera lupina demoníaca das profundezas vulcânicas com mordida voraz em chamas.',
   },
 
@@ -409,7 +409,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#D32F2F',
     avatarKey: 'berserker_warrior',
     skillId: 'machadada_dupla',
-    skillIds: ['machadada_dupla', 'rugido_de_guerra_orc'],
+    skillIds: ['machadada_dupla', 'rugido_de_guerra_orc', 'barbaro_golpe_voraz'],
     description: 'Guerreiro das estepes geladas que luta com machados duplos em fúria desenfreada.',
   },
   cacador_estepes: {
@@ -427,7 +427,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#388E3C',
     avatarKey: 'steppe_hunter',
     skillId: 'disparo_runico_longo',
-    skillIds: ['disparo_runico_longo', 'adaga_furtiva'],
+    skillIds: ['disparo_runico_longo', 'adaga_furtiva', 'cacador_tiro_imobilizante'],
     description: 'Arqueiro de elite que dispara flechas perfurantes com alcance devastador.',
   },
   xama_tempestade: {
@@ -445,7 +445,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#0288D1',
     avatarKey: 'storm_shaman',
     skillId: 'totem_da_tempestade',
-    skillIds: ['totem_da_tempestade', 'chama_sombria'],
+    skillIds: ['totem_da_tempestade', 'chama_sombria', 'xama_cura_ancestral'],
     description: 'Líder espiritual rúnico que invoca o poder dos ventos e protege sua tribo com escudos.',
   },
   constructo_runico: {
@@ -463,7 +463,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#5E35B1',
     avatarKey: 'rune_construct',
     skillId: 'barreira_megalitica',
-    skillIds: ['barreira_megalitica', 'terremoto_basalto'],
+    skillIds: ['barreira_megalitica', 'terremoto_basalto', 'constructo_aura_fraqueza'],
     description: 'Monólito entalhado com magias primitivas que ergue barreiras inabaláveis de pedra.',
   },
   urso_fendendor: {
@@ -481,7 +481,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#B0BEC5',
     avatarKey: 'war_bear',
     skillId: 'patada_glacial',
-    skillIds: ['patada_glacial', 'golpe_esmagador'],
+    skillIds: ['patada_glacial', 'golpe_esmagador', 'urso_mordida_voraz'],
     description: 'Fera colossal com garras congeladas capaz de quebrar defesas e atordoar oponentes.',
   },
   valquiria_sombria: {
@@ -499,13 +499,13 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#8E24AA',
     avatarKey: 'dark_valkyrie',
     skillId: 'estocada_valquiria',
-    skillIds: ['estocada_valquiria', 'investida_caida'],
+    skillIds: ['estocada_valquiria', 'investida_caida', 'valquiria_julgamento_fraqueza'],
     description: 'Guerreira alada portando lança relampejante que corta os céus em ataques rápidos.',
   },
   invocador_glifos: {
     typeId: 'invocador_glifos',
     name: 'Tecelão de Glifos',
-    role: 'attacker',
+    role: 'support',
     act: 3,
     maxHp: 105,
     atk: 12,
@@ -516,9 +516,9 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 3,
     color: '#3949AB',
     avatarKey: 'glyph_weaver',
-    skillId: 'glifo_explosivo_runico',
-    skillIds: ['glifo_explosivo_runico', 'vortice_obscuro'],
-    description: 'Mago arcano que grava símbolos voláteis no ar desencadeando explosões em área.',
+    skillId: 'tecelao_glifo_cruz',
+    skillIds: ['tecelao_glifo_cruz', 'tecelao_cura_runica', 'tecelao_selo_concussivo'],
+    description: 'Mago arcano que grava símbolos mágicos no ar para desferir dano em cruz, curar aliados feridos e atordoar oponentes.',
   },
   lobo_trovao: {
     typeId: 'lobo_trovao',
@@ -535,7 +535,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#00ACC1',
     avatarKey: 'thunder_wolf',
     skillId: 'mordida_do_trovao',
-    skillIds: ['mordida_do_trovao', 'salto_espectral'],
+    skillIds: ['mordida_do_trovao', 'salto_espectral', 'lobo_descarga_atordoante'],
     description: 'Predador veloz com pelo eletrificado que desacelera presas com descargas de choque.',
   },
   guardiao_megalito: {
@@ -553,7 +553,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#455A64',
     avatarKey: 'megalith_guardian',
     skillId: 'barreira_megalitica',
-    skillIds: ['barreira_megalitica', 'golpe_esmagador'],
+    skillIds: ['barreira_megalitica', 'golpe_esmagador', 'guardiao_pisao_atordoador'],
     description: 'Guardião ancestral de santuários rúnicos com defesas maciças quase intransponíveis.',
   },
   espada_ancestral: {
@@ -571,7 +571,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#00E5FF',
     avatarKey: 'rune_blade',
     skillId: 'corte_lamina_ancestral',
-    skillIds: ['corte_lamina_ancestral', 'adaga_furtiva'],
+    skillIds: ['corte_lamina_ancestral', 'adaga_furtiva', 'espada_dreno_espectral'],
     description: 'Lâmina mágica autônoma flutuante que perfura carne e armaduras espiritualmente.',
   },
 
@@ -593,7 +593,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#6A1B9A',
     avatarKey: 'void_cultist',
     skillId: 'feixe_entropico',
-    skillIds: ['feixe_entropico', 'vortice_obscuro'],
+    skillIds: ['feixe_entropico', 'vortice_obscuro', 'cultista_toque_fraqueza'],
     description: 'Cultista consumido pelo vazio que dispara rajadas de antimatéria corrosiva.',
   },
   tentaculo_abissal: {
@@ -611,7 +611,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#4A148C',
     avatarKey: 'abyssal_tentacle',
     skillId: 'puxao_abissal_tentaculo',
-    skillIds: ['puxao_abissal_tentaculo', 'golpe_esmagador'],
+    skillIds: ['puxao_abissal_tentaculo', 'golpe_esmagador', 'tentaculo_constricao_atordoante'],
     description: 'Tentáculo gigantesco que emerge do pântano para puxar, desacelerar e chicotear heróis.',
   },
   espreitador_astral: {
@@ -629,7 +629,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#311B92',
     avatarKey: 'astral_stalker',
     skillId: 'ataque_furtivo_astral',
-    skillIds: ['ataque_furtivo_astral', 'adaga_furtiva'],
+    skillIds: ['ataque_furtivo_astral', 'adaga_furtiva', 'espreitador_corte_tendao'],
     description: 'Assassino que caminha nas dobras dimensionais e ataca nas costas com foices espaciais.',
   },
   aberracao_miasma: {
@@ -647,7 +647,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#2E7D32',
     avatarKey: 'miasma_aberration',
     skillId: 'explosao_miasma_toxico',
-    skillIds: ['explosao_miasma_toxico', 'picada_venenosa'],
+    skillIds: ['explosao_miasma_toxico', 'picada_venenosa', 'aberracao_tentaculo_atordoador'],
     description: 'Massa purulenta de veneno concentrado que exala névoas asfixiantes em área.',
   },
   observador_loucura: {
@@ -665,7 +665,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#AD1457',
     avatarKey: 'madness_eye',
     skillId: 'olhar_da_loucura',
-    skillIds: ['olhar_da_loucura', 'chama_sombria'],
+    skillIds: ['olhar_da_loucura', 'chama_sombria', 'observador_dreno_mental'],
     description: 'Globo ocular aberrante que dispara feixes psíquicos capazes de atordoar alvos.',
   },
   insetoide_vazio: {
@@ -683,7 +683,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#1A237E',
     avatarKey: 'void_crawler',
     skillId: 'mordida_quitina',
-    skillIds: ['mordida_quitina', 'bote_sombrio'],
+    skillIds: ['mordida_quitina', 'bote_sombrio', 'insetoide_ferrao_lentidao'],
     description: 'Predador mutante com carapaça que salta nas vítimas rasgando armaduras.',
   },
   sirene_abissal: {
@@ -701,7 +701,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#00838F',
     avatarKey: 'abyssal_siren',
     skillId: 'canto_do_lodo',
-    skillIds: ['canto_do_lodo', 'bencao_dos_espinhos'],
+    skillIds: ['canto_do_lodo', 'bencao_dos_espinhos', 'sirene_cura_abissal'],
     description: 'Entidade pantanosa que entoa canções hipnóticas que reduzem drasticamente a velocidade.',
   },
   massa_informe: {
@@ -719,7 +719,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#4527A0',
     avatarKey: 'void_blob',
     skillId: 'regeneracao_amorfa',
-    skillIds: ['regeneracao_amorfa', 'acido_corrosivo'],
+    skillIds: ['regeneracao_amorfa', 'acido_corrosivo', 'massa_engolfar_dreno'],
     description: 'Amálgama gelatinoso do abismo com resiliência sobre-humana e escudo regenerativo.',
   },
   pesadelo_vivo: {
@@ -737,7 +737,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#880E4F',
     avatarKey: 'living_nightmare',
     skillId: 'ataque_pesadelo',
-    skillIds: ['ataque_pesadelo', 'maldicao_debilitante'],
+    skillIds: ['ataque_pesadelo', 'maldicao_debilitante', 'pesadelo_sussurro_fraqueza'],
     description: 'Monstruosidade espectral que inflige pavor profundo e dano psíquico letal.',
   },
   parasita_eter: {
@@ -755,7 +755,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#00B4D8',
     avatarKey: 'cosmic_parasite',
     skillId: 'dreno_parasita_eter',
-    skillIds: ['dreno_parasita_eter', 'salto_espectral'],
+    skillIds: ['dreno_parasita_eter', 'salto_espectral', 'parasita_picada_fraqueza'],
     description: 'Sanguessuga do éter que gruda no alvo e suga vida vital restaurando sua própria saúde.',
   },
 
@@ -777,7 +777,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#F57F17',
     avatarKey: 'black_sun_templar',
     skillId: 'estocada_sol_negro',
-    skillIds: ['estocada_sol_negro', 'corte_profano'],
+    skillIds: ['estocada_sol_negro', 'corte_profano', 'templario_dreno_profano'],
     description: 'Cavaleiro de elite blindado que empunha espada profanada ignorando defesas.',
   },
   arauto_do_eclipse: {
@@ -795,7 +795,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#E65100',
     avatarKey: 'eclipse_herald',
     skillId: 'bencao_do_eclipse',
-    skillIds: ['bencao_do_eclipse', 'chama_sombria'],
+    skillIds: ['bencao_do_eclipse', 'chama_sombria', 'arauto_cura_eclipse'],
     description: 'Sacerdote imperial das trevas que concede escudos impenetráveis e fúria aos aliados.',
   },
   inquisidor_do_fim: {
@@ -813,7 +813,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#BF360C',
     avatarKey: 'doom_inquisitor',
     skillId: 'grilhoes_do_juizo',
-    skillIds: ['grilhoes_do_juizo', 'vortice_obscuro'],
+    skillIds: ['grilhoes_do_juizo', 'vortice_obscuro', 'inquisidor_sentenca_fraqueza'],
     description: 'Julgador impiedoso que prende heróis em correntes de atordoamento e estilhaça armaduras.',
   },
   serafim_caido: {
@@ -831,7 +831,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#4A148C',
     avatarKey: 'fallen_seraph',
     skillId: 'tempestade_penas_negras',
-    skillIds: ['tempestade_penas_negras', 'investida_caida'],
+    skillIds: ['tempestade_penas_negras', 'investida_caida', 'serafim_dreno_celestial'],
     description: 'Anjo caído de asas de ferro negro que dispara lâminas cortantes em área ampla.',
   },
   tita_obsidiana: {
@@ -849,7 +849,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#212121',
     avatarKey: 'obsidian_colossus',
     skillId: 'terremoto_obsidiana',
-    skillIds: ['terremoto_obsidiana', 'armadura_petrea'],
+    skillIds: ['terremoto_obsidiana', 'armadura_petrea', 'tita_esmagamento_atordoador'],
     description: 'Monstro colossal esculpido em vidro vulcânico negro com tremores apocalípticos em área.',
   },
   ceifador_crepusculo: {
@@ -867,7 +867,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#B71C1C',
     avatarKey: 'twilight_reaper',
     skillId: 'corte_do_ceifador',
-    skillIds: ['corte_do_ceifador', 'adaga_furtiva'],
+    skillIds: ['corte_do_ceifador', 'adaga_furtiva', 'ceifador_foice_paralisante'],
     description: 'Carrasco com foice colossal que desfere golpes circulares mutiladores.',
   },
   algoz_celestial: {
@@ -885,7 +885,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#FFB300',
     avatarKey: 'celestial_slayer',
     skillId: 'decapitacao_imperial',
-    skillIds: ['decapitacao_imperial', 'salto_espectral'],
+    skillIds: ['decapitacao_imperial', 'salto_espectral', 'algoz_golpe_atordoador'],
     description: 'Executor da corte de Malakor que desfere golpes letais perfurando 30% da defesa.',
   },
   escriba_do_destino: {
@@ -903,7 +903,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#7B1FA2',
     avatarKey: 'fate_scribe',
     skillId: 'veredito_do_fim',
-    skillIds: ['veredito_do_fim', 'maldicao_debilitante'],
+    skillIds: ['veredito_do_fim', 'maldicao_debilitante', 'escriba_restauracao_temporal'],
     description: 'Guardião dos tomos do fim dos tempos com magias que anulam a resistência dos inimigos.',
   },
   pretoriano_do_caos: {
@@ -921,7 +921,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#D50000',
     avatarKey: 'chaos_praetorian',
     skillId: 'bastiao_do_apocalipse',
-    skillIds: ['bastiao_do_apocalipse', 'golpe_esmagador'],
+    skillIds: ['bastiao_do_apocalipse', 'golpe_esmagador', 'pretoriano_investida_atordoante'],
     description: 'Soldado de elite da guarda pessoal de Malakor com escudo intransponível.',
   },
   avatar_cataclismo: {
@@ -939,7 +939,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     color: '#FF1744',
     avatarKey: 'cataclysm_avatar',
     skillId: 'cataclismo_elemental',
-    skillIds: ['cataclismo_elemental', 'chuva_de_meteoros_escoria'],
+    skillIds: ['cataclismo_elemental', 'chuva_de_meteoros_escoria', 'avatar_onda_debilitante'],
     description: 'A personificação mágica do fim do mundo que faz chover fogo cósmico devastador.',
   },
 
@@ -993,20 +993,26 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   arauto_espectral: {
     typeId: 'arauto_espectral',
     name: 'Arauto dos Espectros',
-    role: 'support',
+    role: 'attacker',
     act: 2,
-    maxHp: 761,
+    maxHp: 3000,
     atk: 40,
-    mag: 42,
+    mag: 52,
     def: 42,
     res: 44,
     mov: 3,
-    range: 2,
+    range: 1,
     color: '#00E5FF',
     avatarKey: 'spectral_harbinger_boss',
-    skillId: 'dreno_de_vida',
-    skillIds: ['dreno_de_vida', 'maldicao_fraqueza', 'chama_sombria', 'uivo_aterrador'],
-    description: 'MINI BOSS (FASE 15): Ceifador espectral etéreo que suga a força vital dos inimigos.',
+    skillId: 'arauto_corte_ceifador',
+    skillIds: [
+      'arauto_manto_espectral',
+      'arauto_corte_ceifador',
+      'arauto_giro_foice',
+      'arauto_passo_sombrio',
+      'arauto_arremesso_foice',
+    ],
+    description: 'MINI BOSS (FASE 15): Ceifador espectral etéreo que usa manto de invisibilidade (+30% dano), corte de lifesteal, giro de foice, teleporte na unidade com menor vida e arremesso em linha.',
     isMiniBoss: true,
   },
   tita_forjador: {
@@ -1039,7 +1045,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Arquimago das Runas',
     role: 'support',
     act: 3,
-    maxHp: 55000,
+    maxHp: 5500,
     atk: 34,
     mag: 55,
     def: 59,
@@ -1058,7 +1064,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Valgar, o Carniceiro Imortal',
     role: 'attacker',
     act: 3,
-    maxHp: 7600,
+    maxHp: 8000,
     atk: 65,
     mag: 29,
     def: 65,
@@ -1067,9 +1073,15 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 1,
     color: '#B71C1C',
     avatarKey: 'valgar_butcher_boss',
-    skillId: 'golpe_selvagem',
-    skillIds: ['golpe_selvagem', 'frenesi_sanguinario', 'salto_destrutivo', 'ruina_absoluta'],
-    description: 'BOSS PODEROSO (FASE 30): Senhor da guerra implacável movido por pura fúria sanguinária.',
+    skillId: 'valgar_golpe_voraz',
+    skillIds: [
+      'valgar_golpe_voraz',
+      'valgar_giro_devastador',
+      'valgar_gancho_carniceiro',
+      'valgar_arremesso_cutelo',
+      'valgar_aura_sanguinaria',
+    ],
+    description: 'BOSS PODEROSO (FASE 30): Senhor da guerra implacável movido por pura fúria sanguinária e gancho mortal.',
     isBoss: true,
   },
   quimera_venenosa: {
@@ -1151,9 +1163,10 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
 };
 
 export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
+  arauto_espectral: 3000,
   tita_forjador: 5000,
-  mestre_runico: 55000,
-  valgar_sanguinario: 7600,
+  mestre_runico: 5500,
+  valgar_sanguinario: 8000,
   quimera_venenosa: 9200,
   leviata_vazio: 11000,
   cavaleiro_apocalipse: 13000,
@@ -1161,6 +1174,11 @@ export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
 };
 
 export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, number>> = {
+  invocador_glifos: {
+    tecelao_glifo_cruz: 2.00,
+    tecelao_cura_runica: 1.20,
+    tecelao_selo_concussivo: 2.00,
+  },
   tita_forjador: {
     vulcanus_golpe_esmagador: 2.30,
     vulcanus_baforada_fogo: 2.00,
@@ -1175,10 +1193,11 @@ export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, numb
     vortice_obscuro: 2.50,
   },
   valgar_sanguinario: {
-    golpe_selvagem: 2.20,
-    salto_destrutivo: 2.25,
-    ruina_absoluta: 2.30,
-    frenesi_sanguinario: 2.40,
+    valgar_golpe_voraz: 2.20,
+    valgar_giro_devastador: 2.00,
+    valgar_gancho_carniceiro: 2.00,
+    valgar_arremesso_cutelo: 2.10,
+    valgar_aura_sanguinaria: 2.00,
   },
   quimera_venenosa: {
     picada_venenosa: 2.30,

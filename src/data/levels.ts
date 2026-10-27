@@ -829,7 +829,7 @@ export const LEVELS: LevelConfig[] = [
     objectives: [
       'Derrote Valgar, o Carniceiro Imortal (BOSS PODEROSO)!',
       'Desbloqueie a classe Berserker.',
-      'Cuidado extremo com o frenesi sanguinário e saltos destrutivos.',
+      'Cuidado extremo com o Gancho mortal, Giros devastadores e Arremesso de Cutelo contra heróis sangrando.',
     ],
     grid: createGrid(10, 8, 'stone', {
       '1,2': { obstacle: 'pillar' }, '8,2': { obstacle: 'pillar' },

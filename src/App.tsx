@@ -1856,13 +1856,14 @@ export function App() {
 
       // Single-target Unit targeting (Enemy, Ally or Any)
       if (clickedUnit) {
+        const isEnemyInvisible = clickedUnit.faction === 'enemy' && clickedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         const isFactionValid =
           (targetType === 'enemy' && clickedUnit.faction === 'enemy') ||
           (targetType === 'ally' && clickedUnit.faction === 'player') ||
           targetType === 'any';
 
-        if (isTargetTileValid && (isTargeting ? isFactionValid : clickedUnit.faction === 'enemy')) {
+        if (!isEnemyInvisible && isTargetTileValid && (isTargeting ? isFactionValid : clickedUnit.faction === 'enemy')) {
           setTargetTeleportPoint(null);
           setTargetAoEPoint({ x: clickedUnit.x, y: clickedUnit.y });
           const effectiveSkill = activeSkill || undefined;
@@ -1891,7 +1892,7 @@ export function App() {
     }
 
     // Select / Deselect unit
-    if (clickedUnit) {
+    if (clickedUnit && !(clickedUnit.faction === 'enemy' && clickedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0))) {
       setSelectedUnitId(clickedUnit.id);
       setSelectedAction('none');
       setActiveSkill(null);
@@ -2809,15 +2810,18 @@ export function App() {
     const monsters = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
 
     for (const monster of monsters) {
-      const freshMonster = currentUnits.find((u) => u.id === monster.id);
-      if (!freshMonster || freshMonster.isDead) continue;
+      let extraTurnsAllowed = 1;
+      while (extraTurnsAllowed > 0) {
+        extraTurnsAllowed--;
+        const freshMonster = currentUnits.find((u) => u.id === monster.id);
+        if (!freshMonster || freshMonster.isDead) break;
 
-      const isStunned = freshMonster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
-      if (isStunned) {
-        addFloatingNumber(freshMonster.x, freshMonster.y, 'Atordoado!', 'status', '#FACC15');
-        await new Promise((r) => setTimeout(r, 200 * delayMult));
-        continue;
-      }
+        const isStunned = freshMonster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
+        if (isStunned) {
+          addFloatingNumber(freshMonster.x, freshMonster.y, 'Atordoado!', 'status', '#FACC15');
+          await new Promise((r) => setTimeout(r, 200 * delayMult));
+          break;
+        }
 
       // Boss Threshold Skill (50% HP): Ativa no turno posterior a suas vidas chegarem a 50%, exatamente 1 vez por combate
       const isBossThresholdReady =
@@ -2999,8 +3003,8 @@ export function App() {
             );
           }
         } else if (bossType === 'valgar_sanguinario') {
-          // Fase 30: Valgar - 160% de dano físico a todos, 100% de roubo de vida e sangramento (burn) por 2 turnos
-          addFloatingNumber(freshMonster.x, freshMonster.y, '🩸 BANQUETE SANGUINÁRIO (160% + Dreno)!', 'status', '#DC2626');
+          // Fase 30: Valgar - 160% de dano físico a todos, 150% de roubo de vida e sangramento (burn) por 2 turnos
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🩸 BANQUETE SANGUINÁRIO (160% + Dreno 150%)!', 'status', '#DC2626');
           soundManager.playPhysicalAttack();
 
           let totalValgarDmg = 0;
@@ -3048,12 +3052,13 @@ export function App() {
             );
           }
 
-          // Cura de 100% do dano causado para Valgar
+          // Cura de 150% do dano causado para Valgar
           if (totalValgarDmg > 0) {
-            const healedHp = Math.min(freshMonster.maxHp, freshMonster.currentHp + totalValgarDmg);
+            const healAmount = Math.round(totalValgarDmg * 1.5);
+            const healedHp = Math.min(freshMonster.maxHp, freshMonster.currentHp + healAmount);
             const actualHealed = healedHp - freshMonster.currentHp;
             if (actualHealed > 0) {
-              addFloatingNumber(freshMonster.x, freshMonster.y, '+' + actualHealed + ' (Banquete de Sangue)', 'healing', '#10B981');
+              addFloatingNumber(freshMonster.x, freshMonster.y, '+' + actualHealed + ' (Banquete de Sangue 150%)', 'healing', '#10B981');
               soundManager.playHeal();
               currentUnits = currentUnits.map((u) =>
                 u.id === freshMonster.id ? { ...u, currentHp: healedHp } : u
@@ -3169,11 +3174,42 @@ export function App() {
         }
 
         await new Promise((r) => setTimeout(r, 400 * delayMult));
-        continue;
+        break;
+      }
+
+      // Pre-movement Boss Skills (e.g. Arauto dos Espectros - Manto Espectral: ativa antes de mover)
+      const preMoveInvisSkill = freshMonster.skills.find(
+        (s) => s.id === 'arauto_manto_espectral' && s.currentCooldown === 0
+      );
+      const isAlreadyInvis = freshMonster.statusEffects?.some(
+        (e) => e.type === 'invisible' && e.duration > 0
+      );
+      if (preMoveInvisSkill && !isAlreadyInvis) {
+        soundManager.playMagicSpell();
+        addFloatingNumber(freshMonster.x, freshMonster.y, 'Manto Espectral (Invisível +30% Dano)!', 'buff', '#C77DFF');
+        const updatedSkills = freshMonster.skills.map((s) =>
+          s.id === preMoveInvisSkill.id
+            ? { ...s, currentCooldown: preMoveInvisSkill.cooldownMax, lastUsedTurn: turnNumberRef.current }
+            : s
+        );
+        const updatedEffects = [
+          ...(freshMonster.statusEffects || []).filter((e) => e.type !== 'invisible'),
+          { type: 'invisible' as const, duration: 99, value: 30, appliedTurn: turnNumberRef.current },
+        ];
+        freshMonster = {
+          ...freshMonster,
+          skills: updatedSkills,
+          statusEffects: updatedEffects,
+        };
+        currentUnits = currentUnits.map((u) => (u.id === freshMonster.id ? freshMonster : u));
+        setUnits([...currentUnits]);
+        await new Promise((r) => setTimeout(r, 400 * delayMult));
       }
 
       const choice = decideMonsterAction(freshMonster, grid, currentUnits);
-      if (choice) {
+      if (!choice) {
+        break;
+      }
         if (choice.moveTo && (choice.moveTo.x !== freshMonster.x || choice.moveTo.y !== freshMonster.y)) {
           const fromX = freshMonster.x;
           const fromY = freshMonster.y;
@@ -3444,6 +3480,25 @@ export function App() {
               } else if (aoeRad >= 90) {
                 enemyTargets = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
                 hitTiles = [];
+              } else if (skill?.isLinePierce) {
+                const origin = { x: finalMonsterX, y: finalMonsterY };
+                let dx = Math.sign(freshTarget.x - finalMonsterX);
+                let dy = Math.sign(freshTarget.y - finalMonsterY);
+                if (dx === 0 && dy === 0) dy = 1;
+                const lineReach = skill.rangeMax || 4;
+                for (let s = 1; s <= lineReach; s++) {
+                  const lx = origin.x + dx * s;
+                  const ly = origin.y + dy * s;
+                  if (lx >= 0 && lx < grid[0].length && ly >= 0 && ly < grid.length) {
+                    hitTiles.push({ x: lx, y: ly });
+                  }
+                }
+                enemyTargets = currentUnits.filter(
+                  (u) =>
+                    u.faction === 'player' &&
+                    !u.isDead &&
+                    hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+                );
               } else if (aoeRad > 0) {
                 const origin = { x: finalMonsterX, y: finalMonsterY };
                 hitTiles = getAoETiles(
@@ -3487,8 +3542,15 @@ export function App() {
 
               let totalAiDmgDone = 0;
               let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
+              const wasMonsterInvisible = finalMonsterEffects.some((e) => e.type === 'invisible' && e.duration > 0);
+              if (wasMonsterInvisible) {
+                finalMonsterEffects = finalMonsterEffects.filter((e) => e.type !== 'invisible');
+              }
+              let anyTargetHadBleed = false;
 
               for (const t of enemyTargets) {
+                const targetHadBleed = Boolean(t.statusEffects?.some((e) => e.type === 'burn' && e.duration > 0));
+                if (targetHadBleed) anyTargetHadBleed = true;
                 const res = rollActualDamage(freshAttacker, t, skill);
                 let actualDmg = res.finalDamage;
                 const damageType = res.damageType;
@@ -3687,7 +3749,9 @@ export function App() {
                       }
                       finalTargetX = bestAdj.x;
                       finalTargetY = bestAdj.y;
-                      addFloatingNumber(bestAdj.x, bestAdj.y, 'Arrastado para o Abismo!', 'status', '#9333EA');
+                      const pullText = skill?.id === 'valgar_gancho_carniceiro' ? '⛓️ Gancho Carniceiro: Puxado!' : 'Arrastado para o Abismo!';
+                      const pullColor = skill?.id === 'valgar_gancho_carniceiro' ? '#DC2626' : '#9333EA';
+                      addFloatingNumber(bestAdj.x, bestAdj.y, pullText, 'status', pullColor);
                       soundManager.playStep();
                     }
                   }
@@ -3699,10 +3763,11 @@ export function App() {
                     await boardRef.current.playDeathAnimation(t.id);
                   }
                 } else {
+                  const isValgarSkill = choice.skillToUse?.id?.startsWith('valgar') || choice.skillToUse?.id === 'boss_valgar_banquete_sangue';
                   if (choice.skillToUse?.statusEffect) {
                     const eff = choice.skillToUse.statusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-                    if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, 'Em Chamas!', 'status', '#F97316');
+                    if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isValgarSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isValgarSkill ? '#DC2626' : '#F97316');
                     else if (eff.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
                     else if (eff.type === 'stun') addFloatingNumber(finalTargetX, finalTargetY, 'Atordoado!', 'status', '#FACC15');
                     else if (eff.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff.value || 1} Mov)!`, 'status', '#60A5FA');
@@ -3714,7 +3779,7 @@ export function App() {
                   if (choice.skillToUse?.secondaryStatusEffect) {
                     const eff2 = choice.skillToUse.secondaryStatusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-                    if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, 'Em Chamas!', 'status', '#F97316');
+                    if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isValgarSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isValgarSkill ? '#DC2626' : '#F97316');
                     else if (eff2.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
                     else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
                     else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
@@ -3783,6 +3848,8 @@ export function App() {
                   ];
                 } else if (cEff.type === 'taunt') {
                   addFloatingNumber(finalMonsterX, finalMonsterY, 'Provocando!', 'status', '#EF4444');
+                } else if (cEff.type === 'invisible') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Ficou Invisível!', 'buff', '#C77DFF');
                 }
                 finalMonsterEffects = [...finalMonsterEffects.filter((e) => e.type !== cEff.type), cEff];
               }
@@ -3808,6 +3875,14 @@ export function App() {
                 }
                 return u;
               });
+            }
+
+            // Se a habilidade conceder turno extra ao atingir alvos sangrando (Valgar Arremesso de Cutelo)
+            if (skill?.grantsExtraTurnOnBleeding && anyTargetHadBleed && finalMonsterHp > 0) {
+              extraTurnsAllowed++;
+              addFloatingNumber(finalMonsterX, finalMonsterY, '🩸 Sede de Sangue: Age Novamente!', 'status', '#DC2626');
+              soundManager.playPhysicalAttack();
+              await new Promise((r) => setTimeout(r, 350 * delayMult));
             }
 
             setUnits([...currentUnits]);

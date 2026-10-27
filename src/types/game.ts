@@ -83,6 +83,10 @@ export interface Skill {
   isCardinalArms?: boolean; // Invoca braços nas 4 direções cardinais (N, S, L, O) a partir do conjurador
   aoeCenteredOnCaster?: boolean; // Área de efeito circular centrada no próprio conjurador (ao redor do boss)
   leavesCorruptionPuddle?: boolean; // Cobre as casas atingidas com poças de corrupção por 3 turnos
+  prioritizeBleeding?: boolean; // IA prioriza alvos que estão sob efeito de sangramento (burn)
+  grantsExtraTurnOnBleeding?: boolean; // Se o alvo estiver sangrando, o atacante age novamente
+  targetLowestHpTotal?: boolean; // IA prioriza alvo com menor vida total máxima (Arauto dos Espectros)
+  isLinePierce?: boolean; // Dano em linha reta perfurante a partir do conjurador
   chainCount?: number; // Number of targets lightning chains to (Mago Elétrico)
   chainRange?: number; // Max distance between chained links
   casterStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to the caster upon using this skill

@@ -561,28 +561,32 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         child.userData = { ...child.userData, unitId: unit.id, unitX: unit.x, unitY: unit.y };
       });
 
-      // Stealth / Invisibility Visual: make unit meshes translucent ghostly
+      // Stealth / Invisibility Visual: enemies are completely hidden; player heroes are ghostly translucent
       const isInvisible = unit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
       if (isInvisible) {
-        figure.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.name !== 'auraRing' && !child.name.includes('hpBarBillboard')) {
-            if (child.material) {
-              if (Array.isArray(child.material)) {
-                child.material = child.material.map((m) => {
-                  const cloned = m.clone();
+        if (unit.faction === 'enemy') {
+          figure.visible = false;
+        } else {
+          figure.traverse((child) => {
+            if (child instanceof THREE.Mesh && child.name !== 'auraRing' && !child.name.includes('hpBarBillboard')) {
+              if (child.material) {
+                if (Array.isArray(child.material)) {
+                  child.material = child.material.map((m) => {
+                    const cloned = m.clone();
+                    cloned.transparent = true;
+                    cloned.opacity = 0.35;
+                    return cloned;
+                  });
+                } else {
+                  const cloned = child.material.clone();
                   cloned.transparent = true;
                   cloned.opacity = 0.35;
-                  return cloned;
-                });
-              } else {
-                const cloned = child.material.clone();
-                cloned.transparent = true;
-                cloned.opacity = 0.35;
-                child.material = cloned;
+                  child.material = cloned;
+                }
               }
             }
-          }
-        });
+          });
+        }
       }
 
       group.add(figure);

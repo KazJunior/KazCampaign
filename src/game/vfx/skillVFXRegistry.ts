@@ -2,6 +2,76 @@ import type { Skill, DamageType } from '../../types/game';
 import type { VFXSequence } from './vfxTypes';
 
 export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
+  arauto_manto_espectral: {
+    id: 'arauto_manto_espectral',
+    type: 'void_miasma',
+    durationMs: 500,
+    cast: { durationMs: 150, color: 0x8b5cf6 },
+    impact: {
+      shockwave: true,
+      shockwaveColor: 0x7c3aed,
+      particleBurstCount: 16,
+      particleType: 'shadow',
+    },
+    hitReactionDelayMs: 100,
+  },
+  arauto_corte_ceifador: {
+    id: 'arauto_corte_ceifador',
+    type: 'abyssal_blade',
+    durationMs: 650,
+    cast: { durationMs: 120, color: 0x06b6d4 },
+    impact: {
+      shockwave: true,
+      shockwaveColor: 0x00e5ff,
+      particleBurstCount: 20,
+      particleType: 'shadow',
+    },
+    screenShake: { intensity: 0.12, durationMs: 180, delayMs: 200 },
+    hitReactionDelayMs: 200,
+  },
+  arauto_giro_foice: {
+    id: 'arauto_giro_foice',
+    type: 'abyssal_blade',
+    durationMs: 700,
+    cast: { durationMs: 100, color: 0x00e5ff },
+    impact: {
+      shockwave: true,
+      shockwaveColor: 0x06b6d4,
+      particleBurstCount: 24,
+      particleType: 'shadow',
+    },
+    screenShake: { intensity: 0.15, durationMs: 220, delayMs: 200 },
+    hitReactionDelayMs: 220,
+  },
+  arauto_passo_sombrio: {
+    id: 'arauto_passo_sombrio',
+    type: 'void_miasma',
+    durationMs: 600,
+    cast: { durationMs: 100, color: 0x7c3aed },
+    impact: {
+      shockwave: true,
+      shockwaveColor: 0x8b5cf6,
+      particleBurstCount: 22,
+      particleType: 'shadow',
+    },
+    screenShake: { intensity: 0.14, durationMs: 200, delayMs: 180 },
+    hitReactionDelayMs: 200,
+  },
+  arauto_arremesso_foice: {
+    id: 'arauto_arremesso_foice',
+    type: 'arcane_missile',
+    durationMs: 650,
+    cast: { durationMs: 120, color: 0x00e5ff },
+    impact: {
+      shockwave: true,
+      shockwaveColor: 0x06b6d4,
+      particleBurstCount: 20,
+      particleType: 'shadow',
+    },
+    screenShake: { intensity: 0.12, durationMs: 180, delayMs: 200 },
+    hitReactionDelayMs: 200,
+  },
+
   // ==========================================
   // FIRE ARCHETYPE (Distinct unique variants)
   // ==========================================

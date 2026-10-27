@@ -194,6 +194,12 @@ export function decideMonsterAction(
             manhattanDistance(moveTile, target) <= (act.skill.rangeMax || 3) &&
             manhattanDistance(moveTile, target) >= act.rangeMin;
           if (!isCardinal) continue;
+        } else if (act.skill?.aoeCenteredOnCaster) {
+          const rad = act.skill.aoeRadius || 1;
+          const inAoe =
+            Math.abs(target.x - moveTile.x) <= rad &&
+            Math.abs(target.y - moveTile.y) <= rad;
+          if (!inAoe) continue;
         } else {
           const inRange = attackableTiles.some((t) => t.x === target.x && t.y === target.y);
           if (!inRange) continue;
@@ -297,10 +303,58 @@ export function decideMonsterAction(
             score -= 1000;
           }
         } else {
-          // If skill targets furthest enemy (e.g. Vulcanus Investida Sísmica)
+          // If skill targets furthest enemy (e.g. Vulcanus Investida Sísmica or Valgar Gancho)
           if (act.skill?.targetFurthestEnemy) {
             const distFromMonster = manhattanDistance({ x: monster.x, y: monster.y }, { x: target.x, y: target.y });
             score += distFromMonster * 150;
+          }
+        }
+
+        // Prioritize bleeding targets (e.g. Valgar Arremesso de Cutelo)
+        if (act.skill?.prioritizeBleeding && target.statusEffects?.some((e) => e.type === 'burn' && e.duration > 0)) {
+          score += 650;
+        }
+
+        // Prioritize target with lowest total HP (e.g. Arauto dos Espectros - Passo do Ceifador)
+        if (act.skill?.targetLowestHpTotal) {
+          let lowestHpTotalPlayer = playerUnits[0];
+          for (const p of playerUnits) {
+            if (p.maxHp < lowestHpTotalPlayer.maxHp) {
+              lowestHpTotalPlayer = p;
+            } else if (p.maxHp === lowestHpTotalPlayer.maxHp && p.currentHp < lowestHpTotalPlayer.currentHp) {
+              lowestHpTotalPlayer = p;
+            }
+          }
+          if (target.id === lowestHpTotalPlayer.id) {
+            score += 1500;
+          } else {
+            score -= 2500;
+          }
+        }
+
+        // Line Pierce AoE scoring (e.g. Arauto dos Espectros - Arremesso de Foice Giratória)
+        if (act.skill?.isLinePierce) {
+          const dx = Math.sign(target.x - moveTile.x);
+          const dy = Math.sign(target.y - moveTile.y);
+          const lineReach = act.skill.rangeMax || 4;
+          const lineTiles: Point[] = [];
+          for (let s = 1; s <= lineReach; s++) {
+            const lx = moveTile.x + dx * s;
+            const ly = moveTile.y + dy * s;
+            if (lx >= 0 && lx < grid[0].length && ly >= 0 && ly < grid.length) {
+              lineTiles.push({ x: lx, y: ly });
+            }
+          }
+          for (const other of playerUnits) {
+            if (other.id === target.id) continue;
+            if (lineTiles.some((pt) => pt.x === other.x && pt.y === other.y)) {
+              const { base: splashDmg } = calculateBaseDamage(
+                { ...monster, x: moveTile.x, y: moveTile.y },
+                other,
+                act.skill
+              );
+              score += splashDmg * 1.5 + 110;
+            }
           }
         }
 
