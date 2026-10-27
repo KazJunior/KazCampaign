@@ -598,6 +598,12 @@ function getAvatarIcon(key: string, size = 20) {
       return <Hammer size={size} />;
     case 'venom_chimera_boss':
       return <Zap size={size} />;
+    case 'quimera_leao':
+      return <Flame size={size} />;
+    case 'quimera_serpente':
+      return <Zap size={size} />;
+    case 'quimera_cabra':
+      return <Shield size={size} />;
     case 'eclipse_knight_boss':
       return <Sun size={size} />;
     default:

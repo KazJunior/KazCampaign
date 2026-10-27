@@ -196,6 +196,15 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'venom_chimera_boss':
       buildVenomChimeraBossMini(char);
       break;
+    case 'quimera_leao':
+      buildChimeraLionMini(char);
+      break;
+    case 'quimera_serpente':
+      buildChimeraSnakeMini(char);
+      break;
+    case 'quimera_cabra':
+      buildChimeraGoatMini(char);
+      break;
     case 'void_leviathan_boss':
       buildVoidLeviathanBossMini(char);
       break;
@@ -2208,6 +2217,200 @@ function buildVenomChimeraBossMini(group: THREE.Group) {
   stinger.rotation.x = Math.PI * 0.75;
   tailGroup.add(stinger);
   group.add(tailGroup);
+}
+
+// -------------------------------------------------------------
+// 27B. CHIMERA LION (Fase 2 da Quimera - Fera Leonina)
+// -------------------------------------------------------------
+function buildChimeraLionMini(group: THREE.Group) {
+  const lionCoat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5, metalness: 0.2 });
+  const maneMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+  const eyeMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xf59e0b, emissiveIntensity: 1.5 });
+  const clawMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.8 });
+
+  // Muscular Feline Body
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.52, 8, 10), lionCoat);
+  body.position.set(0, 0.38, 0);
+  body.rotation.x = Math.PI / 2;
+  body.castShadow = true;
+  group.add(body);
+
+  // 4 Muscular Paws
+  const pawPositions = [
+    [-0.22, 0.16, -0.26],
+    [0.22, 0.16, -0.26],
+    [-0.24, 0.16, 0.24],
+    [0.24, 0.16, 0.24],
+  ];
+  pawPositions.forEach(([px, py, pz]) => {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.22, 6, 8), lionCoat);
+    leg.position.set(px, py, pz);
+    group.add(leg);
+    const claw = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.08, 4), clawMat);
+    claw.position.set(px, 0.04, pz + 0.08);
+    claw.rotation.x = Math.PI / 3;
+    group.add(claw);
+  });
+
+  // Majestic Lion Mane
+  const mane = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.10, 8, 16), maneMat);
+  mane.position.set(0, 0.58, 0.32);
+  mane.rotation.x = Math.PI / 4;
+  group.add(mane);
+
+  // Feline Head & Muzzle
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), lionCoat);
+  head.position.set(0, 0.58, 0.40);
+  const muzzle = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.10, 0.14), lionCoat);
+  muzzle.position.set(0, 0.53, 0.52);
+  group.add(head, muzzle);
+
+  // Glowing Amber Predator Eyes
+  const eL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 4, 4), eyeMat);
+  eL.position.set(-0.07, 0.62, 0.52);
+  const eR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 4, 4), eyeMat);
+  eR.position.set(0.07, 0.62, 0.52);
+  group.add(eL, eR);
+
+  // Tail with tuft
+  const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.035, 0.40, 4, 6), lionCoat);
+  tail.position.set(0, 0.45, -0.42);
+  tail.rotation.x = -Math.PI / 3;
+  const tuft = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), maneMat);
+  tuft.position.set(0, 0.60, -0.56);
+  group.add(tail, tuft);
+}
+
+// -------------------------------------------------------------
+// 27C. CHIMERA SNAKE (Fase 2 da Quimera - Víbora Tóxica)
+// -------------------------------------------------------------
+function buildChimeraSnakeMini(group: THREE.Group) {
+  const scaleMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, metalness: 0.5, roughness: 0.3 });
+  const bellyMat = new THREE.MeshStandardMaterial({ color: 0x047857, roughness: 0.4 });
+  const venomMat = new THREE.MeshStandardMaterial({
+    color: 0x10b981,
+    emissive: 0x059669,
+    emissiveIntensity: 2.0,
+    roughness: 0.2,
+  });
+  const fangMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.2 });
+
+  // Coiled Serpentine Body Segments
+  const coils = 6;
+  for (let i = 0; i < coils; i++) {
+    const radius = 0.32 - i * 0.035;
+    const height = 0.10 + i * 0.09;
+    const torus = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.07 - i * 0.006, 6, 16), scaleMat);
+    torus.position.set(0, height, 0);
+    torus.rotation.x = Math.PI / 2 + (i % 2 === 0 ? 0.1 : -0.1);
+    torus.castShadow = true;
+    group.add(torus);
+  }
+
+  // Rising Snake Neck & Hood
+  const neck = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.35, 6, 8), scaleMat);
+  neck.position.set(0, 0.65, 0.12);
+  neck.rotation.x = Math.PI / 8;
+  group.add(neck);
+
+  // Flared Cobra Hood
+  const hood = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.30, 0.04), bellyMat);
+  hood.position.set(0, 0.68, 0.10);
+  hood.rotation.x = Math.PI / 8;
+  group.add(hood);
+
+  // Viper Head
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.24, 5), scaleMat);
+  head.position.set(0, 0.84, 0.22);
+  head.rotation.x = Math.PI / 2;
+  group.add(head);
+
+  // Glowing Emerald Toxic Eyes
+  const eL = new THREE.Mesh(new THREE.SphereGeometry(0.035, 4, 4), venomMat);
+  eL.position.set(-0.07, 0.86, 0.26);
+  const eR = new THREE.Mesh(new THREE.SphereGeometry(0.035, 4, 4), venomMat);
+  eR.position.set(0.07, 0.86, 0.26);
+  group.add(eL, eR);
+
+  // Sharp Venomous Fangs
+  const fL = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.09, 4), fangMat);
+  fL.position.set(-0.04, 0.78, 0.32);
+  fL.rotation.x = -Math.PI / 4;
+  const fR = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.09, 4), fangMat);
+  fR.position.set(0.04, 0.78, 0.32);
+  fR.rotation.x = -Math.PI / 4;
+  group.add(fL, fR);
+}
+
+// -------------------------------------------------------------
+// 27D. CHIMERA GOAT (Fase 2 da Quimera - Bastião Caprino)
+// -------------------------------------------------------------
+function buildChimeraGoatMini(group: THREE.Group) {
+  const coatMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.65 });
+  const hornMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.7, roughness: 0.25 });
+  const shieldGlow = new THREE.MeshStandardMaterial({
+    color: 0xa855f7,
+    emissive: 0x7c3aed,
+    emissiveIntensity: 1.8,
+    roughness: 0.2,
+  });
+
+  // Quadruped Goat Body
+  const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.22, 0.50, 8, 10), coatMat);
+  body.position.set(0, 0.40, 0);
+  body.rotation.x = Math.PI / 2;
+  body.castShadow = true;
+  group.add(body);
+
+  // 4 Slender Hoofed Legs
+  const legPositions = [
+    [-0.18, 0.18, -0.22],
+    [0.18, 0.18, -0.22],
+    [-0.18, 0.18, 0.22],
+    [0.18, 0.18, 0.22],
+  ];
+  legPositions.forEach(([px, py, pz]) => {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.06, 0.26, 6, 8), coatMat);
+    leg.position.set(px, py, pz);
+    group.add(leg);
+    const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.055, 0.06, 6), hornMat);
+    hoof.position.set(px, 0.03, pz);
+    group.add(hoof);
+  });
+
+  // Horned Goat Head & Muzzle
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.28, 6), coatMat);
+  head.position.set(0, 0.64, 0.38);
+  head.rotation.x = -Math.PI / 3;
+  group.add(head);
+
+  // Beard
+  const beard = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 4), hornMat);
+  beard.position.set(0, 0.48, 0.48);
+  beard.rotation.x = Math.PI / 6;
+  group.add(beard);
+
+  // Large Curved Demonic Ram Horns
+  const hL = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.04, 6, 16, Math.PI * 1.1), hornMat);
+  hL.position.set(-0.16, 0.78, 0.28);
+  hL.rotation.set(-Math.PI / 4, -Math.PI / 4, 0);
+  const hR = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.04, 6, 16, Math.PI * 1.1), hornMat);
+  hR.position.set(0.16, 0.78, 0.28);
+  hR.rotation.set(-Math.PI / 4, Math.PI / 4, 0);
+  group.add(hL, hR);
+
+  // Glowing Amethyst Eyes
+  const eL = new THREE.Mesh(new THREE.SphereGeometry(0.03, 4, 4), shieldGlow);
+  eL.position.set(-0.08, 0.68, 0.42);
+  const eR = new THREE.Mesh(new THREE.SphereGeometry(0.03, 4, 4), shieldGlow);
+  eR.position.set(0.08, 0.68, 0.42);
+  group.add(eL, eR);
+
+  // Reflective Spiked Shield Sigil on Chest
+  const sigil = new THREE.Mesh(new THREE.OctahedronGeometry(0.12), shieldGlow);
+  sigil.position.set(0, 0.46, 0.32);
+  sigil.scale.set(1, 1.4, 0.4);
+  group.add(sigil);
 }
 
 // -------------------------------------------------------------

@@ -85,8 +85,8 @@ export function decideMonsterAction(
         } else if (effect?.type === 'shield' || act.skill.casterStatusEffect?.type === 'shield') {
           // Never recast shield if unit already has active shield
           if (!hasActiveShield) {
-            if (role === 'tank') {
-              score = 220; // Tanks prioritize establishing their shield
+            if (role === 'tank' || act.skill.id === 'quimera_escudo_cabra') {
+              score = 220; // Tanks and Chimera Goat prioritize establishing their reflective shield
             } else if (role === 'support') {
               score = hpRatio < 0.6 ? 180 : 70;
             } else {

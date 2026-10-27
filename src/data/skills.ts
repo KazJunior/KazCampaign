@@ -4167,7 +4167,116 @@ export const SKILLS: Record<string, Skill> = {
     statusEffect: { type: 'stun', duration: 2, value: 1 },
     iconName: 'Hammer',
   },
-  // --- FASE 30: VALGAR, O CARNICEIRO IMORTAL ---
+  // ==========================================
+  // --- FASE 30: A QUIMERA PRIMORDIAL ---
+  // ==========================================
+  quimera_rugido_amedrontador: {
+    id: 'quimera_rugido_amedrontador',
+    name: 'Rugido Amedrontador',
+    description: 'Habilidade 1: Um rugido amedrontador que diminui o dano de todos os heróis em 30% por 2 turnos e concede imunidade a efeitos de status por 3 turnos (Cooldown: 5).',
+    damageType: 'physical',
+    category: 'support',
+    power: 0,
+    rangeMin: 0,
+    rangeMax: 0,
+    aoeRadius: 0,
+    cooldownMax: 5,
+    currentCooldown: 0,
+    targetType: 'self',
+    debuffsAllPlayersAtk: 30,
+    debuffDuration: 2,
+    casterStatusEffect: { type: 'immune', duration: 3, value: 1 },
+    iconName: 'Flame',
+  },
+  quimera_mordida_serpente: {
+    id: 'quimera_mordida_serpente',
+    name: 'Mordida da Cauda de Cobra',
+    description: 'Habilidade 2: A cauda de cobra morde o alvo envenenando o alvo, causando 240% de dano físico e atordoando o alvo por 2 turnos (Cooldown: 5).',
+    damageType: 'physical',
+    category: 'attack',
+    power: 2.40,
+    rangeMin: 1,
+    rangeMax: 1,
+    aoeRadius: 0,
+    cooldownMax: 5,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
+    secondaryStatusEffect: { type: 'stun', duration: 2, value: 1 },
+    iconName: 'Zap',
+  },
+  quimera_escudo_cabra: {
+    id: 'quimera_escudo_cabra',
+    name: 'Escudo Protetor da Cabra',
+    description: 'Habilidade 3: A cabra invoca um escudo de 650 de vida que reflete 25% do dano causado de volta ao atacante por 2 turnos (Cooldown: 5).',
+    damageType: 'healing',
+    category: 'defense',
+    power: 0,
+    rangeMin: 0,
+    rangeMax: 0,
+    aoeRadius: 0,
+    cooldownMax: 5,
+    currentCooldown: 0,
+    targetType: 'self',
+    statusEffect: { type: 'shield', duration: 2, value: 650, reflectRatio: 0.25 },
+    casterStatusEffect: { type: 'shield', duration: 2, value: 650, reflectRatio: 0.25 },
+    iconName: 'Shield',
+  },
+  quimera_garras_leao: {
+    id: 'quimera_garras_leao',
+    name: 'Garras Dilacerantes do Leão',
+    description: 'Habilidade 4: O leão realiza um corte com suas garras em formato de cone, causando 230% de dano físico e aplicando sangramento por 2 turnos (Cooldown: 4).',
+    damageType: 'physical',
+    category: 'attack',
+    power: 2.30,
+    rangeMin: 1,
+    rangeMax: 2,
+    aoeRadius: 1,
+    aoeType: 'cone',
+    canTargetGround: true,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    statusEffect: { type: 'burn', duration: 2, value: 2 },
+    iconName: 'Swords',
+  },
+  quimera_cuspe_veneno: {
+    id: 'quimera_cuspe_veneno',
+    name: 'Cuspe Tóxico da Cobra',
+    description: 'Habilidade 5: A cobra cospe uma grande bola de veneno que causa 230% de dano mágico em uma área 3x3, diminuindo a movimentação dos alvos em 2 e envenenando por 2 turnos (Cooldown: 4).',
+    damageType: 'magical',
+    category: 'attack',
+    power: 2.30,
+    rangeMin: 1,
+    rangeMax: 4,
+    aoeRadius: 1,
+    aoeType: 'circle',
+    canTargetGround: true,
+    cooldownMax: 4,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    statusEffect: { type: 'poison', duration: 2, value: 2 },
+    secondaryStatusEffect: { type: 'slow', duration: 2, value: 2 },
+    iconName: 'Skull',
+  },
+  quimera_pisoteio_cabra: {
+    id: 'quimera_pisoteio_cabra',
+    name: 'Pisoteio Brutal da Cabra',
+    description: 'Habilidade 6: A cabra pisoteia o inimigo mais próximo, causando 250% de dano físico que ignora 20% da armadura (Cooldown: 3).',
+    damageType: 'physical',
+    category: 'attack',
+    power: 2.50,
+    rangeMin: 1,
+    rangeMax: 1,
+    aoeRadius: 0,
+    cooldownMax: 3,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    defenseIgnoreRatio: 0.20,
+    iconName: 'Hammer',
+  },
+
+  // --- FASE 35: VALGAR, O CARNICEIRO IMORTAL ---
   valgar_golpe_voraz: {
     id: 'valgar_golpe_voraz',
     name: 'Golpe Voraz Sanguinário',
@@ -4399,313 +4508,7 @@ export const SKILLS: Record<string, Skill> = {
     statusEffect: { type: 'stun', duration: 2, value: 1 },
     iconName: 'RotateCcw',
   },
-};
 
-
-export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
-  guerreiro: [
-    'golpe_demolidor', 'postura_defensiva', 'impacto_blindado', 'escudo_inquebrantavel',
-    'corte_circular', 'investida_pesada', 'grito_de_guerra', 'escudo_de_espinhos', 'resistencia_suprema'
-  ],
-  arqueiro: [
-    'disparo_triplo', 'tiro_de_precisao', 'recuo_tatico', 'flecha_venenosa',
-    'chuva_de_flechas', 'tiro_paralisante', 'armadilha_de_caca', 'olho_de_aguia', 'tiro_mortal'
-  ],
-  mago: [
-    'lanca_chamas', 'armadura_de_magma', 'chuva_de_meteoros', 'combustao_espontanea',
-    'escudo_flamejante', 'labareda_infernal', 'passo_de_cinzas', 'furia_ignea', 'cataclismo_infernal'
-  ],
-  curandeiro: [
-    'cura_em_area', 'escudo_sagrado', 'purificacao', 'luz_restauradora',
-    'martelo_sagrado', 'bencao_divina', 'aura_de_protecao', 'paz_espiritual', 'ressurreicao_mistica'
-  ],
-  assassino: [
-    'passo_das_sombras', 'veneno_mortal', 'execucao', 'laminas_duplas',
-    'mortalha_das_sombras', 'corte_traicoeiro', 'danca_das_laminas', 'agilidade_sombria', 'assassinato'
-  ],
-  cavaleiro_arcano: [
-    'barreira_arcana', 'ruptura_mistica', 'marca_do_cacador', 'golpe_flamejante',
-    'estocada_eletrica', 'aura_runica', 'sedenta_de_runas', 'armadura_runica', 'lamina_do_destino'
-  ],
-  necromante: [
-    'maldicao_fraqueza', 'toque_apodrecedor', 'explosao_corpse', 'pacto_de_sangue', 'profanar_solo'
-  ],
-  druida: [
-    'campo_de_espinhos', 'casca_de_ferro', 'seiva_vital', 'bencao_da_alcateia', 'florescimento_ancestral'
-  ],
-  mago_runico: [
-    'marca_do_destino', 'glifo_incandescente', 'runa_de_protecao', 'campo_runico', 'apocalipse_runico'
-  ],
-  berserker: [
-    'corte_temerario', 'salto_destrutivo', 'frenesi_sanguinario', 'rugido_intimidante', 'ira_incontrolavel'
-  ],
-  carrasco_vazio: [
-    'passo_do_vazio', 'fissura_espacial', 'corte_da_sentenca', 'postura_do_vazio', 'decapitacao_do_vazio'
-  ],
-  paladino: [
-    'escudo_da_fe', 'aura_de_retribuicao', 'consagracao', 'julgamento_divino', 'imposicao_da_justica'
-  ],
-  lanceiro: [
-    'recuo_da_lanca', 'perfuracao_abissal', 'varredura_com_lanca', 'salto_do_dragao', 'cometa_do_dragao'
-  ],
-  bardo: [
-    'balada_do_conforto', 'hino_da_resistencia', 'acorde_dissonante', 'canto_do_silencio', 'sinfonia_da_vitoria'
-  ],
-  mago_gelo: [
-    'armadura_glacial', 'estaca_de_gelo', 'nevasca', 'sepultura_de_gelo', 'zero_absoluto'
-  ],
-  sniper: [
-    'tiro_perfurador_de_eter',
-    'disparo_concussivo',
-    'mina_claymore_tatica',
-    'tiro_recuo_propulsor',
-    'marcador_laser_orbital',
-    'bala_perfuradora_de_blindagem',
-    'tiro_sinalizador_fosforoso',
-    'camuflagem_ghillie_termica',
-    'tiro_no_ponto_vital',
-    'tiro_do_juizo_final',
-  ],
-  mago_eletrico: [
-    'raio_paralisante',
-    'passo_do_trovao',
-    'relampago_em_cadeia',
-    'estimulo_bioeletrico',
-    'escudo_de_plasma_estatico',
-    'pulso_eletrostatico_repulsor',
-    'tempestade_eletromagnetica',
-    'esfera_de_plasma_pesado',
-    'apocalipse_eletrico',
-  ],
-  mago_vento: [
-    'brisa_aceleradora',
-    'passo_das_nuvens',
-    'vendaval_de_resgate',
-    'manto_dos_ventos',
-    'corrente_de_lancamento',
-    'lanca_aerodinamica',
-    'tempestade_de_poeira',
-    'vortice_cortante',
-    'furacao_devastador',
-  ],
-};
-
-/** Nível máximo de evolução de cada habilidade */
-export const MAX_SKILL_LEVEL = 5;
-
-export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
-  if (!baseSkill) return baseSkill;
-  const effectiveLevel = Math.min(MAX_SKILL_LEVEL, Math.max(1, level));
-  if (effectiveLevel <= 1) {
-    const clone = { ...baseSkill, level: 1 };
-    // Habilidades de cura, escudos e roubo de vida possuem cooldown mínimo de 4
-    if (
-      clone.damageType === 'healing' ||
-      clone.id === 'cura' ||
-      clone.id.includes('cura') ||
-      clone.statusEffect?.type === 'shield' ||
-      (clone.lifestealPercent && clone.lifestealPercent > 0) ||
-      clone.id === 'dreno_de_vida' ||
-      clone.id === 'dreno_de_seiva' ||
-      clone.id === 'sedenta_de_runas'
-    ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
-    }
-    // Habilidades de provocação (taunt) possuem cooldown mínimo de 4
-    if (
-      clone.statusEffect?.type === 'taunt' ||
-      clone.secondaryStatusEffect?.type === 'taunt' ||
-      clone.casterStatusEffect?.type === 'taunt'
-    ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
-    }
-    if (
-      clone.statusEffect?.type === 'stun' ||
-      clone.secondaryStatusEffect?.type === 'stun' ||
-      clone.casterStatusEffect?.type === 'stun'
-    ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
-    }
-    if (
-      clone.statusEffect?.type === 'slow' ||
-      clone.secondaryStatusEffect?.type === 'slow' ||
-      clone.statusEffect?.type === 'buff_atk' ||
-      clone.secondaryStatusEffect?.type === 'buff_atk' ||
-      clone.statusEffect?.type === 'debuff_def' ||
-      clone.secondaryStatusEffect?.type === 'debuff_def' ||
-      clone.statusEffect?.type === 'burn' ||
-      clone.secondaryStatusEffect?.type === 'burn' ||
-      clone.statusEffect?.type === 'poison' ||
-      clone.secondaryStatusEffect?.type === 'poison'
-    ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
-    }
-    // Habilidades do druída de cura e escudo possuem no mínimo 4 turnos de cooldown
-    if (
-      clone.id === 'casca_de_ferro' ||
-      clone.id === 'seiva_vital' ||
-      clone.id === 'bencao_da_alcateia' ||
-      clone.id === 'florescimento_ancestral' ||
-      clone.id === 'barreira_tecnologica' ||
-      clone.id === 'choque_estatico' ||
-      clone.id === 'injecao_de_adrenalina' ||
-      clone.id === 'sobrecarga_nuclear'
-    ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
-    }
-    // 1° habilidade do mago possui cooldown reduzido para 3
-    if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
-      clone.cooldownMax = 3;
-    }
-    if (clone.statusEffect?.type === 'burn' || clone.statusEffect?.type === 'poison') {
-      clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 2 };
-    }
-    if (clone.secondaryStatusEffect?.type === 'burn' || clone.secondaryStatusEffect?.type === 'poison') {
-      clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 2 };
-    }
-    if (clone.statusEffect?.type === 'slow') {
-      clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 1 };
-    }
-    if (clone.secondaryStatusEffect?.type === 'slow') {
-      clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 1 };
-    }
-    if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0.20) {
-      clone.defenseIgnoreRatio = 0.20;
-    }
-    return clone;
-  }
-
-  const canonicalBase = (baseSkill.id && SKILLS[baseSkill.id]) ? SKILLS[baseSkill.id] : baseSkill;
-  const clone: Skill = JSON.parse(JSON.stringify(canonicalBase));
-  clone.level = effectiveLevel;
-
-  // Aumento de escalonamento: +0.2 de poder por nível acima de 1 (+0.1 para cura de vida máxima) até o limite de Nível 5
-  if (canonicalBase.power > 0) {
-    const powerStep = canonicalBase.id === 'resistencia_suprema' ? 0.1 : 0.2;
-    clone.power = Math.round((canonicalBase.power + powerStep * (effectiveLevel - 1)) * 100) / 100;
-  }
-
-  // Melhorias de recarga (cooldown) NÃO devem ser fornecidas
-  clone.cooldownMax = Math.max(canonicalBase.cooldownMax, baseSkill.cooldownMax || 0);
-
-  // Bloqueio rigoroso: Nenhuma habilidade de cura, taunt ou stun pode ter o cooldown diminuído por upgrade/nível
-  const isHealing =
-    clone.damageType === 'healing' ||
-    clone.id === 'cura' ||
-    clone.id.includes('cura') ||
-    clone.statusEffect?.type === 'shield' ||
-    (clone.lifestealPercent && clone.lifestealPercent > 0) ||
-    clone.id === 'dreno_de_vida' ||
-    clone.id === 'dreno_de_seiva' ||
-    clone.id === 'sedenta_de_runas';
-
-  const isTaunt =
-    clone.statusEffect?.type === 'taunt' ||
-    clone.secondaryStatusEffect?.type === 'taunt' ||
-    clone.casterStatusEffect?.type === 'taunt';
-
-  const isStun =
-    clone.statusEffect?.type === 'stun' ||
-    clone.secondaryStatusEffect?.type === 'stun' ||
-    clone.casterStatusEffect?.type === 'stun';
-
-  if (isHealing) {
-    clone.cooldownMax = Math.max(4, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
-  }
-  if (isTaunt) {
-    clone.cooldownMax = Math.max(4, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
-  }
-  if (isStun) {
-    clone.cooldownMax = Math.max(4, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
-  }
-
-  // Demais restrições de cooldown por debuffs
-  if (
-      clone.statusEffect?.type === 'slow' ||
-      clone.secondaryStatusEffect?.type === 'slow' ||
-      clone.statusEffect?.type === 'buff_atk' ||
-      clone.secondaryStatusEffect?.type === 'buff_atk' ||
-      clone.statusEffect?.type === 'debuff_def' ||
-      clone.secondaryStatusEffect?.type === 'debuff_def' ||
-      clone.statusEffect?.type === 'burn' ||
-      clone.secondaryStatusEffect?.type === 'burn' ||
-      clone.statusEffect?.type === 'poison' ||
-      clone.secondaryStatusEffect?.type === 'poison'
-    ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
-    }
-    // Habilidades do druída de cura e escudo possuem no mínimo 4 turnos de cooldown
-    if (
-      clone.id === 'casca_de_ferro' ||
-      clone.id === 'seiva_vital' ||
-      clone.id === 'bencao_da_alcateia' ||
-      clone.id === 'florescimento_ancestral' ||
-      clone.id === 'barreira_tecnologica' ||
-      clone.id === 'choque_estatico' ||
-      clone.id === 'injecao_de_adrenalina' ||
-      clone.id === 'sobrecarga_nuclear'
-    ) {
-      clone.cooldownMax = Math.max(4, clone.cooldownMax);
-    }
-    // 1° habilidade do mago possui cooldown reduzido para 3
-    if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
-      clone.cooldownMax = 3;
-    }
-
-  // Aumento de efeito de status (+5% no valor por nível até o Nv. 5; nunca altera duração de stun/slow/taunt)
-  if (clone.statusEffect) {
-    const isDurationEffect = clone.statusEffect.type === 'stun' || clone.statusEffect.type === 'slow' || clone.statusEffect.type === 'taunt';
-    const isStatBuffDebuff = clone.statusEffect.type === 'buff_atk' || clone.statusEffect.type === 'debuff_def';
-    const isPoisonBurn = clone.statusEffect.type === 'burn' || clone.statusEffect.type === 'poison';
-    const isSlow = clone.statusEffect.type === 'slow';
-    const bonus = (isDurationEffect || isPoisonBurn) ? 0 : Math.round(canonicalBase.statusEffect!.value * 0.05 * (effectiveLevel - 1));
-    const calculatedValue = isPoisonBurn ? 2 : isSlow ? 1 : (canonicalBase.statusEffect!.value + bonus);
-    clone.statusEffect = {
-      ...clone.statusEffect,
-      duration: (isStatBuffDebuff || isPoisonBurn || isSlow)
-        ? Math.min(2, clone.statusEffect.duration)
-        : clone.statusEffect.type === 'taunt'
-        ? 1
-        : clone.statusEffect.duration,
-      value: isStatBuffDebuff ? Math.min(20, calculatedValue) : (isPoisonBurn ? 2 : isSlow ? 1 : calculatedValue),
-    };
-  }
-
-  if (clone.secondaryStatusEffect) {
-    const isStatBuffDebuff = clone.secondaryStatusEffect.type === 'buff_atk' || clone.secondaryStatusEffect.type === 'debuff_def';
-    const isPoisonBurn = clone.secondaryStatusEffect.type === 'burn' || clone.secondaryStatusEffect.type === 'poison';
-    const isSlow = clone.secondaryStatusEffect.type === 'slow';
-    if (isStatBuffDebuff) {
-      clone.secondaryStatusEffect = {
-        ...clone.secondaryStatusEffect,
-        duration: Math.min(2, clone.secondaryStatusEffect.duration),
-        value: Math.min(20, clone.secondaryStatusEffect.value),
-      };
-    } else if (isPoisonBurn) {
-      clone.secondaryStatusEffect = {
-        ...clone.secondaryStatusEffect,
-        duration: Math.min(2, clone.secondaryStatusEffect.duration),
-        value: 2,
-      };
-    } else if (isSlow) {
-      clone.secondaryStatusEffect = {
-        ...clone.secondaryStatusEffect,
-        duration: Math.min(2, clone.secondaryStatusEffect.duration),
-        value: 1,
-      };
-    } else if (clone.secondaryStatusEffect.type === 'taunt') {
-      clone.secondaryStatusEffect = {
-        ...clone.secondaryStatusEffect,
-        duration: 1,
-      };
-    }
-  }
-
-  if (clone.casterStatusEffect && clone.casterStatusEffect.type === 'taunt') {
-    clone.casterStatusEffect = {
-      ...clone.casterStatusEffect,
-      duration: 1,
-    
   // ==========================================
   // HABILIDADES EXTRAS DOS MONSTROS NORMAIS (FASES 10-50)
   // ==========================================
@@ -5443,8 +5246,314 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     },
     "iconName": "Hammer"
 },
+
 };
 
+
+export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
+  guerreiro: [
+    'golpe_demolidor', 'postura_defensiva', 'impacto_blindado', 'escudo_inquebrantavel',
+    'corte_circular', 'investida_pesada', 'grito_de_guerra', 'escudo_de_espinhos', 'resistencia_suprema'
+  ],
+  arqueiro: [
+    'disparo_triplo', 'tiro_de_precisao', 'recuo_tatico', 'flecha_venenosa',
+    'chuva_de_flechas', 'tiro_paralisante', 'armadilha_de_caca', 'olho_de_aguia', 'tiro_mortal'
+  ],
+  mago: [
+    'lanca_chamas', 'armadura_de_magma', 'chuva_de_meteoros', 'combustao_espontanea',
+    'escudo_flamejante', 'labareda_infernal', 'passo_de_cinzas', 'furia_ignea', 'cataclismo_infernal'
+  ],
+  curandeiro: [
+    'cura_em_area', 'escudo_sagrado', 'purificacao', 'luz_restauradora',
+    'martelo_sagrado', 'bencao_divina', 'aura_de_protecao', 'paz_espiritual', 'ressurreicao_mistica'
+  ],
+  assassino: [
+    'passo_das_sombras', 'veneno_mortal', 'execucao', 'laminas_duplas',
+    'mortalha_das_sombras', 'corte_traicoeiro', 'danca_das_laminas', 'agilidade_sombria', 'assassinato'
+  ],
+  cavaleiro_arcano: [
+    'barreira_arcana', 'ruptura_mistica', 'marca_do_cacador', 'golpe_flamejante',
+    'estocada_eletrica', 'aura_runica', 'sedenta_de_runas', 'armadura_runica', 'lamina_do_destino'
+  ],
+  necromante: [
+    'maldicao_fraqueza', 'toque_apodrecedor', 'explosao_corpse', 'pacto_de_sangue', 'profanar_solo'
+  ],
+  druida: [
+    'campo_de_espinhos', 'casca_de_ferro', 'seiva_vital', 'bencao_da_alcateia', 'florescimento_ancestral'
+  ],
+  mago_runico: [
+    'marca_do_destino', 'glifo_incandescente', 'runa_de_protecao', 'campo_runico', 'apocalipse_runico'
+  ],
+  berserker: [
+    'corte_temerario', 'salto_destrutivo', 'frenesi_sanguinario', 'rugido_intimidante', 'ira_incontrolavel'
+  ],
+  carrasco_vazio: [
+    'passo_do_vazio', 'fissura_espacial', 'corte_da_sentenca', 'postura_do_vazio', 'decapitacao_do_vazio'
+  ],
+  paladino: [
+    'escudo_da_fe', 'aura_de_retribuicao', 'consagracao', 'julgamento_divino', 'imposicao_da_justica'
+  ],
+  lanceiro: [
+    'recuo_da_lanca', 'perfuracao_abissal', 'varredura_com_lanca', 'salto_do_dragao', 'cometa_do_dragao'
+  ],
+  bardo: [
+    'balada_do_conforto', 'hino_da_resistencia', 'acorde_dissonante', 'canto_do_silencio', 'sinfonia_da_vitoria'
+  ],
+  mago_gelo: [
+    'armadura_glacial', 'estaca_de_gelo', 'nevasca', 'sepultura_de_gelo', 'zero_absoluto'
+  ],
+  sniper: [
+    'tiro_perfurador_de_eter',
+    'disparo_concussivo',
+    'mina_claymore_tatica',
+    'tiro_recuo_propulsor',
+    'marcador_laser_orbital',
+    'bala_perfuradora_de_blindagem',
+    'tiro_sinalizador_fosforoso',
+    'camuflagem_ghillie_termica',
+    'tiro_no_ponto_vital',
+    'tiro_do_juizo_final',
+  ],
+  mago_eletrico: [
+    'raio_paralisante',
+    'passo_do_trovao',
+    'relampago_em_cadeia',
+    'estimulo_bioeletrico',
+    'escudo_de_plasma_estatico',
+    'pulso_eletrostatico_repulsor',
+    'tempestade_eletromagnetica',
+    'esfera_de_plasma_pesado',
+    'apocalipse_eletrico',
+  ],
+  mago_vento: [
+    'brisa_aceleradora',
+    'passo_das_nuvens',
+    'vendaval_de_resgate',
+    'manto_dos_ventos',
+    'corrente_de_lancamento',
+    'lanca_aerodinamica',
+    'tempestade_de_poeira',
+    'vortice_cortante',
+    'furacao_devastador',
+  ],
+};
+
+/** Nível máximo de evolução de cada habilidade */
+export const MAX_SKILL_LEVEL = 5;
+
+export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
+  if (!baseSkill) return baseSkill;
+  const effectiveLevel = Math.min(MAX_SKILL_LEVEL, Math.max(1, level));
+  if (effectiveLevel <= 1) {
+    const clone = { ...baseSkill, level: 1 };
+    // Habilidades de cura, escudos e roubo de vida possuem cooldown mínimo de 4
+    if (
+      clone.damageType === 'healing' ||
+      clone.id === 'cura' ||
+      clone.id.includes('cura') ||
+      clone.statusEffect?.type === 'shield' ||
+      (clone.lifestealPercent && clone.lifestealPercent > 0) ||
+      clone.id === 'dreno_de_vida' ||
+      clone.id === 'dreno_de_seiva' ||
+      clone.id === 'sedenta_de_runas'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // Habilidades de provocação (taunt) possuem cooldown mínimo de 4
+    if (
+      clone.statusEffect?.type === 'taunt' ||
+      clone.secondaryStatusEffect?.type === 'taunt' ||
+      clone.casterStatusEffect?.type === 'taunt'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    if (
+      clone.statusEffect?.type === 'stun' ||
+      clone.secondaryStatusEffect?.type === 'stun' ||
+      clone.casterStatusEffect?.type === 'stun'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    if (
+      clone.statusEffect?.type === 'slow' ||
+      clone.secondaryStatusEffect?.type === 'slow' ||
+      clone.statusEffect?.type === 'buff_atk' ||
+      clone.secondaryStatusEffect?.type === 'buff_atk' ||
+      clone.statusEffect?.type === 'debuff_def' ||
+      clone.secondaryStatusEffect?.type === 'debuff_def' ||
+      clone.statusEffect?.type === 'burn' ||
+      clone.secondaryStatusEffect?.type === 'burn' ||
+      clone.statusEffect?.type === 'poison' ||
+      clone.secondaryStatusEffect?.type === 'poison'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // Habilidades do druída de cura e escudo possuem no mínimo 4 turnos de cooldown
+    if (
+      clone.id === 'casca_de_ferro' ||
+      clone.id === 'seiva_vital' ||
+      clone.id === 'bencao_da_alcateia' ||
+      clone.id === 'florescimento_ancestral' ||
+      clone.id === 'barreira_tecnologica' ||
+      clone.id === 'choque_estatico' ||
+      clone.id === 'injecao_de_adrenalina' ||
+      clone.id === 'sobrecarga_nuclear'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // 1° habilidade do mago possui cooldown reduzido para 3
+    if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
+      clone.cooldownMax = 3;
+    }
+    if (clone.statusEffect?.type === 'burn' || clone.statusEffect?.type === 'poison') {
+      clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 2 };
+    }
+    if (clone.secondaryStatusEffect?.type === 'burn' || clone.secondaryStatusEffect?.type === 'poison') {
+      clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 2 };
+    }
+    if (clone.statusEffect?.type === 'slow') {
+      clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 1 };
+    }
+    if (clone.secondaryStatusEffect?.type === 'slow') {
+      clone.secondaryStatusEffect = { ...clone.secondaryStatusEffect, duration: Math.min(2, clone.secondaryStatusEffect.duration), value: 1 };
+    }
+    if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0.20) {
+      clone.defenseIgnoreRatio = 0.20;
+    }
+    return clone;
+  }
+
+  const canonicalBase = (baseSkill.id && SKILLS[baseSkill.id]) ? SKILLS[baseSkill.id] : baseSkill;
+  const clone: Skill = JSON.parse(JSON.stringify(canonicalBase));
+  clone.level = effectiveLevel;
+
+  // Aumento de escalonamento: +0.2 de poder por nível acima de 1 (+0.1 para cura de vida máxima) até o limite de Nível 5
+  if (canonicalBase.power > 0) {
+    const powerStep = canonicalBase.id === 'resistencia_suprema' ? 0.1 : 0.2;
+    clone.power = Math.round((canonicalBase.power + powerStep * (effectiveLevel - 1)) * 100) / 100;
+  }
+
+  // Melhorias de recarga (cooldown) NÃO devem ser fornecidas
+  clone.cooldownMax = Math.max(canonicalBase.cooldownMax, baseSkill.cooldownMax || 0);
+
+  // Bloqueio rigoroso: Nenhuma habilidade de cura, taunt ou stun pode ter o cooldown diminuído por upgrade/nível
+  const isHealing =
+    clone.damageType === 'healing' ||
+    clone.id === 'cura' ||
+    clone.id.includes('cura') ||
+    clone.statusEffect?.type === 'shield' ||
+    (clone.lifestealPercent && clone.lifestealPercent > 0) ||
+    clone.id === 'dreno_de_vida' ||
+    clone.id === 'dreno_de_seiva' ||
+    clone.id === 'sedenta_de_runas';
+
+  const isTaunt =
+    clone.statusEffect?.type === 'taunt' ||
+    clone.secondaryStatusEffect?.type === 'taunt' ||
+    clone.casterStatusEffect?.type === 'taunt';
+
+  const isStun =
+    clone.statusEffect?.type === 'stun' ||
+    clone.secondaryStatusEffect?.type === 'stun' ||
+    clone.casterStatusEffect?.type === 'stun';
+
+  if (isHealing) {
+    clone.cooldownMax = Math.max(4, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
+  }
+  if (isTaunt) {
+    clone.cooldownMax = Math.max(4, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
+  }
+  if (isStun) {
+    clone.cooldownMax = Math.max(4, clone.cooldownMax, baseSkill.cooldownMax || 0, canonicalBase.cooldownMax || 0);
+  }
+
+  // Demais restrições de cooldown por debuffs
+  if (
+      clone.statusEffect?.type === 'slow' ||
+      clone.secondaryStatusEffect?.type === 'slow' ||
+      clone.statusEffect?.type === 'buff_atk' ||
+      clone.secondaryStatusEffect?.type === 'buff_atk' ||
+      clone.statusEffect?.type === 'debuff_def' ||
+      clone.secondaryStatusEffect?.type === 'debuff_def' ||
+      clone.statusEffect?.type === 'burn' ||
+      clone.secondaryStatusEffect?.type === 'burn' ||
+      clone.statusEffect?.type === 'poison' ||
+      clone.secondaryStatusEffect?.type === 'poison'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // Habilidades do druída de cura e escudo possuem no mínimo 4 turnos de cooldown
+    if (
+      clone.id === 'casca_de_ferro' ||
+      clone.id === 'seiva_vital' ||
+      clone.id === 'bencao_da_alcateia' ||
+      clone.id === 'florescimento_ancestral' ||
+      clone.id === 'barreira_tecnologica' ||
+      clone.id === 'choque_estatico' ||
+      clone.id === 'injecao_de_adrenalina' ||
+      clone.id === 'sobrecarga_nuclear'
+    ) {
+      clone.cooldownMax = Math.max(4, clone.cooldownMax);
+    }
+    // 1° habilidade do mago possui cooldown reduzido para 3
+    if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
+      clone.cooldownMax = 3;
+    }
+
+  // Aumento de efeito de status (+5% no valor por nível até o Nv. 5; nunca altera duração de stun/slow/taunt)
+  if (clone.statusEffect) {
+    const isDurationEffect = clone.statusEffect.type === 'stun' || clone.statusEffect.type === 'slow' || clone.statusEffect.type === 'taunt';
+    const isStatBuffDebuff = clone.statusEffect.type === 'buff_atk' || clone.statusEffect.type === 'debuff_def';
+    const isPoisonBurn = clone.statusEffect.type === 'burn' || clone.statusEffect.type === 'poison';
+    const isSlow = clone.statusEffect.type === 'slow';
+    const bonus = (isDurationEffect || isPoisonBurn) ? 0 : Math.round(canonicalBase.statusEffect!.value * 0.05 * (effectiveLevel - 1));
+    const calculatedValue = isPoisonBurn ? 2 : isSlow ? 1 : (canonicalBase.statusEffect!.value + bonus);
+    clone.statusEffect = {
+      ...clone.statusEffect,
+      duration: (isStatBuffDebuff || isPoisonBurn || isSlow)
+        ? Math.min(2, clone.statusEffect.duration)
+        : clone.statusEffect.type === 'taunt'
+        ? 1
+        : clone.statusEffect.duration,
+      value: isStatBuffDebuff ? Math.min(20, calculatedValue) : (isPoisonBurn ? 2 : isSlow ? 1 : calculatedValue),
+    };
+  }
+
+  if (clone.secondaryStatusEffect) {
+    const isStatBuffDebuff = clone.secondaryStatusEffect.type === 'buff_atk' || clone.secondaryStatusEffect.type === 'debuff_def';
+    const isPoisonBurn = clone.secondaryStatusEffect.type === 'burn' || clone.secondaryStatusEffect.type === 'poison';
+    const isSlow = clone.secondaryStatusEffect.type === 'slow';
+    if (isStatBuffDebuff) {
+      clone.secondaryStatusEffect = {
+        ...clone.secondaryStatusEffect,
+        duration: Math.min(2, clone.secondaryStatusEffect.duration),
+        value: Math.min(20, clone.secondaryStatusEffect.value),
+      };
+    } else if (isPoisonBurn) {
+      clone.secondaryStatusEffect = {
+        ...clone.secondaryStatusEffect,
+        duration: Math.min(2, clone.secondaryStatusEffect.duration),
+        value: 2,
+      };
+    } else if (isSlow) {
+      clone.secondaryStatusEffect = {
+        ...clone.secondaryStatusEffect,
+        duration: Math.min(2, clone.secondaryStatusEffect.duration),
+        value: 1,
+      };
+    } else if (clone.secondaryStatusEffect.type === 'taunt') {
+      clone.secondaryStatusEffect = {
+        ...clone.secondaryStatusEffect,
+        duration: 1,
+      };
+    }
+  }
+
+  if (clone.casterStatusEffect && clone.casterStatusEffect.type === 'taunt') {
+    clone.casterStatusEffect = {
+      ...clone.casterStatusEffect,
+      duration: 1,
+    };
   }
 
   // Penetração de armadura/defesa (limitada a 30% no máximo)

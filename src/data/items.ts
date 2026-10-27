@@ -645,7 +645,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     iconName: 'PocketKnife',
     color: '#00C853',
     stats: { atk: 9, mag: 6, hp: 30 },
-    droppedByMonsterTypeIds: ['quimera_venenosa'],
+    droppedByMonsterTypeIds: ['quimera_venenosa', 'quimera_leao', 'quimera_serpente', 'quimera_cabra'],
   },
   mascara_da_besta: {
     id: 'mascara_da_besta',
@@ -656,7 +656,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     iconName: 'VenetianMask',
     color: '#00E676',
     stats: { hp: 40, def: 4, res: 4 },
-    droppedByMonsterTypeIds: ['quimera_venenosa'],
+    droppedByMonsterTypeIds: ['quimera_venenosa', 'quimera_leao', 'quimera_serpente', 'quimera_cabra'],
   },
   glandula_peconhenta: {
     id: 'glandula_peconhenta',
@@ -667,7 +667,7 @@ export const ITEMS: Record<string, ItemDefinition> = {
     iconName: 'HeartPulse',
     color: '#69F0AE',
     stats: { hp: 35, atk: 6, mag: 5 },
-    droppedByMonsterTypeIds: ['quimera_venenosa'],
+    droppedByMonsterTypeIds: ['quimera_venenosa', 'quimera_leao', 'quimera_serpente', 'quimera_cabra'],
   },
 
   // =========================================================================

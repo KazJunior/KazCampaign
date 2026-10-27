@@ -391,9 +391,9 @@ export const CLASS_UNLOCK_CONDITIONS: Record<string, ClassUnlockInfo> = {
   },
   berserker: {
     requiredLevel: 30,
-    bossName: 'Valgar, o Carniceiro Imortal (Fase 30)',
+    bossName: 'A Quimera Ancestral (Fase 30)',
     isBoss: true,
-    description: 'Derrote o Boss Poderoso Valgar na Fase 30 para desbloquear o Berserker.',
+    description: 'Derrote a Quimera Ancestral na Fase 30 para desbloquear o Berserker.',
   },
 };
 

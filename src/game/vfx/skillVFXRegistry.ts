@@ -17,7 +17,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
   },
   arauto_corte_ceifador: {
     id: 'arauto_corte_ceifador',
-    type: 'abyssal_blade',
+    type: 'blade_tempest',
     durationMs: 650,
     cast: { durationMs: 120, color: 0x06b6d4 },
     impact: {
@@ -31,7 +31,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
   },
   arauto_giro_foice: {
     id: 'arauto_giro_foice',
-    type: 'abyssal_blade',
+    type: 'blade_tempest',
     durationMs: 700,
     cast: { durationMs: 100, color: 0x00e5ff },
     impact: {
@@ -59,7 +59,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
   },
   arauto_arremesso_foice: {
     id: 'arauto_arremesso_foice',
-    type: 'arcane_missile',
+    type: 'generic_magic',
     durationMs: 650,
     cast: { durationMs: 120, color: 0x00e5ff },
     impact: {

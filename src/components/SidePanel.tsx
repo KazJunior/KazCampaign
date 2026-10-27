@@ -87,6 +87,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isAtkDebuffed = selectedUnit.statusEffects?.find((e) => e.type === 'debuff_atk' && e.duration > 0);
   const excessHealEffect = selectedUnit.statusEffects?.find((e) => e.type === 'excess_heal' && e.duration > 0);
   const excessShieldEffect = selectedUnit.statusEffects?.find((e) => e.type === 'excess_shield' && e.duration > 0);
+  const immuneEffect = selectedUnit.statusEffects?.find((e) => e.type === 'immune' && e.duration > 0);
+  const isImmune = !!immuneEffect;
   const isBossMonster = Boolean(selectedUnit.isBoss || selectedUnit.isMiniBoss);
   const isStunImmuneConsecutive =
     isBossMonster &&
@@ -179,12 +181,20 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isStunImmuneConsecutive) && (
+        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isStunImmuneConsecutive || isImmune) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
             </div>
             <div className="flex flex-wrap gap-1.5">
+              {isImmune && (
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#C084FC] flex items-center gap-1"
+                  title="Imune a qualquer efeito de status negativo"
+                >
+                  🛡️ Imunidade a Status ({immuneEffect?.duration}T)
+                </span>
+              )}
               {isStunImmuneConsecutive && (
                 <span
                   className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#64748B]/20 border border-[#64748B]/40 text-[#CBD5E1] flex items-center gap-1"
@@ -522,6 +532,12 @@ export function getUnitAvatar(key: string, size = 16) {
       return <Hammer size={size} />;
     case 'venom_chimera_boss':
       return <Zap size={size} />;
+    case 'quimera_leao':
+      return <Flame size={size} />;
+    case 'quimera_serpente':
+      return <Zap size={size} />;
+    case 'quimera_cabra':
+      return <Shield size={size} />;
     case 'eclipse_knight_boss':
       return <Sun size={size} />;
     case 'basalt_golem':

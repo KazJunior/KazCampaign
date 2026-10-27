@@ -1320,8 +1320,222 @@ export function App() {
     }
   }, [currentLevel, progress]);
 
+  // Divisão Quimérica (Fase 2 da Quimera na Fase 30 quando <= 30% HP)
+  const checkAndTriggerChimeraSplit = useCallback(
+    async (candidateUnits: Unit[], currentGrid: TileData[][] = grid): Promise<{ didSplit: boolean; updatedUnits: Unit[] }> => {
+      const chimera = candidateUnits.find(
+        (u) =>
+          u.faction === 'enemy' &&
+          u.monsterTypeId === 'quimera_venenosa' &&
+          (!u.bossPhase || u.bossPhase === 1) &&
+          (u.currentHp <= u.maxHp * 0.3 || u.isDead)
+      );
+
+      if (!chimera) {
+        return { didSplit: false, updatedUnits: candidateUnits };
+      }
+
+      soundManager.playMagicSpell();
+      soundManager.playUpgrade();
+      addFloatingNumber(chimera.x, chimera.y, '🌀 DIVISÃO QUIMÉRICA: 3 FERAS DESPERTAM!', 'status', '#10B981');
+
+      if (boardRef.current) {
+        await boardRef.current.playDeathAnimation(chimera.id);
+      }
+
+      // Conjunto de posições ocupadas por unidades vivas
+      const occupied = new Set<string>();
+      candidateUnits.forEach((u) => {
+        if (!u.isDead && u.id !== chimera.id) {
+          occupied.add(`${u.x},${u.y}`);
+        }
+      });
+
+      const gWidth = currentGrid[0]?.length || 10;
+      const gHeight = currentGrid.length || 8;
+      const findFreeTile = (prefX: number, prefY: number): { x: number; y: number } => {
+        if (
+          prefX >= 0 && prefX < gWidth &&
+          prefY >= 0 && prefY < gHeight &&
+          currentGrid[prefY][prefX].isWalkable &&
+          !occupied.has(`${prefX},${prefY}`)
+        ) {
+          occupied.add(`${prefX},${prefY}`);
+          return { x: prefX, y: prefY };
+        }
+        for (let dist = 1; dist < Math.max(gWidth, gHeight); dist++) {
+          for (let dy = -dist; dy <= dist; dy++) {
+            for (let dx = -dist; dx <= dist; dx++) {
+              const nx = prefX + dx;
+              const ny = prefY + dy;
+              if (
+                nx >= 0 && nx < gWidth &&
+                ny >= 0 && ny < gHeight &&
+                currentGrid[ny][nx].isWalkable &&
+                !occupied.has(`${nx},${ny}`)
+              ) {
+                occupied.add(`${nx},${ny}`);
+                return { x: nx, y: ny };
+              }
+            }
+          }
+        }
+        return { x: prefX, y: prefY };
+      };
+
+      // Surgem no meio do tabuleiro, separados por 3 casas:
+      // Meio esquerda: x = 1, Meio centro: x = 4, Meio direita: x = 7, linha central: y = 4
+      const midY = Math.floor(gHeight / 2);
+      const lionPos = findFreeTile(1, midY);
+      const snakePos = findFreeTile(4, midY);
+      const goatPos = findFreeTile(7, midY);
+
+      const now = Date.now();
+      const lionUnit: Unit = {
+        id: `quimera_leao_${now}_1`,
+        name: 'Leão Quimérico',
+        className: 'Leão Quimérico',
+        faction: 'enemy',
+        monsterTypeId: 'quimera_leao',
+        monsterRole: 'attacker',
+        level: chimera.level,
+        xp: 0,
+        maxXp: chimera.maxXp,
+        maxHp: 2500,
+        currentHp: 2500,
+        atk: chimera.atk,
+        mag: chimera.mag,
+        def: chimera.def,
+        res: chimera.res,
+        mov: chimera.mov,
+        range: 1,
+        x: lionPos.x,
+        y: lionPos.y,
+        hasMoved: false,
+        hasAttacked: false,
+        isDead: false,
+        color: '#F59E0B',
+        avatarKey: 'quimera_leao',
+        skills: [
+          JSON.parse(JSON.stringify(SKILLS.quimera_rugido_amedrontador)),
+          JSON.parse(JSON.stringify(SKILLS.quimera_garras_leao)),
+        ],
+        learnedSkillIds: [],
+        statusEffects: [],
+        isBoss: true,
+        bossPhase: 2,
+        damageDealt: 0,
+        kills: 0,
+      };
+
+      const snakeUnit: Unit = {
+        id: `quimera_serpente_${now}_2`,
+        name: 'Serpente Quimérica',
+        className: 'Serpente Quimérica',
+        faction: 'enemy',
+        monsterTypeId: 'quimera_serpente',
+        monsterRole: 'attacker',
+        level: chimera.level,
+        xp: 0,
+        maxXp: chimera.maxXp,
+        maxHp: 2500,
+        currentHp: 2500,
+        atk: chimera.atk,
+        mag: chimera.mag,
+        def: chimera.def,
+        res: chimera.res,
+        mov: chimera.mov,
+        range: 2,
+        x: snakePos.x,
+        y: snakePos.y,
+        hasMoved: false,
+        hasAttacked: false,
+        isDead: false,
+        color: '#10B981',
+        avatarKey: 'quimera_serpente',
+        skills: [
+          JSON.parse(JSON.stringify(SKILLS.quimera_mordida_serpente)),
+          JSON.parse(JSON.stringify(SKILLS.quimera_cuspe_veneno)),
+        ],
+        learnedSkillIds: [],
+        statusEffects: [],
+        isBoss: true,
+        bossPhase: 2,
+        damageDealt: 0,
+        kills: 0,
+      };
+
+      const goatUnit: Unit = {
+        id: `quimera_cabra_${now}_3`,
+        name: 'Cabra Quimérica',
+        className: 'Cabra Quimérica',
+        faction: 'enemy',
+        monsterTypeId: 'quimera_cabra',
+        monsterRole: 'tank',
+        level: chimera.level,
+        xp: 0,
+        maxXp: chimera.maxXp,
+        maxHp: 2500,
+        currentHp: 2500,
+        atk: chimera.atk,
+        mag: chimera.mag,
+        def: chimera.def,
+        res: chimera.res,
+        mov: chimera.mov,
+        range: 1,
+        x: goatPos.x,
+        y: goatPos.y,
+        hasMoved: false,
+        hasAttacked: false,
+        isDead: false,
+        color: '#8B5CF6',
+        avatarKey: 'quimera_cabra',
+        skills: [
+          JSON.parse(JSON.stringify(SKILLS.quimera_escudo_cabra)),
+          JSON.parse(JSON.stringify(SKILLS.quimera_pisoteio_cabra)),
+        ],
+        learnedSkillIds: [],
+        statusEffects: [],
+        isBoss: true,
+        bossPhase: 2,
+        damageDealt: 0,
+        kills: 0,
+      };
+
+      addFloatingNumber(lionPos.x, lionPos.y, '🦁 Leão Desperta! (2500 HP)', 'status', '#F59E0B');
+      addFloatingNumber(snakePos.x, snakePos.y, '🐍 Serpente Desperta! (2500 HP)', 'status', '#10B981');
+      addFloatingNumber(goatPos.x, goatPos.y, '🐐 Cabra Desperta! (2500 HP)', 'status', '#8B5CF6');
+
+      setActiveBossBanner({
+        name: 'A Tríade Quimérica',
+        subtitle: 'FASE 2 — Leão, Serpente e Cabra',
+        phase: 2,
+      });
+
+      const nextUnits = candidateUnits
+        .map((u) => (u.id === chimera.id ? { ...u, isDead: true, currentHp: 0, bossPhase: 2 } : u))
+        .concat([lionUnit, snakeUnit, goatUnit]);
+
+      setUnits(nextUnits);
+      return { didSplit: true, updatedUnits: nextUnits };
+    },
+    [grid, addFloatingNumber]
+  );
+
   // Check battle status
-  const checkBattleStatusWithUnits = useCallback((currentUnits: Unit[]) => {
+  const checkBattleStatusWithUnits = useCallback(async (currentUnits: Unit[]) => {
+    const chimeraNeedingSplit = currentUnits.find(
+      (u) =>
+        u.faction === 'enemy' &&
+        u.monsterTypeId === 'quimera_venenosa' &&
+        (!u.bossPhase || u.bossPhase === 1) &&
+        (u.currentHp <= u.maxHp * 0.3 || u.isDead)
+    );
+    if (chimeraNeedingSplit) {
+      await checkAndTriggerChimeraSplit(currentUnits);
+      return;
+    }
+
     const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
     const enemyLiving = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
     if (enemyLiving.length === 0) {
@@ -1329,7 +1543,7 @@ export function App() {
     } else if (playerLiving.length === 0) {
       handleDefeat();
     }
-  }, [handleDefeat]);
+  }, [handleDefeat, checkAndTriggerChimeraSplit]);
 
   // ANIMATED Tile Click Handler
   const handleTileClick = async (x: number, y: number) => {
@@ -2407,6 +2621,7 @@ export function App() {
       if (
         t.isBoss &&
         !t.isMiniBoss &&
+        !t.monsterTypeId?.startsWith('quimera') &&
         !t.hasUsedHalfHpSkill &&
         t.halfHpTriggerTurn === undefined &&
         newHp > 0 &&
@@ -2421,55 +2636,67 @@ export function App() {
         t.lastStunTurn !== undefined &&
         turnNumber - t.lastStunTurn <= 1;
 
-      if (newHp === 0) {
+      const isChimeraPhase1 = t.monsterTypeId === 'quimera_venenosa' && (!t.bossPhase || t.bossPhase === 1);
+      const isChimeraTriggeringSplit = isChimeraPhase1 && (newHp <= t.maxHp * 0.3);
+
+      const isTargetStatusImmune = currentEffects.some((e) => e.type === 'immune' && e.duration > 0);
+
+      if (isChimeraTriggeringSplit) {
+        // Chimera Phase 1 reached 30% HP or less - will split into 3 beasts
+        newHp = 0;
+      } else if (newHp === 0) {
         soundManager.playDeath();
         totalKills++;
         if (boardRef.current) {
           await boardRef.current.playDeathAnimation(t.id);
         }
       } else {
-        // Primary status effect
-        if (skill?.statusEffect && dmgResult.damageType !== 'healing') {
-          const eff = skill.statusEffect;
-          if (eff.type === 'stun' && isBossStunImmune) {
-            addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
-          } else {
-            currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-            if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
-            else if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-            else if (eff.type === 'stun') {
-              addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
-              if (isBossMonster) {
-                newLastStunTurn = turnNumber;
+        if (!isTargetStatusImmune) {
+          // Primary status effect
+          if (skill?.statusEffect && dmgResult.damageType !== 'healing') {
+            const eff = skill.statusEffect;
+            if (eff.type === 'stun' && isBossStunImmune) {
+              addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+            } else {
+              currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+              if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
+              else if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+              else if (eff.type === 'stun') {
+                addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+                if (isBossMonster) {
+                  newLastStunTurn = turnNumber;
+                }
               }
+              else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+              else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+              else if (eff.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
+              else if (eff.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
             }
-            else if (eff.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
-            else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
-            else if (eff.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
-            else if (eff.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
           }
-        }
 
-        // Secondary status effect
-        if (skill?.secondaryStatusEffect && dmgResult.damageType !== 'healing') {
-          const eff2 = skill.secondaryStatusEffect;
-          if (eff2.type === 'stun' && isBossStunImmune) {
-            addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
-          } else {
-            currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-            if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
-            else if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
-            else if (eff2.type === 'stun') {
-              addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
-              if (isBossMonster) {
-                newLastStunTurn = turnNumber;
+          // Secondary status effect
+          if (skill?.secondaryStatusEffect && dmgResult.damageType !== 'healing') {
+            const eff2 = skill.secondaryStatusEffect;
+            if (eff2.type === 'stun' && isBossStunImmune) {
+              addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+            } else {
+              currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+              if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
+              else if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+              else if (eff2.type === 'stun') {
+                addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+                if (isBossMonster) {
+                  newLastStunTurn = turnNumber;
+                }
               }
+              else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
+              else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
+              else if (eff2.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
+              else if (eff2.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
             }
-            else if (eff2.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
-            else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
-            else if (eff2.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
-            else if (eff2.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
           }
+        } else if ((skill?.statusEffect || skill?.secondaryStatusEffect) && dmgResult.damageType !== 'healing') {
+          addFloatingNumber(t.x, t.y, '🛡️ Imune a Efeitos!', 'status', '#A855F7');
         }
       }
 
@@ -2724,6 +2951,11 @@ export function App() {
       return u;
     });
 
+    const splitCheck = await checkAndTriggerChimeraSplit(updatedUnits);
+    if (splitCheck.didSplit) {
+      updatedUnits = splitCheck.updatedUnits;
+    }
+
     setUnits(updatedUnits);
     setTargetTeleportPoint(null);
     setTargetAoEPoint(null);
@@ -2783,12 +3015,18 @@ export function App() {
       await new Promise((r) => setTimeout(r, 300 * delayMult));
     }
 
+    const dotSplit = await checkAndTriggerChimeraSplit(currentUnits);
+    if (dotSplit.didSplit) {
+      currentUnits = dotSplit.updatedUnits;
+    }
+
     // Registra bosses cuja vida atingiu <= 50% para ativação no turno posterior
     currentUnits = currentUnits.map((u) => {
       if (
         u.faction === 'enemy' &&
         u.isBoss &&
         !u.isMiniBoss &&
+        !u.monsterTypeId?.startsWith('quimera') &&
         !u.isDead &&
         u.currentHp > 0 &&
         u.currentHp <= u.maxHp * 0.5 &&
@@ -2813,8 +3051,9 @@ export function App() {
       let extraTurnsAllowed = 1;
       while (extraTurnsAllowed > 0) {
         extraTurnsAllowed--;
-        const freshMonster = currentUnits.find((u) => u.id === monster.id);
-        if (!freshMonster || freshMonster.isDead) break;
+        const monsterUnit = currentUnits.find((u) => u.id === monster.id);
+        if (!monsterUnit || monsterUnit.isDead) break;
+        let freshMonster: Unit = monsterUnit;
 
         const isStunned = freshMonster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
         if (isStunned) {
@@ -2827,6 +3066,7 @@ export function App() {
       const isBossThresholdReady =
         freshMonster.isBoss &&
         !freshMonster.isMiniBoss &&
+        !freshMonster.monsterTypeId?.startsWith('quimera') &&
         !freshMonster.hasUsedHalfHpSkill &&
         freshMonster.halfHpTriggerTurn !== undefined &&
         turnNumberRef.current > freshMonster.halfHpTriggerTurn;
@@ -3003,7 +3243,7 @@ export function App() {
             );
           }
         } else if (bossType === 'valgar_sanguinario') {
-          // Fase 30: Valgar - 160% de dano físico a todos, 150% de roubo de vida e sangramento (burn) por 2 turnos
+          // Fase 35: Valgar - 160% de dano físico a todos, 150% de roubo de vida e sangramento (burn) por 2 turnos
           addFloatingNumber(freshMonster.x, freshMonster.y, '🩸 BANQUETE SANGUINÁRIO (160% + Dreno 150%)!', 'status', '#DC2626');
           soundManager.playPhysicalAttack();
 
@@ -3186,7 +3426,7 @@ export function App() {
       );
       if (preMoveInvisSkill && !isAlreadyInvis) {
         soundManager.playMagicSpell();
-        addFloatingNumber(freshMonster.x, freshMonster.y, 'Manto Espectral (Invisível +30% Dano)!', 'buff', '#C77DFF');
+        addFloatingNumber(freshMonster.x, freshMonster.y, 'Manto Espectral (Invisível +30% Dano)!', 'status', '#C77DFF');
         const updatedSkills = freshMonster.skills.map((s) =>
           s.id === preMoveInvisSkill.id
             ? { ...s, currentCooldown: preMoveInvisSkill.cooldownMax, lastUsedTurn: turnNumberRef.current }
@@ -3325,9 +3565,19 @@ export function App() {
                   } else {
                     addFloatingNumber(freshTarget.x, freshTarget.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
                   }
-                  addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+                  if (effToProcess.reflectRatio) {
+                    eff.reflectRatio = effToProcess.reflectRatio;
+                    addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
+                  } else {
+                    addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+                  }
                 } else if (eff.type === 'buff_atk') {
                   addFloatingNumber(freshTarget.x, freshTarget.y, `+${eff.value}% Dano`, 'status', '#F97316');
+                } else if (eff.type === 'immune') {
+                  addFloatingNumber(freshTarget.x, freshTarget.y, `🛡️ Imunidade a Efeitos (${eff.duration}T)!`, 'status', '#A855F7');
+                  currentEffects = currentEffects.filter((e) =>
+                    !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified'].includes(e.type)
+                  );
                 }
                 currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), eff];
               };
@@ -3764,10 +4014,11 @@ export function App() {
                   }
                 } else {
                   const isValgarSkill = choice.skillToUse?.id?.startsWith('valgar') || choice.skillToUse?.id === 'boss_valgar_banquete_sangue';
+                  const isBleedSkill = isValgarSkill || choice.skillToUse?.id === 'quimera_garras_leao';
                   if (choice.skillToUse?.statusEffect) {
                     const eff = choice.skillToUse.statusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-                    if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isValgarSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isValgarSkill ? '#DC2626' : '#F97316');
+                    if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
                     else if (eff.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
                     else if (eff.type === 'stun') addFloatingNumber(finalTargetX, finalTargetY, 'Atordoado!', 'status', '#FACC15');
                     else if (eff.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff.value || 1} Mov)!`, 'status', '#60A5FA');
@@ -3779,7 +4030,7 @@ export function App() {
                   if (choice.skillToUse?.secondaryStatusEffect) {
                     const eff2 = choice.skillToUse.secondaryStatusEffect;
                     currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-                    if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isValgarSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isValgarSkill ? '#DC2626' : '#F97316');
+                    if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
                     else if (eff2.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
                     else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
                     else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
@@ -3841,7 +4092,12 @@ export function App() {
                   } else {
                     addFloatingNumber(finalMonsterX, finalMonsterY, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
                   }
-                  addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+                  if (choice.skillToUse.casterStatusEffect.reflectRatio) {
+                    cEff.reflectRatio = choice.skillToUse.casterStatusEffect.reflectRatio;
+                    addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Escudo Espinhoso (${Math.round(cEff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
+                  } else {
+                    addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+                  }
                   finalMonsterEffects = [
                     ...finalMonsterEffects.filter((e) => e.type !== 'excess_shield'),
                     { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
@@ -3849,9 +4105,22 @@ export function App() {
                 } else if (cEff.type === 'taunt') {
                   addFloatingNumber(finalMonsterX, finalMonsterY, 'Provocando!', 'status', '#EF4444');
                 } else if (cEff.type === 'invisible') {
-                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Ficou Invisível!', 'buff', '#C77DFF');
+                  addFloatingNumber(finalMonsterX, finalMonsterY, 'Ficou Invisível!', 'status', '#C77DFF');
+                } else if (cEff.type === 'immune') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `🛡️ Imunidade a Efeitos (${cEff.duration}T)!`, 'status', '#A855F7');
+                  finalMonsterEffects = finalMonsterEffects.filter((e) =>
+                    !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified'].includes(e.type)
+                  );
                 }
                 finalMonsterEffects = [...finalMonsterEffects.filter((e) => e.type !== cEff.type), cEff];
+              }
+
+              // Se a habilidade conceder turno extra ao atingir alvos sangrando (Valgar Arremesso de Cutelo)
+              if (skill?.grantsExtraTurnOnBleeding && anyTargetHadBleed && finalMonsterHp > 0) {
+                extraTurnsAllowed++;
+                addFloatingNumber(finalMonsterX, finalMonsterY, '🩸 Sede de Sangue: Age Novamente!', 'status', '#DC2626');
+                soundManager.playPhysicalAttack();
+                await new Promise((r) => setTimeout(r, 350 * delayMult));
               }
 
               // Update freshAttacker position, HP, status effects and isDead
@@ -3877,12 +4146,9 @@ export function App() {
               });
             }
 
-            // Se a habilidade conceder turno extra ao atingir alvos sangrando (Valgar Arremesso de Cutelo)
-            if (skill?.grantsExtraTurnOnBleeding && anyTargetHadBleed && finalMonsterHp > 0) {
-              extraTurnsAllowed++;
-              addFloatingNumber(finalMonsterX, finalMonsterY, '🩸 Sede de Sangue: Age Novamente!', 'status', '#DC2626');
-              soundManager.playPhysicalAttack();
-              await new Promise((r) => setTimeout(r, 350 * delayMult));
+            const actionSplit = await checkAndTriggerChimeraSplit(currentUnits);
+            if (actionSplit.didSplit) {
+              currentUnits = actionSplit.updatedUnits;
             }
 
             setUnits([...currentUnits]);
