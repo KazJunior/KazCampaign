@@ -128,6 +128,7 @@ Total de cupons cadastrados: \x1b[1m${rows.length}\x1b[0m
       let rewardText = '';
       if (c.reward?.gold) rewardText += `${c.reward.gold.toLocaleString('pt-BR')} Ouro `;
       if (c.reward?.eggRarity) rewardText += `+ ${c.reward.eggCount || 1}x Ovo (${c.reward.eggRarity}) `;
+      if (c.reward?.randomGoldClass) rewardText += `+ 1x Classe Liberada com Ouro Aleatória `;
 
       console.log(`
   \x1b[1m\x1b[33m[${c.code}]\x1b[0m - Status: ${statusBadge}

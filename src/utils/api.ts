@@ -216,9 +216,17 @@ export interface RedeemCouponResponse {
   reward?: {
     gold?: number;
     eggs?: Array<{ id: string; rarity: string }>;
+    unlockedClass?: {
+      id: string;
+      name: string;
+      role: string;
+    };
+    compensationGold?: number;
+    compensationMessage?: string;
   };
   newGold?: number;
   newEggs?: any[];
+  newUnlockedClasses?: string[];
 }
 
 /** Resgata um cupom de recompensa na nuvem */

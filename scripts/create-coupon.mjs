@@ -80,6 +80,7 @@ let rawCode = args[0]?.trim();
 let gold = 0;
 let eggRarity = null;
 let eggCount = 1;
+let randomGoldClass = false;
 let maxUses = null;
 let description = '';
 let expiresAt = null;
@@ -94,6 +95,23 @@ const code = rawCode.toUpperCase();
 // Processa demais argumentos
 for (let i = 1; i < args.length; i++) {
   const arg = args[i].trim();
+  const lowerArg = arg.toLowerCase();
+
+  // Verifica se é classe de ouro aleatória
+  if (
+    lowerArg === 'random-gold-class' ||
+    lowerArg === 'classe-ouro' ||
+    lowerArg === 'classe-aleatoria' ||
+    lowerArg === 'gold-class' ||
+    lowerArg === 'class=random_gold' ||
+    lowerArg === 'class=random-gold' ||
+    lowerArg === '--class=random_gold' ||
+    lowerArg === '--class=random-gold' ||
+    lowerArg === '--random-gold-class'
+  ) {
+    randomGoldClass = true;
+    continue;
+  }
 
   // Verifica se é um número puro de ouro
   if (/^\d+$/.test(arg)) {
@@ -118,8 +136,8 @@ for (let i = 1; i < args.length; i++) {
   }
 }
 
-if (gold === 0 && !eggRarity) {
-  console.error('\x1b[31m[ERRO]\x1b[0m O cupom precisa conceder ao menos uma recompensa (ex: ouro ou ovo).');
+if (gold === 0 && !eggRarity && !randomGoldClass) {
+  console.error('\x1b[31m[ERRO]\x1b[0m O cupom precisa conceder ao menos uma recompensa (ex: ouro, ovo ou classe-ouro).');
   process.exit(1);
 }
 
@@ -128,6 +146,9 @@ if (gold > 0) reward.gold = gold;
 if (eggRarity) {
   reward.eggRarity = eggRarity;
   reward.eggCount = eggCount;
+}
+if (randomGoldClass) {
+  reward.randomGoldClass = true;
 }
 
 async function run() {
@@ -193,7 +214,7 @@ async function run() {
 \x1b[1m\x1b[33mCÓDIGO DE RESGATE:\x1b[0m  \x1b[1m\x1b[32m${c.code}\x1b[0m
 =======================================================
   ID do Cupom:       ${c.id}
-  Recompensa:        ${gold > 0 ? `\x1b[33m+${gold.toLocaleString('pt-BR')} de Ouro\x1b[0m` : ''} ${eggRarity ? `\x1b[35m+${eggCount}x Ovo (${eggRarity})\x1b[0m` : ''}
+  Recompensa:        ${gold > 0 ? `\x1b[33m+${gold.toLocaleString('pt-BR')} de Ouro\x1b[0m ` : ''}${eggRarity ? `\x1b[35m+${eggCount}x Ovo (${eggRarity})\x1b[0m ` : ''}${randomGoldClass ? '\x1b[35m+1x Classe Liberada com Ouro Aleatória (Paladino, Lanceiro, Bardo, etc.)\x1b[0m' : ''}
   Uso por Jogador:   \x1b[36m1 ÚNICA VEZ por conta\x1b[0m (garantido pelo banco)
   Limite Global:     ${c.max_uses ? `${c.max_uses} resgates no total` : 'Ilimitado (qualquer jogador pode pegar)'}
   Expira em:         ${c.expires_at ? new Date(c.expires_at).toLocaleString('pt-BR') : 'Sem prazo de expiração'}

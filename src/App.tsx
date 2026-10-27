@@ -5058,11 +5058,12 @@ export function App() {
             isOpen={showCouponModal}
             onClose={() => setShowCouponModal(false)}
             authUser={authUser}
-            onRedeemed={(_reward, newGold, newEggs) => {
+            onRedeemed={(_reward, newGold, newEggs, newClasses) => {
               setProgress((prev) => {
                 const next = { ...prev };
                 if (typeof newGold === 'number') next.gold = newGold;
                 if (Array.isArray(newEggs)) next.eggs = newEggs;
+                if (Array.isArray(newClasses)) next.unlockedClasses = newClasses;
                 savePlayerProgress(next);
                 return next;
               });

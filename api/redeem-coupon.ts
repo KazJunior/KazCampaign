@@ -26,6 +26,15 @@ function createEgg(rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary'
   };
 }
 
+const GOLD_CLASSES = [
+  { id: 'paladino', name: 'Paladino', role: 'Tanque Sagrado & Suporte de Cura' },
+  { id: 'lanceiro', name: 'Lanceiro', role: 'Duelista & Ataque Perfurante a Distância' },
+  { id: 'bardo', name: 'Bardo', role: 'Suporte Utilitário de Ritmo & Turnos Adicionais' },
+  { id: 'mago_gelo', name: 'Mago de Gelo', role: 'Criomancia & Controle de Tabuleiro' },
+  { id: 'mago_eletrico', name: 'Mago Elétrico', role: 'Eletromancia, Dano em Cadeia & Paralisia' },
+  { id: 'mago_vento', name: 'Mago de Vento', role: 'Aeromancia, Repulsão & Rajadas de Vento' },
+];
+
 let couponsSchemaEnsured = false;
 async function ensureCouponsSchema(sql: ReturnType<typeof getSql>): Promise<void> {
   if (couponsSchemaEnsured) return;
@@ -126,9 +135,10 @@ export async function POST(req: Request): Promise<Response> {
       eggs?: ('common' | 'uncommon' | 'rare' | 'epic' | 'legendary')[];
       eggCount?: number;
       eggRarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+      randomGoldClass?: boolean;
     };
 
-    const goldBonus = typeof rewardConfig.gold === 'number' && rewardConfig.gold > 0 ? Math.floor(rewardConfig.gold) : 0;
+    let goldBonus = typeof rewardConfig.gold === 'number' && rewardConfig.gold > 0 ? Math.floor(rewardConfig.gold) : 0;
     const eggsToGrant: PetEgg[] = [];
 
     if (Array.isArray(rewardConfig.eggs)) {
@@ -146,7 +156,7 @@ export async function POST(req: Request): Promise<Response> {
 
     // 5. Atualiza o progresso do jogador
     const progressRows = await sql`
-      SELECT gold, pet_eggs, COALESCE(pending_gold, 0) as pending_gold
+      SELECT gold, pet_eggs, unlocked_classes, COALESCE(pending_gold, 0) as pending_gold
       FROM player_progress
       WHERE user_id = ${auth.uid}
       LIMIT 1
@@ -154,28 +164,53 @@ export async function POST(req: Request): Promise<Response> {
 
     let currentGold = 0;
     let existingEggs: PetEgg[] = [];
+    let currentUnlocked: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
 
     if (progressRows.length > 0) {
       currentGold = Number(progressRows[0].gold) || 0;
       if (Array.isArray(progressRows[0].pet_eggs)) {
         existingEggs = progressRows[0].pet_eggs;
       }
+      if (Array.isArray(progressRows[0].unlocked_classes) && progressRows[0].unlocked_classes.length > 0) {
+        currentUnlocked = progressRows[0].unlocked_classes;
+      }
+    }
+
+    let chosenGoldClass: { id: string; name: string; role: string } | null = null;
+    let compensationGold = 0;
+    let compensationMessage: string | null = null;
+    let newUnlockedClasses = [...currentUnlocked];
+
+    if (rewardConfig.randomGoldClass) {
+      const available = GOLD_CLASSES.filter((gc) => !currentUnlocked.includes(gc.id));
+      if (available.length > 0) {
+        const selected = available[Math.floor(Math.random() * available.length)];
+        chosenGoldClass = selected;
+        newUnlockedClasses.push(selected.id);
+      } else {
+        // Jogador já possui todas as 6 classes de ouro: compensação justa de 100.000 de ouro
+        compensationGold = 100000;
+        goldBonus += compensationGold;
+        compensationMessage = 'Você já possui todas as classes de ouro! Recebeu 100.000 de ouro em compensação.';
+      }
     }
 
     const newGold = currentGold + goldBonus;
     const newEggs = [...existingEggs, ...eggsToGrant];
     const newEggsJson = JSON.stringify(newEggs);
+    const newUnlockedJson = JSON.stringify(newUnlockedClasses);
 
     if (progressRows.length === 0) {
       await sql`
-        INSERT INTO player_progress (user_id, gold, pending_gold, pet_eggs, updated_at)
-        VALUES (${auth.uid}, ${newGold}, 0, ${newEggsJson}::jsonb, NOW())
+        INSERT INTO player_progress (user_id, gold, pending_gold, pet_eggs, unlocked_classes, updated_at)
+        VALUES (${auth.uid}, ${newGold}, 0, ${newEggsJson}::jsonb, ${newUnlockedJson}::jsonb, NOW())
       `;
     } else {
       await sql`
         UPDATE player_progress
         SET gold = ${newGold},
             pet_eggs = ${newEggsJson}::jsonb,
+            unlocked_classes = ${newUnlockedJson}::jsonb,
             updated_at = NOW()
         WHERE user_id = ${auth.uid}
       `;
@@ -185,6 +220,9 @@ export async function POST(req: Request): Promise<Response> {
     const appliedReward = {
       gold: goldBonus,
       eggs: eggsToGrant.map((e) => ({ id: e.id, rarity: e.rarity })),
+      unlockedClass: chosenGoldClass,
+      compensationGold: compensationGold > 0 ? compensationGold : undefined,
+      compensationMessage: compensationMessage || undefined,
     };
 
     await sql`
@@ -201,7 +239,9 @@ export async function POST(req: Request): Promise<Response> {
 
     return json({
       ok: true,
-      message: `Cupom "${coupon.code}" resgatado com sucesso!`,
+      message: chosenGoldClass
+        ? `Parabéns! Você desbloqueou a classe ${chosenGoldClass.name}!`
+        : `Cupom "${coupon.code}" resgatado com sucesso!`,
       coupon: {
         code: coupon.code,
         description: coupon.description,
@@ -209,6 +249,7 @@ export async function POST(req: Request): Promise<Response> {
       reward: appliedReward,
       newGold,
       newEggs,
+      newUnlockedClasses,
     });
   } catch (err) {
     console.error('POST /api/redeem-coupon error:', err);

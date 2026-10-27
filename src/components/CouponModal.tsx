@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Gift, Coins, Egg, CheckCircle2, AlertCircle, Loader2, X, Sparkles, ArrowRight } from 'lucide-react';
+import { Gift, Coins, Egg, CheckCircle2, AlertCircle, Loader2, X, Sparkles, ArrowRight, Shield } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { redeemCoupon, type RedeemCouponResponse } from '../utils/api';
 import type { AuthUser } from '../utils/api';
@@ -8,7 +8,7 @@ interface CouponModalProps {
   isOpen: boolean;
   onClose: () => void;
   authUser: AuthUser | null;
-  onRedeemed: (reward: any, newGold?: number, newEggs?: any[]) => void;
+  onRedeemed: (reward: any, newGold?: number, newEggs?: any[], newUnlockedClasses?: string[]) => void;
 }
 
 export function CouponModal({ isOpen, onClose, authUser, onRedeemed }: CouponModalProps) {
@@ -39,7 +39,7 @@ export function CouponModal({ isOpen, onClose, authUser, onRedeemed }: CouponMod
       const res = await redeemCoupon(cleanCode);
       if (res.ok) {
         setSuccessResult(res);
-        onRedeemed(res.reward, res.newGold, res.newEggs);
+        onRedeemed(res.reward, res.newGold, res.newEggs, res.newUnlockedClasses);
         confetti({
           particleCount: 80,
           spread: 70,
@@ -121,6 +121,33 @@ export function CouponModal({ isOpen, onClose, authUser, onRedeemed }: CouponMod
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                   Itens creditados na sua conta
                 </span>
+
+                {successResult.reward?.unlockedClass ? (
+                  <div className="p-3.5 rounded-xl bg-gradient-to-r from-purple-500/20 via-indigo-500/20 to-purple-500/20 border-2 border-purple-400/60 shadow-lg shadow-purple-500/10 text-left">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-purple-500/30 border border-purple-400/80 flex items-center justify-center text-purple-300 shrink-0 shadow-inner">
+                        <Shield size={20} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 block">
+                          Nova Classe Desbloqueada!
+                        </span>
+                        <h4 className="text-sm font-black text-white truncate">
+                          {successResult.reward.unlockedClass.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-300 line-clamp-1">
+                          {successResult.reward.unlockedClass.role}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {successResult.reward?.compensationMessage ? (
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] text-left">
+                    {successResult.reward.compensationMessage}
+                  </div>
+                ) : null}
 
                 {successResult.reward?.gold ? (
                   <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#D4AD65]/10 border border-[#D4AD65]/30">
