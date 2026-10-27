@@ -82,6 +82,7 @@ import { BaseUpgradeModal } from './components/BaseUpgradeModal';
 import { ChangelogModal } from './components/ChangelogModal';
 import { GAME_CHANGELOG } from './data/changelog';
 import { PetModal } from './components/PetModal';
+import { CouponModal } from './components/CouponModal';
 import { getPetById, calculatePetPassives, createNewEgg, MAX_EGGS_LIMIT } from './data/pets';
 import type { PetActiveSkill, PetEgg } from './types/game';
 import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
@@ -152,6 +153,7 @@ export function App() {
   const [showBaseUpgrades, setShowBaseUpgrades] = useState(false);
   const [showChangelog, setShowChangelog] = useState(false);
   const [showPetsModal, setShowPetsModal] = useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
   const [activePetSkill, setActivePetSkill] = useState<PetActiveSkill | null>(null);
   const [usedPetSkillIds, setUsedPetSkillIds] = useState<string[]>([]);
   const [pendingLootItems, setPendingLootItems] = useState<ItemDefinition[] | null>(null);
@@ -4984,6 +4986,7 @@ export function App() {
           onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
           onOpenChangelog={() => setShowChangelog(true)}
           onOpenPets={() => setShowPetsModal(true)}
+          onOpenCoupons={() => setShowCouponModal(true)}
         />
 
         {showChangelog && (
@@ -5048,6 +5051,22 @@ export function App() {
               savePlayerProgress(newProgress);
             }}
             onClose={() => setShowPetsModal(false)}
+          />
+        )}
+        {showCouponModal && (
+          <CouponModal
+            isOpen={showCouponModal}
+            onClose={() => setShowCouponModal(false)}
+            authUser={authUser}
+            onRedeemed={(_reward, newGold, newEggs) => {
+              setProgress((prev) => {
+                const next = { ...prev };
+                if (typeof newGold === 'number') next.gold = newGold;
+                if (Array.isArray(newEggs)) next.eggs = newEggs;
+                savePlayerProgress(next);
+                return next;
+              });
+            }}
           />
         )}
       </>

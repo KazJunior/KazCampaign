@@ -204,3 +204,36 @@ export async function submitScore(level: number, party: string[], username = 'Jo
     }
   }
 }
+
+export interface RedeemCouponResponse {
+  ok: boolean;
+  message?: string;
+  error?: string;
+  coupon?: {
+    code: string;
+    description?: string;
+  };
+  reward?: {
+    gold?: number;
+    eggs?: Array<{ id: string; rarity: string }>;
+  };
+  newGold?: number;
+  newEggs?: any[];
+}
+
+/** Resgata um cupom de recompensa na nuvem */
+export async function redeemCoupon(code: string): Promise<RedeemCouponResponse> {
+  if (!getToken()) {
+    return { ok: false, error: 'Você precisa estar logado com sua conta para resgatar cupons.' };
+  }
+  try {
+    const data = await request<RedeemCouponResponse>('/api/redeem-coupon', {
+      method: 'POST',
+      body: { code },
+      auth: true,
+    });
+    return data;
+  } catch (err: any) {
+    return { ok: false, error: err?.message || 'Erro ao resgatar cupom.' };
+  }
+}

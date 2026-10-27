@@ -22,6 +22,7 @@ import {
   Building2,
   ChevronRight,
   Egg,
+  Gift,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import { getPetById } from '../data/pets';
@@ -43,6 +44,7 @@ interface LevelSelectProps {
   onOpenBaseUpgrades?: () => void;
   onOpenChangelog?: () => void;
   onOpenPets?: () => void;
+  onOpenCoupons?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -60,6 +62,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onOpenBaseUpgrades,
   onOpenChangelog,
   onOpenPets,
+  onOpenCoupons,
 }) => {
   const openCatalogHandler = onOpenItemCatalog || onOpenItemBestiary;
   const activeAdv = progress.activeAdventure;
@@ -204,6 +207,17 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 <span className="bg-[#10B981]/20 text-[#10B981] px-2 py-0.5 rounded-full text-[10px] font-black border border-[#10B981]/30">
                   {latestVersion}
                 </span>
+              </button>
+            )}
+
+            {onOpenCoupons && (
+              <button
+                onClick={onOpenCoupons}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/25 border-2 border-emerald-400/80 hover:border-emerald-300 text-emerald-300 hover:text-white font-bold text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-md shadow-emerald-500/10"
+                title="Resgatar cupom promocional ou código de recompensa"
+              >
+                <Gift size={16} className="text-emerald-400" />
+                <span>Cupons</span>
               </button>
             )}
           </div>

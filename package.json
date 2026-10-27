@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "reset-password": "node scripts/reset-password.mjs",
     "give-gold": "node scripts/give-gold.mjs",
-    "give-egg": "node scripts/give-egg.mjs"
+    "give-egg": "node scripts/give-egg.mjs",
+    "create-coupon": "node scripts/create-coupon.mjs",
+    "list-coupons": "node scripts/list-coupons.mjs"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.2.0",
