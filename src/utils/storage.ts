@@ -198,7 +198,21 @@ export function loadPlayerProgress(): PlayerProgress {
 export function savePlayerProgress(progress: PlayerProgress): void {
   try {
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-    saveCloudProgress(progress);
+    saveCloudProgress(progress).then((res) => {
+      if (res && typeof res.gold === 'number' && res.gold !== progress.gold) {
+        try {
+          const raw = localStorage.getItem(PROGRESS_KEY);
+          const current = raw ? JSON.parse(raw) : { ...progress };
+          current.gold = res.gold;
+          localStorage.setItem(PROGRESS_KEY, JSON.stringify(current));
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('kazcampaign_gold_sync', { detail: { gold: res.gold } }));
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }).catch(() => {});
   } catch (err) {
     console.error('Failed to save progress to localStorage:', err);
   }

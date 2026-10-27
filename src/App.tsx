@@ -297,6 +297,51 @@ export function App() {
     });
   }, []);
 
+  // Sincronização em tempo real de ouro vindo de reconciliação de créditos na nuvem
+  useEffect(() => {
+    const handleGoldSync = (e: Event) => {
+      const custom = e as CustomEvent<{ gold: number }>;
+      if (custom.detail && typeof custom.detail.gold === 'number') {
+        setProgress((prev) => {
+          if (prev.gold !== custom.detail.gold) {
+            return { ...prev, gold: custom.detail.gold };
+          }
+          return prev;
+        });
+      }
+    };
+
+    const handleWindowFocus = async () => {
+      if (!authUser || authUser.id === 0) return;
+      try {
+        const cloudP = await fetchCloudProgress();
+        if (cloudP && typeof cloudP.gold === 'number') {
+          setProgress((prev) => {
+            if (prev.gold !== cloudP.gold) {
+              const updated = { ...prev, gold: cloudP.gold };
+              try {
+                localStorage.setItem('rpg_tactics_progress_v4', JSON.stringify(updated));
+              } catch {
+                // ignore
+              }
+              return updated;
+            }
+            return prev;
+          });
+        }
+      } catch {
+        // ignore background fetch error
+      }
+    };
+
+    window.addEventListener('kazcampaign_gold_sync', handleGoldSync);
+    window.addEventListener('focus', handleWindowFocus);
+    return () => {
+      window.removeEventListener('kazcampaign_gold_sync', handleGoldSync);
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, [authUser]);
+
   const handleLogout = async () => {
     if (authUser && authUser.id !== 0) {
       try {

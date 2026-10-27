@@ -88,39 +88,60 @@ async function run() {
 
     const user = searchRows[0];
 
+    await sql`ALTER TABLE player_progress ADD COLUMN IF NOT EXISTS pending_gold INTEGER DEFAULT 0;`;
+
     const progressRows = await sql`
-      SELECT gold FROM player_progress
+      SELECT gold, COALESCE(pending_gold, 0) as pending_gold FROM player_progress
       WHERE user_id = ${user.id}
       LIMIT 1
     `;
 
     const currentGold = progressRows.length > 0 ? (progressRows[0].gold ?? 0) : 0;
-    const finalGold = isExactSet ? amount : Math.max(0, currentGold + amount);
+    const currentPending = progressRows.length > 0 ? (progressRows[0].pending_gold ?? 0) : 0;
 
     if (progressRows.length === 0) {
+      const initialGold = isExactSet ? amount : Math.max(0, amount);
       await sql`
-        INSERT INTO player_progress (user_id, gold, updated_at)
-        VALUES (${user.id}, ${finalGold}, NOW())
+        INSERT INTO player_progress (user_id, gold, pending_gold, updated_at)
+        VALUES (${user.id}, ${initialGold}, 0, NOW())
       `;
-    } else {
+      console.log(`\x1b[32m✔ Sucesso!\x1b[0m Registro de progresso criado para \x1b[1m${user.username}\x1b[0m com \x1b[1m${initialGold.toLocaleString('pt-BR')} ouro\x1b[0m.`);
+    } else if (isExactSet) {
       await sql`
         UPDATE player_progress
-        SET gold = ${finalGold}, updated_at = NOW()
+        SET gold = ${amount}, pending_gold = 0, updated_at = NOW()
         WHERE user_id = ${user.id}
       `;
-    }
+      console.log(`
+\x1b[32m✔ Sucesso!\x1b[0m Ouro fixado para o jogador \x1b[1m${user.username}\x1b[0m (ID: ${user.id}):
+  Ouro Anterior: \x1b[33m${currentGold.toLocaleString('pt-BR')}\x1b[0m
+  Novo Saldo:    \x1b[1m\x1b[32m${amount.toLocaleString('pt-BR')} de ouro\x1b[0m
+`);
+    } else {
+      // Incremental: usa pending_gold para garantir que sessões abertas recebam o ouro sem risco de sobrescrita
+      const newPending = currentPending + amount;
+      const expectedTotal = currentGold + newPending;
 
-    console.log(`
-\x1b[32m✔ Sucesso!\x1b[0m Ouro atualizado para o jogador \x1b[1m${user.username}\x1b[0m (ID: ${user.id}):
+      await sql`
+        UPDATE player_progress
+        SET pending_gold = COALESCE(pending_gold, 0) + ${amount}, updated_at = NOW()
+        WHERE user_id = ${user.id}
+      `;
+
+      console.log(`
+\x1b[32m✔ Sucesso!\x1b[0m Ouro concedido para o jogador \x1b[1m${user.username}\x1b[0m (ID: ${user.id}):
 
 =======================================================
 \x1b[1m\x1b[36mDETALHES DA OPERAÇÃO:\x1b[0m
-  Jogador:       \x1b[1m${user.username}\x1b[0m
-  Ouro Anterior: \x1b[33m${currentGold.toLocaleString('pt-BR')}\x1b[0m
-  Operação:      \x1b[35m${isExactSet ? 'Definido para' : (amount >= 0 ? `+${amount.toLocaleString('pt-BR')}` : amount.toLocaleString('pt-BR'))}\x1b[0m
-  Novo Total:    \x1b[1m\x1b[32m${finalGold.toLocaleString('pt-BR')} de ouro\x1b[0m
+  Jogador:         \x1b[1m${user.username}\x1b[0m
+  Ouro no Banco:   \x1b[33m${currentGold.toLocaleString('pt-BR')}\x1b[0m
+  Ouro Concedido:  \x1b[35m+${amount.toLocaleString('pt-BR')}\x1b[0m (via pending_gold)
+  Total Pendente:  \x1b[33m${newPending.toLocaleString('pt-BR')}\x1b[0m
+  Total Garantido: \x1b[1m\x1b[32m${expectedTotal.toLocaleString('pt-BR')} de ouro\x1b[0m
+  Status:          \x1b[36mEntregue na próxima ação, salvamento automático ou recarga de página (F5).\x1b[0m
 =======================================================
 `);
+    }
   } catch (err) {
     console.error('\x1b[31m[ERRO INESPERADO]\x1b[0m', err);
     process.exit(1);

@@ -143,7 +143,8 @@ async function ensureProgressSchema(sql: ReturnType<typeof getSql>): Promise<voi
       ADD COLUMN IF NOT EXISTS discovered_item_ids JSONB DEFAULT '[]'::jsonb,
       ADD COLUMN IF NOT EXISTS unlocked_pet_ids JSONB DEFAULT '[]'::jsonb,
       ADD COLUMN IF NOT EXISTS equipped_pet_id TEXT DEFAULT NULL,
-      ADD COLUMN IF NOT EXISTS pet_eggs JSONB DEFAULT '[]'::jsonb;
+      ADD COLUMN IF NOT EXISTS pet_eggs JSONB DEFAULT '[]'::jsonb,
+      ADD COLUMN IF NOT EXISTS pending_gold INTEGER DEFAULT 0;
     `;
     progressSchemaEnsured = true;
   } catch (e) {
@@ -163,7 +164,8 @@ export async function GET(req: Request): Promise<Response> {
       SELECT gold, unlocked_classes, selected_party_classes, units_state, 
              discovered_monster_ids, discovered_item_ids, active_adventure, adventure_history, combat_speed,
              class_upgrades, general_upgrades, item_upgrades,
-             unlocked_pet_ids, equipped_pet_id, pet_eggs
+             unlocked_pet_ids, equipped_pet_id, pet_eggs,
+             COALESCE(pending_gold, 0) as pending_gold
       FROM player_progress
       WHERE user_id = ${auth.uid}
       LIMIT 1`;
@@ -174,6 +176,7 @@ export async function GET(req: Request): Promise<Response> {
 
     const row = rows[0] as {
       gold: number;
+      pending_gold?: number;
       unlocked_classes: string[];
       selected_party_classes: string[];
       units_state: Record<string, any>;
@@ -189,6 +192,19 @@ export async function GET(req: Request): Promise<Response> {
       equipped_pet_id?: string | null;
       pet_eggs?: any[];
     };
+
+    let deliveredGold = row.gold;
+    const pendingGold = Number(row.pending_gold) || 0;
+    if (pendingGold > 0) {
+      deliveredGold += pendingGold;
+      await sql`
+        UPDATE player_progress 
+        SET gold = gold + ${pendingGold},
+            pending_gold = 0,
+            updated_at = NOW() 
+        WHERE user_id = ${auth.uid}
+      `;
+    }
 
     const lbRows = await sql`SELECT highest_level, party FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
     const lbHighest = (lbRows[0]?.highest_level as number) || 0;
@@ -215,7 +231,7 @@ export async function GET(req: Request): Promise<Response> {
 
     return json({
       progress: {
-        gold: row.gold,
+        gold: deliveredGold,
         unlockedClasses: safeUnlocked,
         selectedPartyClasses: safeParty,
         unitsState: row.units_state,
@@ -255,15 +271,17 @@ export async function POST(req: Request): Promise<Response> {
     await ensureProgressSchema(sql);
 
     const existingRows = await sql`
-      SELECT unlocked_classes FROM player_progress WHERE user_id = ${auth.uid} LIMIT 1
+      SELECT unlocked_classes, COALESCE(pending_gold, 0) as pending_gold FROM player_progress WHERE user_id = ${auth.uid} LIMIT 1
     `;
     const existingDbUnlocked = existingRows[0]?.unlocked_classes;
+    const pendingGold = Number(existingRows[0]?.pending_gold) || 0;
 
     const lbRows = await sql`SELECT highest_level, party FROM leaderboard WHERE user_id = ${auth.uid} LIMIT 1`;
     const lbHighest = (lbRows[0]?.highest_level as number) || 0;
     const lbParty = lbRows[0]?.party;
 
-    const gold = typeof body.gold === 'number' ? body.gold : 0;
+    const baseGold = typeof body.gold === 'number' ? body.gold : 0;
+    const finalGold = baseGold + pendingGold;
     const activeAdventure = body.activeAdventure && typeof body.activeAdventure === 'object' ? body.activeAdventure : null;
     const adventureHistory = Array.isArray(body.adventureHistory) ? body.adventureHistory : [];
 
@@ -292,19 +310,20 @@ export async function POST(req: Request): Promise<Response> {
 
     await sql`
       INSERT INTO player_progress (
-        user_id, gold, unlocked_classes, selected_party_classes, units_state,
+        user_id, gold, pending_gold, unlocked_classes, selected_party_classes, units_state,
         discovered_monster_ids, discovered_item_ids, active_adventure, adventure_history, combat_speed,
         class_upgrades, general_upgrades, item_upgrades,
         unlocked_pet_ids, equipped_pet_id, pet_eggs, updated_at
       )
       VALUES (
-        ${auth.uid}, ${gold}, ${unlockedClassesJson}::jsonb, ${selectedPartyClassesJson}::jsonb, ${unitsStateJson}::jsonb,
+        ${auth.uid}, ${finalGold}, 0, ${unlockedClassesJson}::jsonb, ${selectedPartyClassesJson}::jsonb, ${unitsStateJson}::jsonb,
         ${discoveredMonsterIdsJson}::jsonb, ${discoveredItemIdsJson}::jsonb, ${activeAdventureJson}::jsonb, ${adventureHistoryJson}::jsonb, ${combatSpeed},
         ${classUpgradesJson}::jsonb, ${generalUpgradesJson}::jsonb, ${itemUpgradesJson}::jsonb,
         ${unlockedPetIdsJson}::jsonb, ${equippedPetId}, ${petEggsJson}::jsonb, NOW()
       )
       ON CONFLICT (user_id) DO UPDATE SET
-        gold = EXCLUDED.gold,
+        gold = ${finalGold},
+        pending_gold = 0,
         unlocked_classes = EXCLUDED.unlocked_classes,
         selected_party_classes = EXCLUDED.selected_party_classes,
         units_state = EXCLUDED.units_state,
@@ -321,7 +340,7 @@ export async function POST(req: Request): Promise<Response> {
         pet_eggs = EXCLUDED.pet_eggs,
         updated_at = NOW()`;
 
-    return json({ ok: true });
+    return json({ ok: true, gold: finalGold });
   } catch (err) {
     console.error('POST /api/progress error', err);
     const msg = err instanceof Error ? err.message : '';

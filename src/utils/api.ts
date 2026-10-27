@@ -119,12 +119,14 @@ export async function fetchCloudProgress(): Promise<any | null> {
 }
 
 /** Sincroniza progresso com o Neon Database */
-export async function saveCloudProgress(progress: any): Promise<void> {
-  if (!getToken()) return;
+export async function saveCloudProgress(progress: any): Promise<{ ok: boolean; gold?: number } | null> {
+  if (!getToken()) return null;
   try {
-    await request('/api/progress', { method: 'POST', body: progress, auth: true });
+    const data = await request<{ ok: boolean; gold?: number }>('/api/progress', { method: 'POST', body: progress, auth: true });
+    return data;
   } catch (err) {
     console.warn('Sincronização em nuvem indisponível:', err);
+    return null;
   }
 }
 
