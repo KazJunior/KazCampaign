@@ -307,6 +307,18 @@ export function getAoETiles(
       break;
     }
 
+    case 'x_shape': {
+      // X shape centered on target: all diagonals up to aoeRadius
+      addTile(targetTile.x, targetTile.y);
+      for (let r = 1; r <= aoeRadius; r++) {
+        addTile(targetTile.x + r, targetTile.y + r);
+        addTile(targetTile.x - r, targetTile.y + r);
+        addTile(targetTile.x + r, targetTile.y - r);
+        addTile(targetTile.x - r, targetTile.y - r);
+      }
+      break;
+    }
+
     case 'long_cross': {
       // Cruz com cabo: 3 braços de raio padrão (laterais e retaguarda) e 1 braço estendido em +2 na direção do disparo
       addTile(targetTile.x, targetTile.y);

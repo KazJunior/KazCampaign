@@ -72,7 +72,12 @@ export function calculateBaseDamage(
       return { base: healAmount, damageType: 'healing' };
     }
 
-    // Checagem de imunidade a dano físico e mágico
+    // Checagem de imunidade total (Boss da Fase 45 com cristais) e imunidade física/mágica
+    const isTotallyImmune = target.crystalsAlive || target.statusEffects?.some((e) => e.type === 'immune' && e.duration > 0);
+    if (isTotallyImmune) {
+      return { base: 0, damageType };
+    }
+
     const isPhysImmune = target.statusEffects?.some((e) => e.type === 'immune_physical' && e.duration > 0);
     const isMagImmune = target.statusEffects?.some((e) => e.type === 'immune_magical' && e.duration > 0);
     if ((damageType === 'physical' && isPhysImmune) || (damageType === 'magical' && isMagImmune)) {
@@ -111,7 +116,7 @@ export function calculateBaseDamage(
     }
 
     if (skill.defenseIgnoreRatio) {
-      const effectiveRatio = Math.min(0.20, skill.defenseIgnoreRatio);
+      const effectiveRatio = Math.min(0.35, skill.defenseIgnoreRatio);
       targetDef = Math.round(targetDef * (1 - effectiveRatio));
     }
 
@@ -122,6 +127,11 @@ export function calculateBaseDamage(
   // --- Ataque Básico Normal (Sem Habilidade) ---
   const isMagical = isMagicalClass(attacker);
   const damageType: DamageType = isMagical ? 'magical' : 'physical';
+
+  const isTotallyImmune = target.crystalsAlive || target.statusEffects?.some((e) => e.type === 'immune' && e.duration > 0);
+  if (isTotallyImmune) {
+    return { base: 0, damageType };
+  }
 
   const isPhysImmune = target.statusEffects?.some((e) => e.type === 'immune_physical' && e.duration > 0);
   const isMagImmune = target.statusEffects?.some((e) => e.type === 'immune_magical' && e.duration > 0);

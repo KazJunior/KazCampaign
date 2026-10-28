@@ -19,16 +19,22 @@ export function decideMonsterAction(
 ): AIActionChoice | null {
   if (monster.isDead) return null;
   if (monster.monsterTypeId?.startsWith('boneco_')) return null;
+  if (monster.monsterTypeId?.startsWith('cristal_')) return null;
   if (monster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) return null;
 
   const allAlivePlayers = allUnits.filter((u) => u.faction === 'player' && !u.isDead);
   if (allAlivePlayers.length === 0) return null;
 
-  // Invisible units cannot be targeted by AI unless every alive player is invisible
-  const visiblePlayers = allAlivePlayers.filter(
-    (u) => !u.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0)
+  // Invisible units or heroes trapped in dark cocoon cannot be targeted by AI
+  const targetablePlayers = allAlivePlayers.filter(
+    (u) =>
+      !u.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0) &&
+      !u.statusEffects?.some((e) => e.type === 'dark_cocoon' && e.duration > 0)
   );
-  const playerUnits = visiblePlayers.length > 0 ? visiblePlayers : allAlivePlayers;
+  const playerUnits = targetablePlayers.length > 0 ? targetablePlayers : allAlivePlayers.filter(
+    (u) => !u.statusEffects?.some((e) => e.type === 'dark_cocoon' && e.duration > 0)
+  );
+  if (playerUnits.length === 0) return null;
 
   const allyMonsters = allUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
   const role = monster.monsterRole || 'attacker';
@@ -89,8 +95,8 @@ export function decideMonsterAction(
         } else if (effect?.type === 'shield' || act.skill.casterStatusEffect?.type === 'shield') {
           // Never recast shield if unit already has active shield
           if (!hasActiveShield) {
-            if (role === 'tank' || act.skill.id === 'quimera_escudo_cabra') {
-              score = 220; // Tanks and Chimera Goat prioritize establishing their reflective shield
+            if (role === 'tank' || act.skill.id === 'quimera_escudo_cabra' || act.skill.id === 'luz_escudo_dupla_acao') {
+              score = 230; // Tanks and Light Boss prioritize establishing their shield
             } else if (role === 'support') {
               score = hpRatio < 0.6 ? 180 : 70;
             } else {

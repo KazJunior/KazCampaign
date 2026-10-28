@@ -1192,12 +1192,46 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     description: 'BOSS PODEROSO (FASE 40): Entidade colossal cósmica e abissal com controle de tsunamis, névoas asfixiantes e vórtices mortais.',
     isBoss: true,
   },
+  cristal_da_luz: {
+    typeId: 'cristal_da_luz',
+    name: 'Cristal da Luz',
+    role: 'tank',
+    act: 5,
+    maxHp: 2000,
+    atk: 0,
+    mag: 0,
+    def: 15,
+    res: 15,
+    mov: 0,
+    range: 0,
+    color: '#FACC15',
+    avatarKey: 'cristal_luz',
+    skillIds: [],
+    description: 'Cristal sagrado do Eclipse (2000 HP). Se destruído, o Cavaleiro do Eclipse desperta sua forma da Luz. Apenas um cristal pode ser destruído.',
+  },
+  cristal_das_trevas: {
+    typeId: 'cristal_das_trevas',
+    name: 'Cristal das Trevas',
+    role: 'tank',
+    act: 5,
+    maxHp: 2000,
+    atk: 0,
+    mag: 0,
+    def: 15,
+    res: 15,
+    mov: 0,
+    range: 0,
+    color: '#9333EA',
+    avatarKey: 'cristal_trevas',
+    skillIds: [],
+    description: 'Cristal corrompido do Eclipse (2000 HP). Se destruído, o Cavaleiro do Eclipse desperta sua forma das Trevas. Apenas um cristal pode ser destruído.',
+  },
   cavaleiro_apocalipse: {
     typeId: 'cavaleiro_apocalipse',
     name: 'Cavaleiro do Eclipse Eterno',
     role: 'tank',
     act: 5,
-    maxHp: 13000,
+    maxHp: 17500,
     atk: 65,
     mag: 53,
     def: 70,
@@ -1208,7 +1242,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     avatarKey: 'eclipse_knight_boss',
     skillId: 'corte_profano',
     skillIds: ['corte_profano', 'golpe_esmagador', 'escudo_espectral', 'ruina_absoluta'],
-    description: 'MINI BOSS (FASE 45): O último cavaleiro sagrado corrompido pela escuridão do eclipse.',
+    description: 'MINI BOSS (FASE 45): O guardião do eclipse. Protegido pelos Cristais da Luz e das Trevas, sendo invulnerável a dano até que um dos cristais seja destruído!',
     isMiniBoss: true,
   },
   cronos_abissal: {
@@ -1294,7 +1328,7 @@ export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
   quimera_cabra: 2500,
   valgar_sanguinario: 12000,
   leviata_vazio: 15000,
-  cavaleiro_apocalipse: 13000,
+  cavaleiro_apocalipse: 17500,
   cronos_abissal: 15500,
 };
 
@@ -1341,16 +1375,26 @@ export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, numb
     valgar_aura_sanguinaria: 2.40,
   },
   leviata_vazio: {
-    leviata_impacto_abissal: 2.50,
-    leviata_rajada_vazio: 2.50,
-    leviata_tsunami_abissal: 2.30,
-    leviata_nevoa_asfixiante: 1.50,
-    leviata_jato_pressurizado: 2.20,
+    leviata_impacto_abissal: 2.70,
+    leviata_rajada_vazio: 2.70,
+    leviata_tsunami_abissal: 2.50,
+    leviata_nevoa_asfixiante: 1.70,
+    leviata_jato_pressurizado: 2.40,
   },
   cavaleiro_apocalipse: {
     corte_profano: 2.60,
     golpe_esmagador: 2.70,
     ruina_absoluta: 2.80,
+    trevas_corte_cruz: 2.60,
+    trevas_casulo_escuridao: 1.00,
+    trevas_corte_chamas_borda: 2.40,
+    trevas_corte_x_repulsao: 2.50,
+    trevas_corte_luz_dreno: 2.60,
+    luz_escudo_dupla_acao: 1.00,
+    luz_corte_cruz_atordoante: 2.60,
+    luz_corte_x_enfraquecedor: 2.50,
+    luz_corte_linha_silenciador: 2.50,
+    luz_corte_pesado_lentidao: 3.20,
   },
   cronos_abissal: {
     lanca_do_abismo: 2.80,
@@ -1381,6 +1425,12 @@ export function createMonsterUnit(
     mag = def.mag;
     unitDef = def.def;
     res = def.res;
+  } else if (typeId === 'cristal_da_luz' || typeId === 'cristal_das_trevas') {
+    maxHp = 2000;
+    atk = 0;
+    mag = 0;
+    unitDef = 15;
+    res = 15;
   } else if (STAGE_20_PLUS_BOSS_HP[typeId]) {
     // Bosses a partir da Fase 20: Vida progressiva (5000 na Fase 20, crescendo progressivamente)
     maxHp = STAGE_20_PLUS_BOSS_HP[typeId];
@@ -1511,7 +1561,7 @@ export function createMonsterUnit(
     def: unitDef,
     res,
     // Aumento do alcance de movimentação a partir da Fase 10 (+1 MOV tanto para bosses quanto monstros normais, máximo de 4 casas)
-    mov: Math.min(4, def.mov + (levelOffset >= 9 ? 1 : 0)),
+    mov: (typeId === 'cristal_da_luz' || typeId === 'cristal_das_trevas') ? 0 : Math.min(4, def.mov + (levelOffset >= 9 ? 1 : 0)),
     range: def.range,
     x,
     y,
@@ -1522,10 +1572,12 @@ export function createMonsterUnit(
     avatarKey: def.avatarKey,
     skills: skillList,
     learnedSkillIds: [],
-    statusEffects: [],
+    statusEffects: typeId === 'cavaleiro_apocalipse' ? [{ type: 'immune', duration: 999, value: 1 }] : [],
     isBoss: def.isBoss,
     isMiniBoss: def.isMiniBoss,
     bossPhase: def.isBoss || def.isMiniBoss ? 1 : undefined,
+    crystalsAlive: typeId === 'cavaleiro_apocalipse' ? true : undefined,
+    bossVersion: typeId === 'cavaleiro_apocalipse' ? 'neutral' : undefined,
     damageDealt: 0,
     kills: 0,
   };

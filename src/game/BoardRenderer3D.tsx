@@ -475,6 +475,40 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           vortexMesh.name = 'pulseRing';
           group.add(vortexMesh);
         }
+        // Solo Amaldiçoado de Anti-Cura (Fase 45 - Cavaleiro das Trevas)
+        if (tile.antiHealPermanent) {
+          addTileHighlight(x, y, 0x581c87, 0.75, 0xa855f7, true, 0.052);
+          const cursedGeo = new THREE.RingGeometry(0.12, 0.42, 16);
+          cursedGeo.rotateX(-Math.PI / 2);
+          const cursedMat = new THREE.MeshBasicMaterial({
+            color: 0x9333ea,
+            transparent: true,
+            opacity: 0.75,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          const cursedMesh = new THREE.Mesh(cursedGeo, cursedMat);
+          cursedMesh.position.set(x + 0.5, 0.054, y + 0.5);
+          cursedMesh.name = 'pulseRing';
+          group.add(cursedMesh);
+        }
+        // Chamas da Borda do Mapa (Fase 45 - Cavaleiro das Trevas)
+        if (tile.borderFire) {
+          addTileHighlight(x, y, 0x991b1b, 0.65, 0xf97316, true, 0.052);
+          const fireGeo = new THREE.CircleGeometry(0.28, 16);
+          fireGeo.rotateX(-Math.PI / 2);
+          const fireMat = new THREE.MeshBasicMaterial({
+            color: 0xf97316,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          const fireMesh = new THREE.Mesh(fireGeo, fireMat);
+          fireMesh.position.set(x + 0.5, 0.055, y + 0.5);
+          fireMesh.name = 'pulseRing';
+          group.add(fireMesh);
+        }
       }
     }
 

@@ -209,7 +209,19 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
       buildVoidLeviathanBossMini(char);
       break;
     case 'eclipse_knight_boss':
-      buildEclipseKnightBossMini(char);
+      buildEclipseKnightBossMini(char, 'neutral');
+      break;
+    case 'eclipse_knight_dark':
+      buildEclipseKnightBossMini(char, 'dark');
+      break;
+    case 'eclipse_knight_light':
+      buildEclipseKnightBossMini(char, 'light');
+      break;
+    case 'cristal_luz':
+      buildCrystalMini(char, 'light');
+      break;
+    case 'cristal_trevas':
+      buildCrystalMini(char, 'dark');
       break;
     case 'malakor_final_boss':
       buildMalakorFinalBossMini(char);
@@ -2501,13 +2513,21 @@ function buildVoidLeviathanBossMini(group: THREE.Group) {
 // -------------------------------------------------------------
 // 29. ECLIPSE KNIGHT BOSS (Ato 5 Mini-Boss Fase 45 - Dark Sun Champion)
 // -------------------------------------------------------------
-function buildEclipseKnightBossMini(group: THREE.Group) {
-  const obsidianMat = new THREE.MeshStandardMaterial({ color: 0x09090b, metalness: 0.9, roughness: 0.18 });
-  const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.88, roughness: 0.2 });
+function buildEclipseKnightBossMini(group: THREE.Group, variant: 'neutral' | 'dark' | 'light' = 'neutral') {
+  const isDark = variant === 'dark';
+  const isLight = variant === 'light';
+
+  const armorColor = isDark ? 0x180d2b : (isLight ? 0xe2e8f0 : 0x09090b);
+  const trimColor = isDark ? 0x9333ea : (isLight ? 0xfacc15 : 0xf59e0b);
+  const radiantColor = isDark ? 0xa855f7 : (isLight ? 0xfef08a : 0xfacc15);
+  const emissiveCol = isDark ? 0x581c87 : (isLight ? 0xeab308 : 0xd97706);
+
+  const obsidianMat = new THREE.MeshStandardMaterial({ color: armorColor, metalness: 0.9, roughness: 0.18 });
+  const goldMat = new THREE.MeshStandardMaterial({ color: trimColor, metalness: 0.88, roughness: 0.2 });
   const solarMat = new THREE.MeshStandardMaterial({
-    color: 0xfacc15,
-    emissive: 0xd97706,
-    emissiveIntensity: 1.4,
+    color: radiantColor,
+    emissive: emissiveCol,
+    emissiveIntensity: 1.5,
     roughness: 0.2,
   });
 
@@ -2518,7 +2538,7 @@ function buildEclipseKnightBossMini(group: THREE.Group) {
   legR.position.set(0.14, 0.22, 0);
   group.add(legL, legR);
 
-  // Gothic Plate Torso with Gold Sun Embellishment
+  // Gothic Plate Torso with Gold/Runic Sun Embellishment
   const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.45, 10), obsidianMat);
   torso.position.y = 0.54;
   torso.castShadow = true;
@@ -2533,7 +2553,7 @@ function buildEclipseKnightBossMini(group: THREE.Group) {
   helm.position.y = 0.9;
   group.add(helm);
 
-  // Gold Wing Crests on Helmet
+  // Gold/Dark Wing Crests on Helmet
   const wL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.24, 0.12), goldMat);
   wL.position.set(-0.16, 1.02, 0);
   wL.rotation.z = Math.PI / 6;
@@ -2542,13 +2562,13 @@ function buildEclipseKnightBossMini(group: THREE.Group) {
   wR.rotation.z = -Math.PI / 6;
   group.add(wL, wR);
 
-  // Eclipse Halo: Golden Solar Disc behind head with Pitch Black Core
+  // Eclipse Halo: Solar/Dark Disc behind head with Pitch Black or Bright Core
   const haloDisc = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.028, 6, 24), solarMat);
   haloDisc.position.set(0, 0.95, -0.1);
   haloDisc.name = 'auraRing';
   group.add(haloDisc);
 
-  // Left Hand: Colossal Solar Eclipse Tower Shield
+  // Left Hand: Colossal Tower Shield
   const shield = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.72, 0.38), obsidianMat);
   shield.position.set(-0.38, 0.52, 0.18);
   shield.rotation.y = Math.PI / 12;
@@ -2556,7 +2576,7 @@ function buildEclipseKnightBossMini(group: THREE.Group) {
   shieldSun.position.set(-0.42, 0.52, 0.2);
   group.add(shield, shieldSun);
 
-  // Right Hand: Massive Two-Handed Dark Sun Greatsword
+  // Right Hand: Massive Greatsword
   const blade = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.95, 0.14), obsidianMat);
   blade.position.set(0.38, 0.65, 0.16);
   blade.rotation.x = Math.PI / 10;
@@ -2565,11 +2585,67 @@ function buildEclipseKnightBossMini(group: THREE.Group) {
   bladeEdge.rotation.copy(blade.rotation);
   group.add(blade, bladeEdge);
 
-  // Midnight Gold-Trimmed Split Cloak
-  const cape = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.65, 0.03), new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.6 }));
+  // Cloak
+  const capeColor = isDark ? 0x2e1065 : (isLight ? 0xfffbeb : 0x020617);
+  const cape = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.65, 0.03), new THREE.MeshStandardMaterial({ color: capeColor, roughness: 0.6 }));
   cape.position.set(0, 0.48, -0.16);
   cape.rotation.x = -Math.PI / 16;
   group.add(cape);
+}
+
+// -------------------------------------------------------------
+// 29B. CRISTAL ELEMENTAL (Fase 45 - Cristal da Luz & Cristal das Trevas)
+// -------------------------------------------------------------
+function buildCrystalMini(group: THREE.Group, variant: 'light' | 'dark') {
+  const isLight = variant === 'light';
+  const crystalColor = isLight ? 0xfacc15 : 0x9333ea;
+  const emissiveColor = isLight ? 0xfef08a : 0x581c87;
+  const ringColor = isLight ? 0xfffbeb : 0xc084fc;
+
+  // Floating crystal base pedestal
+  const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.3 });
+  const baseGeo = new THREE.CylinderGeometry(0.26, 0.34, 0.12, 8);
+  const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+  baseMesh.position.y = 0.06;
+  group.add(baseMesh);
+
+  // Pillar prongs holding the crystal
+  for (let i = 0; i < 4; i++) {
+    const prong = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.22, 0.04), baseMat);
+    const angle = (i * Math.PI) / 2;
+    prong.position.set(Math.cos(angle) * 0.20, 0.16, Math.sin(angle) * 0.20);
+    group.add(prong);
+  }
+
+  // Floating Octahedral Core Crystal
+  const crystalMat = new THREE.MeshStandardMaterial({
+    color: crystalColor,
+    emissive: emissiveColor,
+    emissiveIntensity: 1.8,
+    metalness: 0.2,
+    roughness: 0.1,
+    transparent: true,
+    opacity: 0.92,
+  });
+  const crystalGeo = new THREE.OctahedronGeometry(0.24, 0);
+  const crystal = new THREE.Mesh(crystalGeo, crystalMat);
+  crystal.position.y = 0.54;
+  crystal.scale.set(0.85, 1.45, 0.85);
+  crystal.name = 'hoveringRune';
+  group.add(crystal);
+
+  // Rotating Runic Orbit Rings
+  const ringMat = new THREE.MeshStandardMaterial({
+    color: ringColor,
+    emissive: ringColor,
+    emissiveIntensity: 1.2,
+    roughness: 0.2,
+  });
+  const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.02, 6, 24), ringMat);
+  ring1.position.y = 0.54;
+  ring1.rotation.x = Math.PI / 4;
+  ring1.name = 'auraRing';
+  group.add(ring1);
 }
 
 // -------------------------------------------------------------

@@ -1229,10 +1229,10 @@ export const LEVELS: LevelConfig[] = [
     environment: 'citadel',
     width: 10,
     height: 8,
-    description: 'O Cavaleiro do Eclipse Eterno bloqueia a travessia com sua espada reluzente em trevas e trovão!',
+    description: 'O Cavaleiro do Eclipse Eterno bloqueia a ponte guardado por dois cristais elementais (Luz e Trevas). Ele é imune a todo dano até que um dos cristais seja destruído, despertando uma versão correspondente (Cavaleiro da Luz ou Cavaleiro das Trevas)!',
     objectives: [
-      'Derrote o MINI BOSS Cavaleiro do Eclipse Eterno!',
-      'Conquiste a passagem para os domínios finais de Malakor.',
+      'Destrua um dos Cristais (Luz ou Trevas) para remover a imunidade do Boss (apenas um pode ser destruído)!',
+      'Derrote a versão desperta do Cavaleiro do Eclipse!',
     ],
     grid: createGrid(10, 8, 'stone', {
       '1,2': { obstacle: 'pillar' }, '8,2': { obstacle: 'pillar' },
@@ -1241,6 +1241,8 @@ export const LEVELS: LevelConfig[] = [
     deploymentZone: standardDeployment,
     enemySpawns: [
       { monsterTypeId: 'cavaleiro_apocalipse', x: 4, y: 1, levelOffset: 44, isMiniBoss: true },
+      { monsterTypeId: 'cristal_da_luz', x: 1, y: 3, levelOffset: 0 },
+      { monsterTypeId: 'cristal_das_trevas', x: 8, y: 3, levelOffset: 0 },
     ],
     rewards: { gold: 28000, xpPerUnit: 11000 },
     hasMiniBoss: true,

@@ -17,6 +17,8 @@ export interface TileData {
   corruptionTurns?: number; // Duração restante da poça de corrupção
   mistTurns?: number; // Duração restante da névoa do Leviatã (dura 3 turnos, causa dano e silencia no início do turno)
   isWaterTornadoCenter?: boolean; // Centro do tornado de água do Leviatã
+  antiHealPermanent?: boolean; // Área deixada pelo Corte Cruz do Cavaleiro das Trevas que impede qualquer cura até o fim da batalha
+  borderFire?: boolean; // Chamas da borda do mapa invocadas pelo Cavaleiro das Trevas
 }
 
 export type UnitFaction = 'player' | 'enemy';
@@ -43,7 +45,9 @@ export type StatusEffectType =
   | 'immune'
   | 'silence'
   | 'immune_physical'
-  | 'immune_magical';
+  | 'immune_magical'
+  | 'dark_cocoon'
+  | 'immune_burn_poison';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -62,7 +66,8 @@ export type AoEType =
   | 'cross'
   | 'long_cross'
   | 'cleave'
-  | 't_shape';
+  | 't_shape'
+  | 'x_shape';
 
 export interface Skill {
   id: string;
@@ -103,6 +108,8 @@ export interface Skill {
   isCardinalArms?: boolean; // Invoca braços nas 4 direções cardinais (N, S, L, O) a partir do conjurador
   aoeCenteredOnCaster?: boolean; // Área de efeito circular centrada no próprio conjurador (ao redor do boss)
   leavesCorruptionPuddle?: boolean; // Cobre as casas atingidas com poças de corrupção por 3 turnos
+  leavesAntiHealPermanent?: boolean; // Deixa área permanente no chão que impede qualquer cura até o fim da batalha
+  summonsBorderFire?: boolean; // Invoca chamas na borda do mapa (10% HP se iniciar o turno nela)
   prioritizeBleeding?: boolean; // IA prioriza alvos que estão sob efeito de sangramento (burn)
   grantsExtraTurnOnBleeding?: boolean; // Se o alvo estiver sangrando, o atacante age novamente
   targetLowestHpTotal?: boolean; // IA prioriza alvo com menor vida total máxima (Arauto dos Espectros)
@@ -156,6 +163,9 @@ export interface Unit {
   isBoss?: boolean;
   isMiniBoss?: boolean;
   bossPhase?: number; // 1, 2, 3
+  bossVersion?: 'neutral' | 'dark' | 'light'; // Fase 45: Versão escolhida pelo cristal destruído
+  crystalsAlive?: boolean; // Fase 45: Imune enquanto os cristais estiverem ativos
+  lightDoubleActionPending?: boolean; // Fase 45 (Luz): Se o escudo de 800 não for destruído, ganha dupla ação
   lastStunTurn?: number; // Turno da batalha em que a unidade foi atordoada por último (impede stun em turnos consecutivos em chefes)
   monsterTypeId?: string;
   halfHpTriggerTurn?: number; // Turno em que a vida do boss caiu para <= 50%

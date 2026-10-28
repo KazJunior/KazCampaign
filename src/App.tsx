@@ -1780,6 +1780,132 @@ export function App() {
     [grid, addFloatingNumber]
   );
 
+  // Mecânica da Fase 45: Destruição de Cristal e Despertar do Cavaleiro do Eclipse
+  const checkAndTriggerCrystalDestruction = useCallback(
+    async (candidateUnits: Unit[]): Promise<{ didTrigger: boolean; updatedUnits: Unit[] }> => {
+      if (currentLevel?.id !== 45) {
+        return { didTrigger: false, updatedUnits: candidateUnits };
+      }
+
+      const boss = candidateUnits.find(
+        (u) => !u.isDead && (u.monsterTypeId === 'cavaleiro_apocalipse' || u.id.includes('cavaleiro_apocalipse'))
+      );
+      if (!boss || boss.bossVersion !== 'neutral') {
+        return { didTrigger: false, updatedUnits: candidateUnits };
+      }
+
+      const darkCrystalDead = candidateUnits.find(
+        (u) => u.monsterTypeId === 'cristal_das_trevas' && (u.isDead || u.currentHp <= 0)
+      );
+      const lightCrystalDead = candidateUnits.find(
+        (u) => u.monsterTypeId === 'cristal_da_luz' && (u.isDead || u.currentHp <= 0)
+      );
+
+      if (!darkCrystalDead && !lightCrystalDead) {
+        return { didTrigger: false, updatedUnits: candidateUnits };
+      }
+
+      // Um dos cristais foi destruído!
+      const isDarkVersion = Boolean(darkCrystalDead);
+      const otherCrystalTypeId = isDarkVersion ? 'cristal_da_luz' : 'cristal_das_trevas';
+
+      soundManager.playMagicSpell();
+      soundManager.playUpgrade();
+
+      // O outro cristal se dissipa imediatamente para que apenas um cristal seja destruído na batalha
+      const otherCrystal = candidateUnits.find((u) => u.monsterTypeId === otherCrystalTypeId && !u.isDead);
+      if (otherCrystal) {
+        addFloatingNumber(otherCrystal.x, otherCrystal.y, '✨ O outro cristal dissipou-se!', 'status', '#A855F7');
+        if (boardRef.current) {
+          await boardRef.current.playDeathAnimation(otherCrystal.id);
+        }
+      }
+
+      let nextUnits = candidateUnits.map((u) => {
+        if (u.monsterTypeId === otherCrystalTypeId) {
+          return { ...u, isDead: true, currentHp: 0 };
+        }
+        return u;
+      });
+
+      if (isDarkVersion) {
+        // VERSÃO 1: CAVALEIRO DAS TREVAS
+        addFloatingNumber(boss.x, boss.y, '🌑 DESPERTAR DAS TREVAS: IMUNIDADE QUEBRADA!', 'status', '#A855F7');
+        setActiveBossBanner({
+          name: 'Cavaleiro das Trevas',
+          subtitle: 'DESPERTAR DO ECLIPSE SOMBRIO',
+          phase: 2,
+        });
+
+        const darkSkills = [
+          SKILLS.trevas_corte_cruz,
+          SKILLS.trevas_casulo_escuridao,
+          SKILLS.trevas_corte_chamas_borda,
+          SKILLS.trevas_corte_x_repulsao,
+          SKILLS.trevas_corte_luz_dreno,
+        ].filter(Boolean);
+
+        nextUnits = nextUnits.map((u) => {
+          if (u.id === boss.id) {
+            const nextEffects = (u.statusEffects || []).filter((e) => e.type !== 'immune');
+            return {
+              ...u,
+              name: 'Cavaleiro das Trevas',
+              color: '#9333EA',
+              avatarKey: 'eclipse_knight_dark',
+              bossVersion: 'dark',
+              crystalsAlive: false,
+              statusEffects: nextEffects,
+              skills: darkSkills,
+            };
+          }
+          return u;
+        });
+      } else {
+        // VERSÃO 2: CAVALEIRO DA LUZ
+        addFloatingNumber(boss.x, boss.y, '☀️ DESPERTAR DA LUZ: IMUNIDADE QUEBRADA!', 'status', '#FACC15');
+        setActiveBossBanner({
+          name: 'Cavaleiro da Luz',
+          subtitle: 'DESPERTAR DO ECLIPSE RADIANTE',
+          phase: 2,
+        });
+
+        const lightSkills = [
+          SKILLS.luz_escudo_dupla_acao,
+          SKILLS.luz_corte_cruz_atordoante,
+          SKILLS.luz_corte_x_enfraquecedor,
+          SKILLS.luz_corte_linha_silenciador,
+          SKILLS.luz_corte_pesado_lentidao,
+        ].filter(Boolean);
+
+        nextUnits = nextUnits.map((u) => {
+          if (u.id === boss.id) {
+            // Remove imunidade e purifica qualquer queimadura, sangramento ou veneno
+            const nextEffects = (u.statusEffects || []).filter(
+              (e) => e.type !== 'immune' && e.type !== 'burn' && e.type !== 'poison'
+            );
+            nextEffects.push({ type: 'immune_burn_poison', duration: 999, value: 1 });
+            return {
+              ...u,
+              name: 'Cavaleiro da Luz',
+              color: '#FACC15',
+              avatarKey: 'eclipse_knight_light',
+              bossVersion: 'light',
+              crystalsAlive: false,
+              statusEffects: nextEffects,
+              skills: lightSkills,
+            };
+          }
+          return u;
+        });
+      }
+
+      setUnits(nextUnits);
+      return { didTrigger: true, updatedUnits: nextUnits };
+    },
+    [currentLevel, addFloatingNumber]
+  );
+
   // Check battle status
   const checkBattleStatusWithUnits = useCallback(async (currentUnits: Unit[]) => {
     const chimeraNeedingSplit = currentUnits.find(
@@ -1792,6 +1918,17 @@ export function App() {
     if (chimeraNeedingSplit) {
       await checkAndTriggerChimeraSplit(currentUnits);
       return;
+    }
+
+    const crystalNeedingTrigger = currentUnits.find(
+      (u) =>
+        u.faction === 'enemy' &&
+        (u.monsterTypeId === 'cristal_da_luz' || u.monsterTypeId === 'cristal_das_trevas') &&
+        (u.isDead || u.currentHp <= 0)
+    );
+    if (crystalNeedingTrigger) {
+      const crystalRes = await checkAndTriggerCrystalDestruction(currentUnits);
+      if (crystalRes.didTrigger) return;
     }
 
     const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
@@ -1827,7 +1964,7 @@ export function App() {
     } else if (playerLiving.length === 0) {
       handleDefeat();
     }
-  }, [handleDefeat, checkAndTriggerChimeraSplit]);
+  }, [handleDefeat, checkAndTriggerChimeraSplit, checkAndTriggerCrystalDestruction]);
 
   // ANIMATED Tile Click Handler
   const handleTileClick = async (x: number, y: number) => {
@@ -2022,9 +2159,14 @@ export function App() {
 
         // Damage / Debuffs for enemies
         if (u.faction === 'enemy' && (isOffensive || petSkill.targetType === 'any' || petSkill.targetType === 'enemy')) {
+          if (u.crystalsAlive) {
+            addFloatingNumber(u.x, u.y, '🛡️ Imune pelos Cristais!', 'status', '#A855F7');
+            return u;
+          }
+
           const powerMultiplier = petSkill.power || 1.5;
           const rawDmg = Math.round(primaryStat * powerMultiplier);
-          const defIgnore = Math.min(0.20, petSkill.defenseIgnoreRatio || 0);
+          const defIgnore = Math.min(0.35, petSkill.defenseIgnoreRatio || 0);
           const effectiveDef = petSkill.damageType === 'magical' ? u.res : u.def;
           const defDebuff = u.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
           const mitigatedDef = defDebuff ? Math.round(effectiveDef * (1 - defDebuff.value / 100)) : effectiveDef;
@@ -2055,11 +2197,17 @@ export function App() {
           }
 
           if (petSkill.statusEffect && finalHp > 0) {
-            newEffects.push({ ...petSkill.statusEffect });
-            if (petSkill.statusEffect.type === 'stun') addFloatingNumber(u.x, u.y, 'Atordoado!', 'status', '#FACC15');
-            else if (petSkill.statusEffect.type === 'burn') addFloatingNumber(u.x, u.y, 'Queimando!', 'status', '#F97316');
-            else if (petSkill.statusEffect.type === 'slow') addFloatingNumber(u.x, u.y, 'Lentidão!', 'status', '#38BDF8');
-            else if (petSkill.statusEffect.type === 'debuff_def') addFloatingNumber(u.x, u.y, '-Defesa!', 'status', '#F87171');
+            const isBurnPoison = petSkill.statusEffect.type === 'burn' || petSkill.statusEffect.type === 'poison';
+            const isBurnPoisonImmune = u.bossVersion === 'light' || newEffects.some((e) => e.type === 'immune_burn_poison');
+            if (isBurnPoison && isBurnPoisonImmune) {
+              addFloatingNumber(u.x, u.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
+            } else {
+              newEffects.push({ ...petSkill.statusEffect });
+              if (petSkill.statusEffect.type === 'stun') addFloatingNumber(u.x, u.y, 'Atordoado!', 'status', '#FACC15');
+              else if (petSkill.statusEffect.type === 'burn') addFloatingNumber(u.x, u.y, 'Queimando!', 'status', '#F97316');
+              else if (petSkill.statusEffect.type === 'slow') addFloatingNumber(u.x, u.y, 'Lentidão!', 'status', '#38BDF8');
+              else if (petSkill.statusEffect.type === 'debuff_def') addFloatingNumber(u.x, u.y, '-Defesa!', 'status', '#F87171');
+            }
           }
 
           return {
@@ -2073,6 +2221,11 @@ export function App() {
         return u;
       });
 
+      const crystalCheck = await checkAndTriggerCrystalDestruction(updatedUnits);
+      if (crystalCheck.didTrigger) {
+        updatedUnits = crystalCheck.updatedUnits;
+      }
+
       setUsedPetSkillIds((prev) => [...prev, petSkill.id]);
       setActivePetSkill(null);
       setUnits(updatedUnits);
@@ -2082,21 +2235,22 @@ export function App() {
     }
 
     // =========================================================================
-    // STUNNED UNIT HANDLING
-    // If the currently selected unit is stunned, it cannot move, attack, or target skills.
+    // STUNNED / COCOONED UNIT HANDLING
+    // If the currently selected unit is stunned or cocooned, it cannot move, attack, or target skills.
     // Clicking another unit selects that unit; clicking an empty tile deselects.
     // =========================================================================
     const isSelectedUnitStunned = Boolean(
       selectedUnit &&
-      selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)
+      selectedUnit.statusEffects?.some((e) => (e.type === 'stun' || e.type === 'dark_cocoon') && e.duration > 0)
     );
 
     if (isSelectedUnitStunned && selectedUnit) {
       if (clickedUnit) {
         if (clickedUnit.id === selectedUnit.id) {
-          // Re-clicked the stunned unit itself: show feedback and keep selected
+          // Re-clicked the stunned/cocooned unit itself: show feedback and keep selected
           soundManager.playSelect();
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+          const isCocoon = selectedUnit.statusEffects?.some((e) => e.type === 'dark_cocoon' && e.duration > 0);
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, isCocoon ? '🕸️ Preso no Casulo!' : 'Atordoado!', 'status', isCocoon ? '#581C87' : '#FACC15');
           return;
         }
         // Clicked another unit: seamlessly select that unit
@@ -2431,8 +2585,9 @@ export function App() {
       setTargetAoEPoint(null);
       setTargetUnitId(null);
       soundManager.playSelect();
-      if (clickedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
-        addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Atordoado!', 'status', '#FACC15');
+      if (clickedUnit.statusEffects?.some((e) => (e.type === 'stun' || e.type === 'dark_cocoon') && e.duration > 0)) {
+        const isCocoon = clickedUnit.statusEffects?.some((e) => e.type === 'dark_cocoon' && e.duration > 0);
+        addFloatingNumber(clickedUnit.x, clickedUnit.y, isCocoon ? '🕸️ Preso no Casulo!' : 'Atordoado!', 'status', isCocoon ? '#581C87' : '#FACC15');
       }
     } else {
       setSelectedUnitId(null);
@@ -2449,8 +2604,9 @@ export function App() {
   const handleConfirmAttack = async () => {
     if (!selectedUnit || !damagePreview) return;
 
-    if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
-      addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+    if (selectedUnit.statusEffects?.some((e) => (e.type === 'stun' || e.type === 'dark_cocoon') && e.duration > 0)) {
+      const isCocoon = selectedUnit.statusEffects?.some((e) => e.type === 'dark_cocoon' && e.duration > 0);
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, isCocoon ? '🕸️ Preso no Casulo!' : 'Atordoado!', 'status', isCocoon ? '#581C87' : '#FACC15');
       return;
     }
 
@@ -2533,36 +2689,46 @@ export function App() {
       );
 
       let isHealSkill = false;
+      const isSelfAntiHealed = gridRef.current?.[selectedUnit.y]?.[selectedUnit.x]?.antiHealPermanent;
+
       if (skill.id === 'resistencia_suprema') {
-        isHealSkill = true;
-        const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
-        let healAmt = Math.max(1, Math.round(selectedUnit.maxHp * ratio));
-        if (hadExcessHeal) {
-          healAmt = Math.max(1, Math.round(healAmt * 0.5));
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+        if (isSelfAntiHealed) {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🚫 Cura Bloqueada (Solo Amaldiçoado)!', 'status', '#A855F7');
         } else {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+          isHealSkill = true;
+          const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
+          let healAmt = Math.max(1, Math.round(selectedUnit.maxHp * ratio));
+          if (hadExcessHeal) {
+            healAmt = Math.max(1, Math.round(healAmt * 0.5));
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+          } else {
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+          }
+          currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt} (${Math.round(ratio * 100)}% HP)`, 'healing', '#56E59A');
         }
-        currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
-        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt} (${Math.round(ratio * 100)}% HP)`, 'healing', '#56E59A');
       } else if (skill.damageType === 'healing' && skill.power && skill.power > 0) {
-        isHealSkill = true;
-        let healAmt = Math.max(1, Math.round(selectedUnit.mag * skill.power));
-        const isCurandeiro =
-          (selectedUnit.className || '').toLowerCase().includes('curandeiro') ||
-          (selectedUnit.avatarKey || '').toLowerCase().includes('cleric');
-        if (isCurandeiro) {
-          const lostHp = Math.max(0, selectedUnit.maxHp - currentUnitHp);
-          healAmt += Math.round(lostHp * 0.10);
-        }
-        if (hadExcessHeal) {
-          healAmt = Math.max(1, Math.round(healAmt * 0.5));
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+        if (isSelfAntiHealed) {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🚫 Cura Bloqueada (Solo Amaldiçoado)!', 'status', '#A855F7');
         } else {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+          isHealSkill = true;
+          let healAmt = Math.max(1, Math.round(selectedUnit.mag * skill.power));
+          const isCurandeiro =
+            (selectedUnit.className || '').toLowerCase().includes('curandeiro') ||
+            (selectedUnit.avatarKey || '').toLowerCase().includes('cleric');
+          if (isCurandeiro) {
+            const lostHp = Math.max(0, selectedUnit.maxHp - currentUnitHp);
+            healAmt += Math.round(lostHp * 0.10);
+          }
+          if (hadExcessHeal) {
+            healAmt = Math.max(1, Math.round(healAmt * 0.5));
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+          } else {
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+          }
+          currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt}`, 'healing', '#56E59A');
         }
-        currentUnitHp = Math.min(selectedUnit.maxHp, currentUnitHp + healAmt);
-        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${healAmt}`, 'healing', '#56E59A');
       }
 
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
@@ -2809,6 +2975,11 @@ export function App() {
         }
       }
 
+      if (t.crystalsAlive) {
+        addFloatingNumber(t.x, t.y, '🛡️ Imune pelos Cristais!', 'status', '#A855F7');
+        actualDmg = 0;
+      }
+
       if (dmgResult.damageType !== 'healing' && actualDmg > 0) {
         if (skill?.ignoresShield) {
           addFloatingNumber(t.x, t.y, 'Ignorou Escudo!', 'status', '#A855F7');
@@ -2851,17 +3022,22 @@ export function App() {
         let isShielded = false;
 
         const isHealingSpell = (skill && (skill.power > 0 || skill.id === 'resistencia_suprema' || skill.id === 'ressurreicao_mistica')) || actualDmg > 0;
+        const isTargetAntiHealed = gridRef.current?.[t.y]?.[t.x]?.antiHealPermanent;
 
         if (isHealingSpell) {
-          isHealed = true;
-          if (actualDmg > 0) {
-            newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
-            addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
-          }
-          if (hadExcessHeal) {
-            addFloatingNumber(t.x, t.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+          if (isTargetAntiHealed) {
+            addFloatingNumber(t.x, t.y, '🚫 Cura Bloqueada (Solo Amaldiçoado)!', 'status', '#A855F7');
           } else {
-            addFloatingNumber(t.x, t.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+            isHealed = true;
+            if (actualDmg > 0) {
+              newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
+              addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
+            }
+            if (hadExcessHeal) {
+              addFloatingNumber(t.x, t.y, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+            } else {
+              addFloatingNumber(t.x, t.y, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+            }
           }
         }
 
@@ -2968,11 +3144,15 @@ export function App() {
         }
       } else {
         if (!isTargetStatusImmune) {
+          const isTargetBurnPoisonImmune = t.bossVersion === 'light' || currentEffects.some((e) => e.type === 'immune_burn_poison');
+
           // Primary status effect
           if (skill?.statusEffect && dmgResult.damageType !== 'healing') {
             const eff = skill.statusEffect;
             if (eff.type === 'stun' && isBossStunImmune) {
               addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+            } else if ((eff.type === 'burn' || eff.type === 'poison') && isTargetBurnPoisonImmune) {
+              addFloatingNumber(t.x, t.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
             } else {
               currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
               if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
@@ -2995,6 +3175,8 @@ export function App() {
             const eff2 = skill.secondaryStatusEffect;
             if (eff2.type === 'stun' && isBossStunImmune) {
               addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+            } else if ((eff2.type === 'burn' || eff2.type === 'poison') && isTargetBurnPoisonImmune) {
+              addFloatingNumber(t.x, t.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
             } else {
               currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
               if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
@@ -3167,35 +3349,40 @@ export function App() {
         : 0);
 
     if ((lifestealPct > 0 || isGolpeSagrado) && (totalDmgDone > 0 || isGolpeSagrado)) {
-      const hadExcessHeal = finalAttackerEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
-      let healAmt = isGolpeSagrado
-        ? Math.max(1, Math.round(selectedUnit.mag * 0.3), Math.round(totalDmgDone * 0.3))
-        : Math.max(1, Math.round(totalDmgDone * (lifestealPct / 100)));
-
-      if (hadExcessHeal) {
-        healAmt = Math.max(1, Math.round(healAmt * 0.5));
-        addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+      const isAttackerAntiHealed = gridRef.current?.[finalAttackerY]?.[finalAttackerX]?.antiHealPermanent;
+      if (isAttackerAntiHealed) {
+        addFloatingNumber(finalAttackerX, finalAttackerY, '🚫 Dreno Bloqueado (Solo Amaldiçoado)!', 'status', '#A855F7');
       } else {
-        addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva aplicada!', 'status', '#F59E0B');
-      }
+        const hadExcessHeal = finalAttackerEffects.some((e) => e.type === 'excess_heal' && e.duration > 0);
+        let healAmt = isGolpeSagrado
+          ? Math.max(1, Math.round(selectedUnit.mag * 0.3), Math.round(totalDmgDone * 0.3))
+          : Math.max(1, Math.round(totalDmgDone * (lifestealPct / 100)));
 
-      const newHp = Math.min(selectedUnit.maxHp, finalAttackerHp + healAmt);
-      const actualHealed = newHp - finalAttackerHp;
-      if (actualHealed > 0) {
-        finalAttackerHp = newHp;
-        const tag = isGolpeSagrado ? 'Cura Sagrada' : 'Dreno';
-        addFloatingNumber(finalAttackerX, finalAttackerY, `+${actualHealed} (${tag})`, 'healing', '#56E59A');
-        soundManager.playHeal();
-      } else {
-        // Feedback visual imediato mesmo com vida cheia para confirmar a ativação da cura
-        addFloatingNumber(finalAttackerX, finalAttackerY, '+0 (Vida Máxima)', 'healing', '#56E59A');
-        soundManager.playHeal();
-      }
+        if (hadExcessHeal) {
+          healAmt = Math.max(1, Math.round(healAmt * 0.5));
+          addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva (-50%)!', 'status', '#FACC15');
+        } else {
+          addFloatingNumber(finalAttackerX, finalAttackerY, 'Cura excessiva aplicada!', 'status', '#F59E0B');
+        }
 
-      finalAttackerEffects = [
-        ...finalAttackerEffects.filter((e) => e.type !== 'excess_heal'),
-        { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
-      ];
+        const newHp = Math.min(selectedUnit.maxHp, finalAttackerHp + healAmt);
+        const actualHealed = newHp - finalAttackerHp;
+        if (actualHealed > 0) {
+          finalAttackerHp = newHp;
+          const tag = isGolpeSagrado ? 'Cura Sagrada' : 'Dreno';
+          addFloatingNumber(finalAttackerX, finalAttackerY, `+${actualHealed} (${tag})`, 'healing', '#56E59A');
+          soundManager.playHeal();
+        } else {
+          // Feedback visual imediato mesmo com vida cheia para confirmar a ativação da cura
+          addFloatingNumber(finalAttackerX, finalAttackerY, '+0 (Vida Máxima)', 'healing', '#56E59A');
+          soundManager.playHeal();
+        }
+
+        finalAttackerEffects = [
+          ...finalAttackerEffects.filter((e) => e.type !== 'excess_heal'),
+          { type: 'excess_heal', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+        ];
+      }
     }
 
     // Repositioning / movement after skill (Recuo Tático / Recuo da Lança)
@@ -3280,6 +3467,11 @@ export function App() {
       updatedUnits = splitCheck.updatedUnits;
     }
 
+    const crystalCheck = await checkAndTriggerCrystalDestruction(updatedUnits);
+    if (crystalCheck.didTrigger) {
+      updatedUnits = crystalCheck.updatedUnits;
+    }
+
     setUnits(updatedUnits);
     setTargetTeleportPoint(null);
     setTargetAoEPoint(null);
@@ -3344,6 +3536,11 @@ export function App() {
       currentUnits = dotSplit.updatedUnits;
     }
 
+    const dotCrystal = await checkAndTriggerCrystalDestruction(currentUnits);
+    if (dotCrystal.didTrigger) {
+      currentUnits = dotCrystal.updatedUnits;
+    }
+
     // Registra bosses cuja vida atingiu <= 50% para ativação no turno posterior
     currentUnits = currentUnits.map((u) => {
       if (
@@ -3372,7 +3569,23 @@ export function App() {
     const monsters = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
 
     for (const monster of monsters) {
+      const initialMonsterCheck = currentUnits.find((u) => u.id === monster.id);
+      if (!initialMonsterCheck || initialMonsterCheck.isDead) continue;
+
       let extraTurnsAllowed = 1;
+      const hasIntactShield = (initialMonsterCheck.statusEffects || []).some((e) => e.type === 'shield' && e.value > 0);
+      if (initialMonsterCheck.bossVersion === 'light' && initialMonsterCheck.lightDoubleActionPending) {
+        if (hasIntactShield) {
+          extraTurnsAllowed = 2;
+          addFloatingNumber(initialMonsterCheck.x, initialMonsterCheck.y, '⚡ Bastião Intacto: DUPLA AÇÃO!', 'status', '#FACC15');
+        } else {
+          addFloatingNumber(initialMonsterCheck.x, initialMonsterCheck.y, 'Escudo quebrado: Ação normal', 'status', '#94A3B8');
+        }
+        currentUnits = currentUnits.map((u) =>
+          u.id === initialMonsterCheck.id ? { ...u, lightDoubleActionPending: false } : u
+        );
+      }
+
       while (extraTurnsAllowed > 0) {
         extraTurnsAllowed--;
         const monsterUnit = currentUnits.find((u) => u.id === monster.id);
@@ -4146,6 +4359,50 @@ export function App() {
                 addFloatingNumber(finalMonsterX, finalMonsterY, '🌫️ Névoa Asfixiante (3 Turnos)!', 'status', '#0284C7');
               }
 
+              // Cavaleiro das Trevas: Deixa no chão uma área permanente que anula cura
+              if ((skill?.leavesAntiHealPermanent || skill?.id === 'trevas_corte_cruz') && hitTiles.length > 0) {
+                setGrid((prevGrid) => {
+                  const nextGrid = prevGrid.map((row, rY) =>
+                    row.map((cell, cX) => {
+                      if (hitTiles.some((pt) => pt.x === cX && pt.y === rY)) {
+                        return {
+                          ...cell,
+                          antiHealPermanent: true,
+                        };
+                      }
+                      return cell;
+                    })
+                  );
+                  gridRef.current = nextGrid;
+                  return nextGrid;
+                });
+                soundManager.playMagicSpell();
+                addFloatingNumber(finalMonsterX, finalMonsterY, '☠️ Solo Amaldiçoado: Anti-Cura!', 'status', '#7E22CE');
+              }
+
+              // Cavaleiro das Trevas: Invoca em todas as casas da borda do mapa chamas abissais
+              if (skill?.summonsBorderFire || skill?.id === 'trevas_corte_chamas_borda') {
+                setGrid((prevGrid) => {
+                  const gH = prevGrid.length;
+                  const gW = prevGrid[0]?.length || 0;
+                  const nextGrid = prevGrid.map((row, rY) =>
+                    row.map((cell, cX) => {
+                      if (cX === 0 || cX === gW - 1 || rY === 0 || rY === gH - 1) {
+                        return {
+                          ...cell,
+                          borderFire: true,
+                        };
+                      }
+                      return cell;
+                    })
+                  );
+                  gridRef.current = nextGrid;
+                  return nextGrid;
+                });
+                soundManager.playMagicSpell();
+                addFloatingNumber(finalMonsterX, finalMonsterY, '🔥 Chamas de Trevas na Borda!', 'status', '#EA580C');
+              }
+
               let totalAiDmgDone = 0;
               let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
               const wasMonsterInvisible = finalMonsterEffects.some((e) => e.type === 'invisible' && e.duration > 0);
@@ -4443,6 +4700,7 @@ export function App() {
                     else if (eff.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff.value}%!`, 'status', '#EF4444');
                     else if (eff.type === 'electrified') addFloatingNumber(finalTargetX, finalTargetY, '⚡ Eletrificado!', 'status', '#FACC15');
                     else if (eff.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
+                    else if (eff.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
                   }
 
                   if (choice.skillToUse?.secondaryStatusEffect) {
@@ -4454,6 +4712,7 @@ export function App() {
                     else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
                     else if (eff2.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff2.value || 1} Mov)!`, 'status', '#60A5FA');
                     else if (eff2.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
+                    else if (eff2.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
                   }
                 }
 
@@ -4549,7 +4808,15 @@ export function App() {
               // Update freshAttacker position, HP, status effects and isDead
               currentUnits = currentUnits.map((u) =>
                 u.id === freshAttacker.id
-                  ? { ...u, x: finalMonsterX, y: finalMonsterY, currentHp: finalMonsterHp, isDead: finalMonsterHp === 0, statusEffects: finalMonsterEffects }
+                  ? {
+                      ...u,
+                      x: finalMonsterX,
+                      y: finalMonsterY,
+                      currentHp: finalMonsterHp,
+                      isDead: finalMonsterHp === 0,
+                      statusEffects: finalMonsterEffects,
+                      ...(skill?.id === 'luz_escudo_dupla_acao' ? { lightDoubleActionPending: true } : {}),
+                    }
                   : u
               );
             }
@@ -4572,6 +4839,11 @@ export function App() {
             const actionSplit = await checkAndTriggerChimeraSplit(currentUnits);
             if (actionSplit.didSplit) {
               currentUnits = actionSplit.updatedUnits;
+            }
+
+            const actionCrystal = await checkAndTriggerCrystalDestruction(currentUnits);
+            if (actionCrystal.didTrigger) {
+              currentUnits = actionCrystal.updatedUnits;
             }
 
             setUnits([...currentUnits]);
@@ -4717,6 +4989,19 @@ export function App() {
               }
             }
 
+            // Chamas da Borda (Cavaleiro das Trevas): Se um personagem começar o turno em cima de uma casa da borda em chamas, sofre 10% da vida máxima
+            if (!isDead) {
+              const standingTile = gridRef.current?.[unitY]?.[unitX];
+              if (standingTile && standingTile.borderFire) {
+                const fireDmg = Math.max(1, Math.round(u.maxHp * 0.10));
+                currentHp = Math.max(0, currentHp - fireDmg);
+                isDead = currentHp === 0;
+                if (isDead) anyPlayerDiedFromDoT = true;
+                addFloatingNumber(unitX, unitY, `-${fireDmg} Chamas da Borda (10%)!`, 'status', '#EA580C');
+                soundManager.playMagicSpell();
+              }
+            }
+
             // Tornado de Água Primordial: puxa todos os inimigos 1 casa em direção ao centro e causa 5% da vida máxima deles. Se pisarem no centro do tornado, recebem 220% de dano mágico.
             if (!isDead && waterTornadoActive && waterTornadoCenter) {
               const tornDmg = Math.max(1, Math.round(u.maxHp * 0.05));
@@ -4765,6 +5050,11 @@ export function App() {
             }
           }
 
+          const isCocooned = updatedEffects.some((e) => e.type === 'dark_cocoon' && e.duration > 0);
+          if (isCocooned && !isDead) {
+            addFloatingNumber(unitX, unitY, '🕸️ Preso no Casulo de Escuridão!', 'status', '#581C87');
+          }
+
           return {
             ...u,
             x: unitX,
@@ -4772,8 +5062,8 @@ export function App() {
             currentHp,
             isDead,
             statusEffects: updatedEffects,
-            hasMoved: false,
-            hasAttacked: false,
+            hasMoved: isCocooned ? true : false,
+            hasAttacked: isCocooned ? true : false,
           };
         } else {
           // Enemy units: AI turn has ended, decrement status effects & cooldowns
@@ -5685,6 +5975,18 @@ export function App() {
             <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/90 border border-purple-500/60 backdrop-blur-md shadow-lg shadow-purple-900/50 text-purple-200 text-xs font-semibold animate-pulse">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
               Poça de Corrupção ({grid[hoveredTile.y][hoveredTile.x].corruptionTurns} turnos restantes) - 10% Vida Máxima de Dano Verdadeiro
+            </div>
+          ) : null}
+          {hoveredTile && grid[hoveredTile.y]?.[hoveredTile.x]?.antiHealPermanent ? (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/95 border border-purple-500/80 backdrop-blur-md shadow-lg shadow-purple-950/80 text-purple-200 text-xs font-semibold animate-pulse">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
+              ☠️ Solo Maldito: Personagens sobre esta casa NÃO PODEM SER CURADOS!
+            </div>
+          ) : null}
+          {hoveredTile && grid[hoveredTile.y]?.[hoveredTile.x]?.borderFire ? (
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-950/95 border border-orange-500/80 backdrop-blur-md shadow-lg shadow-orange-950/80 text-orange-200 text-xs font-semibold animate-pulse">
+              <span className="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
+              🔥 Chamas da Borda: 10% da Vida Máxima ao iniciar o turno aqui!
             </div>
           ) : null}
           <BoardRenderer3D
