@@ -15,10 +15,39 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.8',
+    date: '27 de Outubro de 2026',
+    title: 'Novo Modo Treino & Bonecos de Prática 3D',
+    isLatest: true,
+    tag: 'Novo Modo de Jogo',
+    changes: [
+      {
+        highlight: 'Novo Campo de Treinamento (Modo Treino)',
+        description: 'Um modo livre dedicado onde os jogadores podem selecionar e testar qualquer uma das 17 classes da campanha livremente em equipes de 1 a 4 heróis, mantendo a classe secreta/oculta preservada.',
+        type: 'new',
+      },
+      {
+        highlight: 'Bonecos de Treino com Miniaturas 3D Dedicadas',
+        description: 'Implementados bonecos de palha e madeira em 3D: Boneco de Treino Padrão (neutro), Boneco Blindado (70 de Defesa Física) e Boneco Rúnico (70 de Resistência Mágica). Os bonecos são estáticos e não atacam.',
+        type: 'new',
+      },
+      {
+        highlight: 'Ferramentas de Prática & Medidor de Dano (DPS)',
+        description: 'Painel em combate com botões para Zerar Recargas instantaneamente, Curar Equipe, Reiniciar Bonecos e medidor em tempo real de Dano Total, Maior Golpe e Número de Ataques.',
+        type: 'new',
+      },
+      {
+        highlight: 'Configuração de Presets de Nível',
+        description: 'Possibilidade de escolher o nível da equipe de treino (Nível 1, 5, 10 com 5 habilidades ou 20 supremo) e cenários de bonecos (Alvo Único, Trio Tático ou Batalhão AoE).',
+        type: 'new',
+      },
+    ],
+  },
+  {
     version: 'v1.7',
     date: '26 de Outubro de 2026',
     title: 'Teto de Movimentação (Máx 4 Casas) & Mira em Área',
-    isLatest: true,
+    isLatest: false,
     tag: 'Balanceamento & QoL',
     changes: [
       {

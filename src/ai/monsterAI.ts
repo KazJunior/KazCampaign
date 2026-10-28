@@ -18,6 +18,7 @@ export function decideMonsterAction(
   allUnits: Unit[]
 ): AIActionChoice | null {
   if (monster.isDead) return null;
+  if (monster.monsterTypeId?.startsWith('boneco_')) return null;
   if (monster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) return null;
 
   const allAlivePlayers = allUnits.filter((u) => u.faction === 'player' && !u.isDead);
@@ -62,11 +63,14 @@ export function decideMonsterAction(
       { skill: undefined, rangeMin: 1, rangeMax: monster.range },
     ];
 
-    activeSkills.forEach((sk) => {
-      if (sk.currentCooldown === 0) {
-        availableActions.push({ skill: sk, rangeMin: sk.rangeMin, rangeMax: sk.rangeMax });
-      }
-    });
+    const isSilenced = monster.statusEffects?.some((e) => e.type === 'silence' && e.duration > 0);
+    if (!isSilenced) {
+      activeSkills.forEach((sk) => {
+        if (sk.currentCooldown === 0) {
+          availableActions.push({ skill: sk, rangeMin: sk.rangeMin, rangeMax: sk.rangeMax });
+        }
+      });
+    }
 
     for (const act of availableActions) {
       // 1. SELF-TARGET ACTIONS (Buffs, Self-Shield, Self-Heal)

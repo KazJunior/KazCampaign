@@ -14,7 +14,9 @@ export interface TileData {
   isWalkable: boolean;
   blocksVision: boolean;
   isTelegraphedHazard?: boolean; // Danger warning tile for boss AoE
-  corruptionTurns?: number; // Duração restante da poça de corrupção (dura 3 turnos, causa 10% da vida máxima como dano verdadeiro no início do turno de heróis)
+  corruptionTurns?: number; // Duração restante da poça de corrupção
+  mistTurns?: number; // Duração restante da névoa do Leviatã (dura 3 turnos, causa dano e silencia no início do turno)
+  isWaterTornadoCenter?: boolean; // Centro do tornado de água do Leviatã
 }
 
 export type UnitFaction = 'player' | 'enemy';
@@ -23,7 +25,25 @@ export type DamageType = 'physical' | 'magical' | 'healing';
 
 export type SkillCategory = 'attack' | 'defense' | 'support' | 'passive';
 
-export type StatusEffectType = 'poison' | 'burn' | 'stun' | 'slow' | 'shield' | 'buff_atk' | 'buff_mov' | 'invisible' | 'debuff_def' | 'taunt' | 'excess_heal' | 'excess_shield' | 'electrified' | 'debuff_atk' | 'immune';
+export type StatusEffectType =
+  | 'poison'
+  | 'burn'
+  | 'stun'
+  | 'slow'
+  | 'shield'
+  | 'buff_atk'
+  | 'buff_mov'
+  | 'invisible'
+  | 'debuff_def'
+  | 'taunt'
+  | 'excess_heal'
+  | 'excess_shield'
+  | 'electrified'
+  | 'debuff_atk'
+  | 'immune'
+  | 'silence'
+  | 'immune_physical'
+  | 'immune_magical';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -266,6 +286,8 @@ export interface ActiveBattleState {
   phase: BattlePhase;
   units: Unit[];
   activeBossBanner?: { name: string; subtitle: string; phase?: number } | null;
+  waterTornadoActive?: boolean;
+  waterTornadoCenter?: { x: number; y: number } | null;
 }
 
 export interface ActiveAdventure {
@@ -277,6 +299,7 @@ export interface ActiveAdventure {
   inventory?: string[]; // Item IDs currently held in this run
   equipment?: Record<string, EquipmentSlots>; // ClassName -> EquipmentSlots
   battleState?: ActiveBattleState | null;
+  combatActive?: boolean; // Se a batalha da fase já foi iniciada
 }
 
 export interface PlayerProgress {

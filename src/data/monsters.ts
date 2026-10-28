@@ -1064,7 +1064,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Valgar, o Carniceiro Imortal',
     role: 'attacker',
     act: 4,
-    maxHp: 9200,
+    maxHp: 12000,
     atk: 65,
     mag: 29,
     def: 65,
@@ -1172,7 +1172,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Leviatã do Vazio Primordial',
     role: 'attacker',
     act: 4,
-    maxHp: 11000,
+    maxHp: 15000,
     atk: 69,
     mag: 69,
     def: 72,
@@ -1181,9 +1181,15 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     range: 3,
     color: '#311B92',
     avatarKey: 'void_leviathan_boss',
-    skillId: 'lanca_do_abismo',
-    skillIds: ['lanca_do_abismo', 'despertar_sombrio', 'ruina_absoluta', 'vortice_obscuro', 'maldicao_debilitante'],
-    description: 'BOSS PODEROSO (FASE 40): Entidade colossal cósmica que distorce o tecido da realidade.',
+    skillId: 'leviata_tsunami_abissal',
+    skillIds: [
+      'leviata_impacto_abissal',
+      'leviata_rajada_vazio',
+      'leviata_tsunami_abissal',
+      'leviata_nevoa_asfixiante',
+      'leviata_jato_pressurizado',
+    ],
+    description: 'BOSS PODEROSO (FASE 40): Entidade colossal cósmica e abissal com controle de tsunamis, névoas asfixiantes e vórtices mortais.',
     isBoss: true,
   },
   cavaleiro_apocalipse: {
@@ -1224,6 +1230,58 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     description: 'BOSS SUPREMO FINAL (FASE 50): A divindade do caos definitivo. O teste final para a sua guilda.',
     isBoss: true,
   },
+
+  // =========================================================================
+  // --- BONECOS DE TREINO (MODO TREINAMENTO) ---
+  // =========================================================================
+  boneco_treino: {
+    typeId: 'boneco_treino',
+    name: 'Boneco de Treino',
+    role: 'tank',
+    maxHp: 50000,
+    atk: 0,
+    mag: 0,
+    def: 15,
+    res: 15,
+    mov: 0,
+    range: 0,
+    color: '#D97706',
+    avatarKey: 'training_dummy',
+    skillIds: [],
+    description: 'Boneco tradicional de palha e madeira com resistências neutras para testar danos e habilidades.',
+  },
+  boneco_blindado: {
+    typeId: 'boneco_blindado',
+    name: 'Boneco Blindado',
+    role: 'tank',
+    maxHp: 50000,
+    atk: 0,
+    mag: 0,
+    def: 70,
+    res: 5,
+    mov: 0,
+    range: 0,
+    color: '#94A3B8',
+    avatarKey: 'training_dummy_armored',
+    skillIds: [],
+    description: 'Boneco revestido com couraça maciça de aço temperado (Alta Defesa Física) para testar penetração e quebra de armadura.',
+  },
+  boneco_mistico: {
+    typeId: 'boneco_mistico',
+    name: 'Boneco Rúnico',
+    role: 'tank',
+    maxHp: 50000,
+    atk: 0,
+    mag: 0,
+    def: 5,
+    res: 70,
+    mov: 0,
+    range: 0,
+    color: '#818CF8',
+    avatarKey: 'training_dummy_mystic',
+    skillIds: [],
+    description: 'Boneco gravado com runas antigas de dispersão arcana (Alta Resistência Mágica) para testar magias e perfuração elemental.',
+  },
 };
 
 export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
@@ -1234,8 +1292,8 @@ export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
   quimera_leao: 2500,
   quimera_serpente: 2500,
   quimera_cabra: 2500,
-  valgar_sanguinario: 9200,
-  leviata_vazio: 11000,
+  valgar_sanguinario: 12000,
+  leviata_vazio: 15000,
   cavaleiro_apocalipse: 13000,
   cronos_abissal: 15500,
 };
@@ -1276,18 +1334,18 @@ export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, numb
     quimera_pisoteio_cabra: 2.20,
   },
   valgar_sanguinario: {
-    valgar_golpe_voraz: 2.20,
-    valgar_giro_devastador: 2.00,
-    valgar_gancho_carniceiro: 2.00,
-    valgar_arremesso_cutelo: 2.10,
-    valgar_aura_sanguinaria: 2.00,
+    valgar_golpe_voraz: 2.64,
+    valgar_giro_devastador: 2.40,
+    valgar_gancho_carniceiro: 2.40,
+    valgar_arremesso_cutelo: 2.52,
+    valgar_aura_sanguinaria: 2.40,
   },
   leviata_vazio: {
-    maldicao_debilitante: 2.40,
-    lanca_do_abismo: 2.50,
-    vortice_obscuro: 2.50,
-    despertar_sombrio: 2.60,
-    ruina_absoluta: 2.70,
+    leviata_impacto_abissal: 2.50,
+    leviata_rajada_vazio: 2.50,
+    leviata_tsunami_abissal: 2.30,
+    leviata_nevoa_asfixiante: 1.50,
+    leviata_jato_pressurizado: 2.20,
   },
   cavaleiro_apocalipse: {
     corte_profano: 2.60,
@@ -1317,8 +1375,13 @@ export function createMonsterUnit(
   let mag: number;
   let unitDef: number;
   let res: number;
-
-  if (STAGE_20_PLUS_BOSS_HP[typeId]) {
+  if (typeId.startsWith('boneco_')) {
+    maxHp = def.maxHp;
+    atk = def.atk;
+    mag = def.mag;
+    unitDef = def.def;
+    res = def.res;
+  } else if (STAGE_20_PLUS_BOSS_HP[typeId]) {
     // Bosses a partir da Fase 20: Vida progressiva (5000 na Fase 20, crescendo progressivamente)
     maxHp = STAGE_20_PLUS_BOSS_HP[typeId];
     atk = def.atk + Math.round(levelOffset * 5.1);

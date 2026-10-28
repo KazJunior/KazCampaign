@@ -29,7 +29,7 @@ function setToken(token: string | null): void {
   }
 }
 
-async function request<T>(path: string, options: { method?: string; body?: unknown; auth?: boolean } = {}): Promise<T> {
+async function request<T>(path: string, options: { method?: string; body?: unknown; auth?: boolean; keepalive?: boolean } = {}): Promise<T> {
   const headers: Record<string, string> = {};
   if (options.body !== undefined) headers['Content-Type'] = 'application/json';
   if (options.auth) {
@@ -43,6 +43,7 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
       method: options.method ?? 'GET',
       headers,
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      keepalive: options.keepalive,
     });
   } catch {
     throw new Error('Não foi possível conectar ao servidor.');
@@ -119,10 +120,15 @@ export async function fetchCloudProgress(): Promise<any | null> {
 }
 
 /** Sincroniza progresso com o Neon Database */
-export async function saveCloudProgress(progress: any): Promise<{ ok: boolean; gold?: number } | null> {
+export async function saveCloudProgress(progress: any, keepalive = false): Promise<{ ok: boolean; gold?: number } | null> {
   if (!getToken()) return null;
   try {
-    const data = await request<{ ok: boolean; gold?: number }>('/api/progress', { method: 'POST', body: progress, auth: true });
+    const data = await request<{ ok: boolean; gold?: number }>('/api/progress', {
+      method: 'POST',
+      body: progress,
+      auth: true,
+      keepalive,
+    });
     return data;
   } catch (err) {
     console.warn('Sincronização em nuvem indisponível:', err);

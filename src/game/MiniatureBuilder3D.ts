@@ -214,6 +214,15 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'malakor_final_boss':
       buildMalakorFinalBossMini(char);
       break;
+    case 'training_dummy':
+      buildTrainingDummyMini(char, 'standard');
+      break;
+    case 'training_dummy_armored':
+      buildTrainingDummyMini(char, 'armored');
+      break;
+    case 'training_dummy_mystic':
+      buildTrainingDummyMini(char, 'mystic');
+      break;
     default:
       buildFallbackMini(char, unit);
       break;
@@ -2704,3 +2713,120 @@ function buildFallbackMini(group: THREE.Group, unit: Unit) {
   capsule.position.y = 0.36;
   group.add(capsule);
 }
+
+// -------------------------------------------------------------
+// Training Dummies (Modo Treino)
+// -------------------------------------------------------------
+function buildTrainingDummyMini(group: THREE.Group, variant: 'standard' | 'armored' | 'mystic' = 'standard') {
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.85, metalness: 0.1 });
+  const strawMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.9, metalness: 0.05 });
+  const ropeMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.95 });
+  const ironMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.35, metalness: 0.8 });
+  const mysticMat = new THREE.MeshStandardMaterial({
+    color: 0x818cf8,
+    emissive: 0x4f46e5,
+    emissiveIntensity: 0.6,
+    roughness: 0.3,
+  });
+
+  // 1. Central Wood Post anchored to pedestal
+  const postGeo = new THREE.CylinderGeometry(0.06, 0.07, 0.75, 10);
+  const post = new THREE.Mesh(postGeo, woodMat);
+  post.position.y = 0.38;
+  post.castShadow = true;
+  group.add(post);
+
+  // 2. Horizontal Crossbar (Arms)
+  const crossGeo = new THREE.BoxGeometry(0.65, 0.08, 0.08);
+  const cross = new THREE.Mesh(crossGeo, woodMat);
+  cross.position.set(0, 0.48, 0);
+  cross.castShadow = true;
+  group.add(cross);
+
+  // 3. Straw Torso Sack around post
+  const torsoGeo = new THREE.CylinderGeometry(0.20, 0.16, 0.38, 12);
+  const torso = new THREE.Mesh(torsoGeo, strawMat);
+  torso.position.y = 0.40;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // 4. Rope Ties
+  const ropeGeo = new THREE.TorusGeometry(0.18, 0.02, 6, 16);
+  const ropeTop = new THREE.Mesh(ropeGeo, ropeMat);
+  ropeTop.rotation.x = Math.PI / 2;
+  ropeTop.position.y = 0.52;
+  const ropeBottom = new THREE.Mesh(ropeGeo, ropeMat);
+  ropeBottom.rotation.x = Math.PI / 2;
+  ropeBottom.position.y = 0.26;
+  group.add(ropeTop, ropeBottom);
+
+  // 5. Head (Burlap / Straw sack)
+  const headGeo = new THREE.SphereGeometry(0.13, 12, 10);
+  const head = new THREE.Mesh(headGeo, strawMat);
+  head.position.y = 0.68;
+  head.castShadow = true;
+  group.add(head);
+
+  // Stitched Eyes (Dark X's)
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x1c1917 });
+  const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, 0.01), eyeMat);
+  eyeL.position.set(-0.05, 0.68, 0.125);
+  const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, 0.01), eyeMat);
+  eyeR.position.set(0.05, 0.68, 0.125);
+  group.add(eyeL, eyeR);
+
+  if (variant === 'standard') {
+    // Red and White Target Bullseye on Torso
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+
+    const targetOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.02, 20), redMat);
+    targetOuter.rotation.x = Math.PI / 2;
+    targetOuter.position.set(0, 0.40, 0.18);
+
+    const targetWhite = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.025, 18), whiteMat);
+    targetWhite.rotation.x = Math.PI / 2;
+    targetWhite.position.set(0, 0.40, 0.185);
+
+    const targetCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 16), redMat);
+    targetCenter.rotation.x = Math.PI / 2;
+    targetCenter.position.set(0, 0.40, 0.19);
+
+    group.add(targetOuter, targetWhite, targetCenter);
+  } else if (variant === 'armored') {
+    // Heavy Steel Plate and Pot Helm
+    const chestPlateGeo = new THREE.CylinderGeometry(0.21, 0.17, 0.32, 10, 1, false, 0, Math.PI);
+    const plate = new THREE.Mesh(chestPlateGeo, ironMat);
+    plate.position.set(0, 0.41, 0.02);
+    plate.rotation.y = Math.PI / 2;
+    group.add(plate);
+
+    const helmGeo = new THREE.CylinderGeometry(0.14, 0.14, 0.16, 12);
+    const helm = new THREE.Mesh(helmGeo, ironMat);
+    helm.position.y = 0.72;
+    group.add(helm);
+
+    const slitGeo = new THREE.BoxGeometry(0.16, 0.02, 0.04);
+    const slit = new THREE.Mesh(slitGeo, new THREE.MeshBasicMaterial({ color: 0x0f172a }));
+    slit.position.set(0, 0.71, 0.13);
+    group.add(slit);
+  } else if (variant === 'mystic') {
+    // Glowing Runic Rings & Core
+    const ringGeo = new THREE.TorusGeometry(0.28, 0.025, 8, 24);
+    const ring = new THREE.Mesh(ringGeo, mysticMat);
+    ring.rotation.x = Math.PI / 4;
+    ring.position.set(0, 0.45, 0);
+    group.add(ring);
+
+    const ring2 = new THREE.Mesh(ringGeo, mysticMat);
+    ring2.rotation.x = -Math.PI / 4;
+    ring2.position.set(0, 0.45, 0);
+    group.add(ring2);
+
+    const runeCoreGeo = new THREE.OctahedronGeometry(0.08, 0);
+    const runeCore = new THREE.Mesh(runeCoreGeo, mysticMat);
+    runeCore.position.set(0, 0.42, 0.20);
+    group.add(runeCore);
+  }
+}
+

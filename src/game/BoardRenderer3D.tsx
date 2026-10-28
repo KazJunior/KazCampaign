@@ -441,6 +441,40 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           puddleMesh.name = 'pulseRing';
           group.add(puddleMesh);
         }
+        // Névoa Asfixiante do Leviatã (Fase 40)
+        if (tile.mistTurns && tile.mistTurns > 0) {
+          addTileHighlight(x, y, 0x0284c7, 0.45, 0x38bdf8, true, 0.052);
+          const mistGeo = new THREE.CircleGeometry(0.35, 16);
+          mistGeo.rotateX(-Math.PI / 2);
+          const mistMat = new THREE.MeshBasicMaterial({
+            color: 0x0ea5e9,
+            transparent: true,
+            opacity: 0.45,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          const mistMesh = new THREE.Mesh(mistGeo, mistMat);
+          mistMesh.position.set(x + 0.5, 0.054, y + 0.5);
+          mistMesh.name = 'pulseRing';
+          group.add(mistMesh);
+        }
+        // Centro do Tornado de Água Primordial (Fase 40 - Leviatã)
+        if (tile.isWaterTornadoCenter) {
+          addTileHighlight(x, y, 0x0369a1, 0.85, 0x38bdf8, true, 0.055);
+          const vortexGeo = new THREE.RingGeometry(0.15, 0.45, 24);
+          vortexGeo.rotateX(-Math.PI / 2);
+          const vortexMat = new THREE.MeshBasicMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          const vortexMesh = new THREE.Mesh(vortexGeo, vortexMat);
+          vortexMesh.position.set(x + 0.5, 0.056, y + 0.5);
+          vortexMesh.name = 'pulseRing';
+          group.add(vortexMesh);
+        }
       }
     }
 

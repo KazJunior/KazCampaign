@@ -229,7 +229,9 @@ export function resetPlayerProgress(): PlayerProgress {
   return DEFAULT_PROGRESS;
 }
 
-export function saveLiveBattleState(battleState: ActiveBattleState | null): void {
+let cloudSyncTimeout: any = null;
+
+export function saveLiveBattleState(battleState: ActiveBattleState | null, syncCloud = false, keepalive = false): void {
   try {
     if (!battleState) {
       clearLiveBattleState();
@@ -243,7 +245,19 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null): void
       const parsed = JSON.parse(raw);
       if (parsed && parsed.activeAdventure) {
         parsed.activeAdventure.battleState = battleState;
+        parsed.activeAdventure.combatActive = true;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
+
+        if (syncCloud || keepalive) {
+          if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+          saveCloudProgress(parsed, keepalive).catch(() => {});
+        } else {
+          // Sincronização periódica suave na nuvem (debounced 800ms)
+          if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+          cloudSyncTimeout = setTimeout(() => {
+            saveCloudProgress(parsed).catch(() => {});
+          }, 800);
+        }
       }
     }
   } catch (err) {
@@ -278,13 +292,16 @@ export function loadLiveBattleState(): ActiveBattleState | null {
 
 export function clearLiveBattleState(): void {
   try {
+    if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
     localStorage.removeItem(BATTLE_STATE_KEY);
     const raw = localStorage.getItem(PROGRESS_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.activeAdventure) {
         parsed.activeAdventure.battleState = null;
+        parsed.activeAdventure.combatActive = false;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
+        saveCloudProgress(parsed).catch(() => {});
       }
     }
   } catch (err) {

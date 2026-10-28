@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Egg,
   Gift,
+  Target,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import { getPetById } from '../data/pets';
@@ -45,6 +46,7 @@ interface LevelSelectProps {
   onOpenChangelog?: () => void;
   onOpenPets?: () => void;
   onOpenCoupons?: () => void;
+  onOpenTrainingMode?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -63,6 +65,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onOpenChangelog,
   onOpenPets,
   onOpenCoupons,
+  onOpenTrainingMode,
 }) => {
   const openCatalogHandler = onOpenItemCatalog || onOpenItemBestiary;
   const activeAdv = progress.activeAdventure;
@@ -218,6 +221,20 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
               >
                 <Gift size={16} className="text-emerald-400" />
                 <span>Cupons</span>
+              </button>
+            )}
+
+            {onOpenTrainingMode && (
+              <button
+                onClick={onOpenTrainingMode}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500/20 via-sky-500/25 to-blue-500/20 border-2 border-cyan-400 hover:border-cyan-300 text-cyan-300 hover:text-white font-black text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-md shadow-cyan-500/15"
+                title="Campo de Treinamento: Teste todas as 17 classes da campanha livremente em bonecos de treino"
+              >
+                <Target size={16} className="text-cyan-400 animate-pulse" />
+                <span>Modo Treino</span>
+                <span className="bg-cyan-400 text-[#10131C] px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  Treino
+                </span>
               </button>
             )}
           </div>

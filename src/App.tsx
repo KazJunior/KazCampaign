@@ -20,9 +20,9 @@ import type {
   Unit,
   UnitProgression,
 } from './types/game';
-import { LEVELS } from './data/levels';
+import { LEVELS, createTrainingLevel } from './data/levels';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
-import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL } from './data/skills';
+import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS } from './data/skills';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
 import {
@@ -83,6 +83,8 @@ import { ChangelogModal } from './components/ChangelogModal';
 import { GAME_CHANGELOG } from './data/changelog';
 import { PetModal } from './components/PetModal';
 import { CouponModal } from './components/CouponModal';
+import { TrainingModeModal, type TrainingModeConfig } from './components/TrainingModeModal';
+import { TrainingBattleHUD } from './components/TrainingBattleHUD';
 import { getPetById, calculatePetPassives, createNewEgg, MAX_EGGS_LIMIT } from './data/pets';
 import type { PetActiveSkill, PetEgg } from './types/game';
 import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
@@ -130,6 +132,7 @@ function consolidateDiscoveredItems(
 
 export function App() {
   const boardRef = useRef<BoardRenderer3DHandle>(null);
+  const resumeBattleRef = useRef<((savedBattle: ActiveBattleState) => void) | null>(null);
 
   const [currentView, setCurrentView] = useState<'level_select' | 'party_select' | 'battle'>(() => {
     const loadedProg = loadPlayerProgress();
@@ -154,6 +157,14 @@ export function App() {
   const [showChangelog, setShowChangelog] = useState(false);
   const [showPetsModal, setShowPetsModal] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
+  const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [isTrainingMode, setIsTrainingMode] = useState(false);
+  const [trainingConfig, setTrainingConfig] = useState<TrainingModeConfig | null>(null);
+  const [trainingDamageStats, setTrainingDamageStats] = useState({
+    totalDamage: 0,
+    highestHit: 0,
+    hitCount: 0,
+  });
   const [activePetSkill, setActivePetSkill] = useState<PetActiveSkill | null>(null);
   const [usedPetSkillIds, setUsedPetSkillIds] = useState<string[]>([]);
   const [pendingLootItems, setPendingLootItems] = useState<ItemDefinition[] | null>(null);
@@ -258,6 +269,14 @@ export function App() {
             ? cloudP.eggs
             : (Array.isArray(progress.eggs) ? progress.eggs : []),
         };
+
+        const incomingBattle = merged.activeAdventure?.battleState || loadLiveBattleState();
+        if (incomingBattle && merged.activeAdventure) {
+          saveLiveBattleState(incomingBattle);
+          setTimeout(() => {
+            resumeBattleRef.current?.(incomingBattle);
+          }, 0);
+        }
 
         setProgress(merged);
         savePlayerProgress(merged);
@@ -468,6 +487,23 @@ export function App() {
     return null;
   });
 
+  const [waterTornadoActive, setWaterTornadoActive] = useState<boolean>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure) {
+      return !!liveBattle.waterTornadoActive;
+    }
+    return false;
+  });
+  const [waterTornadoCenter, setWaterTornadoCenter] = useState<{ x: number; y: number } | null>(() => {
+    const liveBattle = loadLiveBattleState();
+    const loadedProg = loadPlayerProgress();
+    if (liveBattle && loadedProg.activeAdventure) {
+      return liveBattle.waterTornadoCenter || null;
+    }
+    return null;
+  });
+
   const [victorySummary, setVictorySummary] = useState<LevelSummary | null>(null);
 
   // Flag to block input during animations
@@ -580,6 +616,9 @@ export function App() {
     setIsAnimatingAction(false);
     setCurrentView('battle');
 
+    setWaterTornadoActive(false);
+    setWaterTornadoCenter(null);
+
     const bossFound = enemyUnits.find((u) => u.isBoss || u.isMiniBoss);
     let bannerObj: { name: string; subtitle: string; phase?: number } | null = null;
     if (bossFound) {
@@ -595,13 +634,31 @@ export function App() {
       setActiveBossBanner(null);
     }
 
-    saveLiveBattleState({
+    const initialBattleState: ActiveBattleState = {
       levelId: lvlConfig.id,
       turnNumber: 1,
       phase: 'deployment',
       units: initialUnits,
       activeBossBanner: bannerObj,
+    };
+    saveLiveBattleState(initialBattleState, true);
+
+    setProgress((prev) => {
+      if (!prev.activeAdventure) return prev;
+      const updatedAdventure = {
+        ...prev.activeAdventure,
+        currentLevelId: lvlConfig.id,
+        combatActive: true,
+        battleState: initialBattleState,
+      };
+      const updated = {
+        ...prev,
+        activeAdventure: updatedAdventure,
+      };
+      savePlayerProgress(updated);
+      return updated;
     });
+
     soundManager.playSelect();
   };
 
@@ -651,6 +708,8 @@ export function App() {
     setTurnNumber(savedBattle.turnNumber);
     setPhase(savedBattle.phase === 'ai_turn' ? 'player_turn' : savedBattle.phase);
     setActiveBossBanner(savedBattle.activeBossBanner || null);
+    setWaterTornadoActive(!!savedBattle.waterTornadoActive);
+    setWaterTornadoCenter(savedBattle.waterTornadoCenter || null);
 
     setSelectedUnitId(null);
     setSelectedAction('none');
@@ -662,6 +721,7 @@ export function App() {
     setCurrentView('battle');
     soundManager.playSelect();
   };
+  resumeBattleRef.current = resumeBattle;
 
   // Start a fresh Adventure Run from Level 1
   const handleStartNewAdventure = () => {
@@ -799,9 +859,151 @@ export function App() {
     soundManager.playTurnStart(true);
   };
 
+  const handleStartTraining = (config: TrainingModeConfig) => {
+    setShowTrainingModal(false);
+    setIsTrainingMode(true);
+    setTrainingConfig(config);
+    setTrainingDamageStats({ totalDamage: 0, highestHit: 0, hitCount: 0 });
+
+    const lvlConfig = createTrainingLevel(config.dummySetup);
+    setCurrentLevel(lvlConfig);
+
+    const tileGrid: TileData[][] = lvlConfig.grid.map((row, y) =>
+      row.map((cell, x) => ({
+        x,
+        y,
+        terrain: cell.terrain,
+        obstacle: cell.obstacle,
+        isWalkable: cell.obstacle === 'none',
+        blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins' || cell.obstacle === 'pillar',
+      }))
+    );
+    setGrid(tileGrid);
+
+    // Build player units with chosen class and level
+    const playerUnits: Unit[] = config.partyClasses.map((className, idx) => {
+      const def = CLASS_DEFINITIONS[className] || CLASS_DEFINITIONS['guerreiro'];
+      const spawnPt = lvlConfig.deploymentZone[idx] || { x: 3 + idx, y: 6 };
+
+      const learnable = CLASS_LEARNABLE_SKILL_IDS[className] || [];
+      let learnedIds: string[] = [];
+      let skillLevels: Record<string, number> = {};
+
+      if (config.heroLevel >= 20) {
+        learnedIds = learnable.slice(0, 4);
+        skillLevels = { [def.baseSkillId]: 3 };
+        learnedIds.forEach((id) => {
+          skillLevels[id] = 3;
+        });
+      } else if (config.heroLevel >= 10) {
+        learnedIds = learnable.slice(0, 4);
+      } else if (config.heroLevel >= 5) {
+        learnedIds = learnable.slice(0, 2);
+      }
+
+      return createPlayerUnit(
+        className as any,
+        `training_player_${className}_${idx}`,
+        spawnPt.x,
+        spawnPt.y,
+        config.heroLevel,
+        0, // xp
+        0, 0, 0, 0, 0, // bonus stats
+        learnedIds,
+        skillLevels
+      );
+    });
+
+    const enemyUnits: Unit[] = lvlConfig.enemySpawns.map((spawn, idx) =>
+      createMonsterUnit(
+        spawn.monsterTypeId as any,
+        `enemy_${spawn.monsterTypeId}_${idx}`,
+        spawn.x,
+        spawn.y,
+        0
+      )
+    );
+
+    const initialUnits = [...playerUnits, ...enemyUnits];
+    setUnits(initialUnits);
+    setTurnNumber(1);
+    setPhase('deployment');
+    setSelectedUnitId(null);
+    setSelectedAction('none');
+    setActiveSkill(null);
+    setActivePetSkill(null);
+    setUsedPetSkillIds([]);
+    setTargetUnitId(null);
+    setDamagePreview(null);
+    setFloatingNumbers([]);
+    setIsAnimatingAction(false);
+    setActiveBossBanner(null);
+    setCurrentView('battle');
+    soundManager.playSelect();
+  };
+
+  const handleResetTrainingCooldowns = () => {
+    setUnits((prev) =>
+      prev.map((u) => {
+        if (u.faction === 'player') {
+          return {
+            ...u,
+            skills: u.skills.map((s) => ({ ...s, currentCooldown: 0 })),
+          };
+        }
+        return u;
+      })
+    );
+    soundManager.playUpgrade();
+    addFloatingNumber(4, 6, '⚡ Recargas Zeradas!', 'status', '#FACC15');
+  };
+
+  const handleHealTrainingTeam = () => {
+    setUnits((prev) =>
+      prev.map((u) => {
+        if (u.faction === 'player') {
+          return {
+            ...u,
+            currentHp: u.maxHp,
+            isDead: false,
+            statusEffects: [],
+          };
+        }
+        return u;
+      })
+    );
+    soundManager.playHeal();
+    addFloatingNumber(4, 6, '💚 Equipe Curada!', 'healing', '#10B981');
+  };
+
+  const handleResetTrainingDummies = () => {
+    if (!trainingConfig) return;
+    const lvlConfig = createTrainingLevel(trainingConfig.dummySetup);
+    const freshDummies: Unit[] = lvlConfig.enemySpawns.map((spawn, idx) =>
+      createMonsterUnit(
+        spawn.monsterTypeId as any,
+        `enemy_${spawn.monsterTypeId}_${idx}_${Date.now()}`,
+        spawn.x,
+        spawn.y,
+        0
+      )
+    );
+    setUnits((prev) => [...prev.filter((u) => u.faction === 'player'), ...freshDummies]);
+    soundManager.playShield();
+    addFloatingNumber(4, 2, '🔄 Bonecos Reiniciados!', 'status', '#38BDF8');
+  };
+
+  const handleExitTraining = () => {
+    soundManager.playSelect();
+    setIsTrainingMode(false);
+    setTrainingConfig(null);
+    setCurrentView('level_select');
+  };
+
   // Auto-salva continuamente o estado da batalha em andamento sempre que houver qualquer alteração
   useEffect(() => {
     if (
+      isTrainingMode ||
       currentView !== 'battle' ||
       !currentLevel ||
       phase === 'victory' ||
@@ -818,15 +1020,18 @@ export function App() {
       phase,
       units,
       activeBossBanner,
+      waterTornadoActive,
+      waterTornadoCenter,
     };
 
     saveLiveBattleState(bState);
-  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure]);
+  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure, isTrainingMode, waterTornadoActive, waterTornadoCenter]);
 
   // Garante persistência síncrona antes do recarregamento da página (F5) ou fechamento de aba
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (
+        !isTrainingMode &&
         currentView === 'battle' &&
         currentLevel &&
         phase !== 'victory' &&
@@ -834,18 +1039,24 @@ export function App() {
         units.length > 0 &&
         progress.activeAdventure
       ) {
-        saveLiveBattleState({
-          levelId: currentLevel.id,
-          turnNumber,
-          phase,
-          units,
-          activeBossBanner,
-        });
+        saveLiveBattleState(
+          {
+            levelId: currentLevel.id,
+            turnNumber,
+            phase,
+            units,
+            activeBossBanner,
+            waterTornadoActive,
+            waterTornadoCenter,
+          },
+          true,
+          true
+        );
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure]);
+  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure, isTrainingMode, waterTornadoActive, waterTornadoCenter]);
 
   const handleResetProgress = () => {
     clearLiveBattleState();
@@ -1585,6 +1796,32 @@ export function App() {
 
     const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
     const enemyLiving = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
+
+    if (isTrainingMode) {
+      if (playerLiving.length === 0) {
+        addFloatingNumber(4, 6, '💚 Heróis Revividos no Treino!', 'healing', '#10B981');
+        soundManager.playHeal();
+        setUnits((prev) => prev.map((u) => (u.faction === 'player' ? { ...u, isDead: false, currentHp: u.maxHp } : u)));
+      } else if (enemyLiving.length === 0) {
+        addFloatingNumber(4, 2, '🎯 BONECOS DESTRUÍDOS! REINICIANDO...', 'status', '#10B981');
+        soundManager.playVictory();
+        if (trainingConfig) {
+          const lvlConfig = createTrainingLevel(trainingConfig.dummySetup);
+          const freshDummies: Unit[] = lvlConfig.enemySpawns.map((spawn, idx) =>
+            createMonsterUnit(
+              spawn.monsterTypeId as any,
+              `enemy_${spawn.monsterTypeId}_${idx}_${Date.now()}`,
+              spawn.x,
+              spawn.y,
+              0
+            )
+          );
+          setUnits((prev) => [...prev.filter((u) => u.faction === 'player' && !u.isDead), ...freshDummies]);
+        }
+      }
+      return;
+    }
+
     if (enemyLiving.length === 0) {
       handleVictory(currentUnits);
     } else if (playerLiving.length === 0) {
@@ -1914,6 +2151,38 @@ export function App() {
           soundManager.playMagicSpell();
           addFloatingNumber(x, y, `-${totalDmg} Choque (${steps}x)`, 'status', '#FACC15');
 
+          if (unitDead) {
+            soundManager.playDeath();
+            if (boardRef.current) {
+              await boardRef.current.playDeathAnimation(selectedUnit.id);
+            }
+          }
+        }
+
+        // Névoa Asfixiante do Leviatã: causa dano a quem encostar nela
+        const targetTile = grid[y]?.[x];
+        if (targetTile?.mistTurns && targetTile.mistTurns > 0 && !unitDead) {
+          const freshLeviathan = units.find((u) => u.monsterTypeId === 'leviata_vazio' && !u.isDead);
+          const mistDmg = Math.max(1, Math.round((freshLeviathan?.mag || 69) * 0.5));
+          updatedHp = Math.max(0, updatedHp - mistDmg);
+          unitDead = updatedHp === 0;
+          addFloatingNumber(x, y, `-${mistDmg} Névoa Asfixiante!`, 'status', '#38BDF8');
+          if (unitDead) {
+            soundManager.playDeath();
+            if (boardRef.current) {
+              await boardRef.current.playDeathAnimation(selectedUnit.id);
+            }
+          }
+        }
+
+        // Centro do Tornado de Água: se pisar no centro, recebe 220% de dano mágico
+        if (waterTornadoActive && waterTornadoCenter && x === waterTornadoCenter.x && y === waterTornadoCenter.y && !unitDead) {
+          const freshLeviathan = units.find((u) => u.monsterTypeId === 'leviata_vazio' && !u.isDead);
+          const centerDmg = Math.max(1, Math.round((freshLeviathan?.mag || 69) * 2.20));
+          updatedHp = Math.max(0, updatedHp - centerDmg);
+          unitDead = updatedHp === 0;
+          addFloatingNumber(x, y, `-${centerDmg} Centro do Tornado (220%)!`, 'magical', '#0284C7');
+          soundManager.playMagicSpell();
           if (unitDead) {
             soundManager.playDeath();
             if (boardRef.current) {
@@ -2998,6 +3267,14 @@ export function App() {
       return u;
     });
 
+    if (isTrainingMode && totalDmgDone > 0) {
+      setTrainingDamageStats((prev) => ({
+        totalDamage: prev.totalDamage + totalDmgDone,
+        highestHit: Math.max(prev.highestHit, totalDmgDone),
+        hitCount: prev.hitCount + 1,
+      }));
+    }
+
     const splitCheck = await checkAndTriggerChimeraSplit(updatedUnits);
     if (splitCheck.didSplit) {
       updatedUnits = splitCheck.updatedUnits;
@@ -3290,8 +3567,8 @@ export function App() {
             );
           }
         } else if (bossType === 'valgar_sanguinario') {
-          // Fase 35: Valgar - 160% de dano físico a todos, 150% de roubo de vida e sangramento (burn) por 2 turnos
-          addFloatingNumber(freshMonster.x, freshMonster.y, '🩸 BANQUETE SANGUINÁRIO (160% + Dreno 150%)!', 'status', '#DC2626');
+          // Fase 35: Valgar - 192% de dano físico a todos, 150% de roubo de vida e sangramento (burn) por 2 turnos
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🩸 BANQUETE SANGUINÁRIO (192% + Dreno 150%)!', 'status', '#DC2626');
           soundManager.playPhysicalAttack();
 
           let totalValgarDmg = 0;
@@ -3353,8 +3630,8 @@ export function App() {
             }
           }
         } else if (bossType === 'leviata_vazio') {
-          // Fase 40: Leviatã do Vazio - 175% de dano mágico em todos, reduz defesa em 20% e lentidão por 2 turnos
-          addFloatingNumber(freshMonster.x, freshMonster.y, '🌌 SINGULARIDADE DO VAZIO (175%)!', 'status', '#6366F1');
+          // Fase 40: Leviatã do Vazio - 50% HP Ultimate: Invoca um tornado de água no meio do tabuleiro que causa 200% de dano mágico a todos os inimigos.
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🌪️ TORNADO DE ÁGUA PRIMORDIAL (200%)!', 'status', '#0284C7');
           soundManager.playMagicSpell();
 
           for (const target of livingPlayers) {
@@ -3379,16 +3656,8 @@ export function App() {
 
             const newHp = Math.max(0, target.currentHp - actualDmg);
             if (actualDmg > 0) {
-              addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#B58AFF');
+              addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#0284C7');
             }
-
-            // Debuff Def -20% e Slow por 2 turnos
-            currentEffects = [
-              ...currentEffects.filter((e) => e.type !== 'debuff_def' && e.type !== 'slow'),
-              { type: 'debuff_def' as const, duration: 2, value: 20, appliedTurn: turnNumberRef.current },
-              { type: 'slow' as const, duration: 2, value: 1, appliedTurn: turnNumberRef.current },
-            ];
-            addFloatingNumber(target.x, target.y, 'Defesa -20% & Lentidão (2T)!', 'status', '#818CF8');
 
             if (newHp === 0) {
               soundManager.playDeath();
@@ -3400,6 +3669,25 @@ export function App() {
               u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
             );
           }
+
+          // Ativação do Tornado de Água no meio do tabuleiro
+          const centerX = Math.floor(grid[0].length / 2);
+          const centerY = Math.floor(grid.length / 2);
+          const tornadoPt = { x: centerX, y: centerY };
+          setWaterTornadoActive(true);
+          setWaterTornadoCenter(tornadoPt);
+          setGrid((prevGrid) => {
+            const nextGrid = prevGrid.map((row, rY) =>
+              row.map((cell, cX) =>
+                cX === centerX && rY === centerY
+                  ? { ...cell, isWaterTornadoCenter: true }
+                  : { ...cell, isWaterTornadoCenter: false }
+              )
+            );
+            gridRef.current = nextGrid;
+            return nextGrid;
+          });
+          addFloatingNumber(centerX, centerY, '🌪️ VÓRTICE PRIMORDIAL ATIVO!', 'status', '#0284C7');
         } else {
           // Fase 50: Malakor (cronos_abissal) - 220% de dano mágico em todos ignorando escudos + Stun de 2 turnos no alvo de maior ataque
           addFloatingNumber(freshMonster.x, freshMonster.y, '⌛ COLAPSO TEMPORAL ETERNO (220% Direto)!', 'status', '#B91C1C');
@@ -3837,6 +4125,27 @@ export function App() {
                 soundManager.playMagicSpell();
               }
 
+              // Névoa Asfixiante do Leviatã: área de 4 blocos para cada lado, dura 3 turnos
+              if (skill?.id === 'leviata_nevoa_asfixiante') {
+                setGrid((prevGrid) => {
+                  const nextGrid = prevGrid.map((row, rY) =>
+                    row.map((cell, cX) => {
+                      if (Math.abs(cX - finalMonsterX) <= 4 && Math.abs(rY - finalMonsterY) <= 4) {
+                        return {
+                          ...cell,
+                          mistTurns: 3,
+                        };
+                      }
+                      return cell;
+                    })
+                  );
+                  gridRef.current = nextGrid;
+                  return nextGrid;
+                });
+                soundManager.playMagicSpell();
+                addFloatingNumber(finalMonsterX, finalMonsterY, '🌫️ Névoa Asfixiante (3 Turnos)!', 'status', '#0284C7');
+              }
+
               let totalAiDmgDone = 0;
               let finalMonsterEffects = [...(freshAttacker.statusEffects || [])];
               const wasMonsterInvisible = finalMonsterEffects.some((e) => e.type === 'invisible' && e.duration > 0);
@@ -3907,7 +4216,7 @@ export function App() {
                   }
                 }
 
-                const newHp = Math.max(0, t.currentHp - actualDmg);
+                let newHp = Math.max(0, t.currentHp - actualDmg);
                 if (actualDmg > 0) {
                   const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
                   addFloatingNumber(t.x, t.y, `-${actualDmg}`, damageType, color);
@@ -3960,6 +4269,67 @@ export function App() {
                     finalTargetX = currX;
                     finalTargetY = currY;
                     addFloatingNumber(currX, currY, `Empurrado (${stepsPushed})!`, 'status', '#60A5FA');
+                  }
+                }
+
+                // Jato Pressurizado do Leviatã: empurra até o fim da linha de 5. Se atingir obstáculo ou outro inimigo, atordoa e causa dano adicional
+                if (skill?.id === 'leviata_jato_pressurizado' && newHp > 0) {
+                  const originX = finalMonsterX;
+                  const originY = finalMonsterY;
+                  let pushDirX = Math.sign(freshTarget.x - originX);
+                  let pushDirY = Math.sign(freshTarget.y - originY);
+                  if (pushDirX === 0 && pushDirY === 0) pushDirY = 1;
+
+                  const distFromMonster = Math.max(Math.abs(t.x - originX), Math.abs(t.y - originY));
+                  const maxPushSteps = Math.max(1, 5 - distFromMonster);
+
+                  let currX = t.x;
+                  let currY = t.y;
+                  let collided = false;
+                  let stepsPushed = 0;
+
+                  for (let s = 0; s < maxPushSteps; s++) {
+                    const nextX = currX + pushDirX;
+                    const nextY = currY + pushDirY;
+                    const inBounds = nextX >= 0 && nextX < grid[0].length && nextY >= 0 && nextY < grid.length;
+                    const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+                    const isOccupied = inBounds && currentUnits.some((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+
+                    if (!inBounds || !isWalkable || isOccupied) {
+                      collided = true;
+                      break;
+                    } else {
+                      currX = nextX;
+                      currY = nextY;
+                      stepsPushed++;
+                    }
+                  }
+
+                  if (stepsPushed > 0 && (currX !== t.x || currY !== t.y)) {
+                    if (boardRef.current) {
+                      await boardRef.current.playMoveAnimation(t.id, t.x, t.y, currX, currY);
+                    }
+                    finalTargetX = currX;
+                    finalTargetY = currY;
+                    addFloatingNumber(currX, currY, `🌊 Jato Pressurizado (${stepsPushed})!`, 'status', '#38BDF8');
+                  }
+
+                  if (collided) {
+                    const colDmg = Math.max(1, Math.round(freshAttacker.mag * 0.8));
+                    newHp = Math.max(0, newHp - colDmg);
+                    currentEffects = [
+                      ...currentEffects.filter((e) => e.type !== 'stun'),
+                      { type: 'stun', duration: 1, value: 1, appliedTurn: turnNumberRef.current },
+                    ];
+                    addFloatingNumber(currX, currY, `💥 Colisão! -${colDmg}`, 'magical', '#38BDF8');
+                    addFloatingNumber(currX, currY, '💫 Atordoado (1T)!', 'status', '#FACC15');
+                    soundManager.playPhysicalAttack();
+                    if (newHp === 0) {
+                      soundManager.playDeath();
+                      if (boardRef.current) {
+                        await boardRef.current.playDeathAnimation(t.id);
+                      }
+                    }
                   }
                 }
 
@@ -4072,6 +4442,7 @@ export function App() {
                     else if (eff.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff.value}%!`, 'status', '#EF4444');
                     else if (eff.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff.value}%!`, 'status', '#EF4444');
                     else if (eff.type === 'electrified') addFloatingNumber(finalTargetX, finalTargetY, '⚡ Eletrificado!', 'status', '#FACC15');
+                    else if (eff.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
                   }
 
                   if (choice.skillToUse?.secondaryStatusEffect) {
@@ -4082,6 +4453,7 @@ export function App() {
                     else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
                     else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
                     else if (eff2.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff2.value || 1} Mov)!`, 'status', '#60A5FA');
+                    else if (eff2.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
                   }
                 }
 
@@ -4158,6 +4530,10 @@ export function App() {
                   finalMonsterEffects = finalMonsterEffects.filter((e) =>
                     !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified'].includes(e.type)
                   );
+                } else if (cEff.type === 'immune_physical') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `🛡️ Imune a Dano Físico (${cEff.duration}T)!`, 'status', '#60A5FA');
+                } else if (cEff.type === 'immune_magical') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `🔮 Imune a Dano Mágico (${cEff.duration}T)!`, 'status', '#A855F7');
                 }
                 finalMonsterEffects = [...finalMonsterEffects.filter((e) => e.type !== cEff.type), cEff];
               }
@@ -4208,13 +4584,40 @@ export function App() {
     const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
     const enemyLiving = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
 
-    if (playerLiving.length === 0) {
-      handleDefeat();
-      return;
-    }
-    if (enemyLiving.length === 0) {
-      handleVictory(currentUnits);
-      return;
+    if (isTrainingMode) {
+      if (playerLiving.length === 0) {
+        addFloatingNumber(4, 6, '💚 Heróis Revividos no Treino!', 'healing', '#10B981');
+        soundManager.playHeal();
+        currentUnits = currentUnits.map((u) => (u.faction === 'player' ? { ...u, isDead: false, currentHp: u.maxHp } : u));
+        setUnits([...currentUnits]);
+      }
+      if (enemyLiving.length === 0) {
+        addFloatingNumber(4, 2, '🎯 BONECOS DESTRUÍDOS! REINICIANDO...', 'status', '#10B981');
+        soundManager.playVictory();
+        if (trainingConfig) {
+          const lvlConfig = createTrainingLevel(trainingConfig.dummySetup);
+          const freshDummies: Unit[] = lvlConfig.enemySpawns.map((spawn, idx) =>
+            createMonsterUnit(
+              spawn.monsterTypeId as any,
+              `enemy_${spawn.monsterTypeId}_${idx}_${Date.now()}`,
+              spawn.x,
+              spawn.y,
+              0
+            )
+          );
+          currentUnits = [...currentUnits.filter((u) => u.faction === 'player' && !u.isDead), ...freshDummies];
+          setUnits(currentUnits);
+        }
+      }
+    } else {
+      if (playerLiving.length === 0) {
+        handleDefeat();
+        return;
+      }
+      if (enemyLiving.length === 0) {
+        handleVictory(currentUnits);
+        return;
+      }
     }
 
     const aiTurnNumber = turnNumberRef.current;
@@ -4223,23 +4626,26 @@ export function App() {
       return t + 1;
     });
 
-    // Decrement corruption puddles on the grid at turn start
+    // Decrement corruption puddles and mist on the grid at turn start
     setGrid((prevGrid) => {
-      let hasCorruption = false;
+      let changed = false;
       const nextGrid = prevGrid.map((row) =>
         row.map((cell) => {
+          let updatedCell = { ...cell };
           if (cell.corruptionTurns && cell.corruptionTurns > 0) {
-            hasCorruption = true;
+            changed = true;
             const newTurns = cell.corruptionTurns - 1;
-            return {
-              ...cell,
-              corruptionTurns: newTurns > 0 ? newTurns : undefined,
-            };
+            updatedCell.corruptionTurns = newTurns > 0 ? newTurns : undefined;
           }
-          return cell;
+          if (cell.mistTurns && cell.mistTurns > 0) {
+            changed = true;
+            const newTurns = cell.mistTurns - 1;
+            updatedCell.mistTurns = newTurns > 0 ? newTurns : undefined;
+          }
+          return updatedCell;
         })
       );
-      if (hasCorruption) {
+      if (changed) {
         gridRef.current = nextGrid;
         return nextGrid;
       }
@@ -4251,8 +4657,14 @@ export function App() {
       return prev.map((u) => {
         let currentHp = u.currentHp;
         let isDead = u.isDead;
+        let unitX = u.x;
+        let unitY = u.y;
 
         if (u.faction === 'player') {
+          const updatedEffects = (u.statusEffects || [])
+            .map((e) => (e.type === 'taunt' ? { ...e, duration: e.duration - 1 } : e))
+            .filter((e) => e.duration > 0);
+
           if (!isDead) {
             // Burn tick (Queimadura) - 2% da vida máxima
             const burn = u.statusEffects?.find((e) => e.type === 'burn');
@@ -4261,7 +4673,7 @@ export function App() {
               currentHp = Math.max(0, currentHp - bDmg);
               isDead = currentHp === 0;
               if (isDead) anyPlayerDiedFromDoT = true;
-              addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura (2%)`, 'status', '#F97316');
+              addFloatingNumber(unitX, unitY, `-${bDmg} Queimadura (2%)`, 'status', '#F97316');
             }
 
             // Poison tick (Veneno) - 2% da vida máxima
@@ -4272,30 +4684,91 @@ export function App() {
                 currentHp = Math.max(0, currentHp - pDmg);
                 isDead = currentHp === 0;
                 if (isDead) anyPlayerDiedFromDoT = true;
-                addFloatingNumber(u.x, u.y, `-${pDmg} Veneno (2%)`, 'status', '#A855F7');
+                addFloatingNumber(unitX, unitY, `-${pDmg} Veneno (2%)`, 'status', '#A855F7');
               }
             }
 
-            // Corruption Puddle tick (Poça de Corrupção): Se um herói no início de seu turno estiver em cima de uma poça, ele sofre 10% da vida máxima como dano verdadeiro. O boss não é afetado por esse efeito.
+            // Corruption Puddle tick (Poça de Corrupção): Se um herói no início de seu turno estiver em cima de uma poça, sofre 10% da vida máxima como dano verdadeiro.
             if (!isDead) {
-              const standingTile = gridRef.current?.[u.y]?.[u.x];
+              const standingTile = gridRef.current?.[unitY]?.[unitX];
               if (standingTile && standingTile.corruptionTurns && standingTile.corruptionTurns > 0) {
                 const corrDmg = Math.max(1, Math.round(u.maxHp * 0.10));
                 currentHp = Math.max(0, currentHp - corrDmg);
                 isDead = currentHp === 0;
                 if (isDead) anyPlayerDiedFromDoT = true;
-                addFloatingNumber(u.x, u.y, `-${corrDmg} Corrupção (10% Dano Verdadeiro)`, 'status', '#C084FC');
+                addFloatingNumber(unitX, unitY, `-${corrDmg} Corrupção (10% Dano Verdadeiro)`, 'status', '#C084FC');
                 soundManager.playMagicSpell();
               }
             }
+
+            // Névoa Asfixiante: Inimigos que começarem o turno na névoa ficam silenciados (1 turno)
+            if (!isDead) {
+              const standingTile = gridRef.current?.[unitY]?.[unitX];
+              if (standingTile && standingTile.mistTurns && standingTile.mistTurns > 0) {
+                if (!updatedEffects.some((e) => e.type === 'silence' && e.duration > 0)) {
+                  updatedEffects.push({
+                    type: 'silence',
+                    duration: 1,
+                    value: 1,
+                    appliedTurn: turnNumberRef.current,
+                  });
+                  addFloatingNumber(unitX, unitY, '🔇 Silenciado (Névoa)!', 'status', '#A855F7');
+                }
+              }
+            }
+
+            // Tornado de Água Primordial: puxa todos os inimigos 1 casa em direção ao centro e causa 5% da vida máxima deles. Se pisarem no centro do tornado, recebem 220% de dano mágico.
+            if (!isDead && waterTornadoActive && waterTornadoCenter) {
+              const tornDmg = Math.max(1, Math.round(u.maxHp * 0.05));
+              currentHp = Math.max(0, currentHp - tornDmg);
+              isDead = currentHp === 0;
+              if (isDead) anyPlayerDiedFromDoT = true;
+              addFloatingNumber(unitX, unitY, `-${tornDmg} Vórtice (5%)`, 'magical', '#0284C7');
+
+              if (!isDead) {
+                const dx = Math.sign(waterTornadoCenter.x - unitX);
+                const dy = Math.sign(waterTornadoCenter.y - unitY);
+                let pullX = 0;
+                let pullY = 0;
+                if (Math.abs(waterTornadoCenter.x - unitX) >= Math.abs(waterTornadoCenter.y - unitY) && dx !== 0) {
+                  pullX = dx;
+                } else if (dy !== 0) {
+                  pullY = dy;
+                }
+
+                const targetX = unitX + pullX;
+                const targetY = unitY + pullY;
+                const inB =
+                  targetX >= 0 &&
+                  targetX < (gridRef.current?.[0]?.length || 10) &&
+                  targetY >= 0 &&
+                  targetY < (gridRef.current?.length || 8);
+                const isWalkable = inB && gridRef.current?.[targetY]?.[targetX]?.isWalkable;
+                const isOccupied = inB && prev.some((o) => !o.isDead && o.id !== u.id && o.x === targetX && o.y === targetY);
+
+                if (inB && isWalkable && !isOccupied && (pullX !== 0 || pullY !== 0)) {
+                  unitX = targetX;
+                  unitY = targetY;
+                  addFloatingNumber(unitX, unitY, '🌪️ Sugado pelo Vórtice!', 'status', '#0284C7');
+                }
+
+                if (unitX === waterTornadoCenter.x && unitY === waterTornadoCenter.y) {
+                  const leviathanBoss = prev.find((m) => m.monsterTypeId === 'leviata_vazio' && !m.isDead);
+                  const centerDmg = Math.max(1, Math.round((leviathanBoss?.mag || 69) * 2.20));
+                  currentHp = Math.max(0, currentHp - centerDmg);
+                  isDead = currentHp === 0;
+                  if (isDead) anyPlayerDiedFromDoT = true;
+                  addFloatingNumber(unitX, unitY, `-${centerDmg} Centro do Vórtice (220%)!`, 'magical', '#0284C7');
+                  soundManager.playMagicSpell();
+                }
+              }
+            }
           }
-          // Taunt on player units decrements after the enemy turn has concluded
-          const updatedEffects = (u.statusEffects || [])
-            .map((e) => (e.type === 'taunt' ? { ...e, duration: e.duration - 1 } : e))
-            .filter((e) => e.duration > 0);
 
           return {
             ...u,
+            x: unitX,
+            y: unitY,
             currentHp,
             isDead,
             statusEffects: updatedEffects,
@@ -4306,7 +4779,12 @@ export function App() {
           // Enemy units: AI turn has ended, decrement status effects & cooldowns
           const updatedEffects = (u.statusEffects || [])
             .map((e) => {
-              if (e.type === 'excess_heal' || e.type === 'excess_shield') {
+              if (
+                e.type === 'excess_heal' ||
+                e.type === 'excess_shield' ||
+                e.type === 'immune_physical' ||
+                e.type === 'immune_magical'
+              ) {
                 if (e.appliedTurn === undefined || e.appliedTurn === aiTurnNumber) {
                   return { ...e, appliedTurn: aiTurnNumber };
                 }
@@ -4762,6 +5240,10 @@ export function App() {
         addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
         return;
       }
+      if (selectedUnit.statusEffects?.some((e) => e.type === 'silence' && e.duration > 0)) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Silenciado!', 'status', '#A855F7');
+        return;
+      }
       if (sk.currentCooldown > 0) return;
 
       if (activeSkill?.id === sk.id) {
@@ -4987,7 +5469,15 @@ export function App() {
           onOpenChangelog={() => setShowChangelog(true)}
           onOpenPets={() => setShowPetsModal(true)}
           onOpenCoupons={() => setShowCouponModal(true)}
+          onOpenTrainingMode={() => setShowTrainingModal(true)}
         />
+
+        {showTrainingModal && (
+          <TrainingModeModal
+            onStartTraining={handleStartTraining}
+            onClose={() => setShowTrainingModal(false)}
+          />
+        )}
 
         {showChangelog && (
           <ChangelogModal onClose={() => setShowChangelog(false)} />
@@ -5101,8 +5591,8 @@ export function App() {
   return (
     <div className="h-screen w-screen bg-[#10131C] text-[#F3F4F8] flex flex-col overflow-hidden font-sans select-none">
       <TopBar
-        levelNumber={currentLevel?.id || 1}
-        levelName={currentLevel?.name || 'Fase'}
+        levelNumber={isTrainingMode ? 9999 : currentLevel?.id || 1}
+        levelName={isTrainingMode ? 'Campo de Treinamento' : currentLevel?.name || 'Fase'}
         turnNumber={turnNumber}
         alliesCount={alliesCount}
         enemiesCount={enemiesCount}
@@ -5122,20 +5612,41 @@ export function App() {
         onOpenPets={() => setShowPetsModal(true)}
         onOpenRiddle={currentLevel?.id === 10 && hasPedestalBeenStruck ? () => setShowSecretRiddle(true) : undefined}
         onSaveAndExit={() => {
+          if (isTrainingMode) {
+            handleExitTraining();
+            return;
+          }
           if (currentLevel && units.length > 0) {
-            saveLiveBattleState({
-              levelId: currentLevel.id,
-              turnNumber,
-              phase,
-              units,
-              activeBossBanner,
-            });
+            saveLiveBattleState(
+              {
+                levelId: currentLevel.id,
+                turnNumber,
+                phase,
+                units,
+                activeBossBanner,
+                waterTornadoActive,
+                waterTornadoCenter,
+              },
+              true
+            );
           }
           setCurrentView('level_select');
         }}
       />
 
       <div className="flex-1 flex overflow-hidden relative">
+        {isTrainingMode && (
+          <TrainingBattleHUD
+            totalDamage={trainingDamageStats.totalDamage}
+            highestHit={trainingDamageStats.highestHit}
+            hitCount={trainingDamageStats.hitCount}
+            onResetCooldowns={handleResetTrainingCooldowns}
+            onHealTeam={handleHealTrainingTeam}
+            onResetDummies={handleResetTrainingDummies}
+            onExitTraining={handleExitTraining}
+          />
+        )}
+
         {phase === 'deployment' && (
           <DeploymentBanner
             onStartBattle={handleConfirmDeployment}

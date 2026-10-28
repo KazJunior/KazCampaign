@@ -1383,3 +1383,52 @@ export const LEVELS: LevelConfig[] = [
     hasFinalBoss: true,
   },
 ];
+
+export function createTrainingLevel(dummySetup: 'single' | 'trio' | 'aoe' = 'single'): LevelConfig {
+  let enemySpawns: LevelConfig['enemySpawns'] = [];
+
+  if (dummySetup === 'single') {
+    enemySpawns = [
+      { monsterTypeId: 'boneco_treino', x: 4, y: 2, levelOffset: 0 },
+    ];
+  } else if (dummySetup === 'trio') {
+    enemySpawns = [
+      { monsterTypeId: 'boneco_blindado', x: 2, y: 2, levelOffset: 0 },
+      { monsterTypeId: 'boneco_treino', x: 4, y: 2, levelOffset: 0 },
+      { monsterTypeId: 'boneco_mistico', x: 6, y: 2, levelOffset: 0 },
+    ];
+  } else {
+    // aoe (batalhão de treino)
+    enemySpawns = [
+      { monsterTypeId: 'boneco_treino', x: 4, y: 2, levelOffset: 0 },
+      { monsterTypeId: 'boneco_treino', x: 3, y: 2, levelOffset: 0 },
+      { monsterTypeId: 'boneco_treino', x: 5, y: 2, levelOffset: 0 },
+      { monsterTypeId: 'boneco_blindado', x: 4, y: 1, levelOffset: 0 },
+      { monsterTypeId: 'boneco_mistico', x: 4, y: 3, levelOffset: 0 },
+    ];
+  }
+
+  return {
+    id: 9999,
+    name: 'Campo de Treinamento',
+    subtitle: 'Arena de Prática & Teste de Classes',
+    environment: 'ruins',
+    width: 10,
+    height: 8,
+    description: 'Pátio de treinamento com bonecos reforçados. Teste dano, alcances, combos e habilidades de qualquer classe livremente.',
+    objectives: [
+      'Ataque os bonecos de treino para avaliar o dano de suas habilidades.',
+      'Utilize os controles de treino para resetar recargas e curar sua equipe.',
+    ],
+    grid: createGrid(10, 8, 'stone', {
+      '0,1': { obstacle: 'pillar' },
+      '9,1': { obstacle: 'pillar' },
+      '0,4': { obstacle: 'pillar' },
+      '9,4': { obstacle: 'pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns,
+    rewards: { gold: 0, xpPerUnit: 0 },
+  };
+}
+

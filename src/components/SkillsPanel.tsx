@@ -232,7 +232,8 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
           skills.map((skill, index) => {
             const isSelected = activeSkill?.id === skill.id;
             const isOnCd = skill.currentCooldown > 0;
-            const disabled = !isAlly || !canAct || isOnCd;
+            const isSilenced = selectedUnit.statusEffects?.some((e) => e.type === 'silence' && e.duration > 0);
+            const disabled = !isAlly || !canAct || isOnCd || isSilenced;
 
             // Damage type badge color
             let badgeBg = 'bg-[#4C8DFF]/20 text-[#4C8DFF] border-[#4C8DFF]/30';
@@ -297,7 +298,11 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                           </span>
                         )}
                       </div>
-                      {isOnCd ? (
+                      {isSilenced ? (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#A855F7] shrink-0">
+                          Silenciado
+                        </span>
+                      ) : isOnCd ? (
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#E65353]/20 border border-[#E65353]/40 text-[#E65353] shrink-0">
                           {skill.currentCooldown}T CD
                         </span>

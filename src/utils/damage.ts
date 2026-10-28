@@ -72,6 +72,13 @@ export function calculateBaseDamage(
       return { base: healAmount, damageType: 'healing' };
     }
 
+    // Checagem de imunidade a dano físico e mágico
+    const isPhysImmune = target.statusEffects?.some((e) => e.type === 'immune_physical' && e.duration > 0);
+    const isMagImmune = target.statusEffects?.some((e) => e.type === 'immune_magical' && e.duration > 0);
+    if ((damageType === 'physical' && isPhysImmune) || (damageType === 'magical' && isMagImmune)) {
+      return { base: 0, damageType };
+    }
+
     let attackStat = damageType === 'physical' ? attacker.atk : attacker.mag;
     if (skill.scalesWithDefRes || skill.id === 'impacto_blindado' || skill.id === 'provocacao') {
       attackStat = Math.round(attacker.def * 0.75 + attacker.res * 0.75);
@@ -115,6 +122,12 @@ export function calculateBaseDamage(
   // --- Ataque Básico Normal (Sem Habilidade) ---
   const isMagical = isMagicalClass(attacker);
   const damageType: DamageType = isMagical ? 'magical' : 'physical';
+
+  const isPhysImmune = target.statusEffects?.some((e) => e.type === 'immune_physical' && e.duration > 0);
+  const isMagImmune = target.statusEffects?.some((e) => e.type === 'immune_magical' && e.duration > 0);
+  if ((damageType === 'physical' && isPhysImmune) || (damageType === 'magical' && isMagImmune)) {
+    return { base: 0, damageType };
+  }
 
   let attackStat = isMagical
     ? Math.max(attacker.atk, Math.round(attacker.mag * 0.7))
@@ -186,6 +199,22 @@ export function getDamagePreview(
     };
   }
 
+  if (base === 0) {
+    return {
+      attacker,
+      target,
+      skill,
+      minDamage: 0,
+      maxDamage: 0,
+      avgDamage: 0,
+      targetCurrentHp: target.currentHp,
+      targetHpAfterMin: target.currentHp,
+      targetHpAfterMax: target.currentHp,
+      isKillLikely: false,
+      damageType,
+    };
+  }
+
   const minBossDmg = !skill ? getBossMinimumDamage(target) : 0;
   const minFloor = minBossDmg > 0 ? minBossDmg : 1;
 
@@ -235,6 +264,15 @@ export function rollActualDamage(
       finalDamage: base,
       isKill: false,
       damageType: 'healing',
+    };
+  }
+
+  if (base === 0) {
+    return {
+      rawDamage: 0,
+      finalDamage: 0,
+      isKill: false,
+      damageType,
     };
   }
 
