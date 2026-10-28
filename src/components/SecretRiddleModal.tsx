@@ -46,7 +46,7 @@ export const SecretRiddleModal: React.FC<SecretRiddleModalProps> = ({ isOpen, on
           </div>
 
           <p className="text-xs sm:text-sm text-[#E0AAFF] font-serif leading-relaxed text-center italic">
-            &ldquo;Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Carrasco do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
+            &ldquo;Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Samurai do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
           </p>
 
           <div className="h-px w-24 bg-gradient-to-r from-transparent via-[#9D4EDD] to-transparent mx-auto my-1" />

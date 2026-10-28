@@ -47,7 +47,8 @@ export type StatusEffectType =
   | 'immune_physical'
   | 'immune_magical'
   | 'dark_cocoon'
-  | 'immune_burn_poison';
+  | 'immune_burn_poison'
+  | 'dodge_counter';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -67,7 +68,9 @@ export type AoEType =
   | 'long_cross'
   | 'cleave'
   | 't_shape'
-  | 'x_shape';
+  | 'x_shape'
+  | 'rect_3x2'
+  | 'square_5x5';
 
 export interface Skill {
   id: string;
@@ -99,7 +102,10 @@ export interface Skill {
   cleansesDebuffs?: boolean; // Removes debuffs from target ally
   canTargetGround?: boolean; // Allows targeting empty tiles on battlefield to damage enemies around (e.g. Meteoro)
   hpCostPercent?: number; // % of current HP sacrificed by caster to activate skill (Berserker)
-  resetsActionOnKill?: boolean; // Kills reset caster's attack and move action immediately (Carrasco do Vazio)
+  resetsActionOnKill?: boolean; // Kills reset caster's attack and move action immediately (Samurai do Vazio)
+  resetsCooldownOnKill?: boolean; // Reseta o próprio cooldown ao abater um inimigo (Avanço Dimensional)
+  pullToCenter?: number; // Puxa alvos N casas em direção ao centro da área (Buraco Negro)
+  requiredSkillUses?: number; // Requer N usos de outras habilidades para ser ativada (Lágrimas Rubras)
   grantsExtraTurn?: boolean; // Grants target ally an immediate additional turn (Bardo)
   createsObstacle?: ObstacleType; // Spawns an obstacle on targeted tile (Mago de Gelo)
   knockback?: number; // Pushes hit targets back N tiles away from caster (Disparo de Impacto)
@@ -173,6 +179,7 @@ export interface Unit {
 
   damageDealt: number;
   kills: number;
+  skillUsesCount?: number; // Acúmulo de habilidades usadas para liberar ultimate (Samurai do Vazio)
   equippedItemIds?: string[];
   skinId?: string;
   skinName?: string;

@@ -885,7 +885,7 @@ function buildBerserkerMini(group: THREE.Group) {
 }
 
 // -------------------------------------------------------------
-// 11. CARRASCO DO VAZIO (Void Samurai Executioner with Glowing Katana & Jingasa)
+// 11. SAMURAI DO VAZIO (Void Samurai with Glowing Katana & Jingasa)
 // -------------------------------------------------------------
 function buildVoidExecutionerMini(group: THREE.Group) {
   const voidDarkMat = new THREE.MeshStandardMaterial({ color: 0x181024, roughness: 0.7 });

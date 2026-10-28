@@ -17,6 +17,7 @@ interface TrainingBattleHUDProps {
   onHealTeam: () => void;
   onResetDummies: () => void;
   onExitTraining: () => void;
+  onOpenSkillSelector?: () => void;
 }
 
 export const TrainingBattleHUD: React.FC<TrainingBattleHUDProps> = ({
@@ -27,6 +28,7 @@ export const TrainingBattleHUD: React.FC<TrainingBattleHUDProps> = ({
   onHealTeam,
   onResetDummies,
   onExitTraining,
+  onOpenSkillSelector,
 }) => {
   return (
     <div className="absolute top-14 left-1/2 -translate-x-1/2 z-30 flex flex-wrap items-center justify-center gap-2 sm:gap-3 bg-[#121622]/95 border border-[#D4AD65]/50 backdrop-blur-md px-3 sm:px-4 py-2 rounded-2xl shadow-2xl text-[#F3F4F8] select-none max-w-[96vw]">
@@ -58,6 +60,18 @@ export const TrainingBattleHUD: React.FC<TrainingBattleHUDProps> = ({
 
       {/* Action Buttons */}
       <div className="flex items-center gap-1.5 shrink-0">
+        {/* Change Skills */}
+        {onOpenSkillSelector && (
+          <button
+            onClick={onOpenSkillSelector}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/35 border border-purple-400/40 text-purple-300 hover:text-white font-bold text-xs transition-all hover:scale-105 active:scale-95 shadow-sm"
+            title="Escolher e trocar as habilidades dos heróis da equipe em tempo real"
+          >
+            <Sparkles size={13} className="text-purple-400" />
+            <span className="hidden sm:inline">Habilidades</span>
+          </button>
+        )}
+
         {/* Reset Cooldowns */}
         <button
           onClick={onResetCooldowns}

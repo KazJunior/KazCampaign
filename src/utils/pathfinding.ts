@@ -412,6 +412,24 @@ export function getAoETiles(
       }
       break;
     }
+    case 'rect_3x2': {
+      // 3 casas de largura perpendicular por 2 casas de profundidade na direção do golpe (Horizonte Vazio)
+      for (let d = 0; d < 2; d++) {
+        for (let p = -1; p <= 1; p++) {
+          addTile(targetTile.x + d * dirX + p * perpX, targetTile.y + d * dirY + p * perpY);
+        }
+      }
+      break;
+    }
+    case 'square_5x5': {
+      // Quadrado 5x5 ao redor do alvo / conjurador (Lágrimas Rubras)
+      for (let dy = -2; dy <= 2; dy++) {
+        for (let dx = -2; dx <= 2; dx++) {
+          addTile(targetTile.x + dx, targetTile.y + dy);
+        }
+      }
+      break;
+    }
 
     case 'circle':
     default: {
@@ -438,6 +456,10 @@ export function getAoELabel(skill?: Skill | null): string {
       return `Linha Reta (${skill.aoeRadius * 2 + 1} casas)`;
     case 'cone':
       return 'Cone Frontal (3 Fileiras)';
+    case 'rect_3x2':
+      return 'Corte Amplo (3 Linhas x 2 Colunas)';
+    case 'square_5x5':
+      return 'Área Massiva 5x5';
     case 'cross':
       return skill.aoeRadius > 1 ? `Cruz Grande (+${skill.aoeRadius * 2 + 1})` : 'Cruz (+)';
     case 'long_cross':

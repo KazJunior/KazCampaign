@@ -22,7 +22,7 @@ import type {
 } from './types/game';
 import { LEVELS, createTrainingLevel } from './data/levels';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock } from './data/units';
-import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS } from './data/skills';
+import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
 import {
@@ -87,6 +87,7 @@ import { ClassMissionsModal } from './components/ClassMissionsModal';
 import { getEquippedSkin, incrementClassStat, incrementPartyStats } from './data/classQuests';
 import { TrainingModeModal, type TrainingModeConfig } from './components/TrainingModeModal';
 import { TrainingBattleHUD } from './components/TrainingBattleHUD';
+import { TrainingSkillPickerModal } from './components/TrainingSkillPickerModal';
 import { getPetById, calculatePetPassives, createNewEgg, MAX_EGGS_LIMIT } from './data/pets';
 import type { PetActiveSkill, PetEgg } from './types/game';
 import { fetchCurrentUser, fetchCloudProgress, logout, saveCloudProgress, submitScore } from './utils/api';
@@ -163,6 +164,7 @@ export function App() {
   const [showClassMissionsModal, setShowClassMissionsModal] = useState(false);
   const [isTrainingMode, setIsTrainingMode] = useState(false);
   const [trainingConfig, setTrainingConfig] = useState<TrainingModeConfig | null>(null);
+  const [showLiveTrainingSkillPicker, setShowLiveTrainingSkillPicker] = useState(false);
   const [trainingDamageStats, setTrainingDamageStats] = useState({
     totalDamage: 0,
     highestHit: 0,
@@ -889,20 +891,28 @@ export function App() {
       const def = CLASS_DEFINITIONS[className] || CLASS_DEFINITIONS['guerreiro'];
       const spawnPt = lvlConfig.deploymentZone[idx] || { x: 3 + idx, y: 6 };
 
-      const learnable = CLASS_LEARNABLE_SKILL_IDS[className] || [];
+      const learnable = [
+        ...(CLASS_LEARNABLE_SKILL_IDS[className] || []),
+        ...(CLASS_MISSION_REWARD_SKILLS[className] || []),
+      ];
       let learnedIds: string[] = [];
       let skillLevels: Record<string, number> = {};
 
-      if (config.heroLevel >= 20) {
+      if (config.customSkills && config.customSkills[className]) {
+        learnedIds = config.customSkills[className];
+      } else if (config.heroLevel >= 20) {
         learnedIds = learnable.slice(0, 4);
-        skillLevels = { [def.baseSkillId]: 3 };
-        learnedIds.forEach((id) => {
-          skillLevels[id] = 3;
-        });
       } else if (config.heroLevel >= 10) {
         learnedIds = learnable.slice(0, 4);
       } else if (config.heroLevel >= 5) {
         learnedIds = learnable.slice(0, 2);
+      }
+
+      if (config.heroLevel >= 20) {
+        skillLevels = { [def.baseSkillId]: 3 };
+        learnedIds.forEach((id) => {
+          skillLevels[id] = 3;
+        });
       }
 
       return createPlayerUnit(
@@ -960,6 +970,45 @@ export function App() {
     );
     soundManager.playUpgrade();
     addFloatingNumber(4, 6, '⚡ Recargas Zeradas!', 'status', '#FACC15');
+  };
+
+  const handleSaveLiveTrainingSkills = (className: string, newSkillIds: string[]) => {
+    setUnits((prev) =>
+      prev.map((u) => {
+        if (u.faction === 'player' && u.className === className) {
+          const def = CLASS_DEFINITIONS[u.className] || CLASS_DEFINITIONS['guerreiro'];
+          const skillListIds = Array.from(new Set([def.baseSkillId, ...newSkillIds])).slice(0, 5);
+          const skLvl = u.level >= 20 ? 3 : 1;
+          const updatedSkills = skillListIds
+            .map((id) => SKILLS[id])
+            .filter(Boolean)
+            .map((sk) => {
+              const evolved = getEvolvedSkill(sk, skLvl);
+              return { ...evolved, currentCooldown: 0 };
+            });
+          return {
+            ...u,
+            skills: updatedSkills,
+          };
+        }
+        return u;
+      })
+    );
+    if (trainingConfig) {
+      setTrainingConfig((prev) =>
+        prev
+          ? {
+              ...prev,
+              customSkills: {
+                ...(prev.customSkills || {}),
+                [className]: newSkillIds,
+              },
+            }
+          : prev
+      );
+    }
+    soundManager.playUpgrade();
+    addFloatingNumber(4, 2, '✨ Habilidades Atualizadas!', 'status', '#10B981');
   };
 
   const handleHealTrainingTeam = () => {
@@ -3329,6 +3378,76 @@ export function App() {
         }
       }
 
+      // PULL TO CENTER (Buraco Negro: puxa todos os inimigos 1 casa em direção ao centro)
+      if (skill?.pullToCenter && skill.pullToCenter > 0 && newHp > 0 && t.faction !== 'player') {
+        const centerPt = target;
+        if (t.x !== centerPt.x || t.y !== centerPt.y) {
+          const dx = centerPt.x - t.x;
+          const dy = centerPt.y - t.y;
+          let pX = 0;
+          let pY = 0;
+          if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+            pX = Math.sign(dx);
+          } else if (dy !== 0) {
+            pY = Math.sign(dy);
+          }
+
+          const nextX = t.x + pX;
+          const nextY = t.y + pY;
+          const inBounds = nextX >= 0 && nextX < grid[0].length && nextY >= 0 && nextY < grid.length;
+          const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+          const isOccupied = inBounds && updatedUnits.some((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+
+          if (inBounds && isWalkable && !isOccupied) {
+            finalTargetX = nextX;
+            finalTargetY = nextY;
+            if (boardRef.current) {
+              await boardRef.current.playMoveAnimation(t.id, t.x, t.y, nextX, nextY);
+            }
+            addFloatingNumber(nextX, nextY, '🕳️ Puxado pelo Vácuo!', 'status', '#9D4EDD');
+          }
+        }
+      }
+
+      // DIRECT PULL (Fenda Singular: puxa em direção ao conjurador)
+      if (skill?.pull && skill.pull > 0 && newHp > 0 && t.faction !== 'player') {
+        const dx = finalAttackerX - t.x;
+        const dy = finalAttackerY - t.y;
+        let pX = 0;
+        let pY = 0;
+        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+          pX = Math.sign(dx);
+        } else if (dy !== 0) {
+          pY = Math.sign(dy);
+        }
+
+        let currX = t.x;
+        let currY = t.y;
+        let pulledSteps = 0;
+        for (let s = 0; s < skill.pull; s++) {
+          const nextX = currX + pX;
+          const nextY = currY + pY;
+          if (nextX === finalAttackerX && nextY === finalAttackerY) break;
+          const inBounds = nextX >= 0 && nextX < grid[0].length && nextY >= 0 && nextY < grid.length;
+          const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+          const isOccupied = inBounds && updatedUnits.some((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+          if (inBounds && isWalkable && !isOccupied) {
+            currX = nextX;
+            currY = nextY;
+            pulledSteps++;
+          } else break;
+        }
+
+        if (pulledSteps > 0) {
+          finalTargetX = currX;
+          finalTargetY = currY;
+          if (boardRef.current) {
+            await boardRef.current.playMoveAnimation(t.id, t.x, t.y, currX, currY);
+          }
+          addFloatingNumber(currX, currY, '🌀 Puxado!', 'status', '#9D4EDD');
+        }
+      }
+
       updatedUnits = updatedUnits.map((u) =>
         u.id === t.id
           ? {
@@ -3444,7 +3563,9 @@ export function App() {
     const isExecutionKill =
       (skill?.resetsActionOnKill ||
         skill?.id === 'decapitacao_do_vazio' ||
-        skill?.id?.startsWith('decapitacao_do_vazio')) &&
+        skill?.id?.startsWith('decapitacao_do_vazio') ||
+        skill?.id === 'avanco_dimensional' ||
+        skill?.id?.startsWith('avanco_dimensional')) &&
       totalKills > 0;
 
     if (isExecutionKill) {
@@ -3452,11 +3573,28 @@ export function App() {
       addFloatingNumber(finalAttackerX, finalAttackerY, 'EXECUÇÃO! +1 AÇÃO!', 'status', '#C77DFF');
     }
 
+    if (skill?.id === 'lagrimas_rubras') {
+      soundManager.playVictory();
+      addFloatingNumber(finalAttackerX, finalAttackerY, '🌌 O MUNDO PERDE AS CORES...', 'status', '#EF4444');
+    }
+
     updatedUnits = updatedUnits.map((u) => {
       if (u.id === selectedUnit.id) {
-        const updatedSkills = u.skills.map((s) =>
-          skill && s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
-        );
+        const updatedSkills = u.skills.map((s) => {
+          if (skill && s.id === skill.id) {
+            if (isExecutionKill && (skill.resetsCooldownOnKill || skill.id === 'avanco_dimensional')) {
+              return { ...s, currentCooldown: 0 };
+            }
+            return { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current };
+          }
+          return s;
+        });
+
+        const isLayingRubras = skill?.id === 'lagrimas_rubras';
+        const nextSkillUsesCount = isLayingRubras
+          ? 0
+          : (u.skillUsesCount || 0) + (skill ? 1 : 0);
+
         return {
           ...u,
           x: finalAttackerX,
@@ -3468,6 +3606,7 @@ export function App() {
           statusEffects: finalAttackerEffects,
           damageDealt: u.damageDealt + totalDmgDone,
           kills: u.kills + totalKills,
+          skillUsesCount: nextSkillUsesCount,
         };
       }
       return u;
@@ -3788,6 +3927,22 @@ export function App() {
             let actualDmg = res.finalDamage;
             const updatedTarget = currentUnits.find((u) => u.id === singleTarget.id) || singleTarget;
             let currentEffects = [...(updatedTarget.statusEffects || [])];
+
+            const bossDodgeIdx = currentEffects.findIndex((e) => e.type === 'dodge_counter' && e.duration > 0);
+            if (bossDodgeIdx >= 0) {
+              currentEffects.splice(bossDodgeIdx, 1);
+              actualDmg = 0;
+              addFloatingNumber(updatedTarget.x, updatedTarget.y, '⚡ ESQUIVA DO VAZIO!', 'status', '#C77DFF');
+              soundManager.playShield();
+              const counterDmg = Math.max(1, Math.round(updatedTarget.atk * 1.5 - (freshMonster.def || 0) * 0.3));
+              currentUnits = currentUnits.map((u) =>
+                u.id === freshMonster.id
+                  ? { ...u, currentHp: Math.max(0, u.currentHp - counterDmg), isDead: Math.max(0, u.currentHp - counterDmg) === 0 }
+                  : u
+              );
+              addFloatingNumber(freshMonster.x, freshMonster.y, `💥 Contra-Ataque! -${counterDmg}`, 'physical', '#9D4EDD');
+              soundManager.playPhysicalAttack();
+            }
 
             for (let i = 0; i < currentEffects.length; i++) {
               if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
@@ -4455,6 +4610,26 @@ export function App() {
                 const damageType = res.damageType;
 
                 let currentEffects = [...(t.statusEffects || [])];
+
+                // --- AMEAÇA DO VAZIO (100% Esquiva + Contra-ataque de 150%) ---
+                const dodgeCounterIdx = currentEffects.findIndex((e) => e.type === 'dodge_counter' && e.duration > 0);
+                if (dodgeCounterIdx >= 0) {
+                  currentEffects.splice(dodgeCounterIdx, 1);
+                  actualDmg = 0;
+                  addFloatingNumber(t.x, t.y, '⚡ ESQUIVA DO VAZIO!', 'status', '#C77DFF');
+                  soundManager.playShield();
+
+                  const counterDmg = Math.max(1, Math.round(t.atk * 1.5 - (freshAttacker.def || 0) * 0.3));
+                  finalMonsterHp = Math.max(0, finalMonsterHp - counterDmg);
+                  addFloatingNumber(freshAttacker.x, freshAttacker.y, `💥 Contra-Ataque! -${counterDmg}`, 'physical', '#9D4EDD');
+                  soundManager.playPhysicalAttack();
+                  if (finalMonsterHp === 0) {
+                    soundManager.playDeath();
+                    if (boardRef.current) {
+                      await boardRef.current.playDeathAnimation(freshAttacker.id);
+                    }
+                  }
+                }
 
                 // Shield Steal (e.g. Vulcanus Golpe Esmaga-Escudo)
                 if (skill?.stealsShield) {
@@ -5896,6 +6071,16 @@ export function App() {
             }}
           />
         )}
+        {showClassMissionsModal && (
+          <ClassMissionsModal
+            progress={progress}
+            onUpdateProgress={(newProgress) => {
+              setProgress(newProgress);
+              savePlayerProgress(newProgress);
+            }}
+            onClose={() => setShowClassMissionsModal(false)}
+          />
+        )}
       </>
     );
   }
@@ -5917,6 +6102,16 @@ export function App() {
           <ClassUnlockModal
             unlockedClasses={pendingUnlockClasses}
             onDismiss={() => setPendingUnlockClasses((prev) => prev.slice(1))}
+          />
+        )}
+        {showClassMissionsModal && (
+          <ClassMissionsModal
+            progress={progress}
+            onUpdateProgress={(newProgress) => {
+              setProgress(newProgress);
+              savePlayerProgress(newProgress);
+            }}
+            onClose={() => setShowClassMissionsModal(false)}
           />
         )}
       </>
@@ -5983,6 +6178,7 @@ export function App() {
             onHealTeam={handleHealTrainingTeam}
             onResetDummies={handleResetTrainingDummies}
             onExitTraining={handleExitTraining}
+            onOpenSkillSelector={() => setShowLiveTrainingSkillPicker(true)}
           />
         )}
 
@@ -6290,6 +6486,30 @@ export function App() {
             savePlayerProgress(newProgress);
           }}
           onClose={() => setShowClassMissionsModal(false)}
+        />
+      )}
+      {isTrainingMode && showLiveTrainingSkillPicker && (
+        <TrainingSkillPickerModal
+          classNameKey={
+            selectedUnit?.faction === 'player'
+              ? selectedUnit.className
+              : units.find((u) => u.faction === 'player')?.className || 'guerreiro'
+          }
+          initialSkillsByClass={
+            units
+              .filter((u) => u.faction === 'player')
+              .reduce((acc, u) => {
+                const def = CLASS_DEFINITIONS[u.className];
+                acc[u.className] = u.skills
+                  .filter((s) => s.id !== def?.baseSkillId)
+                  .map((s) => s.id);
+                return acc;
+              }, {} as Record<string, string[]>)
+          }
+          heroLevel={trainingConfig?.heroLevel || 10}
+          allTeamClasses={units.filter((u) => u.faction === 'player').map((u) => u.className)}
+          onSaveSkills={handleSaveLiveTrainingSkills}
+          onClose={() => setShowLiveTrainingSkillPicker(false)}
         />
       )}
     </div>

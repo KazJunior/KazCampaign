@@ -205,19 +205,19 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
   },
   carrasco_vazio: {
     className: 'carrasco_vazio',
-    name: 'Carrasco do Vazio',
-    role: 'Samurai Dimensional & Carrasco',
+    name: 'Samurai do Vazio',
+    role: 'Samurai Dimensional & Mestre da Katana',
     maxHp: 95,
-    atk: 31,
+    atk: 32,
     mag: 12,
-    def: 7,
+    def: 8,
     res: 8,
     mov: 4,
     range: 1,
     color: '#9D4EDD',
     avatarKey: 'void_executioner',
     baseSkillId: 'corte_do_vazio',
-    description: 'Samurai dimensional com foco em ataques ultrarrápidos, resetar ação e movimento com abates, alta mobilidade através de fendas e golpes que rasgam o vazio.',
+    description: 'Guerreiro samurai com domínio absoluto sobre o espaço e o vácuo. Desfere cortes multidimensionais em cone, contra-ataques impecáveis ao desembainhar, fendas gravitacionais que puxam inimigos e a lendária técnica suprema Lágrimas Rubras.',
     statGrowth: { hp: 12, atk: 5, mag: 2, def: 2, res: 2 },
     isSecret: true,
   },
@@ -405,9 +405,9 @@ export interface SecretClassUnlockInfo {
 
 export const SECRET_CLASS_UNLOCK_CONDITIONS: Record<string, SecretClassUnlockInfo> = {
   carrasco_vazio: {
-    title: 'Carrasco do Vazio',
+    title: 'Samurai do Vazio',
     description: 'Derrote Astaroth (Fase 10) utilizando apenas classes de combate corpo a corpo (Alcance 1, Cavaleiro Arcano ou Lanceiro).',
-    riddle: `Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Carrasco do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
+    riddle: `Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Samurai do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
 
 Se desejas empunhar a lâmina proibida que rasga o espaço, abandone a covardia do refúgio gerado por métodos fúteis e inferiores de combate.
 

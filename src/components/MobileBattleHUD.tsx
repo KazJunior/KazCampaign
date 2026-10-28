@@ -433,7 +433,10 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                   skills.map((skill) => {
                     const isSelected = activeSkill?.id === skill.id;
                     const isOnCd = skill.currentCooldown > 0;
-                    const disabled = !isAlly || !canAct || isOnCd;
+                    const reqUses = skill.requiredSkillUses || 0;
+                    const currentUses = selectedUnit.skillUsesCount || 0;
+                    const isChargingUltimate = reqUses > 0 && currentUses < reqUses;
+                    const disabled = !isAlly || !canAct || isOnCd || isChargingUltimate;
 
                     let badgeColor = 'bg-[#4C8DFF]/20 text-[#4C8DFF] border-[#4C8DFF]/30';
                     let typeName = 'Físico';
@@ -478,6 +481,16 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                             >
                               {typeName}
                             </span>
+                            {isChargingUltimate && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-purple-500/25 text-purple-300 border border-purple-400">
+                                ⚡ {currentUses}/{reqUses}
+                              </span>
+                            )}
+                            {!isChargingUltimate && reqUses > 0 && (
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-red-500/25 text-red-200 border border-red-400 animate-pulse">
+                                ULTIMATE!
+                              </span>
+                            )}
                             {isOnCd && (
                               <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#E65353]/20 text-[#E65353] border border-[#E65353]/40">
                                 CD: {skill.currentCooldown}T
