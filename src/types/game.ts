@@ -174,6 +174,9 @@ export interface Unit {
   damageDealt: number;
   kills: number;
   equippedItemIds?: string[];
+  skinId?: string;
+  skinName?: string;
+  skinBadge?: string;
 }
 
 export type ItemCategory = 'helmet' | 'chestplate' | 'leggings' | 'boots' | 'weapon' | 'accessory';
@@ -349,6 +352,15 @@ export interface PlayerProgress {
   unlockedPetIds?: string[]; // IDs of unlocked pets in the Pet Almanac
   equippedPetId?: string | null; // ID of currently equipped pet
   eggs?: PetEgg[]; // Up to 20 eggs in egg inventory/nest
+
+  // Class Missions & Skins system:
+  classMissionsProgress?: Record<string, {
+    completedMissions: string[];
+    stats: Record<string, number>;
+  }>;
+  unlockedClassSkins?: string[];
+  equippedClassSkins?: Record<string, string>; // className -> skinId
+  unlockedClassSkillIds?: string[];
 }
 
 export type PetRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -418,3 +430,32 @@ export interface AudioSettings {
 export type BattlePhase = 'deployment' | 'player_turn' | 'ai_turn' | 'boss_transition' | 'victory' | 'defeat';
 
 export type SelectedAction = 'none' | 'move' | 'attack' | 'skill';
+
+export interface ClassMission {
+  id: string;
+  className: string;
+  tier: 1 | 2 | 3;
+  title: string;
+  description: string;
+  statKey: 'damage_dealt' | 'kills' | 'skill_uses' | 'battles_won' | 'bosses_defeated';
+  targetValue: number;
+  rewardType: 'skill' | 'skin' | 'both';
+  rewardSkillId?: string;
+  rewardSkinId?: string;
+  rewardGold: number;
+}
+
+export interface ClassSkin {
+  id: string;
+  className: string;
+  name: string;
+  subtitle: string;
+  description: string;
+  rarity: 'common' | 'rare' | 'epic' | 'legendary';
+  color: string;
+  avatarKey: string;
+  iconName: string;
+  accentGlow: string;
+  badge: string;
+  unlockedByDefault?: boolean;
+}

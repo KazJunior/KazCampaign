@@ -1196,6 +1196,101 @@ export const PET_CUSTOM_ICONS: Record<string, React.FC<SvgIconProps>> = {
       <circle cx="27" cy="25" r="0.8" fill="#FDE047" />
     </svg>
   ),
+
+  coelho_cosmico: ({ size, className }) => (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+      <defs>
+        <linearGradient id="grad_coelho_cosmico" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#F472B6" />
+          <stop offset="50%" stopColor="#C084FC" />
+          <stop offset="100%" stopColor="#38BDF8" />
+        </linearGradient>
+        <linearGradient id="grad_coelho_ears" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E879F9" />
+          <stop offset="100%" stopColor="#7E22CE" />
+        </linearGradient>
+      </defs>
+      {/* Cosmic Aura Halo */}
+      <circle cx="24" cy="24" r="21" stroke="url(#grad_coelho_cosmico)" strokeWidth="1.2" strokeDasharray="3 3" opacity="0.6" />
+      <circle cx="24" cy="24" r="18" fill="#581C87" fillOpacity="0.15" />
+      {/* Constellation Star Sparkles */}
+      <polygon points="10,12 11,14 13,15 11,16 10,18 9,16 7,15 9,14" fill="#FDE047" opacity="0.85" />
+      <polygon points="38,10 39,12 41,13 39,14 38,16 37,14 35,13 37,12" fill="#FDE047" opacity="0.85" />
+      <circle cx="7" cy="28" r="1" fill="#FFFFFF" opacity="0.7" />
+      <circle cx="42" cy="26" r="1" fill="#FFFFFF" opacity="0.7" />
+      {/* Tall Celestial Rabbit Ears */}
+      <path d="M17 22 C13 14 10 3 17 2 C21 2 21 14 20 22 Z" fill="url(#grad_coelho_ears)" stroke="#F472B6" strokeWidth="1.2" />
+      <path d="M16 19 C14 13 12 5 17 4 C19 4 19 13 18 19 Z" fill="#FCE7F3" opacity="0.8" />
+      <path d="M31 22 C35 14 38 3 31 2 C27 2 27 14 28 22 Z" fill="url(#grad_coelho_ears)" stroke="#F472B6" strokeWidth="1.2" />
+      <path d="M32 19 C34 13 36 5 31 4 C29 4 29 13 30 19 Z" fill="#FCE7F3" opacity="0.8" />
+      {/* Cosmic Rabbit Head */}
+      <ellipse cx="24" cy="29" rx="14" ry="12" fill="url(#grad_coelho_cosmico)" stroke="#E879F9" strokeWidth="1.5" />
+      {/* Crescent Moon Mark on Forehead */}
+      <path d="M23 20 C21 22 21 25 24 26 C22 25 22 22 24 21 Z" fill="#FEF08A" stroke="#EAB308" strokeWidth="0.5" />
+      {/* Starlight Cosmic Eyes */}
+      <ellipse cx="18" cy="28" rx="2.8" ry="3.5" fill="#1E1B4B" />
+      <ellipse cx="18" cy="27" rx="1.8" ry="2.2" fill="#38BDF8" />
+      <circle cx="17.2" cy="26" r="1" fill="#FFFFFF" />
+      <circle cx="19" cy="29" r="0.6" fill="#FDF4FF" />
+      <ellipse cx="30" cy="28" rx="2.8" ry="3.5" fill="#1E1B4B" />
+      <ellipse cx="30" cy="27" rx="1.8" ry="2.2" fill="#38BDF8" />
+      <circle cx="29.2" cy="26" r="1" fill="#FFFFFF" />
+      <circle cx="31" cy="29" r="0.6" fill="#FDF4FF" />
+      {/* Cute Nose and Mouth */}
+      <polygon points="24,32 22.5,30.5 25.5,30.5" fill="#F472B6" />
+      <path d="M24 32 L24 34 M21 35 Q24 37 27 35" stroke="#4C1D95" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      {/* Cheeks */}
+      <ellipse cx="13" cy="32" rx="2.5" ry="1.5" fill="#F472B6" opacity="0.5" />
+      <ellipse cx="35" cy="32" rx="2.5" ry="1.5" fill="#F472B6" opacity="0.5" />
+      {/* Whiskers */}
+      <path d="M12 30 L6 29 M12 32 L5 33 M36 30 L42 29 M36 32 L43 33" stroke="#FDF4FF" strokeWidth="0.8" opacity="0.8" />
+    </svg>
+  ),
+
+  hydra: ({ size, className }) => (
+    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className}>
+      <defs>
+        <linearGradient id="grad_hydra_body" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#34D399" />
+          <stop offset="40%" stopColor="#059669" />
+          <stop offset="80%" stopColor="#064E3B" />
+          <stop offset="100%" stopColor="#022C22" />
+        </linearGradient>
+        <linearGradient id="grad_hydra_frill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#A7F3D0" />
+          <stop offset="100%" stopColor="#047857" />
+        </linearGradient>
+      </defs>
+      {/* Serpentine Coils at Base */}
+      <path d="M8 40 C14 34 34 34 40 40 C34 44 14 44 8 40 Z" fill="#064E3B" stroke="#059669" strokeWidth="1.2" />
+      {/* Left Head and Neck */}
+      <path d="M16 38 C14 30 8 26 8 18 C8 12 14 11 16 16 C17 22 20 30 20 36" fill="url(#grad_hydra_body)" stroke="#10B981" strokeWidth="1.2" />
+      <path d="M7 16 L3 14 L7 18 L3 19 L8 21" stroke="#34D399" strokeWidth="1.2" fill="none" />
+      <polygon points="6,15 16,13 18,18 10,21" fill="url(#grad_hydra_body)" stroke="#10B981" strokeWidth="1" />
+      <polygon points="8,19 9,23 11,19" fill="#FFFFFF" />
+      <circle cx="11" cy="15" r="1.5" fill="#FACC15" />
+      <circle cx="11" cy="15" r="0.6" fill="#000000" />
+      {/* Right Head and Neck */}
+      <path d="M32 38 C34 30 40 26 40 18 C40 12 34 11 32 16 C31 22 28 30 28 36" fill="url(#grad_hydra_body)" stroke="#10B981" strokeWidth="1.2" />
+      <path d="M41 16 L45 14 L41 18 L45 19 L40 21" stroke="#34D399" strokeWidth="1.2" fill="none" />
+      <polygon points="42,15 32,13 30,18 38,21" fill="url(#grad_hydra_body)" stroke="#10B981" strokeWidth="1" />
+      <polygon points="40,19 39,23 37,19" fill="#FFFFFF" />
+      <circle cx="37" cy="15" r="1.5" fill="#FACC15" />
+      <circle cx="37" cy="15" r="0.6" fill="#000000" />
+      {/* Center Dominant Head and Neck */}
+      <path d="M21 38 C20 28 20 18 20 12 C20 5 28 5 28 12 C28 18 28 28 27 38" fill="url(#grad_hydra_body)" stroke="#34D399" strokeWidth="1.5" />
+      <path d="M20 9 L15 4 L22 7 L24 2 L26 7 L33 4 L28 9" fill="url(#grad_hydra_frill)" stroke="#10B981" strokeWidth="1" />
+      <polygon points="17,11 31,11 30,19 24,24 18,19" fill="url(#grad_hydra_body)" stroke="#34D399" strokeWidth="1.5" />
+      <polygon points="20,19 21,23 22,19" fill="#FFFFFF" />
+      <polygon points="26,19 27,23 28,19" fill="#FFFFFF" />
+      <circle cx="21.5" cy="25" r="1" fill="#A3E635" />
+      <circle cx="27" cy="26" r="0.8" fill="#A3E635" />
+      <circle cx="20" cy="15" r="2" fill="#FACC15" stroke="#CA8A04" strokeWidth="0.5" />
+      <circle cx="20" cy="15" r="0.8" fill="#14532D" />
+      <circle cx="28" cy="15" r="2" fill="#FACC15" stroke="#CA8A04" strokeWidth="0.5" />
+      <circle cx="28" cy="15" r="0.8" fill="#14532D" />
+    </svg>
+  ),
 };
 
 // Fallback map from old Lucide iconName to pet ID if passed directly

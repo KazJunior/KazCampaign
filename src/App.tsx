@@ -83,6 +83,8 @@ import { ChangelogModal } from './components/ChangelogModal';
 import { GAME_CHANGELOG } from './data/changelog';
 import { PetModal } from './components/PetModal';
 import { CouponModal } from './components/CouponModal';
+import { ClassMissionsModal } from './components/ClassMissionsModal';
+import { getEquippedSkin, incrementClassStat, incrementPartyStats } from './data/classQuests';
 import { TrainingModeModal, type TrainingModeConfig } from './components/TrainingModeModal';
 import { TrainingBattleHUD } from './components/TrainingBattleHUD';
 import { getPetById, calculatePetPassives, createNewEgg, MAX_EGGS_LIMIT } from './data/pets';
@@ -158,6 +160,7 @@ export function App() {
   const [showPetsModal, setShowPetsModal] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [showClassMissionsModal, setShowClassMissionsModal] = useState(false);
   const [isTrainingMode, setIsTrainingMode] = useState(false);
   const [trainingConfig, setTrainingConfig] = useState<TrainingModeConfig | null>(null);
   const [trainingDamageStats, setTrainingDamageStats] = useState({
@@ -575,7 +578,8 @@ export function App() {
         equippedItemIds,
         progress.itemUpgrades,
         getClassCumulativeBonus(cKey, progress.classUpgrades?.[cKey] || 0),
-        getGlobalHeroBonus(progress)
+        getGlobalHeroBonus(progress),
+        getEquippedSkin(cKey, progress.equippedClassSkins)
       );
 
       const equippedPet = getPetById(progress.equippedPetId);
@@ -1174,7 +1178,8 @@ export function App() {
           equippedIds,
           progress.itemUpgrades,
           getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
-          getGlobalHeroBonus(progress)
+          getGlobalHeroBonus(progress),
+          getEquippedSkin(heroClass, progress.equippedClassSkins)
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -1238,7 +1243,8 @@ export function App() {
           equippedIds,
           progress.itemUpgrades,
           getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
-          getGlobalHeroBonus(progress)
+          getGlobalHeroBonus(progress),
+          getEquippedSkin(heroClass, progress.equippedClassSkins)
         );
         return {
           ...recomputed,
@@ -1302,7 +1308,8 @@ export function App() {
           equippedIds,
           nextP.itemUpgrades,
           getClassCumulativeBonus(className, nextLvl),
-          getGlobalHeroBonus(nextP)
+          getGlobalHeroBonus(nextP),
+          getEquippedSkin(className, nextP.equippedClassSkins)
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -1362,7 +1369,8 @@ export function App() {
             equippedIds,
             nextP.itemUpgrades,
             getClassCumulativeBonus(u.className, nextP.classUpgrades?.[u.className] || 0),
-            getGlobalHeroBonus(nextP)
+            getGlobalHeroBonus(nextP),
+            getEquippedSkin(u.className, nextP.equippedClassSkins)
           );
           const hpDiff = recomputed.maxHp - u.maxHp;
           return {
@@ -1424,7 +1432,8 @@ export function App() {
           equippedIds,
           updatedItemUpgrades,
           getClassCumulativeBonus(u.className, nextP.classUpgrades?.[u.className] || 0),
-          getGlobalHeroBonus(nextP)
+          getGlobalHeroBonus(nextP),
+          getEquippedSkin(u.className, nextP.equippedClassSkins)
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -2207,6 +2216,7 @@ export function App() {
               else if (petSkill.statusEffect.type === 'burn') addFloatingNumber(u.x, u.y, 'Queimando!', 'status', '#F97316');
               else if (petSkill.statusEffect.type === 'slow') addFloatingNumber(u.x, u.y, 'Lentidão!', 'status', '#38BDF8');
               else if (petSkill.statusEffect.type === 'debuff_def') addFloatingNumber(u.x, u.y, '-Defesa!', 'status', '#F87171');
+              else if (petSkill.statusEffect.type === 'poison') addFloatingNumber(u.x, u.y, 'Envenenado!', 'status', '#A855F7');
             }
           }
 
@@ -2798,6 +2808,15 @@ export function App() {
       );
 
       setUnits(updatedUnits);
+
+      if (selectedUnit.faction === 'player') {
+        setProgress((prev) => {
+          const updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          savePlayerProgress(updated);
+          return updated;
+        });
+      }
+
       setTargetUnitId(null);
       setSelectedAction('none');
       setActiveSkill(null);
@@ -3453,6 +3472,23 @@ export function App() {
       }
       return u;
     });
+
+    if (selectedUnit.faction === 'player' && !isTrainingMode) {
+      setProgress((prev) => {
+        let p = prev;
+        if (totalDmgDone > 0) {
+          p = incrementClassStat(p, selectedUnit.className, 'damage_dealt', totalDmgDone);
+        }
+        if (totalKills > 0) {
+          p = incrementClassStat(p, selectedUnit.className, 'kills', totalKills);
+        }
+        if (skill) {
+          p = incrementClassStat(p, selectedUnit.className, 'skill_uses', 1);
+        }
+        savePlayerProgress(p);
+        return p;
+      });
+    }
 
     if (isTrainingMode && totalDmgDone > 0) {
       setTrainingDamageStats((prev) => ({
@@ -5324,8 +5360,19 @@ export function App() {
       }
     });
 
+    const hasBossSpawned = Boolean(
+      currentLevel.hasFinalBoss ||
+      currentLevel.hasMiniBoss ||
+      currentLevel.enemySpawns.some((s) => s.isBoss || s.isMiniBoss)
+    );
+
+    let progressWithMissions = incrementPartyStats(progress, activeParty, 'battles_won', 1);
+    if (hasBossSpawned) {
+      progressWithMissions = incrementPartyStats(progressWithMissions, activeParty, 'bosses_defeated', 1);
+    }
+
     const newProgress: PlayerProgress = {
-      ...progress,
+      ...progressWithMissions,
       unlockedLevel: nextUnlocked,
       completedLevels: completedList,
       gold: totalGold,
@@ -5443,9 +5490,10 @@ export function App() {
       equippedItemIds,
       progress.itemUpgrades,
       getClassCumulativeBonus(pendingUnit.className, progress.classUpgrades?.[pendingUnit.className] || 0),
-      getGlobalHeroBonus(progress)
+      getGlobalHeroBonus(progress),
+      getEquippedSkin(pendingUnit.className, progress.equippedClassSkins)
     );
-  }, [pendingSkillChoices, progress.unitsState, progress.activeAdventure?.equipment, progress.itemUpgrades, progress.classUpgrades, progress.generalUpgrades]);
+  }, [pendingSkillChoices, progress.unitsState, progress.activeAdventure?.equipment, progress.itemUpgrades, progress.classUpgrades, progress.generalUpgrades, progress.equippedClassSkins]);
 
   const handleLearnOrEvolveSkill = (chosenSkill: Skill, isEvolution: boolean) => {
     if (pendingSkillChoices.length === 0) return;
@@ -5760,6 +5808,7 @@ export function App() {
           onOpenPets={() => setShowPetsModal(true)}
           onOpenCoupons={() => setShowCouponModal(true)}
           onOpenTrainingMode={() => setShowTrainingModal(true)}
+          onOpenClassMissions={() => setShowClassMissionsModal(true)}
         />
 
         {showTrainingModal && (
@@ -5861,8 +5910,10 @@ export function App() {
           initialSelected={progress.selectedPartyClasses}
           unlockedClasses={progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro']}
           playerGold={progress.gold}
+          equippedClassSkins={progress.equippedClassSkins}
           onBuyClass={handleBuyClass}
           onConfirmParty={handleConfirmParty}
+          onOpenClassMissions={() => setShowClassMissionsModal(true)}
           onClose={() => setCurrentView('level_select')}
         />
         {pendingUnlockClasses.length > 0 && (
@@ -5900,6 +5951,7 @@ export function App() {
         onOpenItemCatalog={() => setShowItemBestiary(true)}
         onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
         onOpenPets={() => setShowPetsModal(true)}
+        onOpenClassMissions={() => setShowClassMissionsModal(true)}
         onOpenRiddle={currentLevel?.id === 10 && hasPedestalBeenStruck ? () => setShowSecretRiddle(true) : undefined}
         onSaveAndExit={() => {
           if (isTrainingMode) {
@@ -6122,6 +6174,7 @@ export function App() {
       {pendingStatChoices.length === 0 && currentSkillChoiceUnit && (
         <SkillChoiceModal
           unit={currentSkillChoiceUnit}
+          unlockedClassSkillIds={progress.unlockedClassSkillIds || []}
           onChooseSkill={handleLearnOrEvolveSkill}
           onSkip={() => setPendingSkillChoices((prev) => prev.slice(1))}
         />
@@ -6230,6 +6283,16 @@ export function App() {
             savePlayerProgress(newProgress);
           }}
           onClose={() => setShowPetsModal(false)}
+        />
+      )}
+      {showClassMissionsModal && (
+        <ClassMissionsModal
+          progress={progress}
+          onUpdateProgress={(newProgress) => {
+            setProgress(newProgress);
+            savePlayerProgress(newProgress);
+          }}
+          onClose={() => setShowClassMissionsModal(false)}
         />
       )}
     </div>

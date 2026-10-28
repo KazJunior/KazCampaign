@@ -57,7 +57,8 @@ function createMiniaturePedestal(unit: Unit): THREE.Group {
   baseGroup.add(disc);
 
   // Outer glowing faction ring
-  const ringColor = isBoss ? 0xd4ad65 : isPlayer ? 0x3b82f6 : 0xef4444;
+  const playerRingColor = unit.color ? new THREE.Color(unit.color).getHex() : 0x3b82f6;
+  const ringColor = isBoss ? 0xd4ad65 : isPlayer ? playerRingColor : 0xef4444;
   const ringGeo = new THREE.TorusGeometry(radiusTop, 0.024, 8, 24);
   ringGeo.rotateX(Math.PI / 2);
   const ringMat = new THREE.MeshStandardMaterial({

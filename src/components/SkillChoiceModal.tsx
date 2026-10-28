@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Skill, Unit } from '../types/game';
-import { SKILLS, CLASS_LEARNABLE_SKILL_IDS, getEvolvedSkill, MAX_SKILL_LEVEL } from '../data/skills';
+import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, getLearnableSkillsForClass, CLASS_MISSION_REWARD_SKILLS } from '../data/skills';
 import { getAoELabel } from '../utils/pathfinding';
 import {
   ArrowUpRight,
@@ -21,11 +21,12 @@ import {
 
 interface SkillChoiceModalProps {
   unit: Unit;
+  unlockedClassSkillIds?: string[];
   onChooseSkill: (skill: Skill, isEvolution: boolean) => void;
   onSkip?: () => void;
 }
 
-export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChooseSkill, onSkip }) => {
+export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, unlockedClassSkillIds = [], onChooseSkill, onSkip }) => {
   const currentSkills = unit.skills || [];
   const has5Skills = currentSkills.length >= 5;
 
@@ -33,7 +34,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
   const eligibleNewSkills = React.useMemo(() => {
     if (has5Skills) return [];
     const learnedSet = new Set(currentSkills.map((s) => s.id));
-    const classPoolIds = CLASS_LEARNABLE_SKILL_IDS[unit.className] || [];
+    const classPoolIds = getLearnableSkillsForClass(unit.className, unlockedClassSkillIds);
     const available = classPoolIds
       .filter((id) => !learnedSet.has(id))
       .map((id) => SKILLS[id])
@@ -42,7 +43,7 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
     // Random shuffle
     const shuffled = [...available].sort(() => Math.random() - 0.5);
     return shuffled.slice(0, 3);
-  }, [unit.id, unit.level, unit.className, has5Skills]);
+  }, [unit.id, unit.level, unit.className, has5Skills, unlockedClassSkillIds]);
 
   // If the unit has >= 5 skills OR if all class skills are already learned,
   // enter EVOLUTION MODE to upgrade existing skills!
@@ -239,6 +240,11 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, onChoo
                     >
                       {skill.category ? skill.category.toUpperCase() : 'HABILIDADE'}
                     </span>
+                    {CLASS_MISSION_REWARD_SKILLS[unit.className]?.includes(skill.id) && (
+                      <span className="text-[10px] font-black px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow-sm animate-pulse">
+                        <Sparkles size={11} /> MISSÃO
+                      </span>
+                    )}
                   </div>
 
                   <h3 className="font-bold text-base text-[#F3F4F8] min-h-[2.5rem] flex items-center leading-snug group-hover:text-[#D4AD65] transition-colors duration-200">

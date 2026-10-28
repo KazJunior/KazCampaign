@@ -1,4 +1,4 @@
-import type { Unit } from '../types/game';
+import type { Unit, ClassSkin } from '../types/game';
 import { SKILLS, getEvolvedSkill } from './skills';
 import { getItemById } from './items';
 import { getItemEffectiveStats } from './baseUpgrades';
@@ -549,7 +549,8 @@ export function createPlayerUnit(
   equippedItemIds: string[] = [],
   itemUpgrades?: Record<string, number>,
   classUpgradeBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number },
-  globalBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number; mov?: number; range?: number }
+  globalBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number; mov?: number; range?: number },
+  skin?: ClassSkin | null
 ): Unit {
   const targetClassKey = className === 'engenheiro' ? 'druida' : className;
   const def = CLASS_DEFINITIONS[targetClassKey] || CLASS_DEFINITIONS[className] || CLASS_DEFINITIONS['guerreiro'];
@@ -682,8 +683,11 @@ export function createPlayerUnit(
     hasMoved: false,
     hasAttacked: false,
     isDead: false,
-    color: def.color,
-    avatarKey: def.avatarKey,
+    color: skin?.color || def.color,
+    avatarKey: skin?.avatarKey || def.avatarKey,
+    skinId: skin?.id,
+    skinName: skin?.name,
+    skinBadge: skin?.badge,
     skills,
     learnedSkillIds: skillListIds.filter((id) => id !== def.baseSkillId),
     skillLevels,

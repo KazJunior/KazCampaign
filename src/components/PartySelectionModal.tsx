@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
+import { getEquippedSkin } from '../data/classQuests';
 import {
   Shield,
   Swords,
@@ -22,14 +23,17 @@ import {
   Wind,
   Zap,
   X,
+  Palette,
 } from 'lucide-react';
 
 interface PartySelectionModalProps {
   initialSelected: string[];
   unlockedClasses: string[];
   playerGold?: number;
+  equippedClassSkins?: Record<string, string>;
   onBuyClass?: (className: string, cost: number) => void;
   onConfirmParty: (selectedClasses: string[]) => void;
+  onOpenClassMissions?: () => void;
   onClose?: () => void;
 }
 
@@ -37,8 +41,10 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
   initialSelected,
   unlockedClasses,
   playerGold = 0,
+  equippedClassSkins,
   onBuyClass,
   onConfirmParty,
+  onOpenClassMissions,
   onClose,
 }) => {
   const [selected, setSelected] = useState<string[]>(
@@ -110,6 +116,17 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
           <span className="px-2.5 py-1 rounded-full font-bold text-[11px] sm:text-xs bg-[#10131C] border border-[#343B50] text-[#D4AD65]">
             {unlockedClasses.length} de {allClasses.length} Desbloqueadas
           </span>
+
+          {onOpenClassMissions && (
+            <button
+              onClick={onOpenClassMissions}
+              className="px-3 py-1 rounded-full font-bold text-[11px] sm:text-xs bg-purple-500/20 border border-purple-400 text-purple-300 hover:bg-purple-500/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+              title="Abrir Missões de Classe & Guarda-Roupa"
+            >
+              <Palette size={13} />
+              <span>Missões & Skins</span>
+            </button>
+          )}
         </div>
 
         {/* Class Cards Grid */}
@@ -124,6 +141,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             const isPurchasable = typeof goldCost === 'number';
             const canAfford = isPurchasable && playerGold >= goldCost;
             const isDropOnly = !!(classDef as any).isDropOnly || cKey === 'sniper';
+            const equippedSkin = getEquippedSkin(cKey, equippedClassSkins);
 
             return (
               <div
@@ -204,7 +222,14 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                             : 'grayscale brightness-75'
                           : ''
                       }`}
-                      style={{ backgroundColor: !isUnlocked && isSecret ? undefined : classDef.color }}
+                      style={{
+                        backgroundColor:
+                          !isUnlocked && isSecret
+                            ? undefined
+                            : isUnlocked && equippedSkin
+                            ? equippedSkin.color
+                            : classDef.color,
+                      }}
                     >
                       {!isUnlocked && isSecret ? <HelpCircle size={22} /> : getClassIcon(classDef.avatarKey, 22)}
                     </div>
@@ -221,6 +246,24 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  {isUnlocked && equippedSkin && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/40 border border-white/5 text-[9px]">
+                      <span
+                        className="font-black tracking-wider uppercase px-1 rounded text-[8px]"
+                        style={{
+                          backgroundColor: `${equippedSkin.color}25`,
+                          color: equippedSkin.color,
+                          border: `1px solid ${equippedSkin.color}50`,
+                        }}
+                      >
+                        {equippedSkin.badge}
+                      </span>
+                      <span className="text-[#F3F4F8] truncate font-medium">
+                        {equippedSkin.name}
+                      </span>
+                    </div>
+                  )}
 
                   <p className="text-xs text-[#A7B0C4] leading-relaxed line-clamp-2">
                     {!isUnlocked && isSecret

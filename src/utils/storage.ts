@@ -50,6 +50,10 @@ export const DEFAULT_PROGRESS: PlayerProgress = {
   unlockedPetIds: [],
   equippedPetId: null,
   eggs: [],
+  classMissionsProgress: {},
+  unlockedClassSkins: [],
+  equippedClassSkins: {},
+  unlockedClassSkillIds: [],
 };
 
 export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -188,6 +192,10 @@ export function loadPlayerProgress(): PlayerProgress {
             hatchDurationMs: getHatchDuration(e.rarity),
           }))
         : [],
+      classMissionsProgress: parsed.classMissionsProgress && typeof parsed.classMissionsProgress === 'object' ? parsed.classMissionsProgress : {},
+      unlockedClassSkins: Array.isArray(parsed.unlockedClassSkins) ? parsed.unlockedClassSkins : [],
+      equippedClassSkins: parsed.equippedClassSkins && typeof parsed.equippedClassSkins === 'object' ? parsed.equippedClassSkins : {},
+      unlockedClassSkillIds: Array.isArray(parsed.unlockedClassSkillIds) ? parsed.unlockedClassSkillIds : [],
     };
   } catch (err) {
     console.error('Failed to load progress from localStorage:', err);

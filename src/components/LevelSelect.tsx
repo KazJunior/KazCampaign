@@ -24,6 +24,7 @@ import {
   Egg,
   Gift,
   Target,
+  Palette,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import { getPetById } from '../data/pets';
@@ -47,6 +48,7 @@ interface LevelSelectProps {
   onOpenPets?: () => void;
   onOpenCoupons?: () => void;
   onOpenTrainingMode?: () => void;
+  onOpenClassMissions?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -66,6 +68,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onOpenPets,
   onOpenCoupons,
   onOpenTrainingMode,
+  onOpenClassMissions,
 }) => {
   const openCatalogHandler = onOpenItemCatalog || onOpenItemBestiary;
   const activeAdv = progress.activeAdventure;
@@ -195,6 +198,20 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 <span>Pets & Ninho</span>
                 <span className="bg-amber-400 text-black px-1.5 py-0.2 rounded-full text-[10px] font-black">
                   {progress.eggs?.length || 0}/20
+                </span>
+              </button>
+            )}
+
+            {onOpenClassMissions && (
+              <button
+                onClick={onOpenClassMissions}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600/20 to-fuchsia-600/25 border-2 border-purple-400 hover:border-purple-300 text-purple-300 hover:text-white font-black text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-md shadow-purple-500/15"
+                title="Missões de Classe & Guarda-Roupa: Desbloqueie novas habilidades e skins personalizadas!"
+              >
+                <Palette size={16} className="text-purple-300" />
+                <span>Missões & Skins</span>
+                <span className="bg-purple-500 text-white px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider">
+                  Skins
                 </span>
               </button>
             )}

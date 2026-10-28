@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   Egg,
+  Palette,
 } from 'lucide-react';
 import type { BattlePhase, Unit } from '../types/game';
 
@@ -42,6 +43,7 @@ interface TopBarProps {
   onOpenRiddle?: () => void;
   onSaveAndExit?: () => void;
   onOpenPets?: () => void;
+  onOpenClassMissions?: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
@@ -66,6 +68,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onOpenRiddle,
   onSaveAndExit,
   onOpenPets,
+  onOpenClassMissions,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isPlayerTurn = phase === 'player_turn';
@@ -256,6 +259,16 @@ export const TopBar: React.FC<TopBarProps> = ({
               title="Santuário de Pets & Ninho"
             >
               <Egg size={16} />
+            </button>
+          )}
+
+          {onOpenClassMissions && (
+            <button
+              onClick={onOpenClassMissions}
+              className="p-2 rounded-lg bg-[#10131C] border border-[#343B50] hover:border-purple-400 text-[#A7B0C4] hover:text-purple-300 transition-colors cursor-pointer"
+              title="Missões de Classe & Guarda-Roupa de Skins"
+            >
+              <Palette size={16} />
             </button>
           )}
 
@@ -492,6 +505,19 @@ export const TopBar: React.FC<TopBarProps> = ({
                   >
                     <Egg size={17} />
                     <span>Pets & Ninho</span>
+                  </button>
+                )}
+
+                {onOpenClassMissions && (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenClassMissions();
+                    }}
+                    className="p-2.5 rounded-xl bg-[#10131C] border border-[#343B50] hover:border-purple-400 text-purple-300 flex items-center gap-2 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Palette size={17} />
+                    <span>Missões & Skins</span>
                   </button>
                 )}
 
