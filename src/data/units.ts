@@ -406,7 +406,7 @@ export interface SecretClassUnlockInfo {
 export const SECRET_CLASS_UNLOCK_CONDITIONS: Record<string, SecretClassUnlockInfo> = {
   carrasco_vazio: {
     title: 'Carrasco do Vazio',
-    description: 'Derrote Astaroth (Fase 10) utilizando apenas classes de combate corpo a corpo (Alcance 1).',
+    description: 'Derrote Astaroth (Fase 10) utilizando apenas classes de combate corpo a corpo (Alcance 1, Cavaleiro Arcano ou Lanceiro).',
     riddle: `Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Carrasco do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
 
 Se desejas empunhar a lâmina proibida que rasga o espaço, abandone a covardia do refúgio gerado por métodos fúteis e inferiores de combate.
@@ -414,6 +414,12 @@ Se desejas empunhar a lâmina proibida que rasga o espaço, abandone a covardia 
 Desça ao abismo com coragem e encare Astaroth de frente. Façam o Soberano tombar sentindo o peso do aço em sua carne...`,
   },
 };
+
+export function isMeleeClassForSecretUnlock(className: string): boolean {
+  const cDef = CLASS_DEFINITIONS[className];
+  if (!cDef) return false;
+  return cDef.range === 1 || className === 'cavaleiro_arcano' || className === 'lanceiro';
+}
 
 export function getMaxCompletedLevel(progress: {
   activeAdventure?: { currentLevelId: number } | null;

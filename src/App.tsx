@@ -21,7 +21,7 @@ import type {
   UnitProgression,
 } from './types/game';
 import { LEVELS, createTrainingLevel } from './data/levels';
-import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from './data/units';
+import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS } from './data/skills';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
@@ -5266,15 +5266,12 @@ export function App() {
     });
 
     // SECRET CLASS UNLOCK: Carrasco do Vazio
-    // Condição: Derrotar Astaroth (Fase 10) utilizando apenas classes corpo a corpo (range === 1)
+    // Condição: Derrotar Astaroth (Fase 10) utilizando apenas classes corpo a corpo (Alcance 1, Cavaleiro Arcano ou Lanceiro)
     if (currentLevel.id === 10 && !currentUnlocked.includes('carrasco_vazio')) {
       const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
       const allMelee =
         activeParty.length === 4 &&
-        activeParty.every((cKey) => {
-          const cDef = CLASS_DEFINITIONS[cKey];
-          return cDef && cDef.range === 1;
-        });
+        activeParty.every((cKey) => isMeleeClassForSecretUnlock(cKey));
 
       if (allMelee) {
         newlyUnlocked.push('carrasco_vazio');
