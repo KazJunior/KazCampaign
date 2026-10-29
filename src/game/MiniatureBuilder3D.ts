@@ -236,6 +236,9 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'training_dummy_mystic':
       buildTrainingDummyMini(char, 'mystic');
       break;
+    case 'skeleton':
+      buildSkeletonMini(char);
+      break;
     default:
       buildFallbackMini(char, unit);
       break;
@@ -2907,3 +2910,84 @@ function buildTrainingDummyMini(group: THREE.Group, variant: 'standard' | 'armor
   }
 }
 
+
+// -------------------------------------------------------------
+// Summoned Skeleton (Necromante)
+// -------------------------------------------------------------
+function buildSkeletonMini(group: THREE.Group) {
+  const boneMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7, metalness: 0.1 });
+  const darkBoneMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.8 });
+  const ragMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
+  const eyeMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.9,
+    roughness: 0.2,
+  });
+  const swordMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.4, metalness: 0.7 });
+
+  // 1. Pelvis & Rags
+  const pelvis = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.12), ragMat);
+  pelvis.position.y = 0.24;
+  group.add(pelvis);
+
+  // 2. Spine & Ribcage
+  const spine = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.035, 0.22, 8), darkBoneMat);
+  spine.position.y = 0.35;
+  group.add(spine);
+
+  // Ribs (3 horizontal curved rings)
+  for (let i = 0; i < 3; i++) {
+    const rib = new THREE.Mesh(new THREE.TorusGeometry(0.09 - i * 0.01, 0.018, 6, 12, Math.PI * 1.5), boneMat);
+    rib.rotation.x = Math.PI / 2;
+    rib.rotation.z = Math.PI * 0.75;
+    rib.position.set(0, 0.30 + i * 0.06, 0);
+    group.add(rib);
+  }
+
+  // 3. Legs
+  const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.22, 6), boneMat);
+  legL.position.set(-0.07, 0.11, 0);
+  group.add(legL);
+
+  const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.02, 0.22, 6), boneMat);
+  legR.position.set(0.07, 0.11, 0);
+  group.add(legR);
+
+  // 4. Skull (Head)
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.11, 8, 8), boneMat);
+  skull.position.set(0, 0.54, 0);
+  skull.scale.set(0.9, 1.05, 0.95);
+  group.add(skull);
+
+  const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.04, 0.08), darkBoneMat);
+  jaw.position.set(0, 0.46, 0.04);
+  group.add(jaw);
+
+  // Glowing Eye Sockets
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), eyeMat);
+  eyeL.position.set(-0.04, 0.54, 0.09);
+  group.add(eyeL);
+
+  const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), eyeMat);
+  eyeR.position.set(0.04, 0.54, 0.09);
+  group.add(eyeR);
+
+  // 5. Arms & Weapon
+  // Left arm
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.20, 6), boneMat);
+  armL.rotation.z = Math.PI / 8;
+  armL.position.set(-0.16, 0.36, 0.02);
+  group.add(armL);
+
+  // Right arm holding rusty bone sword
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.20, 6), boneMat);
+  armR.rotation.z = -Math.PI / 6;
+  armR.position.set(0.16, 0.36, 0.02);
+  group.add(armR);
+
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.32, 0.015), swordMat);
+  blade.position.set(0.24, 0.44, 0.10);
+  blade.rotation.x = Math.PI / 6;
+  group.add(blade);
+}

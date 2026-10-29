@@ -3173,6 +3173,11 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
+    alliesStatusEffect: {
+      type: 'shield',
+      duration: 2,
+      value: 40,
+    },
     requiredLevel: 4,
     iconName: 'Sparkles',
   },
@@ -5627,25 +5632,23 @@ export const SKILLS: Record<string, Skill> = {
   colapso_sismico: {
     id: 'colapso_sismico',
     name: 'Colapso Sísmico',
-    description: 'Golpeia o solo com tremenda força (alcance 1-2, raio 1), causando 220% de dano físico escalado com Armadura e provocando todos os atingidos por 2 turnos.',
+    description: 'Golpeia o solo com tremenda força em cone à sua frente (alcance 1-2), causando 200% de dano físico aos inimigos atingidos.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.2,
+    power: 2.0,
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 1,
-    aoeType: 'circle',
+    aoeType: 'cone',
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
-    scalesWithDefRes: true,
-    statusEffect: { type: 'taunt', duration: 2, value: 1 },
     iconName: 'Hammer',
   },
   fortaleza_inquebravel: {
     id: 'fortaleza_inquebravel',
     name: 'Fortaleza Inquebrável',
-    description: 'Bate o escudo no solo erguendo uma barreira colossal que concede a si e aliados adjacentes um escudo de 120 de absorção por 3 turnos.',
+    description: 'Bate o escudo no solo erguendo uma barreira colossal que concede a si e aliados adjacentes um escudo equivalente a 20% da vida máxima do guerreiro por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -5653,10 +5656,11 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 1,
     aoeRadius: 1,
     aoeType: 'circle',
-    cooldownMax: 4,
+    cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'ally',
-    statusEffect: { type: 'shield', duration: 3, value: 120 },
+    shieldPercentOfMaxHp: 0.20,
+    statusEffect: { type: 'shield', duration: 2, value: 0 },
     iconName: 'ShieldCheck',
   },
 
@@ -5664,14 +5668,13 @@ export const SKILLS: Record<string, Skill> = {
   disparo_ciclone: {
     id: 'disparo_ciclone',
     name: 'Disparo Ciclone',
-    description: 'Dispara uma flecha rotativa de alta pressão em linha reta (alcance 2-5) que perfura inimigos por 210% de dano físico e os empurra 2 casas para trás.',
+    description: 'Dispara uma flecha rotativa de alta pressão em alvo único (alcance 2-5), causando 200% de dano físico e empurrando o alvo 2 casas para trás.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.1,
+    power: 2.0,
     rangeMin: 2,
     rangeMax: 5,
     aoeRadius: 0,
-    isLinePierce: true,
     knockback: 2,
     cooldownMax: 3,
     currentCooldown: 0,
@@ -5681,10 +5684,10 @@ export const SKILLS: Record<string, Skill> = {
   chuva_estelar_flechas: {
     id: 'chuva_estelar_flechas',
     name: 'Chuva Estelar de Flechas',
-    description: 'Dispara uma salva celestial de flechas cadentes (alcance 2-5, raio 2) causando 230% de dano físico e ignorando 30% da armadura inimiga.',
+    description: 'Dispara uma salva celestial de flechas cadentes (alcance 2-5, raio 2) causando 180% de dano físico e ignorando 30% da armadura inimiga.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.3,
+    power: 1.8,
     rangeMin: 2,
     rangeMax: 5,
     aoeRadius: 2,
@@ -5700,10 +5703,10 @@ export const SKILLS: Record<string, Skill> = {
   supernova_incandescente: {
     id: 'supernova_incandescente',
     name: 'Supernova Incandescente',
-    description: 'Detona uma esfera de plasma termonuclear em área (alcance 1-4, raio 2), causando 240% de dano mágico devastador e Queimadura por 2 turnos.',
+    description: 'Detona uma esfera de plasma termonuclear em área (alcance 1-4, raio 2), causando 170% de dano mágico devastador e Queimadura por 2 turnos.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.4,
+    power: 1.7,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 2,
@@ -5718,10 +5721,10 @@ export const SKILLS: Record<string, Skill> = {
   selo_fenix_ancestral: {
     id: 'selo_fenix_ancestral',
     name: 'Selo da Fênix Ancestral',
-    description: 'Canaliza o calor primordial da fênix contra um alvo por 260% de dano mágico, envolvendo o conjurador em uma carapaça de chamas com escudo de 80.',
+    description: 'Canaliza o calor primordial da fênix contra um alvo único (alcance 1-3) causando 200% de dano mágico, envolvendo o conjurador em uma carapaça de chamas com escudo de 80.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.6,
+    power: 2.0,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
@@ -5746,7 +5749,7 @@ export const SKILLS: Record<string, Skill> = {
     aoeRadius: 2,
     aoeType: 'circle',
     cleansesDebuffs: true,
-    cooldownMax: 4,
+    cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'ally',
     iconName: 'Sparkles',
@@ -5754,7 +5757,7 @@ export const SKILLS: Record<string, Skill> = {
   colera_dos_arcanjos: {
     id: 'colera_dos_arcanjos',
     name: 'Cólera dos Arcanjos',
-    description: 'Desce um pilar de luz santa (alcance 1-4, raio 2) que causa 180% de dano mágico a inimigos e concede +25% de dano de ataque a todos os aliados atingidos.',
+    description: 'Desce um pilar de luz santa (alcance 1-4, raio 2) que causa 180% de dano mágico a inimigos e concede +15% de dano de ataque a todos os aliados atingidos.',
     damageType: 'magical',
     category: 'attack',
     power: 1.8,
@@ -5762,10 +5765,11 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 4,
     aoeRadius: 2,
     aoeType: 'circle',
-    cooldownMax: 4,
+    canTargetGround: true,
+    cooldownMax: 5,
     currentCooldown: 0,
-    targetType: 'any',
-    statusEffect: { type: 'buff_atk', duration: 2, value: 25 },
+    targetType: 'enemy',
+    alliesStatusEffect: { type: 'buff_atk', duration: 2, value: 15 },
     iconName: 'Sun',
   },
 
@@ -5773,10 +5777,10 @@ export const SKILLS: Record<string, Skill> = {
   vortice_sombrio: {
     id: 'vortice_sombrio',
     name: 'Vórtice Sombrio',
-    description: 'Teleporta instantaneamente para as costas do inimigo (alcance 1-3), desferindo um golpe letal de 240% de dano físico e tornando-se invisível por 1 turno.',
+    description: 'Teleporta instantaneamente para as costas do inimigo (alcance 1-3), desferindo um golpe letal de 180% de dano físico e tornando-se invisível por 1 turno.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.4,
+    power: 1.8,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
@@ -5790,10 +5794,10 @@ export const SKILLS: Record<string, Skill> = {
   lotus_noite_eterna: {
     id: 'lotus_noite_eterna',
     name: 'Lótus da Noite Eterna',
-    description: 'Desfere um turbilhão mortal de punhais em cruz ao seu redor (raio 1 em cruz) causando 220% de dano físico e aplicando Veneno corrosivo por 2 turnos.',
+    description: 'Desfere um turbilhão mortal de punhais em cruz ao seu redor (raio 1 em cruz) causando 170% de dano físico e aplicando Veneno corrosivo por 2 turnos.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.2,
+    power: 1.7,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 1,
@@ -5810,10 +5814,10 @@ export const SKILLS: Record<string, Skill> = {
   impacto_fenda_mistica: {
     id: 'impacto_fenda_mistica',
     name: 'Impacto de Fenda Mística',
-    description: 'Dispara uma lâmina de plasma arcano a até 2 casas que causa 200% de dano mágico e fragmenta a defesa do alvo em 25% por 2 turnos.',
+    description: 'Dispara uma lâmina de plasma arcano a até 2 casas que causa 180% de dano mágico e fragmenta a defesa do alvo em 25% por 2 turnos.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.0,
+    power: 1.8,
     rangeMin: 1,
     rangeMax: 2,
     aoeRadius: 0,
@@ -5826,10 +5830,10 @@ export const SKILLS: Record<string, Skill> = {
   julgamento_runico_supremo: {
     id: 'julgamento_runico_supremo',
     name: 'Julgamento Rúnico Supremo',
-    description: 'Empunha uma espada de fenda colossal (alcance 1-3, raio 1) causando 250% de dano mágico e ignorando 30% da armadura do alvo.',
+    description: 'Empunha uma espada de fenda colossal (alcance 1-3, raio 1) causando 180% de dano mágico e ignorando 30% da armadura do alvo.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.5,
+    power: 1.8,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 1,
@@ -5841,53 +5845,67 @@ export const SKILLS: Record<string, Skill> = {
     iconName: 'Sparkles',
   },
 
+  // Habilidade do Esqueleto Invocado
+  golpe_esqueleto: {
+    id: 'golpe_esqueleto',
+    name: 'Golpe de Ossos',
+    description: 'Desfere um golpe cortante corpo a corpo causando 100% de dano físico.',
+    damageType: 'physical',
+    category: 'attack',
+    power: 1.0,
+    rangeMin: 1,
+    rangeMax: 1,
+    aoeRadius: 0,
+    cooldownMax: 0,
+    currentCooldown: 0,
+    targetType: 'enemy',
+    iconName: 'Swords',
+  },
+
   // Necromante
   grito_dos_mortos: {
     id: 'grito_dos_mortos',
-    name: 'Grito dos Mortos',
-    description: 'Libera uma torrente de almas atormentadas em cone (alcance 1-3) causando 190% de dano mágico, Lentidão (-2 Mov) e -20% de dano nos inimigos.',
+    name: 'Ressurreição Cadavérica',
+    description: 'Ergue os restos mortais de um monstro abatido (alcance 1-3) como um Esqueleto servo com 1 de vida sob controle do jogador. O esqueleto desfaz-se após 2 turnos.',
     damageType: 'magical',
-    category: 'attack',
-    power: 1.9,
+    category: 'support',
+    power: 0,
     rangeMin: 1,
     rangeMax: 3,
-    aoeRadius: 2,
-    aoeType: 'cone',
+    aoeRadius: 0,
     cooldownMax: 3,
     currentCooldown: 0,
-    targetType: 'enemy',
-    statusEffect: { type: 'slow', duration: 2, value: 2 },
-    secondaryStatusEffect: { type: 'debuff_atk', duration: 2, value: 20 },
+    targetType: 'corpse',
+    isSummonSkill: true,
+    summonType: 'corpse_skeleton',
     iconName: 'Skull',
   },
   colapso_trevas_profanas: {
     id: 'colapso_trevas_profanas',
-    name: 'Colapso das Trevas Profanas',
-    description: 'Cobre o solo em raio 2 com trevas corruptas causando 230% de dano mágico, drenando 100% do dano causado como vida e aplicando Veneno por 2 turnos.',
+    name: 'Legião de Esqueletos',
+    description: 'Invoca 3 Esqueletos servos com 1 de vida em casas livres adjacentes sob controle do jogador. Os esqueletos desfazem-se após 2 turnos.',
     damageType: 'magical',
-    category: 'attack',
-    power: 2.3,
-    rangeMin: 1,
-    rangeMax: 3,
-    aoeRadius: 2,
-    aoeType: 'circle',
-    lifestealPercent: 100,
-    statusEffect: { type: 'poison', duration: 2, value: 3 },
-    leavesCorruptionPuddle: true,
-    cooldownMax: 4,
+    category: 'support',
+    power: 0,
+    rangeMin: 0,
+    rangeMax: 0,
+    aoeRadius: 0,
+    cooldownMax: 5,
     currentCooldown: 0,
-    targetType: 'enemy',
-    iconName: 'Flame',
+    targetType: 'self',
+    isSummonSkill: true,
+    summonType: 'skeleton_army',
+    iconName: 'Skull',
   },
 
   // Druída
   ira_de_gaia: {
     id: 'ira_de_gaia',
     name: 'Ira de Gaia',
-    description: 'Brota raízes colossais em linha reta (alcance 1-3) causando 210% de dano mágico e prendendo inimigos em Lentidão (-2 Movimento por 2 turnos).',
+    description: 'Brota raízes colossais em linha reta (alcance 1-3) causando 160% de dano mágico e prendendo inimigos em Lentidão (-2 Movimento por 2 turnos).',
     damageType: 'magical',
     category: 'attack',
-    power: 2.1,
+    power: 1.6,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
@@ -5912,7 +5930,7 @@ export const SKILLS: Record<string, Skill> = {
     targetType: 'ally',
     statusEffect: { type: 'shield', duration: 2, value: 60 },
     secondaryStatusEffect: { type: 'buff_atk', duration: 2, value: 20 },
-    cooldownMax: 4,
+    cooldownMax: 5,
     currentCooldown: 0,
     iconName: 'ShieldAlert',
   },
@@ -5921,10 +5939,10 @@ export const SKILLS: Record<string, Skill> = {
   runa_supercondutividade: {
     id: 'runa_supercondutividade',
     name: 'Runa de Supercondutividade',
-    description: 'Projeta um glifo perfurante em linha reta (alcance 1-4) causando 240% de dano mágico e ignorando 35% da resistência do alvo.',
+    description: 'Projeta um glifo perfurante em linha reta (alcance 1-4) causando 190% de dano mágico e ignorando 35% da resistência do alvo.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.4,
+    power: 1.9,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 0,
@@ -5938,10 +5956,10 @@ export const SKILLS: Record<string, Skill> = {
   convergencia_runica_estelar: {
     id: 'convergencia_runica_estelar',
     name: 'Convergência Rúnica Estelar',
-    description: 'Detona círculos rúnicos em formato de cruz (alcance 1-4, raio 2 em cruz) causando 260% de dano mágico concentrado.',
+    description: 'Detona círculos rúnicos em formato de cruz (alcance 1-4, raio 2 em cruz) causando 180% de dano mágico concentrado.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.6,
+    power: 1.8,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 2,
@@ -5957,10 +5975,10 @@ export const SKILLS: Record<string, Skill> = {
   execucao_implacavel: {
     id: 'execucao_implacavel',
     name: 'Execução Implacável',
-    description: 'Desfere um golpe visceral com ambos os machados (alcance 1) causando 230% de dano físico e recuperando 50% do dano em vida própria.',
+    description: 'Desfere um golpe visceral com ambos os machados (alcance 1) causando 180% de dano físico e recuperando 50% do dano em vida própria.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.3,
+    power: 1.8,
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
@@ -5973,10 +5991,10 @@ export const SKILLS: Record<string, Skill> = {
   frenesi_sangue_sagrado: {
     id: 'frenesi_sangue_sagrado',
     name: 'Frenesi do Sangue Sagrado',
-    description: 'Sacrifica 15% do HP atual para girar em fúria total ao seu redor (raio 1) causando 250% de dano físico a todos os inimigos adjacentes.',
+    description: 'Sacrifica 15% do HP atual para girar em fúria total ao seu redor (raio 1) causando 200% de dano físico a todos os inimigos adjacentes.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.5,
+    power: 2.0,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 1,
@@ -6028,15 +6046,15 @@ export const SKILLS: Record<string, Skill> = {
   impacto_dos_justos: {
     id: 'impacto_dos_justos',
     name: 'Impacto dos Justos',
-    description: 'Desfere um golpe de martelo sagrado causando 180% de dano físico, provocando o alvo por 2 turnos e concedendo ao paladino um escudo de 50.',
+    description: 'Desfere um golpe de martelo sagrado causando 180% de dano físico e concedendo ao paladino um escudo equivalente a 10% de sua vida máxima por 2 turnos.',
     damageType: 'physical',
     category: 'attack',
     power: 1.8,
     rangeMin: 1,
     rangeMax: 1,
     aoeRadius: 0,
-    statusEffect: { type: 'taunt', duration: 2, value: 1 },
-    casterStatusEffect: { type: 'shield', duration: 2, value: 50 },
+    shieldPercentOfMaxHp: 0.10,
+    casterStatusEffect: { type: 'shield', duration: 2, value: 0 },
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
@@ -6045,7 +6063,7 @@ export const SKILLS: Record<string, Skill> = {
   bencao_ceus_inquebraveis: {
     id: 'bencao_ceus_inquebraveis',
     name: 'Bênção dos Céus Inquebráveis',
-    description: 'Ergue o estandarte celestial (alcance 0-5, raio 3) cobrindo todos os aliados com um escudo sagrado de 80 por 2 turnos.',
+    description: 'Ergue o estandarte celestial (alcance 0-5, raio 3) cobrindo todos os aliados com um escudo sagrado de 80% do poder mágico do paladino por 2 turnos.',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -6053,7 +6071,8 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 5,
     aoeRadius: 3,
     aoeType: 'circle',
-    statusEffect: { type: 'shield', duration: 2, value: 80 },
+    shieldPercentOfMag: 0.80,
+    statusEffect: { type: 'shield', duration: 2, value: 0 },
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'ally',
@@ -6063,16 +6082,15 @@ export const SKILLS: Record<string, Skill> = {
   // Lanceiro
   perfuracao_tempestade: {
     id: 'perfuracao_tempestade',
-    name: 'Perfuração de Tempestade',
-    description: 'Perfura em linha reta a até 2 casas causando 200% de dano físico e quebrando a cadência inimiga com Lentidão (-2 Movimento por 2 turnos).',
+    name: 'Arremesso de Lança',
+    description: 'Arremessa uma lança veloz a até 3 casas causando 180% de dano físico e ignorando totalmente escudos e barreiras do alvo.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.0,
+    power: 1.8,
     rangeMin: 1,
-    rangeMax: 2,
+    rangeMax: 3,
     aoeRadius: 0,
-    isLinePierce: true,
-    statusEffect: { type: 'slow', duration: 2, value: 2 },
+    ignoresShield: true,
     cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'enemy',
@@ -6081,15 +6099,17 @@ export const SKILLS: Record<string, Skill> = {
   meteoro_lanca_estelar: {
     id: 'meteoro_lanca_estelar',
     name: 'Meteoro da Lança Estelar',
-    description: 'Salta alto no ar aterrissando sobre o alvo (alcance 2-4), causando 240% de dano físico em cruz no impacto e reposicionando o lanceiro.',
+    description: 'Salta alto no ar aterrissando sobre o alvo (alcance 2-4), causando 170% de dano físico em cruz no impacto e concedendo ao lanceiro um escudo de 70% do seu ataque por 2 turnos.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.4,
+    power: 1.7,
     rangeMin: 2,
     rangeMax: 4,
     aoeRadius: 1,
     aoeType: 'cross',
     teleportToTarget: true,
+    shieldPercentOfAtk: 0.70,
+    casterStatusEffect: { type: 'shield', duration: 2, value: 0 },
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
@@ -6100,7 +6120,7 @@ export const SKILLS: Record<string, Skill> = {
   crescendo_heroico: {
     id: 'crescendo_heroico',
     name: 'Crescendo Heroico',
-    description: 'Entoa uma melodia marcial para um aliado à escolha (alcance 1-4), concedendo +30% de dano de ataque e +1 de Movimento por 2 turnos.',
+    description: 'Entoa uma melodia marcial para um aliado à escolha (alcance 1-4), concedendo um escudo de 60% da magia do bardo, +20% de dano de ataque e +1 de Movimento por 2 turnos.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -6108,8 +6128,10 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 4,
     aoeRadius: 0,
     targetType: 'ally',
-    statusEffect: { type: 'buff_atk', duration: 2, value: 30 },
-    secondaryStatusEffect: { type: 'buff_mov', duration: 2, value: 1 },
+    shieldPercentOfMag: 0.60,
+    buffMovBonus: 1,
+    statusEffect: { type: 'shield', duration: 2, value: 0 },
+    secondaryStatusEffect: { type: 'buff_atk', duration: 2, value: 20 },
     cooldownMax: 3,
     currentCooldown: 0,
     iconName: 'Music',
@@ -6117,10 +6139,10 @@ export const SKILLS: Record<string, Skill> = {
   requiem_silencio: {
     id: 'requiem_silencio',
     name: 'Réquiem do Silêncio Ensurdecedor',
-    description: 'Toca um acorde dissonante em área (alcance 1-3, raio 2) causando 190% de dano mágico e Silenciando todos os inimigos atingidos por 1 turno.',
+    description: 'Toca um acorde dissonante em área (alcance 1-3, raio 2) causando 150% de dano mágico e Silenciando todos os inimigos atingidos por 1 turno.',
     damageType: 'magical',
     category: 'attack',
-    power: 1.9,
+    power: 1.5,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 2,
@@ -6136,10 +6158,10 @@ export const SKILLS: Record<string, Skill> = {
   cometa_glacial: {
     id: 'cometa_glacial',
     name: 'Cometa Glacial',
-    description: 'Lança um bloco maciço de gelo (alcance 1-4, raio 1) causando 210% de dano mágico, Lentidão e erguendo um obstáculo de gelo no centro.',
+    description: 'Lança um bloco maciço de gelo (alcance 1-4, raio 1) causando 170% de dano mágico, Lentidão e erguendo um obstáculo de gelo no centro.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.1,
+    power: 1.7,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 1,
@@ -6154,15 +6176,15 @@ export const SKILLS: Record<string, Skill> = {
   esfera_criogenica_perfeita: {
     id: 'esfera_criogenica_perfeita',
     name: 'Esfera Criogênica Perfeita',
-    description: 'Encapsula o alvo em gelo absoluto eterno (alcance 1-3) causando 250% de dano mágico e aplicando Atordoamento total por 1 turno.',
+    description: 'Encapsula o alvo em gelo absoluto eterno (alcance 1-3) causando 200% de dano mágico e aplicando Atordoamento total por 1 turno.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.5,
+    power: 2.0,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
     statusEffect: { type: 'stun', duration: 1, value: 1 },
-    cooldownMax: 4,
+    cooldownMax: 6,
     currentCooldown: 0,
     targetType: 'enemy',
     iconName: 'Crown',
@@ -6172,10 +6194,10 @@ export const SKILLS: Record<string, Skill> = {
   projetil_antimateria: {
     id: 'projetil_antimateria',
     name: 'Projétil de Antimatéria',
-    description: 'Disparo de altíssimo calibre perfurador (alcance 3-5) causando 270% de dano físico e ignorando 40% da defesa e couraça do alvo.',
+    description: 'Disparo de altíssimo calibre perfurador (alcance 3-5) causando 230% de dano físico e ignorando 40% da defesa e couraça do alvo.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.7,
+    power: 2.3,
     rangeMin: 3,
     rangeMax: 5,
     aoeRadius: 0,
@@ -6188,10 +6210,10 @@ export const SKILLS: Record<string, Skill> = {
   disparo_orbital_satelite: {
     id: 'disparo_orbital_satelite',
     name: 'Disparo Orbital de Satélite',
-    description: 'Dispara um sinalizador que convoca um feixe de canhão de satélite a qualquer distância no mapa (alcance 1-10, raio 1), causando 280% de dano físico.',
+    description: 'Dispara um sinalizador que convoca um feixe de canhão de satélite a qualquer distância no mapa (alcance 1-10, raio 1), causando 200% de dano físico.',
     damageType: 'physical',
     category: 'attack',
-    power: 2.8,
+    power: 2.0,
     rangeMin: 1,
     rangeMax: 10,
     aoeRadius: 1,
@@ -6206,10 +6228,10 @@ export const SKILLS: Record<string, Skill> = {
   arco_voltaico_devastador: {
     id: 'arco_voltaico_devastador',
     name: 'Arco Voltaico Devastador',
-    description: 'Dispara uma descarga elétrica de alta voltagem (alcance 1-3) que atinge o alvo com 220% de dano elétrico e salta para até 3 inimigos próximos.',
+    description: 'Dispara uma descarga elétrica de alta voltagem (alcance 1-3) que atinge o alvo com 180% de dano elétrico, aplica Eletrificado por 2 turnos e salta para até 3 inimigos próximos.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.2,
+    power: 1.8,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 0,
@@ -6224,15 +6246,17 @@ export const SKILLS: Record<string, Skill> = {
   ira_de_thoris: {
     id: 'ira_de_thoris',
     name: 'Ira de Thoris',
-    description: 'Desce uma tempestade violenta de raios em área (alcance 1-4, raio 2) causando 250% de dano elétrico e atordoando inimigos por 1 turno.',
+    description: 'Desce uma tempestade violenta de raios em área (alcance 1-4, raio 2) causando 170% de dano elétrico, aplicando Eletrificado nos inimigos e concedendo ao mago elétrico um escudo equivalente a 60% de sua magia por 2 turnos.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.5,
+    power: 1.7,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 2,
     aoeType: 'circle',
-    statusEffect: { type: 'stun', duration: 1, value: 1 },
+    statusEffect: { type: 'electrified', duration: 2, value: 2 },
+    shieldPercentOfMag: 0.60,
+    casterStatusEffect: { type: 'shield', duration: 2, value: 0 },
     cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'enemy',
@@ -6243,10 +6267,10 @@ export const SKILLS: Record<string, Skill> = {
   vendaval_dilacerante: {
     id: 'vendaval_dilacerante',
     name: 'Vendaval Dilacerante',
-    description: 'Dispara lâminas cortantes de ar comprimido em leque (alcance 1-3) causando 210% de dano mágico e repelindo inimigos 2 casas para trás.',
+    description: 'Dispara lâminas cortantes de ar comprimido em leque (alcance 1-3) causando 170% de dano mágico e repelindo inimigos 2 casas para trás.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.1,
+    power: 1.7,
     rangeMin: 1,
     rangeMax: 3,
     aoeRadius: 1,
@@ -6260,10 +6284,10 @@ export const SKILLS: Record<string, Skill> = {
   ciclone_ancestral_primordial: {
     id: 'ciclone_ancestral_primordial',
     name: 'Ciclone Ancestral Primordial',
-    description: 'Ergue um grande tufão destruidor em área (alcance 1-4, raio 2) causando 240% de dano mágico, puxando inimigos 2 casas e aplicando Lentidão por 2 turnos.',
+    description: 'Ergue um grande tufão destruidor em área (alcance 1-4, raio 2) causando 160% de dano mágico, puxando inimigos 2 casas e aplicando Lentidão por 2 turnos.',
     damageType: 'magical',
     category: 'attack',
-    power: 2.4,
+    power: 1.6,
     rangeMin: 1,
     rangeMax: 4,
     aoeRadius: 2,
@@ -6614,11 +6638,40 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     }
   }
 
-  if (clone.casterStatusEffect && clone.casterStatusEffect.type === 'taunt') {
-    clone.casterStatusEffect = {
-      ...clone.casterStatusEffect,
-      duration: 1,
-    };
+  if (clone.casterStatusEffect) {
+    if (clone.casterStatusEffect.type === 'taunt') {
+      clone.casterStatusEffect = {
+        ...clone.casterStatusEffect,
+        duration: 1,
+      };
+    } else if (clone.casterStatusEffect.type === 'shield' && canonicalBase.casterStatusEffect?.value) {
+      const bonus = Math.round(canonicalBase.casterStatusEffect.value * 0.05 * (effectiveLevel - 1));
+      clone.casterStatusEffect = {
+        ...clone.casterStatusEffect,
+        value: canonicalBase.casterStatusEffect.value + bonus,
+      };
+    }
+  }
+
+  if (clone.alliesStatusEffect) {
+    if (clone.alliesStatusEffect.type === 'shield' && canonicalBase.alliesStatusEffect?.value) {
+      const bonus = Math.round(canonicalBase.alliesStatusEffect.value * 0.05 * (effectiveLevel - 1));
+      clone.alliesStatusEffect = {
+        ...clone.alliesStatusEffect,
+        value: canonicalBase.alliesStatusEffect.value + bonus,
+      };
+    } else if (clone.alliesStatusEffect.type === 'buff_atk' && canonicalBase.alliesStatusEffect?.value) {
+      const bonus = Math.round(canonicalBase.alliesStatusEffect.value * 0.05 * (effectiveLevel - 1));
+      clone.alliesStatusEffect = {
+        ...clone.alliesStatusEffect,
+        value: Math.min(25, canonicalBase.alliesStatusEffect.value + bonus),
+      };
+    }
+  }
+
+  // Escalonamento de escudo baseado em % da vida máxima
+  if (canonicalBase.shieldPercentOfMaxHp && clone.shieldPercentOfMaxHp) {
+    clone.shieldPercentOfMaxHp = Math.round((canonicalBase.shieldPercentOfMaxHp + 0.02 * (effectiveLevel - 1)) * 100) / 100;
   }
 
   // Penetração de armadura/defesa (limitada a 30% no máximo)
@@ -6660,6 +6713,36 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     const newShield = clone.statusEffect.value;
     const reg = new RegExp('(\\b' + baseShield + '\\b)(\\s*(?:pontos|de absorção|de escudo|de dano|de barreira))', 'i');
     evolvedDesc = evolvedDesc.replace(reg, (_match, _val, rest) => `${newShield}${rest}`);
+  }
+
+  if (canonicalBase.casterStatusEffect?.type === 'shield' && clone.casterStatusEffect?.value && clone.casterStatusEffect.value !== canonicalBase.casterStatusEffect.value) {
+    const baseShield = canonicalBase.casterStatusEffect.value;
+    const newShield = clone.casterStatusEffect.value;
+    const reg = new RegExp('(\\b' + baseShield + '\\b)(\\s*(?:pontos|de absorção|de escudo|de dano|de barreira))', 'i');
+    evolvedDesc = evolvedDesc.replace(reg, (_match, _val, rest) => `${newShield}${rest}`);
+  }
+
+  if (canonicalBase.alliesStatusEffect?.type === 'shield' && clone.alliesStatusEffect?.value && clone.alliesStatusEffect.value !== canonicalBase.alliesStatusEffect.value) {
+    const baseShield = canonicalBase.alliesStatusEffect.value;
+    const newShield = clone.alliesStatusEffect.value;
+    const reg = new RegExp('(\\b' + baseShield + '\\b)(\\s*(?:pontos|de absorção|de escudo|de dano|de barreira))', 'i');
+    evolvedDesc = evolvedDesc.replace(reg, (_match, _val, rest) => `${newShield}${rest}`);
+  }
+
+  if (canonicalBase.shieldPercentOfMaxHp && clone.shieldPercentOfMaxHp && clone.shieldPercentOfMaxHp !== canonicalBase.shieldPercentOfMaxHp) {
+    const basePct = Math.round(canonicalBase.shieldPercentOfMaxHp * 100);
+    const newPct = Math.round(clone.shieldPercentOfMaxHp * 100);
+    if (evolvedDesc.includes(`${basePct}% da vida máxima`)) {
+      evolvedDesc = evolvedDesc.replace(`${basePct}% da vida máxima`, `${newPct}% da vida máxima`);
+    }
+  }
+
+  if (canonicalBase.alliesStatusEffect?.type === 'buff_atk' && clone.alliesStatusEffect?.value && clone.alliesStatusEffect.value !== canonicalBase.alliesStatusEffect.value) {
+    const baseBuff = canonicalBase.alliesStatusEffect.value;
+    const newBuff = clone.alliesStatusEffect.value;
+    if (evolvedDesc.includes(`+${baseBuff}% de dano de ataque`)) {
+      evolvedDesc = evolvedDesc.replace(`+${baseBuff}% de dano de ataque`, `+${newBuff}% de dano de ataque`);
+    }
   }
 
   clone.description = evolvedDesc;

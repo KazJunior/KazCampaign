@@ -40,6 +40,9 @@ export function calculateBaseDamage(
   const isSkill = !!skill;
 
   if (isSkill) {
+    if (skill.isSummonSkill) {
+      return { base: 0, damageType: 'healing' };
+    }
     const damageType: DamageType = skill.damageType;
 
     if (damageType === 'healing') {

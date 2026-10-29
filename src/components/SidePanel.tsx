@@ -478,6 +478,7 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'void_crawler':
       return <Footprints size={size} />;
     case 'necromancer':
+    case 'skeleton':
     case 'spider':
     case 'mimic':
     case 'ash_specter':

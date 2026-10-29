@@ -1558,6 +1558,17 @@ export function App() {
         return isWalkable && !isOccupied;
       });
     }
+    if (activeSkill && (activeSkill.targetType === 'corpse' || activeSkill.summonType === 'corpse_skeleton')) {
+      const rangeMin = activeSkill.rangeMin;
+      const rangeMax = activeSkill.rangeMax;
+      const candidates = getAttackableTiles({ x: selectedUnit.x, y: selectedUnit.y }, rangeMin, rangeMax, grid[0]?.length || 0, grid.length);
+      return candidates.filter((pt) => {
+        const isWalkable = grid[pt.y]?.[pt.x]?.isWalkable;
+        const hasCorpse = units.some((u) => u.faction === 'enemy' && u.isDead && !u.corpseConsumed && u.x === pt.x && u.y === pt.y);
+        const isOccupiedByLiving = units.some((u) => !u.isDead && u.x === pt.x && u.y === pt.y);
+        return isWalkable && hasCorpse && !isOccupiedByLiving;
+      });
+    }
     if (selectedAction === 'attack' || activeSkill) {
       const rangeMin = activeSkill ? activeSkill.rangeMin : 1;
       const rangeMax = activeSkill ? activeSkill.rangeMax : selectedUnit.range;
@@ -1989,7 +2000,7 @@ export function App() {
       if (crystalRes.didTrigger) return;
     }
 
-    const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+    const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isSummoned);
     const enemyLiving = currentUnits.filter((u) => u.faction === 'enemy' && !u.isDead);
 
     if (isTrainingMode) {
@@ -2182,8 +2193,6 @@ export function App() {
             if (hadExcessShield) {
               shieldVal = Math.max(1, Math.round(shieldVal * 0.5));
               addFloatingNumber(u.x, u.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
-            } else {
-              addFloatingNumber(u.x, u.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
             }
             const currentShield = newEffects.find((e) => e.type === 'shield')?.value || 0;
             const updatedShield = currentShield + shieldVal;
@@ -2502,6 +2511,35 @@ export function App() {
         }
       }
 
+      // Corpse targeting (e.g. Ressurreição Cadavérica)
+      if (activeSkill && (activeSkill.targetType === 'corpse' || activeSkill.summonType === 'corpse_skeleton')) {
+        const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
+        if (isTargetTileValid) {
+          const deadMonster = units.find((u) => u.faction === 'enemy' && u.isDead && !u.corpseConsumed && u.x === x && u.y === y);
+          if (deadMonster) {
+            setTargetTeleportPoint({ x, y });
+            setTargetAoEPoint(null);
+            const preview: DamagePreview = {
+              attacker: selectedUnit,
+              target: deadMonster,
+              skill: activeSkill,
+              minDamage: 0,
+              maxDamage: 0,
+              avgDamage: 0,
+              targetCurrentHp: 0,
+              targetHpAfterMin: 1,
+              targetHpAfterMax: 1,
+              isKillLikely: false,
+              damageType: 'healing',
+            };
+            setDamagePreview(preview);
+            setTargetUnitId(deadMonster.id);
+            soundManager.playSelect();
+            return;
+          }
+        }
+      }
+
       const isTargeting = selectedAction === 'attack' || !!activeSkill;
       const targetType = activeSkill ? activeSkill.targetType : 'enemy';
 
@@ -2715,6 +2753,161 @@ export function App() {
       return;
     }
 
+    // 1.5. Necromancer Corpse Resurrection Skill
+    if (skill && (skill.targetType === 'corpse' || skill.summonType === 'corpse_skeleton')) {
+      const deadMonster = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
+      const spawnX = deadMonster ? deadMonster.x : (targetTeleportPoint?.x ?? selectedUnit.x);
+      const spawnY = deadMonster ? deadMonster.y : (targetTeleportPoint?.y ?? selectedUnit.y);
+
+      soundManager.playMagicSpell();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'magical', 0, skill, { x: spawnX, y: spawnY });
+      }
+
+      addFloatingNumber(spawnX, spawnY, '💀 Esqueleto Reanimado!', 'status', '#94A3B8');
+
+      const newSkeleton: Unit = {
+        id: `skeleton_resurrected_${Date.now()}`,
+        name: 'Esqueleto Reanimado',
+        className: 'Esqueleto',
+        faction: 'player',
+        isSummoned: true,
+        summonTurnsLeft: 2,
+        level: selectedUnit.level,
+        xp: 0,
+        maxXp: 100,
+        maxHp: 1,
+        currentHp: 1,
+        atk: Math.max(10, Math.round(selectedUnit.mag * 0.75)),
+        mag: Math.max(5, Math.round(selectedUnit.mag * 0.5)),
+        def: 0,
+        res: 0,
+        mov: 3,
+        range: 1,
+        x: spawnX,
+        y: spawnY,
+        hasMoved: false,
+        hasAttacked: false,
+        isDead: false,
+        color: '#E2E8F0',
+        avatarKey: 'skeleton',
+        skills: [JSON.parse(JSON.stringify(SKILLS.golpe_esqueleto))],
+        learnedSkillIds: ['golpe_esqueleto'],
+        statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
+        damageDealt: 0,
+        kills: 0,
+              };
+
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
+      );
+
+      const updatedUnits = units.map((u) => {
+        if (u.id === selectedUnit.id) {
+          return { ...u, hasAttacked: true, skills: updatedSkills };
+        }
+        if (deadMonster && u.id === deadMonster.id) {
+          return { ...u, corpseConsumed: true };
+        }
+        return u;
+      });
+
+      updatedUnits.push(newSkeleton);
+      setUnits(updatedUnits);
+      setTargetTeleportPoint(null);
+      setTargetUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
+    // 1.6. Necromancer Skeleton Army Skill
+    if (skill && skill.summonType === 'skeleton_army') {
+      soundManager.playMagicSpell();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'magical', 1, skill);
+      }
+
+      const occupied = new Set(units.filter((u) => !u.isDead).map((u) => `${u.x},${u.y}`));
+      const freeTiles: Point[] = [];
+      const gWidth = grid[0]?.length || 10;
+      const gHeight = grid.length || 8;
+
+      for (let r = 1; r <= 3 && freeTiles.length < 3; r++) {
+        for (let dx = -r; dx <= r && freeTiles.length < 3; dx++) {
+          for (let dy = -r; dy <= r && freeTiles.length < 3; dy++) {
+            if (Math.abs(dx) + Math.abs(dy) === 0) continue;
+            const nx = selectedUnit.x + dx;
+            const ny = selectedUnit.y + dy;
+            if (
+              nx >= 0 && nx < gWidth &&
+              ny >= 0 && ny < gHeight &&
+              grid[ny]?.[nx]?.isWalkable &&
+              !occupied.has(`${nx},${ny}`) &&
+              !freeTiles.some((t) => t.x === nx && t.y === ny)
+            ) {
+              freeTiles.push({ x: nx, y: ny });
+              occupied.add(`${nx},${ny}`);
+            }
+          }
+        }
+      }
+
+      const now = Date.now();
+      const spawnedSkeletons: Unit[] = freeTiles.map((tile, i) => ({
+        id: `skeleton_army_${now}_${i}`,
+        name: `Esqueleto Servo ${i + 1}`,
+        className: 'Esqueleto',
+        faction: 'player',
+        isSummoned: true,
+        summonTurnsLeft: 2,
+        level: selectedUnit.level,
+        xp: 0,
+        maxXp: 100,
+        maxHp: 1,
+        currentHp: 1,
+        atk: Math.max(10, Math.round(selectedUnit.mag * 0.70)),
+        mag: Math.max(5, Math.round(selectedUnit.mag * 0.5)),
+        def: 0,
+        res: 0,
+        mov: 3,
+        range: 1,
+        x: tile.x,
+        y: tile.y,
+        hasMoved: false,
+        hasAttacked: false,
+        isDead: false,
+        color: '#E2E8F0',
+        avatarKey: 'skeleton',
+        skills: [JSON.parse(JSON.stringify(SKILLS.golpe_esqueleto))],
+        learnedSkillIds: ['golpe_esqueleto'],
+        statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
+        damageDealt: 0,
+        kills: 0,
+              }));
+
+      spawnedSkeletons.forEach((skel) => {
+        addFloatingNumber(skel.x, skel.y, '💀 Esqueleto Erguido!', 'status', '#94A3B8');
+      });
+
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
+      );
+
+      const updatedUnits = units.map((u) =>
+        u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
+      );
+
+      setUnits([...updatedUnits, ...spawnedSkeletons]);
+      setTargetTeleportPoint(null);
+      setTargetUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
     const target = (skill && skill.targetType === 'self')
       ? selectedUnit
       : units.find((u) => u.id === targetUnitId);
@@ -2799,11 +2992,12 @@ export function App() {
         const eff = { ...effToProcess, appliedTurn: turnNumberRef.current };
         if (eff.type === 'shield') {
           givesShield = true;
+          if (skill.shieldPercentOfMaxHp) {
+            eff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+          }
           if (hadExcessShield) {
             eff.value = Math.max(1, Math.round(eff.value * 0.5));
             addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
-          } else {
-            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
           }
           if (eff.reflectRatio) {
             addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
@@ -3124,11 +3318,12 @@ export function App() {
           const eff = { ...effToProcess, appliedTurn: turnNumberRef.current };
           if (eff.type === 'shield') {
             isShielded = true;
+            if (skill?.shieldPercentOfMaxHp) {
+              eff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+            }
             if (hadExcessShield) {
               eff.value = Math.max(1, Math.round(eff.value * 0.5));
               addFloatingNumber(t.x, t.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
-            } else {
-              addFloatingNumber(t.x, t.y, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
             }
             if (eff.reflectRatio) {
               addFloatingNumber(t.x, t.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
@@ -3467,6 +3662,52 @@ export function App() {
       );
     }
 
+    // Ally status effects in AoE (e.g. Solo Consagrado / Consagração)
+    if (skill?.alliesStatusEffect) {
+      const origin = { x: selectedUnit.x, y: selectedUnit.y };
+      const hitTiles = aoeRadius > 0
+        ? getAoETiles(aoeCenter, aoeRadius, grid[0].length, grid.length, skill?.aoeType || 'circle', origin)
+        : [{ x: target.x, y: target.y }];
+
+      const allyFaction = selectedUnit.faction;
+      const alliesInArea = updatedUnits.filter(
+        (u) =>
+          u.faction === allyFaction &&
+          !u.isDead &&
+          hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+      );
+
+      if (alliesInArea.length > 0) {
+        soundManager.playShield();
+      }
+
+      for (const ally of alliesInArea) {
+        const allyEff = { ...skill.alliesStatusEffect, appliedTurn: turnNumberRef.current };
+        let allyEffects = [...(ally.statusEffects || [])];
+
+        if (allyEff.type === 'shield') {
+          const hadExcessShield = allyEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+          if (hadExcessShield) {
+            allyEff.value = Math.max(1, Math.round(allyEff.value * 0.5));
+            addFloatingNumber(ally.x, ally.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+          }
+          addFloatingNumber(ally.x, ally.y, `+${allyEff.value} Escudo`, 'shield', '#38BDF8');
+          allyEffects = [
+            ...allyEffects.filter((e) => e.type !== 'excess_shield'),
+            { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+          ];
+        } else if (allyEff.type === 'buff_atk') {
+          addFloatingNumber(ally.x, ally.y, `+${allyEff.value}% Dano`, 'status', '#F97316');
+        } else if (allyEff.type === 'buff_mov') {
+          addFloatingNumber(ally.x, ally.y, `+${allyEff.value} Movimento!`, 'status', '#38BDF8');
+        }
+
+        allyEffects = [...allyEffects.filter((e) => e.type !== allyEff.type), allyEff];
+
+        updatedUnits = updatedUnits.map((u) => (u.id === ally.id ? { ...u, statusEffects: allyEffects } : u));
+      }
+    }
+
     // Retrieve attacker's updated state from the loop (in case attacker healed or shielded themselves)
     const attackerAfterLoop = updatedUnits.find((u) => u.id === selectedUnit.id);
     let finalAttackerHp = attackerAfterLoop ? attackerAfterLoop.currentHp : currentAttackerHp;
@@ -3542,16 +3783,22 @@ export function App() {
         if (hadExcessShield) {
           cEff.value = Math.max(1, Math.round(cEff.value * 0.5));
           addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
-        } else {
-          addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
         }
-        addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+        soundManager.playShield();
+        if (skill.casterStatusEffect.reflectRatio) {
+          cEff.reflectRatio = skill.casterStatusEffect.reflectRatio;
+          addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Escudo Espinhoso (${Math.round(cEff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
+        } else {
+          addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
+        }
         finalAttackerEffects = [
           ...finalAttackerEffects.filter((e) => e.type !== 'excess_shield'),
           { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
         ];
       } else if (cEff.type === 'buff_atk') {
         addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value}% Dano`, 'status', '#F97316');
+      } else if (cEff.type === 'buff_mov') {
+        addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Movimento!`, 'status', '#38BDF8');
       } else if (cEff.type === 'invisible') {
         addFloatingNumber(finalAttackerX, finalAttackerY, 'Invisível!', 'status', '#8B5CF6');
       } else if (cEff.type === 'taunt') {
@@ -3658,6 +3905,9 @@ export function App() {
 
     if (isExecutionKill) {
       setSelectedUnitId(selectedUnit.id);
+    } else if (canMoveAgain) {
+      setSelectedUnitId(selectedUnit.id);
+      setSelectedAction('move');
     }
 
     setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 200);
@@ -4147,7 +4397,7 @@ export function App() {
         );
         setUnits([...currentUnits]);
 
-        const playerLivingAfter = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+        const playerLivingAfter = currentUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isSummoned);
         if (playerLivingAfter.length === 0) {
           handleDefeat();
           return;
@@ -4979,8 +5229,6 @@ export function App() {
                   if (hadExcessShield) {
                     cEff.value = Math.max(1, Math.round(cEff.value * 0.5));
                     addFloatingNumber(finalMonsterX, finalMonsterY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
-                  } else {
-                    addFloatingNumber(finalMonsterX, finalMonsterY, 'Escudo excessivo aplicado!', 'status', '#F59E0B');
                   }
                   if (choice.skillToUse.casterStatusEffect.reflectRatio) {
                     cEff.reflectRatio = choice.skillToUse.casterStatusEffect.reflectRatio;
@@ -5285,7 +5533,8 @@ export function App() {
                 e.type === 'excess_heal' ||
                 e.type === 'excess_shield' ||
                 e.type === 'immune_physical' ||
-                e.type === 'immune_magical'
+                e.type === 'immune_magical' ||
+                e.type === 'shield'
               ) {
                 if (e.appliedTurn === undefined || e.appliedTurn === aiTurnNumber) {
                   return { ...e, appliedTurn: aiTurnNumber };
@@ -5314,7 +5563,7 @@ export function App() {
     if (anyPlayerDiedFromDoT) {
       setTimeout(() => {
         setUnits((latest) => {
-          const alive = latest.filter((u) => u.faction === 'player' && !u.isDead);
+          const alive = latest.filter((u) => u.faction === 'player' && !u.isDead && !u.isSummoned);
           if (alive.length === 0) handleDefeat();
           return latest;
         });
@@ -5340,6 +5589,30 @@ export function App() {
     setUnits((prev) => {
       nextUnitsState = prev.map((u) => {
         if (u.faction === 'player' && !u.isDead) {
+          if (u.isSummoned) {
+            const lifeEffect = u.statusEffects?.find((e) => e.type === 'summon_lifetime');
+            if (lifeEffect) {
+              if (lifeEffect.appliedTurn === currentTurn) {
+                return {
+                  ...u,
+                  statusEffects: u.statusEffects.map((e) =>
+                    e.type === 'summon_lifetime' ? { ...e, appliedTurn: undefined } : e
+                  ),
+                };
+              } else {
+                addFloatingNumber(u.x, u.y, '💀 Esqueleto desfez-se!', 'status', '#94A3B8');
+                if (boardRef.current) {
+                  boardRef.current.playDeathAnimation(u.id);
+                }
+                return {
+                  ...u,
+                  currentHp: 0,
+                  isDead: true,
+                  statusEffects: [],
+                };
+              }
+            }
+          }
           // Taunt is active against the upcoming enemy phase, so it decrements after the enemy turn ends
           // Invisibility protects against the upcoming enemy phase AND persists until their next turn!
           // Therefore, if it was applied on the current turn, do NOT decrement it at the end of the current turn.
@@ -5353,6 +5626,12 @@ export function App() {
                 return { ...e, duration: e.duration - 1 };
               }
               if (e.type === 'excess_heal' || e.type === 'excess_shield') {
+                if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
+                  return { ...e, appliedTurn: currentTurn };
+                }
+                return { ...e, duration: e.duration - 1 };
+              }
+              if (e.type === 'shield') {
                 if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
                   return { ...e, appliedTurn: currentTurn };
                 }
@@ -5399,7 +5678,7 @@ export function App() {
     const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);
 
     // Todos os heróis da equipe recebem o XP e evoluem de nível, mesmo que tenham caído em combate
-    const partyUnits = finalUnitsState.filter((u) => u.faction === 'player');
+    const partyUnits = finalUnitsState.filter((u) => u.faction === 'player' && !u.isSummoned);
     const levelUps: { unitName: string; oldLevel: number; newLevel: number }[] = [];
     const statChoiceQueue: { unit: Unit; newLevel: number }[] = [];
     const updatedUnitsState = { ...progress.unitsState };

@@ -1,6 +1,6 @@
 import React from 'react';
 import type { DamagePreview } from '../types/game';
-import { Swords, HeartPulse, AlertTriangle, Wand2 } from 'lucide-react';
+import { Swords, HeartPulse, AlertTriangle, Wand2, Skull } from 'lucide-react';
 import { getAoELabel } from '../utils/pathfinding';
 
 interface ActionPreviewModalProps {
@@ -17,6 +17,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
   turnNumber,
 }) => {
   const isTeleport = !!preview.skill?.isTeleport;
+  const isSummon = !!preview.skill?.isSummonSkill;
   const isHeal = preview.damageType === 'healing';
   const isMagic = preview.damageType === 'magical';
   const isSupportOnly = isHeal && preview.minDamage === 0;
@@ -67,7 +68,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               : 'bg-[#FF5252]/15 text-[#FF5252] border-[#FF5252]/30'
           }`}
         >
-          {isTeleport ? 'TELEPORTE' : isSupportOnly ? 'SUPORTE' : preview.damageType.toUpperCase()}
+          {isSummon ? 'INVOCAÇÃO' : isTeleport ? 'TELEPORTE' : isSupportOnly ? 'SUPORTE' : preview.damageType.toUpperCase()}
         </span>
       </div>
 
@@ -106,14 +107,48 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
       </div>
 
       <div className="my-3 space-y-2">
+        {isSummon && (
+          <div className="bg-[#10131C] p-3 rounded-xl border border-[#A855F7]/30 space-y-1.5 text-xs">
+            <div className="font-bold text-[#C084FC] flex items-center gap-1.5">
+              <Skull size={15} />
+              {preview.skill?.summonType === 'corpse_skeleton'
+                ? 'Reanimação Cadavérica (1 Esqueleto)'
+                : 'Legião das Sombras (3 Esqueletos)'}
+            </div>
+            <p className="text-[#CBD5E1]">
+              {preview.skill?.summonType === 'corpse_skeleton'
+                ? 'Ergue o monstro abatido selecionado como um Guerreiro Esqueleto servo sob seu comando.'
+                : 'Invoca 3 Guerreiros Esqueletos servos em casas livres adjacentes sob seu comando.'}
+            </p>
+            <div className="grid grid-cols-2 gap-2 pt-1 text-[11px]">
+              <div className="bg-[#1B2030] p-1.5 rounded border border-[#343B50] text-[#FACC15]">
+                ❤️ Vida: <strong>1 PV</strong>
+              </div>
+              <div className="bg-[#1B2030] p-1.5 rounded border border-[#343B50] text-[#38BDF8]">
+                👣 Mov: <strong>3 casas</strong> | Alc: <strong>1</strong>
+              </div>
+              <div className="bg-[#1B2030] p-1.5 rounded border border-[#343B50] text-[#4ADE80]">
+                ⚔️ Ataque: <strong>Golpe de Ossos</strong>
+              </div>
+              <div className="bg-[#1B2030] p-1.5 rounded border border-[#343B50] text-[#A78BFA]">
+                ⏳ Duração: <strong>2 Turnos</strong>
+              </div>
+            </div>
+          </div>
+        )}
         {preview.skill?.statusEffect && (
           <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#343B50]">
             <span className="text-[#A7B0C4]">Efeito Concedido:</span>
             <span className="font-bold text-[#F97316]">
               {preview.skill.statusEffect.type === 'buff_atk' && `🔥 +${preview.skill.statusEffect.value}% Dano (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'buff_mov' && `💨 +${preview.skill.statusEffect.value} Movimento (${preview.skill.statusEffect.duration}T)`}
-              {preview.skill.statusEffect.type === 'shield' &&
-                `🛡️ +${targetHasExcessShield ? Math.max(1, Math.round(preview.skill.statusEffect.value * 0.5)) : preview.skill.statusEffect.value} Escudo ${preview.skill.statusEffect.reflectRatio ? `(Espinhos ${Math.round(preview.skill.statusEffect.reflectRatio * 100)}%) ` : ''}${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'shield' && (() => {
+                const baseVal = preview.skill.shieldPercentOfMaxHp
+                  ? Math.max(1, Math.round(preview.attacker.maxHp * preview.skill.shieldPercentOfMaxHp))
+                  : preview.skill.statusEffect.value;
+                const finalVal = targetHasExcessShield ? Math.max(1, Math.round(baseVal * 0.5)) : baseVal;
+                return `🛡️ +${finalVal} Escudo ${preview.skill.shieldPercentOfMaxHp ? `(${Math.round(preview.skill.shieldPercentOfMaxHp * 100)}% Vida) ` : ''}${preview.skill.statusEffect.reflectRatio ? `(Espinhos ${Math.round(preview.skill.statusEffect.reflectRatio * 100)}%) ` : ''}${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.statusEffect.duration}T)`;
+              })()}
               {preview.skill.statusEffect.type === 'invisible' && `👁️ Invisibilidade (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'stun' && (
@@ -165,8 +200,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
             <span className="font-bold text-[#38BDF8]">
               {preview.skill.secondaryStatusEffect.type === 'burn' && `🔥 Queimadura (-${preview.skill.secondaryStatusEffect.value}% Vida Máx, ${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'poison' && `☠️ Veneno (-${preview.skill.secondaryStatusEffect.value}% Vida Máx, ${preview.skill.secondaryStatusEffect.duration}T)`}
-              {preview.skill.secondaryStatusEffect.type === 'shield' &&
-                `🛡️ +${targetHasExcessShield ? Math.max(1, Math.round(preview.skill.secondaryStatusEffect.value * 0.5)) : preview.skill.secondaryStatusEffect.value} Escudo ${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'shield' && (() => {
+                const baseVal = preview.skill.shieldPercentOfMaxHp
+                  ? Math.max(1, Math.round(preview.attacker.maxHp * preview.skill.shieldPercentOfMaxHp))
+                  : preview.skill.secondaryStatusEffect.value;
+                const finalVal = targetHasExcessShield ? Math.max(1, Math.round(baseVal * 0.5)) : baseVal;
+                return `🛡️ +${finalVal} Escudo ${preview.skill.shieldPercentOfMaxHp ? `(${Math.round(preview.skill.shieldPercentOfMaxHp * 100)}% Vida) ` : ''}${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.secondaryStatusEffect.duration}T)`;
+              })()}
               {preview.skill.secondaryStatusEffect.type === 'buff_atk' && `⚔️ +${preview.skill.secondaryStatusEffect.value}% Dano (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'buff_mov' && `💨 +${preview.skill.secondaryStatusEffect.value} Movimento (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.secondaryStatusEffect.duration}T)`}
@@ -188,6 +228,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           <div className="flex items-center justify-between text-xs bg-[#581C87]/40 p-2.5 rounded-lg border border-[#A855F7]/40">
             <span className="text-[#E9D5FF] font-semibold">Ímpeto de Abate:</span>
             <span className="font-bold text-[#C084FC]">⚡ Reseta Movimento e Ação ao Eliminar</span>
+          </div>
+        )}
+
+        {preview.skill?.buffMovBonus && (
+          <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#343B50]">
+            <span className="text-[#A7B0C4]">Bônus de Ritmo:</span>
+            <span className="font-bold text-[#38BDF8]">💨 +{preview.skill.buffMovBonus} Movimento (2T)</span>
           </div>
         )}
 
@@ -234,7 +281,23 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           <div className="flex items-center justify-between text-xs bg-[#1E293B] p-2.5 rounded-lg border border-[#64748B]">
             <span className="text-[#94A3B8]">Auto-Efeito:</span>
             <span className="font-bold text-[#38BDF8]">
-              {preview.skill.casterStatusEffect.type === 'shield' && `🛡️ Ganha Escudo (+${preview.skill.casterStatusEffect.value})`}
+              {preview.skill.casterStatusEffect.type === 'shield' && (() => {
+                const baseVal = preview.skill.shieldPercentOfMaxHp
+                  ? Math.max(1, Math.round(preview.attacker.maxHp * preview.skill.shieldPercentOfMaxHp))
+                  : preview.skill.shieldPercentOfMag
+                  ? Math.max(1, Math.round(preview.attacker.mag * preview.skill.shieldPercentOfMag))
+                  : preview.skill.shieldPercentOfAtk
+                  ? Math.max(1, Math.round(preview.attacker.atk * preview.skill.shieldPercentOfAtk))
+                  : preview.skill.casterStatusEffect.value;
+                const scaleLabel = preview.skill.shieldPercentOfMaxHp
+                  ? `(${Math.round(preview.skill.shieldPercentOfMaxHp * 100)}% Vida)`
+                  : preview.skill.shieldPercentOfMag
+                  ? `(${Math.round(preview.skill.shieldPercentOfMag * 100)}% Magia)`
+                  : preview.skill.shieldPercentOfAtk
+                  ? `(${Math.round(preview.skill.shieldPercentOfAtk * 100)}% Ataque)`
+                  : '';
+                return `🛡️ Ganha Escudo (+${baseVal} ${scaleLabel})`;
+              })()}
               {preview.skill.casterStatusEffect.type === 'invisible' && `👤 Fica Invisível (${preview.skill.casterStatusEffect.duration}T)`}
               {preview.skill.casterStatusEffect.type === 'buff_atk' && `⚔️ +${preview.skill.casterStatusEffect.value}% Dano (${preview.skill.casterStatusEffect.duration}T)`}
               {preview.skill.casterStatusEffect.type === 'buff_mov' && `💨 +${preview.skill.casterStatusEffect.value} Movimento (${preview.skill.casterStatusEffect.duration}T)`}

@@ -48,7 +48,8 @@ export type StatusEffectType =
   | 'immune_magical'
   | 'dark_cocoon'
   | 'immune_burn_poison'
-  | 'dodge_counter';
+  | 'dodge_counter'
+  | 'summon_lifetime';
 
 export interface StatusEffect {
   type: StatusEffectType;
@@ -86,7 +87,9 @@ export interface Skill {
   cooldownMax: number;
   currentCooldown: number;
   lastUsedTurn?: number; // Turno em que a habilidade foi utilizada (o cooldown só reduz a partir do turno seguinte)
-  targetType: 'enemy' | 'ally' | 'any' | 'self' | 'empty_tile';
+  targetType: 'enemy' | 'ally' | 'any' | 'self' | 'empty_tile' | 'corpse';
+  isSummonSkill?: boolean;
+  summonType?: 'corpse_skeleton' | 'skeleton_army';
   defenseIgnoreRatio?: number;
   ignoresShield?: boolean; // Ignora barreiras e escudos do alvo, causando dano direto à vida
   stealsShield?: boolean; // Se o alvo possuir escudo ativo, rouba todo o escudo para si antes de aplicar o dano
@@ -123,6 +126,11 @@ export interface Skill {
   chainCount?: number; // Number of targets lightning chains to (Mago Elétrico)
   chainRange?: number; // Max distance between chained links
   casterStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to the caster upon using this skill
+  alliesStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to allies in the skill AoE
+  shieldPercentOfMaxHp?: number; // Concede escudo baseado em % da vida máxima do conjurador (ex: 0.20 para 20%)
+  shieldPercentOfMag?: number; // Concede escudo baseado em % da magia do conjurador (ex: 0.80 para 80%)
+  shieldPercentOfAtk?: number; // Concede escudo baseado em % do ataque do conjurador (ex: 0.70 para 70%)
+  buffMovBonus?: number; // Bônus de movimento concedido pela habilidade
   scalesWithDefRes?: boolean; // Causa dano com base em 0.75 da armadura (defesa) + 0.75 da resistência
   iconName: string;
   isPassive?: boolean;
@@ -177,6 +185,9 @@ export interface Unit {
   halfHpTriggerTurn?: number; // Turno em que a vida do boss caiu para <= 50%
   hasUsedHalfHpSkill?: boolean; // Se a habilidade única de 50% HP já foi utilizada (ativa apenas 1 vez por combate)
 
+  isSummoned?: boolean;
+  summonTurnsLeft?: number;
+  corpseConsumed?: boolean;
   damageDealt: number;
   kills: number;
   skillUsesCount?: number; // Acúmulo de habilidades usadas para liberar ultimate (Samurai do Vazio)
