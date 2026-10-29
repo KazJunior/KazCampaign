@@ -24,6 +24,8 @@ import {
 } from '../data/lineageQuests';
 import { CLASS_DEFINITIONS } from '../data/units';
 import { soundManager } from '../utils/audio';
+import { ClassLineageAvatar } from './ClassLineageAvatar';
+import { getUnitAvatar } from './SidePanel';
 
 interface LineageSelectionModalProps {
   unlockedLineages?: string[];
@@ -104,9 +106,51 @@ export const LineageSelectionModal: React.FC<LineageSelectionModalProps> = ({
           </h2>
 
           <p className="text-xs sm:text-sm text-[#A7B0C4]">
-            Cada linhagem concede atributos adicionais e um <strong className="text-[#FFD700]">bônus único permanente</strong> para este herói durante toda a expedição.
+            Cada linhagem transforma a <strong className="text-[#FFD700]">aparência visual da classe (retrato e miniatura 3D)</strong> e concede um bônus único permanente!
           </p>
         </div>
+
+        {/* Prévia Visual Ao Vivo da Classe com a Linhagem Escolhida */}
+        {(() => {
+          const previewLineage = getLineageById(selectedId);
+          return (
+            <div
+              className="p-3.5 sm:p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#10131C]/90 shadow-lg transition-all"
+              style={{ borderColor: `${previewLineage.color}70` }}
+            >
+              <div className="flex items-center gap-4">
+                <ClassLineageAvatar
+                  lineageId={selectedId}
+                  classColor={classDef.color}
+                  size="xl"
+                >
+                  {getUnitAvatar(classDef.avatarKey, 28)}
+                </ClassLineageAvatar>
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-wider text-[#A7B0C4]">
+                    Prévia Visual da Classe + Linhagem
+                  </div>
+                  <div className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <span>{displayName}</span>
+                    <span
+                      className="text-xs px-2 py-0.5 rounded-full border font-black"
+                      style={{
+                        backgroundColor: `${previewLineage.color}20`,
+                        borderColor: previewLineage.color,
+                        color: previewLineage.color,
+                      }}
+                    >
+                      🧬 {previewLineage.name}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#CBD5E1] mt-0.5">
+                    {previewLineage.bonusDescription}
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Grid de Linhagens */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -145,21 +189,19 @@ export const LineageSelectionModal: React.FC<LineageSelectionModalProps> = ({
                   {/* Topo do Card: Ícone, Nome e Check */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center border-2 shadow-inner shrink-0"
-                        style={{
-                          backgroundColor: `${lineage.color}20`,
-                          borderColor: lineage.color,
-                          color: lineage.color,
-                        }}
+                      <ClassLineageAvatar
+                        lineageId={lineage.id}
+                        classColor={classDef.color}
+                        size="md"
                       >
-                        {getLineageIcon(lineage.iconName, 22)}
-                      </div>
+                        {getUnitAvatar(classDef.avatarKey, 20)}
+                      </ClassLineageAvatar>
 
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-black text-base text-white" style={{ color: lineage.color }}>
-                            {lineage.name}
+                          <h3 className="font-black text-base text-white flex items-center gap-1.5" style={{ color: lineage.color }}>
+                            {getLineageIcon(lineage.iconName, 15)}
+                            <span>{lineage.name}</span>
                           </h3>
                           {!isUnlocked ? (
                             <span className="bg-[#EF4444]/20 border border-[#EF4444]/50 text-[#F87171] text-[10px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1 shadow">

@@ -24,7 +24,6 @@ import { LEVELS, createTrainingLevel } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
-import { checkClassUnlockQuests } from './data/classUnlockQuests';
 import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from './data/lineageQuests';
 import { LineageUnlockCelebrationModal } from './components/LineageUnlockCelebrationModal';
 import { ClassUnlockQuestsModal } from './components/ClassUnlockQuestsModal';
@@ -4165,14 +4164,6 @@ export function App() {
             currentKills[mId] = (currentKills[mId] || 0) + 1;
           }
           p = { ...p, monsterKills: currentKills };
-          const newUnlocked = checkClassUnlockQuests(p);
-          if (newUnlocked.length > 0) {
-            p = {
-              ...p,
-              unlockedClasses: Array.from(new Set([...(p.unlockedClasses || []), ...newUnlocked])),
-            };
-            setPendingUnlockClasses((prevPending) => Array.from(new Set([...prevPending, ...newUnlocked])));
-          }
         }
         if (skill) {
           p = incrementClassStat(p, selectedUnit.className, 'skill_uses', 1);
@@ -6181,10 +6172,6 @@ export function App() {
       monsterKills: updatedMonsterKills,
       unlockedClasses: currentUnlocked,
     };
-    const readyFromQuests = checkClassUnlockQuests(questsProgressCheck);
-    if (readyFromQuests.length > 0) {
-      newlyUnlocked.push(...readyFromQuests);
-    }
     const readyLineages = checkLineageUnlockQuests(questsProgressCheck);
     if (readyLineages.length > 0) {
       setPendingUnlockLineages((prev) => Array.from(new Set([...prev, ...readyLineages])));

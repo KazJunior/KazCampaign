@@ -198,6 +198,22 @@ function swapMiniatureChar(unitFigure: THREE.Group, newModel: THREE.Group, unit:
 
   newModel.name = 'miniatureChar';
 
+  // Apply lineage physical proportions (Dwarf, Orc, Minotaur, Elf, etc.)
+  if (unit.faction === 'player' && unit.lineageId) {
+    const lin = unit.lineageId;
+    if (lin === 'anao') {
+      newModel.scale.multiply(new THREE.Vector3(1.16, 0.85, 1.16));
+    } else if (lin === 'orc') {
+      newModel.scale.multiply(new THREE.Vector3(1.12, 1.06, 1.12));
+    } else if (lin === 'minotauro') {
+      newModel.scale.multiply(new THREE.Vector3(1.16, 1.09, 1.16));
+    } else if (lin === 'elfo') {
+      newModel.scale.multiply(new THREE.Vector3(0.95, 1.05, 0.95));
+    } else if (lin === 'feerico') {
+      newModel.scale.multiply(new THREE.Vector3(0.92, 0.96, 0.92));
+    }
+  }
+
   // Apply stealth / invisibility transparency if unit is currently invisible
   const isInvisible = unit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
   if (isInvisible) {

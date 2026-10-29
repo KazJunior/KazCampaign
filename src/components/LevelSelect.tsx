@@ -33,6 +33,7 @@ import { PetIcon } from './PetIcon';
 import { GAME_CHANGELOG } from '../data/changelog';
 import { getTodayDateString, getFormattedDailyDate, useMidnightCountdown } from '../utils/dailyDungeon';
 import { getLineageById, DEFAULT_CLASS_LINEAGES } from '../data/lineages';
+import { ClassLineageAvatar } from './ClassLineageAvatar';
 
 interface LevelSelectProps {
   progress: PlayerProgress;
@@ -203,10 +204,10 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
               <button
                 onClick={onOpenClassUnlockQuests}
                 className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500/20 to-red-600/25 border-2 border-orange-400 hover:border-orange-300 text-orange-300 hover:text-white font-black text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-md shadow-orange-500/15"
-                title="Missões de Desbloqueio de Classes: Elimine monstros para desbloquear o Dragonoide e outras classes"
+                title="Missões de Desbloqueio de Linhagens Ancestrais"
               >
                 <Flame size={16} className="text-orange-400" />
-                <span>Missões de Classes</span>
+                <span>Missões de Linhagens</span>
               </button>
             )}
 
@@ -502,12 +503,13 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                       key={cKey}
                       className="bg-[#10131C] p-3 rounded-xl border border-[#343B50] flex items-center gap-3"
                     >
-                      <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white shadow text-xs"
-                        style={{ backgroundColor: classDef.color }}
+                      <ClassLineageAvatar
+                        lineageId={activeAdv.partyLineages?.[cKey] || progress.selectedPartyLineages?.[cKey] || DEFAULT_CLASS_LINEAGES[cKey] || 'humano'}
+                        classColor={classDef.color}
+                        size="md"
                       >
-                        Nv.{uState.level}
-                      </div>
+                        <span className="text-[11px] font-black">Nv.{uState.level}</span>
+                      </ClassLineageAvatar>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center justify-between gap-1">
                           <span className="font-bold text-xs text-[#F3F4F8] truncate">{classDef.name}</span>
@@ -574,12 +576,13 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                       key={cKey}
                       className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] flex items-center gap-2.5"
                     >
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shadow text-xs shrink-0"
-                        style={{ backgroundColor: classDef.color }}
+                      <ClassLineageAvatar
+                        lineageId={progress.selectedPartyLineages?.[cKey] || DEFAULT_CLASS_LINEAGES[cKey] || 'humano'}
+                        classColor={classDef.color}
+                        size="sm"
                       >
-                        Nv.1
-                      </div>
+                        <span className="text-[10px] font-black">Nv.1</span>
+                      </ClassLineageAvatar>
                       <div className="min-w-0 text-left">
                         <div className="font-bold text-xs text-[#F3F4F8] truncate">{classDef.name}</div>
                         <div className="text-[10px] text-[#A7B0C4]">Iniciará Nv. 1</div>

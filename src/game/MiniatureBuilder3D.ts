@@ -22,7 +22,13 @@ export function createOrganicMiniatureModel(
   const cachedModel = getCachedUnitModel(unit.avatarKey);
   const charMesh = cachedModel || buildCharacterMesh(unit);
   charMesh.name = 'miniatureChar';
+  applyLineageBodyScale(charMesh, unit);
   group.add(charMesh);
+
+  // 2b. 3D Lineage Visual Features (Wings, Horns, Halos, Ears, Tusks, Tails, Runes)
+  if (unit.faction === 'player' && unit.lineageId) {
+    group.add(createLineageVisualFeatures3D(unit));
+  }
 
   // 3. Floating HP Bar & Status Auras
   group.add(createHpBar(unit));
@@ -71,7 +77,495 @@ function createMiniaturePedestal(unit: Unit): THREE.Group {
   ring.position.y = height;
   baseGroup.add(ring);
 
+  // Inner glowing lineage ring on pedestal for player units
+  if (isPlayer && unit.lineageColor) {
+    const linColorHex = new THREE.Color(unit.lineageColor).getHex();
+    const innerRingGeo = new THREE.TorusGeometry(radiusTop * 0.76, 0.016, 8, 24);
+    innerRingGeo.rotateX(Math.PI / 2);
+    const innerRingMat = new THREE.MeshStandardMaterial({
+      color: linColorHex,
+      emissive: linColorHex,
+      emissiveIntensity: 0.95,
+      roughness: 0.2,
+    });
+    const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
+    innerRing.position.y = height + 0.005;
+    baseGroup.add(innerRing);
+  }
+
   return baseGroup;
+}
+
+/**
+ * Ajusta a proporção física e coloração sutil da miniatura 3D de acordo com a Linhagem.
+ */
+export function applyLineageBodyScale(charMesh: THREE.Group, unit: Unit): void {
+  if (unit.faction !== 'player' || !unit.lineageId) return;
+  const lin = unit.lineageId;
+  if (lin === 'anao') {
+    charMesh.scale.multiply(new THREE.Vector3(1.16, 0.85, 1.16));
+  } else if (lin === 'orc') {
+    charMesh.scale.multiply(new THREE.Vector3(1.12, 1.06, 1.12));
+  } else if (lin === 'minotauro') {
+    charMesh.scale.multiply(new THREE.Vector3(1.16, 1.09, 1.16));
+  } else if (lin === 'elfo') {
+    charMesh.scale.multiply(new THREE.Vector3(0.95, 1.05, 0.95));
+  } else if (lin === 'feerico') {
+    charMesh.scale.multiply(new THREE.Vector3(0.92, 0.96, 0.92));
+  }
+}
+
+/**
+ * Cria os traços visuais 3D exclusivos de cada uma das 13 Linhagens Ancestrais
+ * (Asas articuladas, Chifres, Auréolas, Orelhas Élficas, Presas, Caudas e Orbes).
+ */
+function createLineageVisualFeatures3D(unit: Unit): THREE.Group {
+  const linGroup = new THREE.Group();
+  linGroup.name = 'lineageVisualGroup';
+  const lin = unit.lineageId || 'humano';
+
+  const goldMat = new THREE.MeshStandardMaterial({
+    color: 0xfacc15,
+    emissive: 0xd97706,
+    emissiveIntensity: 0.55,
+    metalness: 0.85,
+    roughness: 0.2,
+  });
+
+  if (lin === 'humano') {
+    // Coroa Imperial Dourada na cabeça
+    const crownGroup = new THREE.Group();
+    crownGroup.position.set(0, 0.78, 0);
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.11, 0.016, 8, 20), goldMat);
+    band.rotation.x = Math.PI / 2;
+    crownGroup.add(band);
+
+    for (let i = 0; i < 5; i++) {
+      const angle = (i / 5) * Math.PI * 2;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.065, 5), goldMat);
+      spike.position.set(Math.cos(angle) * 0.105, 0.035, Math.sin(angle) * 0.105);
+      crownGroup.add(spike);
+    }
+    linGroup.add(crownGroup);
+  } else if (lin === 'elfo') {
+    // Longas Orelhas Élficas Pontiagudas + Cristais Esmeralda Orbitantes
+    const skinMat = new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.45 });
+    const emeraldMat = new THREE.MeshStandardMaterial({
+      color: 0x10b981,
+      emissive: 0x059669,
+      emissiveIntensity: 0.85,
+      roughness: 0.2,
+    });
+
+    const earGeo = new THREE.ConeGeometry(0.036, 0.18, 6);
+    const earL = new THREE.Mesh(earGeo, skinMat);
+    earL.position.set(-0.17, 0.66, -0.01);
+    earL.rotation.set(-0.2, 0, Math.PI * 0.38);
+
+    const earR = new THREE.Mesh(earGeo, skinMat);
+    earR.position.set(0.17, 0.66, -0.01);
+    earR.rotation.set(-0.2, 0, -Math.PI * 0.38);
+    linGroup.add(earL, earR);
+
+    // Diadema com gema esmeralda na testa
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.038, 0), emeraldMat);
+    gem.position.set(0, 0.75, 0.13);
+    linGroup.add(gem);
+
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.52, 0);
+    for (let i = 0; i < 2; i++) {
+      const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.035, 0), emeraldMat);
+      crystal.position.set(i === 0 ? -0.32 : 0.32, 0.08, 0);
+      orbit.add(crystal);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'anao') {
+    // Chifres de Forja em Bronze no Elmo + Escudo Rúnico nas Costas
+    const bronzeMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      metalness: 0.85,
+      roughness: 0.25,
+    });
+    const hornGeo = new THREE.ConeGeometry(0.042, 0.16, 8);
+    const hornL = new THREE.Mesh(hornGeo, bronzeMat);
+    hornL.position.set(-0.16, 0.64, 0.02);
+    hornL.rotation.set(0.25, 0, Math.PI * 0.28);
+
+    const hornR = new THREE.Mesh(hornGeo, bronzeMat);
+    hornR.position.set(0.16, 0.64, 0.02);
+    hornR.rotation.set(0.25, 0, -Math.PI * 0.28);
+    linGroup.add(hornL, hornR);
+
+    // Escudo Rúnico de Montanha nas costas
+    const backShield = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.04, 8), bronzeMat);
+    backShield.rotation.x = Math.PI / 2;
+    backShield.position.set(0, 0.38, -0.17);
+    linGroup.add(backShield);
+  } else if (lin === 'orc') {
+    // Presas Inferiores de Marfim + Ombreiras de Espinhos Brutais
+    const ivoryMat = new THREE.MeshStandardMaterial({ color: 0xfefce8, roughness: 0.3 });
+    const redIronMat = new THREE.MeshStandardMaterial({
+      color: 0xdc2626,
+      emissive: 0x7f1d1d,
+      emissiveIntensity: 0.45,
+      metalness: 0.6,
+      roughness: 0.35,
+    });
+
+    const tuskGeo = new THREE.ConeGeometry(0.028, 0.11, 6);
+    const tuskL = new THREE.Mesh(tuskGeo, ivoryMat);
+    tuskL.position.set(-0.065, 0.60, 0.15);
+    tuskL.rotation.x = -0.25;
+    const tuskR = new THREE.Mesh(tuskGeo, ivoryMat);
+    tuskR.position.set(0.065, 0.60, 0.15);
+    tuskR.rotation.x = -0.25;
+    linGroup.add(tuskL, tuskR);
+
+    // Espinhos nos ombros
+    for (const side of [-1, 1]) {
+      const spike1 = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.14, 6), redIronMat);
+      spike1.position.set(side * 0.27, 0.56, 0);
+      spike1.rotation.z = -side * 0.45;
+      linGroup.add(spike1);
+    }
+  } else if (lin === 'vampiro') {
+    // Asas de Morcego Noturnas + Orbes Sanguíneos
+    const batMat = new THREE.MeshStandardMaterial({
+      color: 0x450a0a,
+      emissive: 0x991b1b,
+      emissiveIntensity: 0.45,
+      roughness: 0.4,
+      side: THREE.DoubleSide,
+    });
+    const bloodOrbMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xdc2626,
+      emissiveIntensity: 0.9,
+    });
+
+    const buildBatWing = (isLeft: boolean) => {
+      const wGroup = new THREE.Group();
+      wGroup.name = isLeft ? 'lineageWingL' : 'lineageWingR';
+      wGroup.position.set(isLeft ? -0.08 : 0.08, 0.46, -0.14);
+      const sign = isLeft ? -1 : 1;
+
+      const mainBlade = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.18, 0.02), batMat);
+      mainBlade.position.set(sign * 0.14, 0.04, -0.02);
+      mainBlade.rotation.z = -sign * 0.28;
+      wGroup.add(mainBlade);
+
+      const tipSpike = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.16, 5), bloodOrbMat);
+      tipSpike.position.set(sign * 0.26, 0.14, -0.02);
+      tipSpike.rotation.z = -sign * 0.5;
+      wGroup.add(tipSpike);
+      return wGroup;
+    };
+
+    linGroup.add(buildBatWing(true), buildBatWing(false));
+
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.48, 0);
+    for (const side of [-1, 1]) {
+      const orb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), bloodOrbMat);
+      orb.position.set(side * 0.34, 0.06, 0);
+      orbit.add(orb);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'celestial') {
+    // Auréola Sagrada Luminosa + Estrela Empírea
+    const haloMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a,
+      emissive: 0xf59e0b,
+      emissiveIntensity: 1.0,
+      roughness: 0.15,
+    });
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.02, 10, 28), haloMat);
+    halo.name = 'lineageHalo';
+    halo.rotation.x = Math.PI / 2;
+    halo.position.set(0, 0.88, 0);
+    linGroup.add(halo);
+
+    const starGroup = new THREE.Group();
+    starGroup.name = 'lineageOrbit';
+    starGroup.position.set(0, 0.52, 0);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.036, 0), haloMat);
+      star.position.set(Math.cos(a) * 0.34, 0.05, Math.sin(a) * 0.34);
+      starGroup.add(star);
+    }
+    linGroup.add(starGroup);
+  } else if (lin === 'dragonoide') {
+    // Chifres Dracônicos + Asas de Dragão Escamosas + Cauda Dracônica
+    const scaleMat = new THREE.MeshStandardMaterial({
+      color: 0xea580c,
+      emissive: 0x9a3412,
+      emissiveIntensity: 0.5,
+      roughness: 0.35,
+    });
+    const hornMat = new THREE.MeshStandardMaterial({
+      color: 0xfde047,
+      emissive: 0xf97316,
+      emissiveIntensity: 0.45,
+      roughness: 0.25,
+    });
+
+    for (const side of [-1, 1]) {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.22, 7), hornMat);
+      horn.position.set(side * 0.12, 0.78, -0.02);
+      horn.rotation.set(-0.35, 0, -side * 0.38);
+      linGroup.add(horn);
+
+      const wing = new THREE.Group();
+      wing.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      wing.position.set(side * 0.08, 0.46, -0.14);
+
+      const membrane = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.22, 0.025), scaleMat);
+      membrane.position.set(side * 0.16, 0.06, -0.02);
+      membrane.rotation.z = -side * 0.32;
+      wing.add(membrane);
+
+      const claw = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.14, 5), hornMat);
+      claw.position.set(side * 0.28, 0.18, -0.02);
+      claw.rotation.z = -side * 0.45;
+      wing.add(claw);
+      linGroup.add(wing);
+    }
+
+    // Cauda Dracônica com chama na ponta
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.28, 7), scaleMat);
+    tail.position.set(0, 0.20, -0.22);
+    tail.rotation.x = -Math.PI * 0.35;
+    linGroup.add(tail);
+  } else if (lin === 'feerico') {
+    // 4 Asas de Fada Translúcidas e Brilhantes
+    const pinkWingMat = new THREE.MeshStandardMaterial({
+      color: 0xf472b6,
+      emissive: 0xec4899,
+      emissiveIntensity: 0.75,
+      transparent: true,
+      opacity: 0.82,
+      roughness: 0.15,
+    });
+    const cyanWingMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.75,
+      transparent: true,
+      opacity: 0.82,
+      roughness: 0.15,
+    });
+
+    for (const side of [-1, 1]) {
+      const wGroup = new THREE.Group();
+      wGroup.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      wGroup.position.set(side * 0.07, 0.44, -0.13);
+
+      const upperWing = new THREE.Mesh(new THREE.SphereGeometry(0.14, 10, 10), pinkWingMat);
+      upperWing.scale.set(1.3, 0.85, 0.15);
+      upperWing.position.set(side * 0.15, 0.10, 0);
+      upperWing.rotation.z = -side * 0.35;
+
+      const lowerWing = new THREE.Mesh(new THREE.SphereGeometry(0.10, 10, 10), cyanWingMat);
+      lowerWing.scale.set(1.2, 0.75, 0.15);
+      lowerWing.position.set(side * 0.13, -0.06, 0);
+      lowerWing.rotation.z = side * 0.25;
+
+      wGroup.add(upperWing, lowerWing);
+      linGroup.add(wGroup);
+    }
+  } else if (lin === 'minotauro') {
+    // Grandes Chifres de Touro Curvados para Frente + Argola Dourada
+    const hornMat = new THREE.MeshStandardMaterial({
+      color: 0xd97706,
+      emissive: 0x78350f,
+      emissiveIntensity: 0.35,
+      roughness: 0.35,
+    });
+
+    for (const side of [-1, 1]) {
+      const baseHorn = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.048, 0.16, 8), hornMat);
+      baseHorn.position.set(side * 0.16, 0.70, 0.02);
+      baseHorn.rotation.z = -side * (Math.PI * 0.38);
+
+      const tipHorn = new THREE.Mesh(new THREE.ConeGeometry(0.034, 0.18, 8), goldMat);
+      tipHorn.position.set(side * 0.24, 0.76, 0.09);
+      tipHorn.rotation.set(0.55, 0, -side * 0.22);
+
+      linGroup.add(baseHorn, tipHorn);
+    }
+
+    // Argola de Ouro Frontal
+    const noseRing = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 8, 16), goldMat);
+    noseRing.position.set(0, 0.58, 0.16);
+    linGroup.add(noseRing);
+  } else if (lin === 'anjo') {
+    // Grandes Asas Angelicais Brancas/Douradas em camadas + Auréola Dupla Radiante
+    const featherMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xfef08a,
+      emissiveIntensity: 0.55,
+      roughness: 0.2,
+    });
+    const haloMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a,
+      emissive: 0xfacc15,
+      emissiveIntensity: 1.1,
+      roughness: 0.1,
+    });
+
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.022, 10, 28), haloMat);
+    halo.name = 'lineageHalo';
+    halo.rotation.x = Math.PI / 2;
+    halo.position.set(0, 0.90, 0);
+    linGroup.add(halo);
+
+    for (const side of [-1, 1]) {
+      const wGroup = new THREE.Group();
+      wGroup.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      wGroup.position.set(side * 0.08, 0.48, -0.14);
+
+      for (let f = 0; f < 3; f++) {
+        const feather = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.042 - f * 0.006, 0.24 - f * 0.04, 6, 8),
+          f === 0 ? goldMat : featherMat
+        );
+        feather.position.set(side * (0.14 + f * 0.07), 0.10 - f * 0.06, -0.02);
+        feather.rotation.z = -side * (0.45 + f * 0.18);
+        wGroup.add(feather);
+      }
+      linGroup.add(wGroup);
+    }
+  } else if (lin === 'demonio') {
+    // Chifres Abissais + Asas Demoníacas Carmesim/Negras + Cauda
+    const darkHornMat = new THREE.MeshStandardMaterial({
+      color: 0x1e1b4b,
+      emissive: 0xdc2626,
+      emissiveIntensity: 0.55,
+      roughness: 0.25,
+    });
+    const demonWingMat = new THREE.MeshStandardMaterial({
+      color: 0x7f1d1d,
+      emissive: 0xdc2626,
+      emissiveIntensity: 0.65,
+      roughness: 0.35,
+    });
+
+    for (const side of [-1, 1]) {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.24, 8), darkHornMat);
+      horn.position.set(side * 0.12, 0.79, 0.02);
+      horn.rotation.set(0.2, 0, -side * 0.35);
+      linGroup.add(horn);
+
+      const wGroup = new THREE.Group();
+      wGroup.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      wGroup.position.set(side * 0.08, 0.48, -0.14);
+
+      const wingBlade = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.025), demonWingMat);
+      wingBlade.position.set(side * 0.17, 0.08, -0.02);
+      wingBlade.rotation.z = -side * 0.35;
+      wGroup.add(wingBlade);
+
+      const wingSpike = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.16, 6), darkHornMat);
+      wingSpike.position.set(side * 0.30, 0.20, -0.02);
+      wingSpike.rotation.z = -side * 0.45;
+      wGroup.add(wingSpike);
+      linGroup.add(wGroup);
+    }
+  } else if (lin === 'nefalim') {
+    // HÍBRIDO ANJO + DEMÔNIO: Asa Esquerda Branca/Dourada + Asa Direita Rubra/Púrpura + Meia Auréola & Chifre
+    const angelMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xfef08a,
+      emissiveIntensity: 0.7,
+      roughness: 0.2,
+    });
+    const demonMat = new THREE.MeshStandardMaterial({
+      color: 0x581c87,
+      emissive: 0xc084fc,
+      emissiveIntensity: 0.75,
+      roughness: 0.3,
+    });
+
+    // Asa Esquerda Angelical
+    const wingL = new THREE.Group();
+    wingL.name = 'lineageWingL';
+    wingL.position.set(-0.08, 0.48, -0.14);
+    for (let f = 0; f < 3; f++) {
+      const feather = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.04 - f * 0.005, 0.24 - f * 0.04, 6, 8),
+        f === 0 ? goldMat : angelMat
+      );
+      feather.position.set(-(0.14 + f * 0.07), 0.10 - f * 0.06, -0.02);
+      feather.rotation.z = 0.45 + f * 0.18;
+      wingL.add(feather);
+    }
+    linGroup.add(wingL);
+
+    // Asa Direita Demoníaca
+    const wingR = new THREE.Group();
+    wingR.name = 'lineageWingR';
+    wingR.position.set(0.08, 0.48, -0.14);
+    const wingBlade = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.24, 0.025), demonMat);
+    wingBlade.position.set(0.17, 0.08, -0.02);
+    wingBlade.rotation.z = -0.35;
+    wingR.add(wingBlade);
+    linGroup.add(wingR);
+
+    // Chifre Direito Abissal + Auréola Dourada Inclinada na Esquerda
+    const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.23, 8), demonMat);
+    hornR.position.set(0.12, 0.79, 0.02);
+    hornR.rotation.set(0.2, 0, -0.35);
+    linGroup.add(hornR);
+
+    const halfHalo = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.018, 8, 20), goldMat);
+    halfHalo.name = 'lineageHalo';
+    halfHalo.rotation.set(Math.PI / 2, 0.25, 0);
+    halfHalo.position.set(-0.05, 0.88, 0);
+    linGroup.add(halfHalo);
+  } else if (lin === 'fenix') {
+    // Grandes Asas de Chamas Solares + Crista de Fogo + Auréola Incandescente
+    const flameOrangeMat = new THREE.MeshStandardMaterial({
+      color: 0xf97316,
+      emissive: 0xea580c,
+      emissiveIntensity: 0.95,
+      roughness: 0.2,
+    });
+    const flameGoldMat = new THREE.MeshStandardMaterial({
+      color: 0xfde047,
+      emissive: 0xfacc15,
+      emissiveIntensity: 1.1,
+      roughness: 0.15,
+    });
+
+    // Crista de Fênix na cabeça
+    const crest = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.22, 6), flameGoldMat);
+    crest.position.set(0, 0.82, 0.02);
+    crest.rotation.x = -0.25;
+    linGroup.add(crest);
+
+    for (const side of [-1, 1]) {
+      const wGroup = new THREE.Group();
+      wGroup.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      wGroup.position.set(side * 0.08, 0.48, -0.14);
+
+      for (let f = 0; f < 3; f++) {
+        const plume = new THREE.Mesh(
+          new THREE.ConeGeometry(0.055 - f * 0.008, 0.32 - f * 0.04, 6),
+          f % 2 === 0 ? flameGoldMat : flameOrangeMat
+        );
+        plume.position.set(side * (0.15 + f * 0.07), 0.12 - f * 0.05, -0.02);
+        plume.rotation.z = -side * (0.55 + f * 0.18);
+        wGroup.add(plume);
+      }
+      linGroup.add(wGroup);
+    }
+  }
+
+  return linGroup;
 }
 
 // ============================================================================

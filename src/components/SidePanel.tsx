@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Unit, SelectedAction } from '../types/game';
+import { ClassLineageAvatar } from './ClassLineageAvatar';
 import {
   Footprints,
   Swords,
@@ -108,13 +109,25 @@ export const SidePanel: React.FC<SidePanelProps> = ({
     <aside className="hidden lg:flex w-80 bg-[#1B2030] border-l border-[#343B50] p-4 flex-col justify-between shadow-2xl text-[#F3F4F8] select-none h-full z-10 overflow-y-auto">
       <div className="space-y-4">
         {/* Unit Identity Card */}
-        <div className="flex items-center gap-3 p-3 rounded-2xl bg-[#10131C] border border-[#343B50]">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md border-2 border-white/20 relative shrink-0"
-            style={{ backgroundColor: selectedUnit.color }}
-          >
-            {getUnitAvatar(selectedUnit.avatarKey, 28)}
-            <span className="absolute -bottom-1 -right-1 bg-[#10131C] border border-[#D4AD65] text-[#D4AD65] font-black text-[10px] px-1.5 py-0.2 rounded-full">
+        <div className="flex items-center gap-3.5 p-3 rounded-2xl bg-[#10131C] border border-[#343B50]">
+          <div className="relative shrink-0">
+            {isAlly && selectedUnit.lineageId ? (
+              <ClassLineageAvatar
+                lineageId={selectedUnit.lineageId}
+                classColor={selectedUnit.color}
+                size="xl"
+              >
+                {getUnitAvatar(selectedUnit.avatarKey, 28)}
+              </ClassLineageAvatar>
+            ) : (
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-md border-2 border-white/20 relative shrink-0"
+                style={{ backgroundColor: selectedUnit.color }}
+              >
+                {getUnitAvatar(selectedUnit.avatarKey, 28)}
+              </div>
+            )}
+            <span className="absolute -bottom-1 -right-1 z-30 bg-[#10131C] border border-[#D4AD65] text-[#D4AD65] font-black text-[10px] px-1.5 py-0.2 rounded-full">
               Lv.{selectedUnit.level}
             </span>
           </div>

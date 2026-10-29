@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import type { PlayerProgress } from '../types/game';
-import { CLASS_UNLOCK_QUESTS_BY_CLASS, getMonsterKillCount } from '../data/classUnlockQuests';
 import { ClassUnlockQuestsModal } from './ClassUnlockQuestsModal';
 import { getEquippedSkin } from '../data/classQuests';
 import { LineageSelectionModal } from './LineageSelectionModal';
 import { getLineageById, DEFAULT_CLASS_LINEAGES } from '../data/lineages';
+import { ClassLineageAvatar } from './ClassLineageAvatar';
 import {
   Shield,
   Swords,
@@ -136,10 +136,10 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
           <button
             onClick={() => setShowUnlockQuestsModal(true)}
             className="px-3 py-1 rounded-full font-bold text-[11px] sm:text-xs bg-amber-500/20 border border-amber-400 text-amber-300 hover:bg-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
-            title="Abrir Missões de Desbloqueio de Classes"
+            title="Abrir Missões de Desbloqueio de Linhagens Ancestrais"
           >
             <Flame size={13} className="text-[#FF5722]" />
-            <span>Missões de Classes</span>
+            <span>Missões de Linhagens</span>
           </button>
 
           {onOpenClassMissions && (
@@ -192,13 +192,10 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   className="bg-[#1B2030] border-2 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-sm transition-all"
                   style={{ borderColor: `${cDef.color}60` }}
                 >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
-                      style={{ backgroundColor: cDef.color }}
-                    >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <ClassLineageAvatar lineageId={linId} classColor={cDef.color} size="sm">
                       {getClassIcon(cDef.avatarKey, 16)}
-                    </div>
+                    </ClassLineageAvatar>
                     <div className="min-w-0">
                       <div className="font-bold text-xs text-white truncate">{cDef.name}</div>
                       <div className="text-[10px] text-[#A7B0C4] truncate">{cDef.role.split('&')[0]}</div>
@@ -243,9 +240,8 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             const canAfford = isPurchasable && playerGold >= goldCost;
             const isDropOnly = !!(classDef as any).isDropOnly || cKey === 'sniper';
             const equippedSkin = getEquippedSkin(cKey, equippedClassSkins);
-            const unlockQuest = CLASS_UNLOCK_QUESTS_BY_CLASS[cKey];
-            const questKills = progress ? getMonsterKillCount(progress, unlockQuest?.monsterTypeId || '') : 0;
-            const questPercent = unlockQuest ? Math.min(100, Math.round((questKills / unlockQuest.targetCount) * 100)) : 0;
+            const cardLineageId = partyLineages[cKey] || DEFAULT_CLASS_LINEAGES[cKey] || 'humano';
+            const cardLineage = getLineageById(cardLineageId);
 
             return (
               <div
@@ -315,28 +311,31 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   </div>
 
                   {/* Class Identity: Avatar + Name & Subtitle */}
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 shrink-0 ${
-                        !isUnlocked
-                          ? isSecret
+                  <div className="flex items-center gap-3">
+                    {!isUnlocked ? (
+                      <div
+                        className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 shrink-0 ${
+                          isSecret
                             ? 'bg-[#3C096C]/80 text-[#C77DFF]'
                             : isPurchasable
                             ? 'brightness-90'
                             : 'grayscale brightness-75'
-                          : ''
-                      }`}
-                      style={{
-                        backgroundColor:
-                          !isUnlocked && isSecret
-                            ? undefined
-                            : isUnlocked && equippedSkin
-                            ? equippedSkin.color
-                            : classDef.color,
-                      }}
-                    >
-                      {!isUnlocked && isSecret ? <HelpCircle size={22} /> : getClassIcon(classDef.avatarKey, 22)}
-                    </div>
+                        }`}
+                        style={{
+                          backgroundColor: isSecret ? undefined : classDef.color,
+                        }}
+                      >
+                        {isSecret ? <HelpCircle size={22} /> : getClassIcon(classDef.avatarKey, 22)}
+                      </div>
+                    ) : (
+                      <ClassLineageAvatar
+                        lineageId={cardLineageId}
+                        classColor={equippedSkin ? equippedSkin.color : classDef.color}
+                        size="lg"
+                      >
+                        {getClassIcon(classDef.avatarKey, 22)}
+                      </ClassLineageAvatar>
+                    )}
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-sm text-[#F3F4F8] leading-tight" title={classDef.name}>
                         {!isUnlocked && isSecret ? '??? — Oculta' : classDef.name}
@@ -350,6 +349,28 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                       </span>
                     </div>
                   </div>
+
+                  {isUnlocked && (
+                    <div className="flex items-center justify-between gap-1.5">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLineageModalClass(cKey);
+                        }}
+                        className="flex-1 flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold transition-all hover:scale-[1.02] cursor-pointer"
+                        style={{
+                          backgroundColor: `${cardLineage.color}18`,
+                          borderColor: `${cardLineage.color}55`,
+                          color: cardLineage.color,
+                        }}
+                        title={`Visual e Bônus da Linhagem ${cardLineage.name}: ${cardLineage.bonusDescription} (Clique para alterar)`}
+                      >
+                        <span className="truncate">🧬 Linhagem: <strong className="text-white">{cardLineage.name}</strong></span>
+                        <span className="text-[9px] underline opacity-85 shrink-0">Trocar</span>
+                      </button>
+                    </div>
+                  )}
 
                   {isUnlocked && equippedSkin && (
                     <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-black/40 border border-white/5 text-[9px]">
@@ -375,36 +396,6 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                       : classDef.description}
                   </p>
                 </div>
-
-                {/* Class Unlock Quest Banner */}
-                {unlockQuest && !isUnlocked && (
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowUnlockQuestsModal(true);
-                    }}
-                    className="mt-2.5 p-2 rounded-xl bg-black/60 border border-[#F59E0B]/40 hover:border-[#F59E0B] text-left cursor-pointer transition-all space-y-1 shadow-inner"
-                    title="Clique para ver detalhes da Missão de Desbloqueio"
-                  >
-                    <div className="flex items-center justify-between text-[10px]">
-                      <span className="font-extrabold text-[#F59E0B] flex items-center gap-1">
-                        ⚔️ Missão de Abate:
-                      </span>
-                      <span className="font-bold text-white">
-                        {questKills}/{unlockQuest.targetCount} ({questPercent}%)
-                      </span>
-                    </div>
-                    <div className="text-[9px] text-[#CBD5E1] truncate">
-                      Matar <strong>{unlockQuest.targetCount} {unlockQuest.monsterName}</strong>
-                    </div>
-                    <div className="w-full h-1.5 rounded-full bg-black/80 overflow-hidden border border-white/5">
-                      <div
-                        className="h-full bg-gradient-to-r from-[#EA580C] via-[#F59E0B] to-[#FACC15] rounded-full transition-all duration-300"
-                        style={{ width: `${questPercent}%` }}
-                      />
-                    </div>
-                  </div>
-                )}
 
                 {/* Unlock condition hint or purchase button */}
                 {!isUnlocked && (

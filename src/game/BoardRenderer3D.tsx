@@ -249,8 +249,14 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
             child.quaternion.copy(camQuat);
           } else if (child.name === 'auraRing') {
             child.rotation.y += 0.025;
-          } else if (child.name === 'spinningOrb') {
+          } else if (child.name === 'spinningOrb' || child.name === 'lineageOrbit') {
             child.rotation.y += 0.04;
+          } else if (child.name === 'lineageHalo') {
+            child.rotation.z += 0.025;
+          } else if (child.name === 'lineageWingL') {
+            child.rotation.y = 0.22 + Math.sin(time * 3.2) * 0.16;
+          } else if (child.name === 'lineageWingR') {
+            child.rotation.y = -0.22 - Math.sin(time * 3.2) * 0.16;
           }
         });
       }

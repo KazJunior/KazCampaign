@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Unit, SelectedAction, Skill, BattlePhase } from '../types/game';
 import { getUnitAvatar } from './SidePanel';
+import { ClassLineageAvatar } from './ClassLineageAvatar';
 import { getAoELabel } from '../utils/pathfinding';
 import {
   Footprints,
@@ -224,12 +225,24 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
         <div className="p-2.5 bg-[#141824] border-b border-[#343B50] flex items-center justify-between gap-2">
           {/* Avatar & Name & HP */}
           <div className="flex items-center gap-2 min-w-0 flex-1">
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md border border-white/20 shrink-0 relative"
-              style={{ backgroundColor: selectedUnit.color }}
-            >
-              {getUnitAvatar(selectedUnit.avatarKey, 20)}
-              <span className="absolute -bottom-1 -right-1 bg-[#10131C] border border-[#D4AD65] text-[#D4AD65] font-black text-[9px] px-1 rounded-full">
+            <div className="relative shrink-0">
+              {isAlly && selectedUnit.lineageId ? (
+                <ClassLineageAvatar
+                  lineageId={selectedUnit.lineageId}
+                  classColor={selectedUnit.color}
+                  size="md"
+                >
+                  {getUnitAvatar(selectedUnit.avatarKey, 20)}
+                </ClassLineageAvatar>
+              ) : (
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md border border-white/20 shrink-0 relative"
+                  style={{ backgroundColor: selectedUnit.color }}
+                >
+                  {getUnitAvatar(selectedUnit.avatarKey, 20)}
+                </div>
+              )}
+              <span className="absolute -bottom-1 -right-1 z-30 bg-[#10131C] border border-[#D4AD65] text-[#D4AD65] font-black text-[9px] px-1 rounded-full">
                 L{selectedUnit.level}
               </span>
             </div>
