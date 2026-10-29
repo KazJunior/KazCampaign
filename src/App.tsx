@@ -2530,7 +2530,7 @@ export function App() {
           );
           preview.aoeTargetsCount = units.filter(
             (u) =>
-              u.faction === 'player' &&
+              u.faction === (activeSkill.damageType === 'healing' ? 'player' : 'enemy') &&
               !u.isDead &&
               hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
           ).length;
@@ -2682,6 +2682,7 @@ export function App() {
 
       if (boardRef.current) {
         await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, destX, destY);
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', 0, skill, { x: destX, y: destY });
       }
 
       addFloatingNumber(destX, destY, 'Teleporte Místico!', 'status', '#8B5CF6');
@@ -2723,7 +2724,7 @@ export function App() {
     }
 
     // 2. Self-targeting skill (e.g. Buffs, Escudos, Pacto de Sangue, Resistência Suprema)
-    if (skill && skill.targetType === 'self') {
+    if (skill && skill.targetType === 'self' && skill.damageType === 'healing') {
       soundManager.playHeal();
       if (boardRef.current) {
         await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', skill.aoeRadius || 0, skill);

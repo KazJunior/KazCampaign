@@ -1,343 +1,2320 @@
 import type { Skill, DamageType } from '../../types/game';
-import type { VFXSequence } from './vfxTypes';
+import type { VFXSequence, VFXAnimationType, VFXCasterMotion, VFXSlashStyle } from './vfxTypes';
+
+/**
+ * Helper to concisely define a unique VFXSequence
+ */
+function defVFX(
+  id: string,
+  type: VFXAnimationType,
+  opts: {
+    durationMs?: number;
+    casterMotion?: VFXCasterMotion;
+    primaryColor: number;
+    secondaryColor?: number;
+    slashStyle?: VFXSlashStyle;
+    slashCount?: number;
+    aoeShape?: string;
+    castColor?: number;
+    castRing?: number;
+    shockwave?: boolean;
+    crater?: boolean;
+    particleType?: 'fire' | 'ice' | 'sparks' | 'dust' | 'stars' | 'shadow';
+    burstCount?: number;
+    shakeIntensity?: number;
+    shakeDuration?: number;
+    pillarHeight?: number;
+    pillarRadius?: number;
+    projectiles?: VFXSequence['projectiles'];
+  }
+): VFXSequence {
+  const durationMs = opts.durationMs ?? 580;
+  const secondary = opts.secondaryColor ?? 0xffffff;
+  return {
+    id,
+    type,
+    durationMs,
+    casterMotion: opts.casterMotion,
+    primaryColor: opts.primaryColor,
+    secondaryColor: secondary,
+    slashStyle: opts.slashStyle,
+    slashCount: opts.slashCount,
+    aoeShape: opts.aoeShape,
+    cast: opts.castColor !== undefined
+      ? { durationMs: 130, color: opts.castColor, ringRadius: opts.castRing ?? 0.9 }
+      : undefined,
+    pillar: opts.pillarHeight !== undefined
+      ? { height: opts.pillarHeight, radius: opts.pillarRadius ?? 0.85, color: opts.primaryColor, innerCoreColor: secondary }
+      : undefined,
+    projectiles: opts.projectiles,
+    impact: {
+      shockwave: opts.shockwave ?? true,
+      shockwaveColor: opts.primaryColor,
+      craterDecal: opts.crater ?? false,
+      craterColor: opts.primaryColor,
+      particleBurstCount: opts.burstCount ?? 18,
+      particleType: opts.particleType ?? 'sparks',
+    },
+    screenShake: opts.shakeIntensity
+      ? { intensity: opts.shakeIntensity, durationMs: opts.shakeDuration ?? 220, delayMs: Math.round(durationMs * 0.42) }
+      : undefined,
+    hitReactionDelayMs: Math.round(durationMs * 0.45),
+  };
+}
 
 export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
-  arauto_manto_espectral: {
-    id: 'arauto_manto_espectral',
-    type: 'void_miasma',
-    durationMs: 500,
-    cast: { durationMs: 150, color: 0x8b5cf6 },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x7c3aed,
-      particleBurstCount: 16,
-      particleType: 'shadow',
-    },
-    hitReactionDelayMs: 100,
-  },
-  arauto_corte_ceifador: {
-    id: 'arauto_corte_ceifador',
-    type: 'blade_tempest',
-    durationMs: 650,
-    cast: { durationMs: 120, color: 0x06b6d4 },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x00e5ff,
-      particleBurstCount: 20,
-      particleType: 'shadow',
-    },
-    screenShake: { intensity: 0.12, durationMs: 180, delayMs: 200 },
-    hitReactionDelayMs: 200,
-  },
-  arauto_giro_foice: {
-    id: 'arauto_giro_foice',
-    type: 'blade_tempest',
-    durationMs: 700,
-    cast: { durationMs: 100, color: 0x00e5ff },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x06b6d4,
-      particleBurstCount: 24,
-      particleType: 'shadow',
-    },
-    screenShake: { intensity: 0.15, durationMs: 220, delayMs: 200 },
-    hitReactionDelayMs: 220,
-  },
-  arauto_passo_sombrio: {
-    id: 'arauto_passo_sombrio',
-    type: 'void_miasma',
-    durationMs: 600,
-    cast: { durationMs: 100, color: 0x7c3aed },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x8b5cf6,
-      particleBurstCount: 22,
-      particleType: 'shadow',
-    },
-    screenShake: { intensity: 0.14, durationMs: 200, delayMs: 180 },
-    hitReactionDelayMs: 200,
-  },
-  arauto_arremesso_foice: {
-    id: 'arauto_arremesso_foice',
-    type: 'generic_magic',
-    durationMs: 650,
-    cast: { durationMs: 120, color: 0x00e5ff },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x06b6d4,
-      particleBurstCount: 20,
-      particleType: 'shadow',
-    },
-    screenShake: { intensity: 0.12, durationMs: 180, delayMs: 200 },
-    hitReactionDelayMs: 200,
-  },
-
-  // ==========================================
-  // FIRE ARCHETYPE (Distinct unique variants)
-  // ==========================================
-
-  // 1. Chuva de Meteoros: 3 meteoros caindo em cascata com crateras e forte abalo
-  chuva_de_meteoros: {
-    id: 'chuva_de_meteoros',
-    type: 'meteor_shower',
-    durationMs: 820,
-    cast: { durationMs: 160, color: 0xff3b00, ringRadius: 1.4 },
-    projectiles: [
-      { delayMs: 0, fromSky: true, skyAngleDeg: 60, skyHeight: 6.8, targetOffset: { x: -0.28, z: 0.2 }, size: 0.26, color: 0xff4500 },
-      { delayMs: 130, fromSky: true, skyAngleDeg: 55, skyHeight: 7.2, targetOffset: { x: 0.32, z: -0.22 }, size: 0.24, color: 0xff5500 },
-      { delayMs: 260, fromSky: true, skyAngleDeg: 65, skyHeight: 6.6, targetOffset: { x: 0.05, z: 0.1 }, size: 0.32, color: 0xff2200 },
-    ],
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xff4500,
-      craterDecal: true,
-      craterColor: 0xff3300,
-      particleBurstCount: 28,
-      particleType: 'fire',
-    },
-    screenShake: { intensity: 0.24, durationMs: 400, delayMs: 380 },
-    hitReactionDelayMs: 400,
-  },
-
-  // 2. Coluna de Chamas / Labareda: Erupção puramente vertical do solo
-  coluna_de_chamas: {
-    id: 'coluna_de_chamas',
-    type: 'fire_pillar',
-    durationMs: 650,
-    cast: { durationMs: 150, color: 0xff7700, ringRadius: 0.9 },
-    pillar: { height: 4.8, radius: 0.85, color: 0xff3b00, innerCoreColor: 0xfef08a },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xff7700,
-      particleBurstCount: 22,
-      particleType: 'fire',
-    },
-    screenShake: { intensity: 0.13, durationMs: 250, delayMs: 180 },
-    hitReactionDelayMs: 200,
-  },
-
-  // 3. Combustão Espontânea: Sem projétil; pulso no peito do alvo e detonação de choque
-  combustao_espontanea: {
-    id: 'combustao_espontanea',
-    type: 'combustion',
-    durationMs: 580,
-    cast: { durationMs: 120, color: 0xdc2626 },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xef4444,
-      craterDecal: false,
-      particleBurstCount: 24,
-      particleType: 'fire',
-    },
-    screenShake: { intensity: 0.16, durationMs: 260, delayMs: 220 },
-    hitReactionDelayMs: 240,
-  },
-
-  // 4. Lança-Chamas: Cone contínuo de fogo partindo do conjurador
-  lanca_chamas: {
-    id: 'lanca_chamas',
-    type: 'flamethrower',
-    durationMs: 720,
-    cast: { durationMs: 100, color: 0xf97316 },
-    stream: {
-      particleCount: 36,
-      spreadAngleDeg: 28,
-      color: 0xff4500,
-      secondaryColor: 0xfbbf24,
-      flowDurationMs: 480,
-    },
-    impact: {
-      shockwave: false,
-      particleBurstCount: 16,
-      particleType: 'fire',
-    },
-    screenShake: { intensity: 0.08, durationMs: 320, delayMs: 180 },
-    hitReactionDelayMs: 280,
-  },
-
-  // 5. Bola de Fogo clássica
-  bola_de_fogo: {
-    id: 'bola_de_fogo',
-    type: 'meteor_shower',
-    durationMs: 620,
-    cast: { durationMs: 120, color: 0xff5500 },
-    projectiles: [
-      { delayMs: 0, fromSky: false, arcHeight: 0.8, size: 0.22, color: 0xff4500 },
-    ],
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xff4500,
-      particleBurstCount: 18,
-      particleType: 'fire',
-    },
-    screenShake: { intensity: 0.12, durationMs: 220, delayMs: 350 },
-    hitReactionDelayMs: 360,
-  },
-
-  // ==========================================
-  // ICE ARCHETYPE
-  // ==========================================
-  raio_glacial: {
-    id: 'raio_glacial',
-    type: 'ice_spikes',
-    durationMs: 620,
-    cast: { durationMs: 140, color: 0x38bdf8 },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xbae6fd,
-      particleBurstCount: 20,
-      particleType: 'ice',
-    },
-    screenShake: { intensity: 0.12, durationMs: 220, delayMs: 240 },
-    hitReactionDelayMs: 260,
-  },
-
-  nevasca: {
-    id: 'nevasca',
-    type: 'frost_nova',
-    durationMs: 680,
-    cast: { durationMs: 150, color: 0x0284c7, ringRadius: 1.5 },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x38bdf8,
-      particleBurstCount: 26,
-      particleType: 'ice',
-    },
-    screenShake: { intensity: 0.14, durationMs: 280, delayMs: 260 },
-    hitReactionDelayMs: 280,
-  },
-
-  // ==========================================
-  // LIGHTNING & HOLY ARCHETYPES
-  // ==========================================
-  relampago: {
-    id: 'relampago',
-    type: 'lightning_storm',
+  // ============================================================================
+  // 1. SAMURAI DO VAZIO (carrasco_vazio) - 12 Habilidades Exclusivas
+  // ============================================================================
+  corte_do_vazio: defVFX('corte_do_vazio', 'blade_tempest', {
     durationMs: 480,
-    cast: { durationMs: 80, color: 0x00f0ff },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x00f0ff,
-      particleBurstCount: 20,
-      particleType: 'sparks',
-    },
-    screenShake: { intensity: 0.18, durationMs: 240, delayMs: 120 },
-    hitReactionDelayMs: 140,
-  },
-
-  cura: {
-    id: 'cura',
-    type: 'holy_pillar',
-    durationMs: 650,
-    cast: { durationMs: 120, color: 0xfef08a },
-    pillar: { height: 4.5, radius: 0.7, color: 0xfef08a, innerCoreColor: 0xfacc15 },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xfacc15,
-      particleBurstCount: 16,
-      particleType: 'stars',
-    },
-    hitReactionDelayMs: 200,
-  },
-
-  bencao_sagrada: {
-    id: 'bencao_sagrada',
-    type: 'holy_pillar',
-    durationMs: 700,
-    cast: { durationMs: 150, color: 0xfef08a, ringRadius: 1.2 },
-    pillar: { height: 5.2, radius: 0.9, color: 0xfde047, innerCoreColor: 0xffffff },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xfde047,
-      particleBurstCount: 20,
-      particleType: 'stars',
-    },
-    hitReactionDelayMs: 220,
-  },
-
-  // ==========================================
-  // PHYSICAL & MARTIAL ARCHETYPES
-  // ==========================================
-  golpe_poderoso: {
-    id: 'golpe_poderoso',
-    type: 'blade_tempest',
-    durationMs: 460,
-    impact: {
-      shockwave: false,
-      particleBurstCount: 12,
-      particleType: 'dust',
-    },
-    screenShake: { intensity: 0.08, durationMs: 180, delayMs: 180 },
-    hitReactionDelayMs: 200,
-  },
-
-  golpe_demolidor: {
-    id: 'golpe_demolidor',
-    type: 'heavy_slam',
+    casterMotion: 'lunge',
+    primaryColor: 0x9d4edd,
+    secondaryColor: 0xe0aaff,
+    slashStyle: 'single',
+    slashCount: 1,
+    particleType: 'shadow',
+    shakeIntensity: 0.1,
+  }),
+  lampejo_do_vazio: defVFX('lampejo_do_vazio', 'blade_tempest', {
+    durationMs: 620,
+    casterMotion: 'dash_through',
+    primaryColor: 0x9d4edd,
+    secondaryColor: 0xef4444, // Sangramento sombrio carmesim
+    slashStyle: 'cone_slashes',
+    slashCount: 5,
+    aoeShape: 'cone',
+    castColor: 0x7b2cbf,
+    particleType: 'shadow',
+    burstCount: 24,
+    shakeIntensity: 0.16,
+  }),
+  ameaca_do_vazio: defVFX('ameaca_do_vazio', 'shield_bastion', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x7b2cbf,
+    secondaryColor: 0xe0aaff,
+    castColor: 0x9d4edd,
+    castRing: 1.1,
+    particleType: 'shadow',
+    shockwave: false,
+  }),
+  horizonte_vazio: defVFX('horizonte_vazio', 'dimensional_wave', {
+    durationMs: 640,
+    casterMotion: 'lunge',
+    primaryColor: 0x7b2cbf,
+    secondaryColor: 0xdc2626, // Sangramento sombrio
+    aoeShape: 'rect_3x2',
+    castColor: 0x9d4edd,
+    particleType: 'shadow',
+    burstCount: 24,
+    shakeIntensity: 0.18,
+  }),
+  buraco_negro: defVFX('buraco_negro', 'black_hole', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x9d4edd,
+    secondaryColor: 0xef4444,
+    aoeShape: 'cross',
+    castColor: 0x3c096c,
+    castRing: 1.4,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 28,
+    shakeIntensity: 0.22,
+    shakeDuration: 340,
+  }),
+  avanco_dimensional: defVFX('avanco_dimensional', 'blade_tempest', {
     durationMs: 560,
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xf59e0b,
-      craterDecal: true,
-      craterColor: 0x78716c,
-      particleBurstCount: 24,
-      particleType: 'dust',
-    },
-    screenShake: { intensity: 0.22, durationMs: 320, delayMs: 250 },
-    hitReactionDelayMs: 270,
-  },
-
-  tiro_preciso: {
-    id: 'tiro_preciso',
-    type: 'sniper_shot',
-    durationMs: 440,
-    projectiles: [
-      { delayMs: 0, fromSky: false, size: 0.15, color: 0xf8fafc },
-    ],
-    impact: {
-      particleBurstCount: 10,
-      particleType: 'sparks',
-    },
-    screenShake: { intensity: 0.09, durationMs: 180, delayMs: 180 },
-    hitReactionDelayMs: 200,
-  },
-
-  tiro_triplo: {
-    id: 'tiro_triplo',
-    type: 'arrow_volley',
+    casterMotion: 'blink_strike',
+    primaryColor: 0xc77dff,
+    secondaryColor: 0xffffff,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    castColor: 0x9d4edd,
+    particleType: 'shadow',
+    burstCount: 22,
+    shakeIntensity: 0.16,
+  }),
+  lagrimas_rubras: defVFX('lagrimas_rubras', 'crimson_horizon', {
+    durationMs: 1100,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x9d4edd,
+    aoeShape: 'square_5x5',
+    castColor: 0xdc2626,
+    castRing: 1.8,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 36,
+    shakeIntensity: 0.28,
+    shakeDuration: 480,
+  }),
+  passo_das_mil_sombras: defVFX('passo_das_mil_sombras', 'void_miasma', {
     durationMs: 500,
-    projectiles: [
-      { delayMs: 0, fromSky: false, targetOffset: { x: -0.15, z: 0.1 } },
-      { delayMs: 40, fromSky: false, targetOffset: { x: 0, z: 0 } },
-      { delayMs: 80, fromSky: false, targetOffset: { x: 0.15, z: -0.1 } },
-    ],
-    impact: {
-      particleBurstCount: 14,
-      particleType: 'dust',
-    },
-    screenShake: { intensity: 0.11, durationMs: 200, delayMs: 220 },
-    hitReactionDelayMs: 240,
-  },
+    casterMotion: 'blink_strike',
+    primaryColor: 0x5a189a,
+    secondaryColor: 0xc77dff,
+    particleType: 'shadow',
+  }),
+  fissura_da_katana: defVFX('fissura_da_katana', 'dimensional_wave', {
+    durationMs: 560,
+    casterMotion: 'lunge',
+    primaryColor: 0xc77dff,
+    secondaryColor: 0xffffff,
+    aoeShape: 'line',
+    particleType: 'shadow',
+    shakeIntensity: 0.14,
+  }),
+  postura_do_luar_sombrio: defVFX('postura_do_luar_sombrio', 'holy_pillar', {
+    durationMs: 640,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x9d4edd,
+    secondaryColor: 0xe0aaff,
+    pillarHeight: 4.8,
+    pillarRadius: 0.75,
+    particleType: 'stars',
+  }),
+  fenda_singular: defVFX('fenda_singular', 'blade_tempest', {
+    durationMs: 600,
+    casterMotion: 'dash_through',
+    primaryColor: 0x7b2cbf,
+    secondaryColor: 0xff0055,
+    slashStyle: 'flurry',
+    slashCount: 4,
+    castColor: 0x9d4edd,
+    particleType: 'shadow',
+    shakeIntensity: 0.18,
+  }),
+  corte_vazio_absoluto: defVFX('corte_vazio_absoluto', 'blade_tempest', {
+    durationMs: 650,
+    casterMotion: 'leap_slam',
+    primaryColor: 0x3c096c,
+    secondaryColor: 0xe0aaff,
+    slashStyle: 'guillotine',
+    slashCount: 2,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 26,
+    shakeIntensity: 0.22,
+  }),
 
-  dreno_de_vida: {
-    id: 'dreno_de_vida',
-    type: 'void_miasma',
+  // ============================================================================
+  // 2. GUERREIRO - 12 Habilidades
+  // ============================================================================
+  golpe_poderoso: defVFX('golpe_poderoso', 'blade_tempest', {
+    durationMs: 460,
+    casterMotion: 'lunge',
+    primaryColor: 0x3b82f6,
+    secondaryColor: 0x93c5fd,
+    slashStyle: 'single',
+    particleType: 'dust',
+    shakeIntensity: 0.09,
+  }),
+  golpe_demolidor: defVFX('golpe_demolidor', 'heavy_slam', {
+    durationMs: 560,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xf59e0b,
+    secondaryColor: 0x78716c,
+    crater: true,
+    particleType: 'dust',
+    burstCount: 24,
+    shakeIntensity: 0.2,
+  }),
+  postura_defensiva: defVFX('postura_defensiva', 'shield_bastion', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x3b82f6,
+    secondaryColor: 0x93c5fd,
+    particleType: 'sparks',
+  }),
+  impacto_blindado: defVFX('impacto_blindado', 'heavy_slam', {
+    durationMs: 520,
+    casterMotion: 'lunge',
+    primaryColor: 0x60a5fa,
+    secondaryColor: 0xe2e8f0,
+    particleType: 'sparks',
+    shakeIntensity: 0.16,
+  }),
+  escudo_inquebrantavel: defVFX('escudo_inquebrantavel', 'shield_bastion', {
+    durationMs: 620,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x2563eb,
+    secondaryColor: 0xfacc15,
+    particleType: 'stars',
+  }),
+  corte_circular: defVFX('corte_circular', 'blade_tempest', {
+    durationMs: 580,
+    casterMotion: 'whirlwind',
+    primaryColor: 0x3b82f6,
+    secondaryColor: 0xffffff,
+    slashStyle: 'spin',
+    slashCount: 2,
+    particleType: 'dust',
+    shakeIntensity: 0.15,
+  }),
+  investida_pesada: defVFX('investida_pesada', 'heavy_slam', {
+    durationMs: 540,
+    casterMotion: 'dash_through',
+    primaryColor: 0xf97316,
+    secondaryColor: 0xfef08a,
+    crater: true,
+    particleType: 'dust',
+    shakeIntensity: 0.18,
+  }),
+  grito_de_guerra: defVFX('grito_de_guerra', 'sonic_symphony', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xef4444,
+    secondaryColor: 0xf59e0b,
+    particleType: 'sparks',
+    shakeIntensity: 0.14,
+  }),
+  escudo_de_espinhos: defVFX('escudo_de_espinhos', 'shield_bastion', {
+    durationMs: 620,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xf97316,
+    secondaryColor: 0xdc2626,
+    particleType: 'sparks',
+  }),
+  resistencia_suprema: defVFX('resistencia_suprema', 'holy_pillar', {
+    durationMs: 740,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x3b82f6,
+    secondaryColor: 0xfacc15,
+    pillarHeight: 5.5,
+    pillarRadius: 1.0,
+    particleType: 'stars',
+    shakeIntensity: 0.16,
+  }),
+  colapso_sismico: defVFX('colapso_sismico', 'heavy_slam', {
     durationMs: 680,
-    cast: { durationMs: 120, color: 0x7c3aed },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0x8b5cf6,
-      particleBurstCount: 18,
-      particleType: 'shadow',
-    },
-    hitReactionDelayMs: 220,
-  },
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0xd97706,
+    secondaryColor: 0xfef08a,
+    crater: true,
+    particleType: 'dust',
+    burstCount: 30,
+    shakeIntensity: 0.25,
+  }),
+  fortaleza_inquebravel: defVFX('fortaleza_inquebravel', 'shield_bastion', {
+    durationMs: 720,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0x38bdf8,
+    castColor: 0xfacc15,
+    castRing: 1.5,
+    particleType: 'stars',
+  }),
+
+  // ============================================================================
+  // 3. ARQUEIRO - 12 Habilidades
+  // ============================================================================
+  flecha_perfurante: defVFX('flecha_perfurante', 'sniper_shot', {
+    durationMs: 440,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x43c878,
+    secondaryColor: 0xa7f3d0,
+    particleType: 'sparks',
+    shakeIntensity: 0.08,
+  }),
+  disparo_triplo: defVFX('disparo_triplo', 'arrow_volley', {
+    durationMs: 520,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x43c878,
+    secondaryColor: 0xfef08a,
+    projectiles: [
+      { delayMs: 0, fromSky: false },
+      { delayMs: 45, fromSky: false },
+      { delayMs: 90, fromSky: false },
+    ],
+    particleType: 'sparks',
+    shakeIntensity: 0.11,
+  }),
+  tiro_de_precisao: defVFX('tiro_de_precisao', 'sniper_shot', {
+    durationMs: 480,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x22c55e,
+    secondaryColor: 0xffffff,
+    particleType: 'sparks',
+    shakeIntensity: 0.12,
+  }),
+  recuo_tatico: defVFX('recuo_tatico', 'sniper_shot', {
+    durationMs: 460,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0x43c878,
+    particleType: 'dust',
+  }),
+  flecha_venenosa: defVFX('flecha_venenosa', 'generic_magic', {
+    durationMs: 520,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x84cc16,
+    secondaryColor: 0x15803d,
+    particleType: 'shadow',
+  }),
+  chuva_de_flechas: defVFX('chuva_de_flechas', 'arrow_volley', {
+    durationMs: 660,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xf97316,
+    secondaryColor: 0xfacc15,
+    projectiles: [{ delayMs: 0, fromSky: true }],
+    crater: true,
+    particleType: 'fire',
+    burstCount: 24,
+    shakeIntensity: 0.16,
+  }),
+  tiro_paralisante: defVFX('tiro_paralisante', 'chain_hook', {
+    durationMs: 540,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0x43c878,
+    particleType: 'sparks',
+  }),
+  armadilha_de_caca: defVFX('armadilha_de_caca', 'sniper_shot', {
+    durationMs: 540,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xd97706,
+    secondaryColor: 0xfef08a,
+    particleType: 'dust',
+    shakeIntensity: 0.15,
+  }),
+  olho_de_aguia: defVFX('olho_de_aguia', 'holy_pillar', {
+    durationMs: 540,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x43c878,
+    secondaryColor: 0xfef08a,
+    pillarHeight: 3.8,
+    pillarRadius: 0.6,
+    particleType: 'stars',
+  }),
+  tiro_mortal: defVFX('tiro_mortal', 'sniper_shot', {
+    durationMs: 650,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x10b981,
+    secondaryColor: 0xfacc15,
+    castColor: 0x10b981,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 28,
+    shakeIntensity: 0.22,
+  }),
+  disparo_ciclone: defVFX('disparo_ciclone', 'dimensional_wave', {
+    durationMs: 560,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x2dd4bf,
+    secondaryColor: 0xa7f3d0,
+    particleType: 'sparks',
+    shakeIntensity: 0.14,
+  }),
+  chuva_estelar_flechas: defVFX('chuva_estelar_flechas', 'arrow_volley', {
+    durationMs: 780,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xfef08a,
+    castColor: 0x38bdf8,
+    castRing: 1.4,
+    projectiles: [{ delayMs: 0, fromSky: true }],
+    particleType: 'stars',
+    burstCount: 30,
+    shakeIntensity: 0.2,
+  }),
+
+  // ============================================================================
+  // 4. MAGO DE FOGO (mago) - 12 Habilidades
+  // ============================================================================
+  bola_de_fogo: defVFX('bola_de_fogo', 'meteor_shower', {
+    durationMs: 600,
+    primaryColor: 0xff4500,
+    secondaryColor: 0xfacc15,
+    castColor: 0xff5500,
+    projectiles: [{ delayMs: 0, fromSky: false, arcHeight: 0.85, size: 0.22, color: 0xff4500 }],
+    particleType: 'fire',
+    shakeIntensity: 0.12,
+  }),
+  lanca_chamas: defVFX('lanca_chamas', 'flamethrower', {
+    durationMs: 700,
+    primaryColor: 0xff4500,
+    secondaryColor: 0xfbbf24,
+    castColor: 0xf97316,
+    particleType: 'fire',
+    shakeIntensity: 0.1,
+  }),
+  armadura_de_magma: defVFX('armadura_de_magma', 'shield_bastion', {
+    durationMs: 620,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xea580c,
+    secondaryColor: 0xfacc15,
+    particleType: 'fire',
+  }),
+  chuva_de_meteoros: defVFX('chuva_de_meteoros', 'meteor_shower', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xff4500,
+    secondaryColor: 0xfacc15,
+    castColor: 0xff3b00,
+    castRing: 1.4,
+    projectiles: [
+      { delayMs: 0, fromSky: true, skyHeight: 6.8, targetOffset: { x: -0.28, z: 0.2 }, size: 0.26, color: 0xff4500 },
+      { delayMs: 130, fromSky: true, skyHeight: 7.2, targetOffset: { x: 0.32, z: -0.22 }, size: 0.24, color: 0xff5500 },
+      { delayMs: 260, fromSky: true, skyHeight: 6.6, targetOffset: { x: 0.05, z: 0.1 }, size: 0.32, color: 0xff2200 },
+    ],
+    crater: true,
+    particleType: 'fire',
+    burstCount: 28,
+    shakeIntensity: 0.24,
+  }),
+  combustao_espontanea: defVFX('combustao_espontanea', 'combustion', {
+    durationMs: 580,
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xfbbf24,
+    castColor: 0xdc2626,
+    particleType: 'fire',
+    burstCount: 24,
+    shakeIntensity: 0.16,
+  }),
+  escudo_flamejante: defVFX('escudo_flamejante', 'shield_bastion', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xff5722,
+    secondaryColor: 0xfef08a,
+    particleType: 'fire',
+  }),
+  labareda_infernal: defVFX('labareda_infernal', 'fire_pillar', {
+    durationMs: 650,
+    primaryColor: 0xff3b00,
+    secondaryColor: 0xfef08a,
+    castColor: 0xff7700,
+    pillarHeight: 4.8,
+    pillarRadius: 0.9,
+    particleType: 'fire',
+    shakeIntensity: 0.14,
+  }),
+  passo_de_cinzas: defVFX('passo_de_cinzas', 'fire_pillar', {
+    durationMs: 660,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xea580c,
+    secondaryColor: 0x78716c,
+    pillarHeight: 5.2,
+    pillarRadius: 1.05,
+    crater: true,
+    particleType: 'fire',
+    shakeIntensity: 0.18,
+  }),
+  furia_ignea: defVFX('furia_ignea', 'fire_pillar', {
+    durationMs: 580,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xff4500,
+    secondaryColor: 0xfacc15,
+    pillarHeight: 3.6,
+    pillarRadius: 0.65,
+    particleType: 'fire',
+  }),
+  cataclismo_infernal: defVFX('cataclismo_infernal', 'meteor_shower', {
+    durationMs: 920,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xfef08a,
+    castColor: 0xdc2626,
+    castRing: 1.6,
+    projectiles: [
+      { delayMs: 0, fromSky: true, skyHeight: 7.2, targetOffset: { x: -0.35, z: -0.25 }, size: 0.3, color: 0xdc2626 },
+      { delayMs: 110, fromSky: true, skyHeight: 7.5, targetOffset: { x: 0.35, z: 0.25 }, size: 0.3, color: 0xff4500 },
+      { delayMs: 220, fromSky: true, skyHeight: 7.0, targetOffset: { x: -0.2, z: 0.35 }, size: 0.28, color: 0xea580c },
+      { delayMs: 330, fromSky: true, skyHeight: 7.8, targetOffset: { x: 0, z: 0 }, size: 0.42, color: 0xef4444 },
+    ],
+    crater: true,
+    particleType: 'fire',
+    burstCount: 34,
+    shakeIntensity: 0.28,
+  }),
+  supernova_incandescente: defVFX('supernova_incandescente', 'combustion', {
+    durationMs: 780,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xf97316,
+    secondaryColor: 0xffffff,
+    castColor: 0xfacc15,
+    castRing: 1.6,
+    crater: true,
+    particleType: 'fire',
+    burstCount: 32,
+    shakeIntensity: 0.26,
+  }),
+  selo_fenix_ancestral: defVFX('selo_fenix_ancestral', 'fire_pillar', {
+    durationMs: 740,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xff4500,
+    castColor: 0xfacc15,
+    pillarHeight: 6.0,
+    pillarRadius: 0.95,
+    particleType: 'fire',
+    shakeIntensity: 0.2,
+  }),
+
+  // ============================================================================
+  // 5. CURANDEIRO - 12 Habilidades
+  // ============================================================================
+  cura: defVFX('cura', 'holy_pillar', {
+    durationMs: 620,
+    primaryColor: 0x56e59a,
+    secondaryColor: 0xfef08a,
+    castColor: 0x56e59a,
+    pillarHeight: 4.5,
+    pillarRadius: 0.65,
+    particleType: 'stars',
+  }),
+  cura_em_area: defVFX('cura_em_area', 'holy_pillar', {
+    durationMs: 680,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x10b981,
+    secondaryColor: 0xfef08a,
+    castColor: 0x10b981,
+    castRing: 1.3,
+    pillarHeight: 5.0,
+    pillarRadius: 1.2,
+    particleType: 'stars',
+  }),
+  escudo_sagrado: defVFX('escudo_sagrado', 'shield_bastion', {
+    durationMs: 620,
+    primaryColor: 0xfef08a,
+    secondaryColor: 0x56e59a,
+    castColor: 0xfacc15,
+    particleType: 'stars',
+  }),
+  purificacao: defVFX('purificacao', 'holy_pillar', {
+    durationMs: 580,
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xffffff,
+    pillarHeight: 4.2,
+    pillarRadius: 0.7,
+    particleType: 'stars',
+  }),
+  luz_restauradora: defVFX('luz_restauradora', 'holy_pillar', {
+    durationMs: 620,
+    primaryColor: 0xa7f3d0,
+    secondaryColor: 0xfacc15,
+    pillarHeight: 4.6,
+    pillarRadius: 0.7,
+    particleType: 'stars',
+  }),
+  martelo_sagrado: defVFX('martelo_sagrado', 'heavy_slam', {
+    durationMs: 640,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xfef08a,
+    castColor: 0xfacc15,
+    crater: true,
+    particleType: 'stars',
+    burstCount: 26,
+    shakeIntensity: 0.2,
+  }),
+  bencao_divina: defVFX('bencao_divina', 'holy_pillar', {
+    durationMs: 640,
+    primaryColor: 0xfde047,
+    secondaryColor: 0xffffff,
+    pillarHeight: 5.0,
+    pillarRadius: 0.8,
+    particleType: 'stars',
+  }),
+  aura_de_protecao: defVFX('aura_de_protecao', 'shield_bastion', {
+    durationMs: 680,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x56e59a,
+    secondaryColor: 0xfef08a,
+    castColor: 0x56e59a,
+    castRing: 1.4,
+    particleType: 'stars',
+  }),
+  paz_espiritual: defVFX('paz_espiritual', 'sonic_symphony', {
+    durationMs: 620,
+    primaryColor: 0x6ee7b7,
+    secondaryColor: 0xffffff,
+    particleType: 'stars',
+  }),
+  ressurreicao_mistica: defVFX('ressurreicao_mistica', 'holy_pillar', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0x56e59a,
+    castColor: 0xfacc15,
+    castRing: 1.6,
+    pillarHeight: 6.5,
+    pillarRadius: 1.35,
+    particleType: 'stars',
+    burstCount: 32,
+  }),
+  santuario_celestial: defVFX('santuario_celestial', 'shield_bastion', {
+    durationMs: 780,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfef08a,
+    secondaryColor: 0x38bdf8,
+    castColor: 0xfacc15,
+    castRing: 1.6,
+    particleType: 'stars',
+  }),
+  colera_dos_arcanjos: defVFX('colera_dos_arcanjos', 'fire_pillar', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xffffff,
+    castColor: 0xfef08a,
+    castRing: 1.6,
+    pillarHeight: 6.5,
+    pillarRadius: 1.4,
+    crater: true,
+    particleType: 'stars',
+    burstCount: 32,
+    shakeIntensity: 0.24,
+  }),
+
+  // ============================================================================
+  // 6. ASSASSINO - 12 Habilidades
+  // ============================================================================
+  golpe_sombrio: defVFX('golpe_sombrio', 'blade_tempest', {
+    durationMs: 440,
+    casterMotion: 'lunge',
+    primaryColor: 0xe65353,
+    secondaryColor: 0x18181b,
+    slashStyle: 'single',
+    particleType: 'shadow',
+  }),
+  passo_das_sombras: defVFX('passo_das_sombras', 'blade_tempest', {
+    durationMs: 520,
+    casterMotion: 'blink_strike',
+    primaryColor: 0x7c3aed,
+    secondaryColor: 0xef4444,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    particleType: 'shadow',
+    shakeIntensity: 0.12,
+  }),
+  veneno_mortal: defVFX('veneno_mortal', 'blade_tempest', {
+    durationMs: 480,
+    casterMotion: 'lunge',
+    primaryColor: 0x22c55e,
+    secondaryColor: 0xa3e635,
+    slashStyle: 'single',
+    particleType: 'shadow',
+  }),
+  execucao: defVFX('execucao', 'blade_tempest', {
+    durationMs: 560,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x000000,
+    slashStyle: 'guillotine',
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.2,
+  }),
+  laminas_duplas: defVFX('laminas_duplas', 'blade_tempest', {
+    durationMs: 500,
+    casterMotion: 'dash_through',
+    primaryColor: 0xef4444,
+    secondaryColor: 0xfef08a,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    particleType: 'shadow',
+    shakeIntensity: 0.12,
+  }),
+  mortalha_das_sombras: defVFX('mortalha_das_sombras', 'void_miasma', {
+    durationMs: 520,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x18181b,
+    secondaryColor: 0x7c3aed,
+    particleType: 'shadow',
+    shockwave: false,
+  }),
+  corte_traicoeiro: defVFX('corte_traicoeiro', 'blade_tempest', {
+    durationMs: 500,
+    casterMotion: 'blink_strike',
+    primaryColor: 0xb91c1c,
+    secondaryColor: 0xfca5a5,
+    slashStyle: 'single',
+    particleType: 'shadow',
+    shakeIntensity: 0.14,
+  }),
+  danca_das_laminas: defVFX('danca_das_laminas', 'blade_tempest', {
+    durationMs: 600,
+    casterMotion: 'whirlwind',
+    primaryColor: 0xe11d48,
+    secondaryColor: 0xc084fc,
+    slashStyle: 'flurry',
+    slashCount: 5,
+    particleType: 'shadow',
+    shakeIntensity: 0.15,
+  }),
+  agilidade_sombria: defVFX('agilidade_sombria', 'sonic_symphony', {
+    durationMs: 500,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xef4444,
+    secondaryColor: 0x7c3aed,
+    particleType: 'shadow',
+  }),
+  assassinato: defVFX('assassinato', 'blade_tempest', {
+    durationMs: 720,
+    casterMotion: 'blink_strike',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xffffff,
+    slashStyle: 'flurry',
+    slashCount: 7,
+    castColor: 0x991b1b,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 30,
+    shakeIntensity: 0.24,
+  }),
+  vortice_sombrio: defVFX('vortice_sombrio', 'blade_tempest', {
+    durationMs: 600,
+    casterMotion: 'whirlwind',
+    primaryColor: 0x6d28d9,
+    secondaryColor: 0xef4444,
+    slashStyle: 'spin',
+    slashCount: 3,
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  lotus_noite_eterna: defVFX('lotus_noite_eterna', 'crimson_horizon', {
+    durationMs: 850,
+    casterMotion: 'dash_through',
+    primaryColor: 0xe11d48,
+    secondaryColor: 0x4c1d95,
+    aoeShape: 'cross',
+    castColor: 0xe11d48,
+    particleType: 'shadow',
+    burstCount: 28,
+    shakeIntensity: 0.22,
+  }),
+
+  // ============================================================================
+  // 7. CAVALEIRO ARCANO - 12 Habilidades
+  // ============================================================================
+  lamina_runica: defVFX('lamina_runica', 'dimensional_wave', {
+    durationMs: 500,
+    casterMotion: 'lunge',
+    primaryColor: 0x00bcd4,
+    secondaryColor: 0xa5f3fc,
+    particleType: 'sparks',
+    shakeIntensity: 0.1,
+  }),
+  barreira_arcana: defVFX('barreira_arcana', 'shield_bastion', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x06b6d4,
+    secondaryColor: 0xc084fc,
+    particleType: 'sparks',
+  }),
+  ruptura_mistica: defVFX('ruptura_mistica', 'blade_tempest', {
+    durationMs: 540,
+    casterMotion: 'lunge',
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0x8b5cf6,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    particleType: 'sparks',
+    shakeIntensity: 0.14,
+  }),
+  marca_do_cacador: defVFX('marca_do_cacador', 'lightning_storm', {
+    durationMs: 520,
+    primaryColor: 0xc084fc,
+    secondaryColor: 0x00e5ff,
+    castColor: 0x8b5cf6,
+    particleType: 'sparks',
+  }),
+  golpe_flamejante: defVFX('golpe_flamejante', 'dimensional_wave', {
+    durationMs: 560,
+    casterMotion: 'lunge',
+    primaryColor: 0xff5722,
+    secondaryColor: 0x00e5ff,
+    aoeShape: 'cleave',
+    particleType: 'fire',
+    shakeIntensity: 0.15,
+  }),
+  estocada_eletrica: defVFX('estocada_eletrica', 'lightning_storm', {
+    durationMs: 500,
+    casterMotion: 'dash_through',
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0xfacc15,
+    particleType: 'sparks',
+    shakeIntensity: 0.15,
+  }),
+  aura_runica: defVFX('aura_runica', 'holy_pillar', {
+    durationMs: 580,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x06b6d4,
+    secondaryColor: 0x8b5cf6,
+    pillarHeight: 4.2,
+    pillarRadius: 0.75,
+    particleType: 'sparks',
+  }),
+  sedenta_de_runas: defVFX('sedenta_de_runas', 'void_miasma', {
+    durationMs: 620,
+    casterMotion: 'lunge',
+    primaryColor: 0x06b6d4,
+    secondaryColor: 0xa855f7,
+    particleType: 'sparks',
+  }),
+  armadura_runica: defVFX('armadura_runica', 'shield_bastion', {
+    durationMs: 620,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x0284c7,
+    secondaryColor: 0x67e8f9,
+    particleType: 'sparks',
+  }),
+  lamina_do_destino: defVFX('lamina_do_destino', 'blade_tempest', {
+    durationMs: 740,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0xfacc15,
+    slashStyle: 'guillotine',
+    slashCount: 3,
+    castColor: 0x00e5ff,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 30,
+    shakeIntensity: 0.24,
+  }),
+  impacto_fenda_mistica: defVFX('impacto_fenda_mistica', 'heavy_slam', {
+    durationMs: 600,
+    casterMotion: 'leap_slam',
+    primaryColor: 0x8b5cf6,
+    secondaryColor: 0x06b6d4,
+    crater: true,
+    particleType: 'sparks',
+    shakeIntensity: 0.18,
+  }),
+  julgamento_runico_supremo: defVFX('julgamento_runico_supremo', 'fire_pillar', {
+    durationMs: 780,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0xc084fc,
+    castColor: 0x00e5ff,
+    castRing: 1.5,
+    pillarHeight: 6.0,
+    pillarRadius: 1.2,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 28,
+    shakeIntensity: 0.22,
+  }),
+
+  // ============================================================================
+  // 8. NECROMANTE - 8 Habilidades
+  // ============================================================================
+  dreno_de_vida: defVFX('dreno_de_vida', 'void_miasma', {
+    durationMs: 660,
+    primaryColor: 0x9333ea,
+    secondaryColor: 0x10b981,
+    castColor: 0x7c3aed,
+    particleType: 'shadow',
+  }),
+  maldicao_fraqueza: defVFX('maldicao_fraqueza', 'chain_hook', {
+    durationMs: 580,
+    primaryColor: 0x6b21a8,
+    secondaryColor: 0x84cc16,
+    castColor: 0x6b21a8,
+    particleType: 'shadow',
+  }),
+  toque_apodrecedor: defVFX('toque_apodrecedor', 'combustion', {
+    durationMs: 580,
+    primaryColor: 0x16a34a,
+    secondaryColor: 0x581c87,
+    castColor: 0x15803d,
+    particleType: 'shadow',
+  }),
+  explosao_corpse: defVFX('explosao_corpse', 'void_miasma', {
+    durationMs: 700,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x10b981,
+    secondaryColor: 0x9333ea,
+    castColor: 0x10b981,
+    castRing: 1.3,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 26,
+    shakeIntensity: 0.18,
+  }),
+  pacto_de_sangue: defVFX('pacto_de_sangue', 'combustion', {
+    durationMs: 600,
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x7c3aed,
+    castColor: 0xdc2626,
+    particleType: 'shadow',
+    shakeIntensity: 0.15,
+  }),
+  profanar_solo: defVFX('profanar_solo', 'black_hole', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x581c87,
+    secondaryColor: 0x10b981,
+    castColor: 0x581c87,
+    castRing: 1.5,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 30,
+    shakeIntensity: 0.24,
+  }),
+  grito_dos_mortos: defVFX('grito_dos_mortos', 'flamethrower', {
+    durationMs: 700,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x10b981,
+    secondaryColor: 0x9333ea,
+    castColor: 0x10b981,
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  colapso_trevas_profanas: defVFX('colapso_trevas_profanas', 'crimson_horizon', {
+    durationMs: 900,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x7e22ce,
+    secondaryColor: 0x10b981,
+    castColor: 0x581c87,
+    castRing: 1.6,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 32,
+    shakeIntensity: 0.25,
+  }),
+
+  // ============================================================================
+  // 9. DRUIDA - 8 Habilidades
+  // ============================================================================
+  raizes_vinculantes: defVFX('raizes_vinculantes', 'chain_hook', {
+    durationMs: 600,
+    primaryColor: 0x10b981,
+    secondaryColor: 0x854d0e,
+    castColor: 0x10b981,
+    particleType: 'dust',
+  }),
+  campo_de_espinhos: defVFX('campo_de_espinhos', 'ice_spikes', {
+    durationMs: 650,
+    primaryColor: 0x15803d,
+    secondaryColor: 0x84cc16,
+    castColor: 0x16a34a,
+    particleType: 'dust',
+    shakeIntensity: 0.14,
+  }),
+  casca_de_ferro: defVFX('casca_de_ferro', 'shield_bastion', {
+    durationMs: 600,
+    primaryColor: 0x854d0e,
+    secondaryColor: 0x22c55e,
+    castColor: 0x16a34a,
+    particleType: 'stars',
+  }),
+  seiva_vital: defVFX('seiva_vital', 'holy_pillar', {
+    durationMs: 620,
+    primaryColor: 0x22c55e,
+    secondaryColor: 0xa3e635,
+    pillarHeight: 4.4,
+    pillarRadius: 0.65,
+    particleType: 'stars',
+  }),
+  bencao_da_alcateia: defVFX('bencao_da_alcateia', 'sonic_symphony', {
+    durationMs: 650,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x10b981,
+    secondaryColor: 0xfacc15,
+    castColor: 0x10b981,
+    castRing: 1.3,
+    particleType: 'stars',
+  }),
+  florescimento_ancestral: defVFX('florescimento_ancestral', 'holy_pillar', {
+    durationMs: 800,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x10b981,
+    secondaryColor: 0xfde047,
+    castColor: 0x22c55e,
+    castRing: 1.6,
+    pillarHeight: 6.2,
+    pillarRadius: 1.35,
+    particleType: 'stars',
+    burstCount: 30,
+  }),
+  ira_de_gaia: defVFX('ira_de_gaia', 'heavy_slam', {
+    durationMs: 660,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x16a34a,
+    secondaryColor: 0x854d0e,
+    castColor: 0x16a34a,
+    crater: true,
+    particleType: 'dust',
+    burstCount: 26,
+    shakeIntensity: 0.22,
+  }),
+  santuario_feras_ancestrais: defVFX('santuario_feras_ancestrais', 'frost_nova', {
+    durationMs: 750,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x22c55e,
+    secondaryColor: 0xfef08a,
+    castColor: 0x10b981,
+    castRing: 1.6,
+    particleType: 'stars',
+  }),
+
+  // ============================================================================
+  // 10. MAGO RÚNICO - 8 Habilidades
+  // ============================================================================
+  runa_de_choque: defVFX('runa_de_choque', 'sniper_shot', {
+    durationMs: 480,
+    primaryColor: 0x4169e1,
+    secondaryColor: 0x00f0ff,
+    castColor: 0x4169e1,
+    particleType: 'sparks',
+    shakeIntensity: 0.1,
+  }),
+  marca_do_destino: defVFX('marca_do_destino', 'combustion', {
+    durationMs: 560,
+    primaryColor: 0x6366f1,
+    secondaryColor: 0x38bdf8,
+    castColor: 0x6366f1,
+    particleType: 'sparks',
+  }),
+  glifo_incandescente: defVFX('glifo_incandescente', 'dimensional_wave', {
+    durationMs: 600,
+    primaryColor: 0x3b82f6,
+    secondaryColor: 0x67e8f9,
+    aoeShape: 'line',
+    castColor: 0x3b82f6,
+    particleType: 'sparks',
+    shakeIntensity: 0.16,
+  }),
+  runa_de_protecao: defVFX('runa_de_protecao', 'frost_nova', {
+    durationMs: 620,
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0x818cf8,
+    castColor: 0x38bdf8,
+    particleType: 'sparks',
+    shakeIntensity: 0.14,
+  }),
+  campo_runico: defVFX('campo_runico', 'fire_pillar', {
+    durationMs: 680,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x4f46e5,
+    secondaryColor: 0x00f0ff,
+    castColor: 0x4f46e5,
+    pillarHeight: 5.0,
+    pillarRadius: 1.1,
+    particleType: 'sparks',
+    shakeIntensity: 0.18,
+  }),
+  apocalipse_runico: defVFX('apocalipse_runico', 'meteor_shower', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x4f46e5,
+    secondaryColor: 0x00f0ff,
+    castColor: 0x4f46e5,
+    castRing: 1.5,
+    projectiles: [
+      { delayMs: 0, fromSky: true, skyHeight: 7.5, size: 0.4, color: 0x38bdf8, innerColor: 0x312e81 },
+    ],
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 32,
+    shakeIntensity: 0.26,
+  }),
+  runa_supercondutividade: defVFX('runa_supercondutividade', 'lightning_storm', {
+    durationMs: 580,
+    primaryColor: 0x60a5fa,
+    secondaryColor: 0xc084fc,
+    castColor: 0x3b82f6,
+    particleType: 'sparks',
+    shakeIntensity: 0.16,
+  }),
+  convergencia_runica_estelar: defVFX('convergencia_runica_estelar', 'black_hole', {
+    durationMs: 840,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0x818cf8,
+    castColor: 0x38bdf8,
+    castRing: 1.6,
+    crater: true,
+    particleType: 'stars',
+    burstCount: 30,
+    shakeIntensity: 0.24,
+  }),
+
+  // ============================================================================
+  // 11. BERSERKER - 8 Habilidades
+  // ============================================================================
+  golpe_selvagem: defVFX('golpe_selvagem', 'blade_tempest', {
+    durationMs: 460,
+    casterMotion: 'lunge',
+    primaryColor: 0x991b1b,
+    secondaryColor: 0xef4444,
+    slashStyle: 'single',
+    particleType: 'shadow',
+    shakeIntensity: 0.12,
+  }),
+  corte_temerario: defVFX('corte_temerario', 'blade_tempest', {
+    durationMs: 520,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xfca5a5,
+    slashStyle: 'guillotine',
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  salto_destrutivo: defVFX('salto_destrutivo', 'void_miasma', {
+    durationMs: 580,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x7f1d1d,
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.18,
+  }),
+  frenesi_sanguinario: defVFX('frenesi_sanguinario', 'blade_tempest', {
+    durationMs: 580,
+    casterMotion: 'dash_through',
+    primaryColor: 0xef4444,
+    secondaryColor: 0xfacc15,
+    slashStyle: 'flurry',
+    slashCount: 4,
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  rugido_intimidante: defVFX('rugido_intimidante', 'sonic_symphony', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x000000,
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  ira_incontrolavel: defVFX('ira_incontrolavel', 'heavy_slam', {
+    durationMs: 760,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xf97316,
+    castColor: 0xdc2626,
+    crater: true,
+    particleType: 'fire',
+    burstCount: 34,
+    shakeIntensity: 0.28,
+  }),
+  execucao_implacavel: defVFX('execucao_implacavel', 'blade_tempest', {
+    durationMs: 620,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xb91c1c,
+    secondaryColor: 0xffffff,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.22,
+  }),
+  frenesi_sangue_sagrado: defVFX('frenesi_sangue_sagrado', 'blade_tempest', {
+    durationMs: 700,
+    casterMotion: 'whirlwind',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xfacc15,
+    slashStyle: 'spin',
+    slashCount: 3,
+    crater: true,
+    particleType: 'fire',
+    shakeIntensity: 0.22,
+  }),
+
+  // ============================================================================
+  // 12. PALADINO - 8 Habilidades
+  // ============================================================================
+  golpe_sagrado: defVFX('golpe_sagrado', 'blade_tempest', {
+    durationMs: 480,
+    casterMotion: 'lunge',
+    primaryColor: 0xf59e0b,
+    secondaryColor: 0xfef08a,
+    slashStyle: 'single',
+    particleType: 'stars',
+    shakeIntensity: 0.1,
+  }),
+  escudo_da_fe: defVFX('escudo_da_fe', 'shield_bastion', {
+    durationMs: 620,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xffffff,
+    castColor: 0xfacc15,
+    particleType: 'stars',
+  }),
+  aura_de_retribuicao: defVFX('aura_de_retribuicao', 'sonic_symphony', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xf59e0b,
+    secondaryColor: 0xfef08a,
+    particleType: 'stars',
+  }),
+  consagracao: defVFX('consagracao', 'holy_pillar', {
+    durationMs: 680,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xf97316,
+    castColor: 0xfacc15,
+    castRing: 1.4,
+    pillarHeight: 4.5,
+    pillarRadius: 1.15,
+    particleType: 'stars',
+    shakeIntensity: 0.14,
+  }),
+  julgamento_divino: defVFX('julgamento_divino', 'fire_pillar', {
+    durationMs: 640,
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xffffff,
+    castColor: 0xfacc15,
+    pillarHeight: 5.5,
+    pillarRadius: 0.8,
+    crater: true,
+    particleType: 'stars',
+    shakeIntensity: 0.18,
+  }),
+  imposicao_da_justica: defVFX('imposicao_da_justica', 'heavy_slam', {
+    durationMs: 740,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xffffff,
+    castColor: 0xf59e0b,
+    crater: true,
+    particleType: 'stars',
+    burstCount: 32,
+    shakeIntensity: 0.26,
+  }),
+  impacto_dos_justos: defVFX('impacto_dos_justos', 'heavy_slam', {
+    durationMs: 580,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xf59e0b,
+    secondaryColor: 0xfef08a,
+    crater: true,
+    particleType: 'stars',
+    shakeIntensity: 0.18,
+  }),
+  bencao_ceus_inquebraveis: defVFX('bencao_ceus_inquebraveis', 'holy_pillar', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfde047,
+    secondaryColor: 0xffffff,
+    castColor: 0xfacc15,
+    castRing: 1.8,
+    pillarHeight: 6.8,
+    pillarRadius: 1.6,
+    particleType: 'stars',
+    burstCount: 34,
+  }),
+
+  // ============================================================================
+  // 13. LANCEIRO (Dragoon) - 8 Habilidades
+  // ============================================================================
+  estocada_perfurante: defVFX('estocada_perfurante', 'sniper_shot', {
+    durationMs: 440,
+    casterMotion: 'lunge',
+    primaryColor: 0x0ea5e9,
+    secondaryColor: 0xe0f2fe,
+    particleType: 'sparks',
+    shakeIntensity: 0.1,
+  }),
+  recuo_da_lanca: defVFX('recuo_da_lanca', 'blade_tempest', {
+    durationMs: 480,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xffffff,
+    slashStyle: 'single',
+    particleType: 'dust',
+  }),
+  perfuracao_abissal: defVFX('perfuracao_abissal', 'dimensional_wave', {
+    durationMs: 540,
+    casterMotion: 'dash_through',
+    primaryColor: 0x0284c7,
+    secondaryColor: 0x7dd3fc,
+    aoeShape: 'line',
+    particleType: 'sparks',
+    shakeIntensity: 0.15,
+  }),
+  varredura_com_lanca: defVFX('varredura_com_lanca', 'blade_tempest', {
+    durationMs: 540,
+    casterMotion: 'whirlwind',
+    primaryColor: 0x0ea5e9,
+    secondaryColor: 0xbae6fd,
+    slashStyle: 'spin',
+    slashCount: 2,
+    particleType: 'dust',
+    shakeIntensity: 0.14,
+  }),
+  salto_do_dragao: defVFX('salto_do_dragao', 'heavy_slam', {
+    durationMs: 680,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0x0ea5e9,
+    secondaryColor: 0x38bdf8,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 24,
+    shakeIntensity: 0.22,
+  }),
+  cometa_do_dragao: defVFX('cometa_do_dragao', 'meteor_shower', {
+    durationMs: 780,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0x1d4ed8,
+    castColor: 0x00e5ff,
+    projectiles: [
+      { delayMs: 120, fromSky: true, skyHeight: 7.5, size: 0.36, color: 0x00e5ff, innerColor: 0x1e3a8a },
+    ],
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 32,
+    shakeIntensity: 0.26,
+  }),
+  perfuracao_tempestade: defVFX('perfuracao_tempestade', 'blade_tempest', {
+    durationMs: 560,
+    casterMotion: 'dash_through',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xfacc15,
+    slashStyle: 'flurry',
+    slashCount: 5,
+    particleType: 'sparks',
+    shakeIntensity: 0.16,
+  }),
+  meteoro_lanca_estelar: defVFX('meteoro_lanca_estelar', 'arrow_volley', {
+    durationMs: 740,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xfef08a,
+    castColor: 0x0ea5e9,
+    projectiles: [{ delayMs: 0, fromSky: true }],
+    crater: true,
+    particleType: 'stars',
+    burstCount: 28,
+    shakeIntensity: 0.22,
+  }),
+
+  // ============================================================================
+  // 14. BARDO - 8 Habilidades
+  // ============================================================================
+  cancao_da_bravura: defVFX('cancao_da_bravura', 'sonic_symphony', {
+    durationMs: 560,
+    primaryColor: 0xec4899,
+    secondaryColor: 0xfacc15,
+    castColor: 0xec4899,
+    particleType: 'stars',
+  }),
+  balada_do_conforto: defVFX('balada_do_conforto', 'sonic_symphony', {
+    durationMs: 580,
+    primaryColor: 0xf472b6,
+    secondaryColor: 0x38bdf8,
+    castColor: 0xf472b6,
+    particleType: 'stars',
+  }),
+  hino_da_resistencia: defVFX('hino_da_resistencia', 'sonic_symphony', {
+    durationMs: 650,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xec4899,
+    castColor: 0xfacc15,
+    castRing: 1.3,
+    particleType: 'stars',
+  }),
+  acorde_dissonante: defVFX('acorde_dissonante', 'sonic_symphony', {
+    durationMs: 560,
+    primaryColor: 0xa855f7,
+    secondaryColor: 0xec4899,
+    castColor: 0xa855f7,
+    particleType: 'sparks',
+    shakeIntensity: 0.12,
+  }),
+  canto_do_silencio: defVFX('canto_do_silencio', 'chain_hook', {
+    durationMs: 580,
+    primaryColor: 0xdb2777,
+    secondaryColor: 0x6366f1,
+    castColor: 0xdb2777,
+    particleType: 'shadow',
+  }),
+  sinfonia_da_vitoria: defVFX('sinfonia_da_vitoria', 'holy_pillar', {
+    durationMs: 780,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xec4899,
+    secondaryColor: 0xfacc15,
+    castColor: 0xec4899,
+    castRing: 1.5,
+    pillarHeight: 6.0,
+    pillarRadius: 1.1,
+    particleType: 'stars',
+    burstCount: 30,
+  }),
+  crescendo_heroico: defVFX('crescendo_heroico', 'sonic_symphony', {
+    durationMs: 640,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xf43f5e,
+    secondaryColor: 0xfef08a,
+    castColor: 0xf43f5e,
+    particleType: 'stars',
+  }),
+  requiem_silencio: defVFX('requiem_silencio', 'sonic_symphony', {
+    durationMs: 760,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x9333ea,
+    secondaryColor: 0xf43f5e,
+    castColor: 0x9333ea,
+    castRing: 1.6,
+    particleType: 'shadow',
+    burstCount: 28,
+    shakeIntensity: 0.2,
+  }),
+
+  // ============================================================================
+  // 15. MAGO DE GELO - 8 Habilidades
+  // ============================================================================
+  raio_congelante: defVFX('raio_congelante', 'ice_spikes', {
+    durationMs: 580,
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xbae6fd,
+    castColor: 0x38bdf8,
+    particleType: 'ice',
+    shakeIntensity: 0.12,
+  }),
+  armadura_glacial: defVFX('armadura_glacial', 'ice_spikes', {
+    durationMs: 620,
+    primaryColor: 0x0284c7,
+    secondaryColor: 0xe0f2fe,
+    castColor: 0x0284c7,
+    particleType: 'ice',
+  }),
+  estaca_de_gelo: defVFX('estaca_de_gelo', 'ice_spikes', {
+    durationMs: 640,
+    primaryColor: 0x06b6d4,
+    secondaryColor: 0x67e8f9,
+    castColor: 0x06b6d4,
+    particleType: 'ice',
+    shakeIntensity: 0.15,
+  }),
+  nevasca: defVFX('nevasca', 'frost_nova', {
+    durationMs: 680,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xe0f2fe,
+    castColor: 0x0284c7,
+    castRing: 1.4,
+    particleType: 'ice',
+    burstCount: 26,
+    shakeIntensity: 0.15,
+  }),
+  sepultura_de_gelo: defVFX('sepultura_de_gelo', 'shield_bastion', {
+    durationMs: 660,
+    primaryColor: 0x0284c7,
+    secondaryColor: 0xbae6fd,
+    castColor: 0x38bdf8,
+    particleType: 'ice',
+    shakeIntensity: 0.16,
+  }),
+  zero_absoluto: defVFX('zero_absoluto', 'frost_nova', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0xffffff,
+    castColor: 0x00e5ff,
+    castRing: 1.6,
+    crater: true,
+    particleType: 'ice',
+    burstCount: 34,
+    shakeIntensity: 0.24,
+  }),
+  cometa_glacial: defVFX('cometa_glacial', 'meteor_shower', {
+    durationMs: 740,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xe0f2fe,
+    castColor: 0x38bdf8,
+    projectiles: [
+      { delayMs: 0, fromSky: true, skyHeight: 7.0, size: 0.35, color: 0x38bdf8, innerColor: 0x0c4a6e },
+    ],
+    crater: true,
+    particleType: 'ice',
+    burstCount: 28,
+    shakeIntensity: 0.22,
+  }),
+  esfera_criogenica_perfeita: defVFX('esfera_criogenica_perfeita', 'combustion', {
+    durationMs: 680,
+    primaryColor: 0x06b6d4,
+    secondaryColor: 0xffffff,
+    castColor: 0x06b6d4,
+    particleType: 'ice',
+    burstCount: 26,
+    shakeIntensity: 0.18,
+  }),
+
+  // ============================================================================
+  // 16. SNIPER - 13 Habilidades
+  // ============================================================================
+  tiro_de_elite: defVFX('tiro_de_elite', 'sniper_shot', {
+    durationMs: 460,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xef4444,
+    particleType: 'sparks',
+    shakeIntensity: 0.12,
+  }),
+  tiro_perfurador_de_eter: defVFX('tiro_perfurador_de_eter', 'sniper_shot', {
+    durationMs: 500,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0x8b5cf6,
+    particleType: 'sparks',
+    shakeIntensity: 0.14,
+  }),
+  disparo_concussivo: defVFX('disparo_concussivo', 'sniper_shot', {
+    durationMs: 500,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xf97316,
+    secondaryColor: 0xfef08a,
+    crater: true,
+    particleType: 'dust',
+    shakeIntensity: 0.16,
+  }),
+  mina_claymore_tatica: defVFX('mina_claymore_tatica', 'cannon_barrage', {
+    durationMs: 580,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xef4444,
+    secondaryColor: 0x334155,
+    crater: true,
+    particleType: 'fire',
+    shakeIntensity: 0.18,
+  }),
+  tiro_recuo_propulsor: defVFX('tiro_recuo_propulsor', 'sniper_shot', {
+    durationMs: 480,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xf97316,
+    particleType: 'dust',
+    shakeIntensity: 0.14,
+  }),
+  marcador_laser_orbital: defVFX('marcador_laser_orbital', 'sniper_shot', {
+    durationMs: 520,
+    primaryColor: 0xef4444,
+    secondaryColor: 0xfacc15,
+    castColor: 0xef4444,
+    particleType: 'sparks',
+  }),
+  bala_perfuradora_de_blindagem: defVFX('bala_perfuradora_de_blindagem', 'sniper_shot', {
+    durationMs: 520,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xf59e0b,
+    secondaryColor: 0xffffff,
+    crater: true,
+    particleType: 'sparks',
+    shakeIntensity: 0.18,
+  }),
+  tiro_sinalizador_fosforoso: defVFX('tiro_sinalizador_fosforoso', 'cannon_barrage', {
+    durationMs: 620,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xff4500,
+    secondaryColor: 0xfef08a,
+    crater: true,
+    particleType: 'fire',
+    burstCount: 26,
+    shakeIntensity: 0.18,
+  }),
+  camuflagem_ghillie_termica: defVFX('camuflagem_ghillie_termica', 'shield_bastion', {
+    durationMs: 560,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x16a34a,
+    secondaryColor: 0x4ade80,
+    particleType: 'dust',
+  }),
+  tiro_no_ponto_vital: defVFX('tiro_no_ponto_vital', 'sniper_shot', {
+    durationMs: 560,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xffffff,
+    castColor: 0xdc2626,
+    particleType: 'shadow',
+    burstCount: 24,
+    shakeIntensity: 0.2,
+  }),
+  tiro_do_juizo_final: defVFX('tiro_do_juizo_final', 'sniper_shot', {
+    durationMs: 700,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xdc2626,
+    castColor: 0xdc2626,
+    castRing: 1.3,
+    crater: true,
+    particleType: 'fire',
+    burstCount: 32,
+    shakeIntensity: 0.26,
+  }),
+  projetil_antimateria: defVFX('projetil_antimateria', 'sniper_shot', {
+    durationMs: 600,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0x9333ea,
+    secondaryColor: 0x00f0ff,
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.22,
+  }),
+  disparo_orbital_satelite: defVFX('disparo_orbital_satelite', 'fire_pillar', {
+    durationMs: 780,
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0xffffff,
+    castColor: 0xef4444,
+    castRing: 1.5,
+    pillarHeight: 7.0,
+    pillarRadius: 1.15,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 32,
+    shakeIntensity: 0.26,
+  }),
+
+  // ============================================================================
+  // 17. MAGO ELÉTRICO - 12 Habilidades
+  // ============================================================================
+  centelha_eletrica: defVFX('centelha_eletrica', 'lightning_storm', {
+    durationMs: 460,
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0xfacc15,
+    particleType: 'sparks',
+    shakeIntensity: 0.12,
+  }),
+  raio_paralisante: defVFX('raio_paralisante', 'lightning_storm', {
+    durationMs: 500,
+    primaryColor: 0xfacc15,
+    secondaryColor: 0x00f0ff,
+    castColor: 0xfacc15,
+    particleType: 'sparks',
+    shakeIntensity: 0.14,
+  }),
+  passo_do_trovao: defVFX('passo_do_trovao', 'lightning_storm', {
+    durationMs: 480,
+    casterMotion: 'blink_strike',
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0xffffff,
+    particleType: 'sparks',
+  }),
+  relampago_em_cadeia: defVFX('relampago_em_cadeia', 'lightning_storm', {
+    durationMs: 580,
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0xfde047,
+    castColor: 0x00f0ff,
+    particleType: 'sparks',
+    burstCount: 24,
+    shakeIntensity: 0.16,
+  }),
+  estimulo_bioeletrico: defVFX('estimulo_bioeletrico', 'holy_pillar', {
+    durationMs: 580,
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0x4ade80,
+    pillarHeight: 4.2,
+    pillarRadius: 0.65,
+    particleType: 'sparks',
+  }),
+  escudo_de_plasma_estatico: defVFX('escudo_de_plasma_estatico', 'shield_bastion', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0xfacc15,
+    particleType: 'sparks',
+  }),
+  pulso_eletrostatico_repulsor: defVFX('pulso_eletrostatico_repulsor', 'frost_nova', {
+    durationMs: 560,
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0xfacc15,
+    castColor: 0x00f0ff,
+    particleType: 'sparks',
+    shakeIntensity: 0.16,
+  }),
+  tempestade_eletromagnetica: defVFX('tempestade_eletromagnetica', 'lightning_storm', {
+    durationMs: 680,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x6366f1,
+    secondaryColor: 0x00f0ff,
+    castColor: 0x00f0ff,
+    castRing: 1.3,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 26,
+    shakeIntensity: 0.2,
+  }),
+  esfera_de_plasma_pesado: defVFX('esfera_de_plasma_pesado', 'sniper_shot', {
+    durationMs: 540,
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0x3b82f6,
+    castColor: 0x00f0ff,
+    crater: true,
+    particleType: 'sparks',
+    shakeIntensity: 0.18,
+  }),
+  apocalipse_eletrico: defVFX('apocalipse_eletrico', 'lightning_storm', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0x00f0ff,
+    castColor: 0xfacc15,
+    castRing: 1.6,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 34,
+    shakeIntensity: 0.26,
+  }),
+  arco_voltaico_devastador: defVFX('arco_voltaico_devastador', 'lightning_storm', {
+    durationMs: 600,
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0xc084fc,
+    castColor: 0x00e5ff,
+    particleType: 'sparks',
+    shakeIntensity: 0.18,
+  }),
+  ira_de_thoris: defVFX('ira_de_thoris', 'fire_pillar', {
+    durationMs: 800,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x00f0ff,
+    secondaryColor: 0xfef08a,
+    castColor: 0x00f0ff,
+    castRing: 1.6,
+    pillarHeight: 6.8,
+    pillarRadius: 1.35,
+    crater: true,
+    particleType: 'sparks',
+    burstCount: 34,
+    shakeIntensity: 0.26,
+  }),
+
+  // ============================================================================
+  // 18. MAGO DE VENTO - 12 Habilidades
+  // ============================================================================
+  rajada_de_vento: defVFX('rajada_de_vento', 'dimensional_wave', {
+    durationMs: 460,
+    primaryColor: 0x2dd4bf,
+    secondaryColor: 0xccfbf1,
+    particleType: 'dust',
+    shakeIntensity: 0.1,
+  }),
+  brisa_aceleradora: defVFX('brisa_aceleradora', 'sonic_symphony', {
+    durationMs: 540,
+    primaryColor: 0x2dd4bf,
+    secondaryColor: 0x99f6e4,
+    particleType: 'stars',
+  }),
+  passo_das_nuvens: defVFX('passo_das_nuvens', 'frost_nova', {
+    durationMs: 480,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x5eead4,
+    secondaryColor: 0xffffff,
+    particleType: 'dust',
+  }),
+  vendaval_de_resgate: defVFX('vendaval_de_resgate', 'sonic_symphony', {
+    durationMs: 560,
+    primaryColor: 0x14b8a6,
+    secondaryColor: 0xe0f2fe,
+    particleType: 'stars',
+  }),
+  manto_dos_ventos: defVFX('manto_dos_ventos', 'shield_bastion', {
+    durationMs: 580,
+    primaryColor: 0x2dd4bf,
+    secondaryColor: 0xffffff,
+    particleType: 'dust',
+  }),
+  corrente_de_lancamento: defVFX('corrente_de_lancamento', 'sonic_symphony', {
+    durationMs: 560,
+    primaryColor: 0x38bdf8,
+    secondaryColor: 0x2dd4bf,
+    particleType: 'stars',
+  }),
+  lanca_aerodinamica: defVFX('lanca_aerodinamica', 'sniper_shot', {
+    durationMs: 480,
+    primaryColor: 0x2dd4bf,
+    secondaryColor: 0xffffff,
+    castColor: 0x2dd4bf,
+    particleType: 'sparks',
+    shakeIntensity: 0.14,
+  }),
+  tempestade_de_poeira: defVFX('tempestade_de_poeira', 'flamethrower', {
+    durationMs: 640,
+    primaryColor: 0xd97706,
+    secondaryColor: 0x2dd4bf,
+    castColor: 0xd97706,
+    particleType: 'dust',
+    shakeIntensity: 0.14,
+  }),
+  vortice_cortante: defVFX('vortice_cortante', 'blade_tempest', {
+    durationMs: 620,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x2dd4bf,
+    secondaryColor: 0xffffff,
+    slashStyle: 'spin',
+    slashCount: 3,
+    castColor: 0x14b8a6,
+    particleType: 'sparks',
+    shakeIntensity: 0.16,
+  }),
+  furacao_devastador: defVFX('furacao_devastador', 'fire_pillar', {
+    durationMs: 800,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x14b8a6,
+    secondaryColor: 0xccfbf1,
+    castColor: 0x2dd4bf,
+    castRing: 1.5,
+    pillarHeight: 6.2,
+    pillarRadius: 1.25,
+    crater: true,
+    particleType: 'dust',
+    burstCount: 30,
+    shakeIntensity: 0.24,
+  }),
+  vendaval_dilacerante: defVFX('vendaval_dilacerante', 'dimensional_wave', {
+    durationMs: 560,
+    primaryColor: 0x2dd4bf,
+    secondaryColor: 0x5eead4,
+    aoeShape: 'cleave',
+    particleType: 'sparks',
+    shakeIntensity: 0.16,
+  }),
+  ciclone_ancestral_primordial: defVFX('ciclone_ancestral_primordial', 'fire_pillar', {
+    durationMs: 840,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x0d9488,
+    secondaryColor: 0x99f6e4,
+    castColor: 0x2dd4bf,
+    castRing: 1.7,
+    pillarHeight: 6.8,
+    pillarRadius: 1.45,
+    crater: true,
+    particleType: 'dust',
+    burstCount: 34,
+    shakeIntensity: 0.26,
+  }),
+
+  // ============================================================================
+  // 19. BOSSES & MINI-BOSSES DA CAMPANHA (Efeitos Épicos em Escala Maior)
+  // ============================================================================
+  // Astaroth (Fase 10)
+  astaroth_cone_abissal: defVFX('astaroth_cone_abissal', 'flamethrower', {
+    durationMs: 740,
+    casterMotion: 'lunge',
+    primaryColor: 0x9333ea,
+    secondaryColor: 0xdc2626,
+    castColor: 0x7e22ce,
+    particleType: 'shadow',
+    shakeIntensity: 0.2,
+  }),
+  astaroth_cruz_apocaliptica: defVFX('astaroth_cruz_apocaliptica', 'black_hole', {
+    durationMs: 820,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x7e22ce,
+    secondaryColor: 0xef4444,
+    castColor: 0x9333ea,
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.24,
+  }),
+  astaroth_bracos_cardinais: defVFX('astaroth_bracos_cardinais', 'chain_hook', {
+    durationMs: 700,
+    primaryColor: 0x581c87,
+    secondaryColor: 0xc084fc,
+    castColor: 0x7e22ce,
+    particleType: 'shadow',
+    shakeIntensity: 0.18,
+  }),
+  astaroth_emanacao_abissal: defVFX('astaroth_emanacao_abissal', 'frost_nova', {
+    durationMs: 720,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x9333ea,
+    secondaryColor: 0xef4444,
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.22,
+  }),
+  boss_astaroth_cataclismo: defVFX('boss_astaroth_cataclismo', 'crimson_horizon', {
+    durationMs: 950,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x9333ea,
+    secondaryColor: 0xdc2626,
+    castColor: 0x9333ea,
+    castRing: 1.8,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 36,
+    shakeIntensity: 0.28,
+  }),
+
+  // Vulcanus / Titã Forjador (Fase 20)
+  vulcanus_golpe_esmagador: defVFX('vulcanus_golpe_esmagador', 'heavy_slam', {
+    durationMs: 650,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xea580c,
+    secondaryColor: 0xfacc15,
+    crater: true,
+    particleType: 'fire',
+    shakeIntensity: 0.24,
+  }),
+  vulcanus_baforada_fogo: defVFX('vulcanus_baforada_fogo', 'flamethrower', {
+    durationMs: 760,
+    primaryColor: 0xff4500,
+    secondaryColor: 0xfef08a,
+    castColor: 0xea580c,
+    particleType: 'fire',
+    shakeIntensity: 0.2,
+  }),
+  vulcanus_bigorna_forja: defVFX('vulcanus_bigorna_forja', 'shield_bastion', {
+    durationMs: 660,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xea580c,
+    secondaryColor: 0xfacc15,
+    particleType: 'fire',
+  }),
+  vulcanus_fissura_cruz: defVFX('vulcanus_fissura_cruz', 'fire_pillar', {
+    durationMs: 740,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xff3b00,
+    secondaryColor: 0xfacc15,
+    pillarHeight: 5.5,
+    pillarRadius: 1.2,
+    crater: true,
+    particleType: 'fire',
+    shakeIntensity: 0.24,
+  }),
+  vulcanus_investida_titanica: defVFX('vulcanus_investida_titanica', 'heavy_slam', {
+    durationMs: 640,
+    casterMotion: 'dash_through',
+    primaryColor: 0xf97316,
+    secondaryColor: 0x78716c,
+    crater: true,
+    particleType: 'fire',
+    shakeIntensity: 0.22,
+  }),
+  boss_vulcanus_terremoto: defVFX('boss_vulcanus_terremoto', 'heavy_slam', {
+    durationMs: 900,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0xff4500,
+    secondaryColor: 0xfacc15,
+    castColor: 0xea580c,
+    castRing: 1.8,
+    crater: true,
+    particleType: 'fire',
+    burstCount: 38,
+    shakeIntensity: 0.3,
+  }),
+
+  // Quimera (Mini-Boss)
+  quimera_rugido_amedrontador: defVFX('quimera_rugido_amedrontador', 'sonic_symphony', {
+    durationMs: 640,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xef4444,
+    secondaryColor: 0xfacc15,
+    particleType: 'dust',
+    shakeIntensity: 0.18,
+  }),
+  quimera_mordida_serpente: defVFX('quimera_mordida_serpente', 'blade_tempest', {
+    durationMs: 520,
+    casterMotion: 'lunge',
+    primaryColor: 0x22c55e,
+    secondaryColor: 0xa3e635,
+    slashStyle: 'cross_x',
+    particleType: 'shadow',
+  }),
+  quimera_escudo_cabra: defVFX('quimera_escudo_cabra', 'shield_bastion', {
+    durationMs: 600,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xa8a29e,
+    secondaryColor: 0xfacc15,
+    particleType: 'dust',
+  }),
+  quimera_garras_leao: defVFX('quimera_garras_leao', 'blade_tempest', {
+    durationMs: 580,
+    casterMotion: 'lunge',
+    primaryColor: 0xf59e0b,
+    secondaryColor: 0xef4444,
+    slashStyle: 'cone_slashes',
+    slashCount: 4,
+    particleType: 'fire',
+    shakeIntensity: 0.18,
+  }),
+  quimera_cuspe_veneno: defVFX('quimera_cuspe_veneno', 'cannon_barrage', {
+    durationMs: 620,
+    primaryColor: 0x22c55e,
+    secondaryColor: 0x15803d,
+    crater: true,
+    particleType: 'shadow',
+  }),
+  quimera_pisoteio_cabra: defVFX('quimera_pisoteio_cabra', 'heavy_slam', {
+    durationMs: 580,
+    casterMotion: 'leap_slam',
+    primaryColor: 0x78716c,
+    secondaryColor: 0xf59e0b,
+    crater: true,
+    particleType: 'dust',
+    shakeIntensity: 0.2,
+  }),
+
+  // Valgar o Carniceiro (Fase 35)
+  valgar_golpe_voraz: defVFX('valgar_golpe_voraz', 'void_miasma', {
+    durationMs: 580,
+    casterMotion: 'lunge',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x7f1d1d,
+    particleType: 'shadow',
+    shakeIntensity: 0.18,
+  }),
+  valgar_giro_devastador: defVFX('valgar_giro_devastador', 'blade_tempest', {
+    durationMs: 680,
+    casterMotion: 'whirlwind',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xffffff,
+    slashStyle: 'spin',
+    slashCount: 3,
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.22,
+  }),
+  valgar_gancho_carniceiro: defVFX('valgar_gancho_carniceiro', 'chain_hook', {
+    durationMs: 600,
+    primaryColor: 0x991b1b,
+    secondaryColor: 0x94a3b8,
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  valgar_arremesso_cutelo: defVFX('valgar_arremesso_cutelo', 'dimensional_wave', {
+    durationMs: 560,
+    casterMotion: 'recoil_shot',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0xe2e8f0,
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  valgar_aura_sanguinaria: defVFX('valgar_aura_sanguinaria', 'combustion', {
+    durationMs: 640,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x991b1b,
+    particleType: 'shadow',
+    shakeIntensity: 0.18,
+  }),
+  boss_valgar_banquete_sangue: defVFX('boss_valgar_banquete_sangue', 'crimson_horizon', {
+    durationMs: 920,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xdc2626,
+    secondaryColor: 0x7f1d1d,
+    castColor: 0xdc2626,
+    castRing: 1.7,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 36,
+    shakeIntensity: 0.28,
+  }),
+
+  // Leviatã do Vazio (Fase 40)
+  leviata_impacto_abissal: defVFX('leviata_impacto_abissal', 'heavy_slam', {
+    durationMs: 620,
+    casterMotion: 'leap_slam',
+    primaryColor: 0x0284c7,
+    secondaryColor: 0x38bdf8,
+    crater: true,
+    particleType: 'ice',
+    shakeIntensity: 0.22,
+  }),
+  leviata_rajada_vazio: defVFX('leviata_rajada_vazio', 'sniper_shot', {
+    durationMs: 560,
+    primaryColor: 0x6366f1,
+    secondaryColor: 0x00e5ff,
+    particleType: 'sparks',
+    shakeIntensity: 0.18,
+  }),
+  leviata_tsunami_abissal: defVFX('leviata_tsunami_abissal', 'dimensional_wave', {
+    durationMs: 740,
+    primaryColor: 0x0284c7,
+    secondaryColor: 0x7dd3fc,
+    castColor: 0x0284c7,
+    crater: true,
+    particleType: 'ice',
+    burstCount: 30,
+    shakeIntensity: 0.24,
+  }),
+  leviata_nevoa_asfixiante: defVFX('leviata_nevoa_asfixiante', 'frost_nova', {
+    durationMs: 760,
+    primaryColor: 0x0e7490,
+    secondaryColor: 0x67e8f9,
+    particleType: 'ice',
+    shakeIntensity: 0.18,
+  }),
+  leviata_jato_pressurizado: defVFX('leviata_jato_pressurizado', 'flamethrower', {
+    durationMs: 680,
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0xffffff,
+    particleType: 'ice',
+    shakeIntensity: 0.2,
+  }),
+  boss_leviata_singularidade: defVFX('boss_leviata_singularidade', 'fire_pillar', {
+    durationMs: 900,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0x0284c7,
+    secondaryColor: 0x00e5ff,
+    castColor: 0x0284c7,
+    castRing: 1.8,
+    pillarHeight: 7.0,
+    pillarRadius: 1.5,
+    crater: true,
+    particleType: 'ice',
+    burstCount: 36,
+    shakeIntensity: 0.28,
+  }),
+
+  // Arauto do Eclipse & Malakor (Fase 45 & 50)
+  arauto_manto_espectral: defVFX('arauto_manto_espectral', 'shield_bastion', {
+    durationMs: 580,
+    casterMotion: 'stance_guard',
+    primaryColor: 0x8b5cf6,
+    secondaryColor: 0x00e5ff,
+    particleType: 'shadow',
+  }),
+  arauto_corte_ceifador: defVFX('arauto_corte_ceifador', 'blade_tempest', {
+    durationMs: 620,
+    casterMotion: 'lunge',
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0x7c3aed,
+    slashStyle: 'single',
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  arauto_giro_foice: defVFX('arauto_giro_foice', 'blade_tempest', {
+    durationMs: 680,
+    casterMotion: 'whirlwind',
+    primaryColor: 0x06b6d4,
+    secondaryColor: 0x8b5cf6,
+    slashStyle: 'spin',
+    slashCount: 3,
+    particleType: 'shadow',
+    shakeIntensity: 0.2,
+  }),
+  arauto_passo_sombrio: defVFX('arauto_passo_sombrio', 'blade_tempest', {
+    durationMs: 600,
+    casterMotion: 'blink_strike',
+    primaryColor: 0x7c3aed,
+    secondaryColor: 0x00e5ff,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    particleType: 'shadow',
+    shakeIntensity: 0.18,
+  }),
+  arauto_arremesso_foice: defVFX('arauto_arremesso_foice', 'dimensional_wave', {
+    durationMs: 640,
+    primaryColor: 0x00e5ff,
+    secondaryColor: 0x8b5cf6,
+    aoeShape: 'line',
+    particleType: 'shadow',
+    shakeIntensity: 0.16,
+  }),
+  boss_malakor_colapso_temporal: defVFX('boss_malakor_colapso_temporal', 'crimson_horizon', {
+    durationMs: 1000,
+    casterMotion: 'levitate_cast',
+    primaryColor: 0xb91c1c,
+    secondaryColor: 0xfacc15,
+    castColor: 0xdc2626,
+    castRing: 1.9,
+    crater: true,
+    particleType: 'shadow',
+    burstCount: 40,
+    shakeIntensity: 0.3,
+  }),
+
+  // Guardiões de Luz e Trevas
+  trevas_corte_cruz: defVFX('trevas_corte_cruz', 'black_hole', {
+    durationMs: 720,
+    casterMotion: 'lunge',
+    primaryColor: 0x581c87,
+    secondaryColor: 0xdc2626,
+    crater: true,
+    particleType: 'shadow',
+    shakeIntensity: 0.2,
+  }),
+  trevas_casulo_escuridao: defVFX('trevas_casulo_escuridao', 'chain_hook', {
+    durationMs: 640,
+    primaryColor: 0x3b0764,
+    secondaryColor: 0x9333ea,
+    particleType: 'shadow',
+  }),
+  trevas_corte_chamas_borda: defVFX('trevas_corte_chamas_borda', 'blade_tempest', {
+    durationMs: 680,
+    casterMotion: 'whirlwind',
+    primaryColor: 0x7e22ce,
+    secondaryColor: 0xff4500,
+    slashStyle: 'spin',
+    slashCount: 3,
+    particleType: 'fire',
+    shakeIntensity: 0.2,
+  }),
+  trevas_corte_x_repulsao: defVFX('trevas_corte_x_repulsao', 'blade_tempest', {
+    durationMs: 640,
+    casterMotion: 'dash_through',
+    primaryColor: 0x9333ea,
+    secondaryColor: 0xef4444,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    particleType: 'shadow',
+    shakeIntensity: 0.2,
+  }),
+  trevas_corte_luz_dreno: defVFX('trevas_corte_luz_dreno', 'dimensional_wave', {
+    durationMs: 640,
+    primaryColor: 0x6b21a8,
+    secondaryColor: 0xfacc15,
+    aoeShape: 'line',
+    particleType: 'shadow',
+    shakeIntensity: 0.18,
+  }),
+  luz_escudo_dupla_acao: defVFX('luz_escudo_dupla_acao', 'shield_bastion', {
+    durationMs: 640,
+    casterMotion: 'stance_guard',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xffffff,
+    particleType: 'stars',
+  }),
+  luz_corte_cruz_atordoante: defVFX('luz_corte_cruz_atordoante', 'fire_pillar', {
+    durationMs: 700,
+    casterMotion: 'leap_slam',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xffffff,
+    pillarHeight: 5.5,
+    pillarRadius: 1.1,
+    crater: true,
+    particleType: 'stars',
+    shakeIntensity: 0.2,
+  }),
+  luz_corte_x_enfraquecedor: defVFX('luz_corte_x_enfraquecedor', 'blade_tempest', {
+    durationMs: 640,
+    casterMotion: 'dash_through',
+    primaryColor: 0xfacc15,
+    secondaryColor: 0xffffff,
+    slashStyle: 'cross_x',
+    slashCount: 2,
+    particleType: 'stars',
+    shakeIntensity: 0.18,
+  }),
+  luz_corte_linha_silenciador: defVFX('luz_corte_linha_silenciador', 'sniper_shot', {
+    durationMs: 580,
+    primaryColor: 0xfef08a,
+    secondaryColor: 0xf59e0b,
+    particleType: 'stars',
+    shakeIntensity: 0.18,
+  }),
+  luz_corte_pesado_lentidao: defVFX('luz_corte_pesado_lentidao', 'heavy_slam', {
+    durationMs: 660,
+    casterMotion: 'sky_dragoon',
+    primaryColor: 0xf59e0b,
+    secondaryColor: 0xfef08a,
+    crater: true,
+    particleType: 'stars',
+    shakeIntensity: 0.22,
+  }),
 };
 
 /**
- * Resolves a VFXSequence for any skill.
- * If the skill has an explicit registration, it is used.
- * Otherwise, generates an appropriate, high-quality fallback sequence.
+ * Simple deterministic hash from string so every unregistered monster skill
+ * gets its own consistent, unique color palette and motion variation.
+ */
+function hashSkillId(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h);
+}
+
+/**
+ * Resolves a unique VFXSequence for ANY skill in the game.
  */
 export function resolveSkillVFX(
   skill: Skill | undefined,
@@ -348,91 +2325,181 @@ export function resolveSkillVFX(
     return SKILL_VFX_REGISTRY[skill.id];
   }
 
+  const skillId = (skill?.id || 'basic_attack').toLowerCase();
   const skillName = (skill?.name || '').toLowerCase();
-  const skillId = (skill?.id || '').toLowerCase();
+  const aoeType = skill?.aoeType || '';
+  const h = hashSkillId(skillId);
 
-  // 1. Holy / Healing
+  // Palette pool for unique procedural differentiation
+  const palettes: [number, number][] = [
+    [0xef4444, 0xfca5a5], // Crimson
+    [0xf97316, 0xfef08a], // Magma Orange
+    [0xfacc15, 0xffffff], // Solar Gold
+    [0x22c55e, 0xa3e635], // Venom Emerald
+    [0x06b6d4, 0xa5f3fc], // Frost Cyan
+    [0x3b82f6, 0x93c5fd], // Cobalt Blue
+    [0x8b5cf6, 0xe9d5ff], // Void Violet
+    [0xec4899, 0xfbcfe8], // Astral Magenta
+    [0x14b8a6, 0x99f6e4], // Aero Teal
+    [0xd97706, 0xfde68a], // Earth Amber
+  ];
+  const [pColor, sColor] = palettes[h % palettes.length];
+
+  // 1. Self / Ally / Healing / Shield / Buffs
   if (damageType === 'healing' || skill?.targetType === 'self' || skill?.targetType === 'ally') {
-    return SKILL_VFX_REGISTRY.cura;
+    if (skillId.includes('escudo') || skillId.includes('armadura') || skillId.includes('carapaca') || skillId.includes('barreira') || skillId.includes('bastiao') || skillId.includes('blindagem')) {
+      return defVFX(skillId, 'shield_bastion', {
+        casterMotion: 'stance_guard',
+        primaryColor: pColor,
+        secondaryColor: sColor,
+        particleType: 'stars',
+      });
+    }
+    if (skillId.includes('rugido') || skillId.includes('grito') || skillId.includes('uivo') || skillId.includes('canto') || skillId.includes('cancao')) {
+      return defVFX(skillId, 'sonic_symphony', {
+        casterMotion: 'stance_guard',
+        primaryColor: pColor,
+        secondaryColor: sColor,
+        particleType: 'stars',
+      });
+    }
+    return defVFX(skillId, 'holy_pillar', {
+      casterMotion: 'stance_guard',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      pillarHeight: 4.5,
+      pillarRadius: 0.75,
+      particleType: 'stars',
+    });
   }
 
-  // 2. Fire variants by naming
-  if (skillId.includes('meteoro') || skillName.includes('meteoro') || skillId.includes('cataclismo')) {
-    return SKILL_VFX_REGISTRY.chuva_de_meteoros;
-  }
-  if (skillId.includes('coluna') || skillName.includes('coluna') || skillId.includes('labareda') || skillId.includes('erupcao')) {
-    return SKILL_VFX_REGISTRY.coluna_de_chamas;
-  }
-  if (skillId.includes('combustao') || skillName.includes('combustão') || skillId.includes('chama_interna')) {
-    return SKILL_VFX_REGISTRY.combustao_espontanea;
-  }
-  if (skillId.includes('lanca_chamas') || skillName.includes('lança-chamas') || skillId.includes('chamas')) {
-    return SKILL_VFX_REGISTRY.lanca_chamas;
-  }
-  if (skillId.includes('fogo') || skillName.includes('fogo')) {
-    return aoeRadius > 0 ? SKILL_VFX_REGISTRY.coluna_de_chamas : SKILL_VFX_REGISTRY.bola_de_fogo;
+  // 2. Breath / Cone / Gas / Howl skills
+  if (aoeType === 'cone' || skillId.includes('sopro') || skillId.includes('baforada') || skillId.includes('jato') || skillId.includes('vapor') || skillId.includes('gas') || skillId.includes('onda')) {
+    return defVFX(skillId, 'flamethrower', {
+      casterMotion: 'lunge',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      aoeShape: 'cone',
+      particleType: skillId.includes('fogo') || skillId.includes('magma') ? 'fire' : 'shadow',
+      shakeIntensity: 0.15,
+    });
   }
 
-  // 3. Ice variants
-  if (skillId.includes('gelo') || skillId.includes('glacial') || skillName.includes('gelo') || skillName.includes('glacial')) {
-    return aoeRadius > 0 ? SKILL_VFX_REGISTRY.nevasca : SKILL_VFX_REGISTRY.raio_glacial;
+  // 3. Chains / Tentacles / Roots / Constriction / Webs / Bites
+  if (skillId.includes('tentaculo') || skillId.includes('constricao') || skillId.includes('raiz') || skillId.includes('teia') || skillId.includes('grilhoes') || skillId.includes('lingua') || skillId.includes('boleadeira')) {
+    return defVFX(skillId, 'chain_hook', {
+      casterMotion: 'lunge',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      particleType: 'shadow',
+      shakeIntensity: 0.14,
+    });
   }
 
-  // 4. Lightning
-  if (skillId.includes('raio') || skillId.includes('relampago') || skillId.includes('trovao') || skillId.includes('eletric') || skillId.includes('voltaic') || skillId.includes('plasma') || skillName.includes('raio') || skillName.includes('elétric')) {
-    return SKILL_VFX_REGISTRY.relampago;
+  // 4. Drain / Siphon / Vampire / Parasite / Miasma
+  if (skillId.includes('dreno') || skillId.includes('voraz') || skillId.includes('vampir') || skillId.includes('suga') || skillId.includes('engolfar') || skillId.includes('miasma') || skillId.includes('toque')) {
+    return defVFX(skillId, 'void_miasma', {
+      casterMotion: damageType === 'physical' ? 'lunge' : 'levitate_cast',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      particleType: 'shadow',
+      shakeIntensity: 0.14,
+    });
   }
 
-  // 4B. Wind / Aero
-  if (skillId.includes('vento') || skillId.includes('vendaval') || skillId.includes('furacao') || skillId.includes('brisa') || skillId.includes('vortice') || skillName.includes('vento') || skillName.includes('furacão')) {
-    return {
-      id: 'vento',
-      type: 'generic_magic',
-      durationMs: 460,
-      cast: { durationMs: 90, color: 0x2dd4bf },
-      impact: {
-        shockwave: true,
-        shockwaveColor: 0x5eead4,
-        particleBurstCount: 22,
-        particleType: 'sparks',
-      },
-      screenShake: { intensity: 0.12, durationMs: 180, delayMs: 80 },
-    };
+  // 5. Bombs / Grenades / Flasks / Acid / Meteors
+  if (skillId.includes('bomba') || skillId.includes('granada') || skillId.includes('piche') || skillId.includes('acido')) {
+    return defVFX(skillId, 'cannon_barrage', {
+      casterMotion: 'recoil_shot',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      crater: true,
+      particleType: 'fire',
+      shakeIntensity: 0.16,
+    });
+  }
+  if (skillId.includes('meteoro') || skillId.includes('cataclismo')) {
+    return defVFX(skillId, 'meteor_shower', {
+      casterMotion: 'levitate_cast',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      crater: true,
+      particleType: 'fire',
+      shakeIntensity: 0.22,
+    });
   }
 
-  // 5. Void / Shadows
-  if (skillId.includes('vazio') || skillId.includes('sombra') || skillId.includes('drenar') || skillId.includes('trevas')) {
-    return SKILL_VFX_REGISTRY.dreno_de_vida;
-  }
-
-  // 6. Archery / Projectiles
-  if (skillId.includes('flecha') || skillId.includes('tiro') || skillId.includes('disparo')) {
-    return aoeRadius > 0 ? SKILL_VFX_REGISTRY.tiro_triplo : SKILL_VFX_REGISTRY.tiro_preciso;
-  }
-
-  // 7. Heavy Physical
-  if (skillId.includes('demolidor') || skillId.includes('esmagar') || skillId.includes('investida') || aoeRadius > 0) {
-    return SKILL_VFX_REGISTRY.golpe_demolidor;
-  }
-
-  // 8. Generic physical melee
-  if (damageType === 'physical') {
-    return SKILL_VFX_REGISTRY.golpe_poderoso;
-  }
-
-  // 9. Generic Magic fallback
-  return {
-    id: 'generic_magic',
-    type: 'generic_magic',
-    durationMs: 550,
-    cast: { durationMs: 100, color: 0xb58aff },
-    impact: {
-      shockwave: true,
-      shockwaveColor: 0xb58aff,
-      particleBurstCount: 16,
+  // 6. Lightning / Shock / Beam / Laser
+  if (skillId.includes('raio') || skillId.includes('trovao') || skillId.includes('descarga') || skillId.includes('feixe') || skillId.includes('olhar')) {
+    return defVFX(skillId, 'lightning_storm', {
+      primaryColor: pColor,
+      secondaryColor: sColor,
       particleType: 'sparks',
-    },
-    screenShake: { intensity: 0.1, durationMs: 200, delayMs: 220 },
-    hitReactionDelayMs: 240,
-  };
+      shakeIntensity: 0.16,
+    });
+  }
+
+  // 7. Spikes / Thorns / Gliphs / Cross Eruptions
+  if (skillId.includes('espinho') || skillId.includes('glifo') || aoeType === 'cross' || aoeType === 'long_cross') {
+    return defVFX(skillId, h % 2 === 0 ? 'ice_spikes' : 'fire_pillar', {
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      pillarHeight: 4.8,
+      pillarRadius: 0.9,
+      crater: true,
+      particleType: 'sparks',
+      shakeIntensity: 0.18,
+    });
+  }
+
+  // 8. Ranged Shots / Arrows / Spears
+  if (skillId.includes('flecha') || skillId.includes('disparo') || skillId.includes('tiro') || skillId.includes('lanca') || skillId.includes('penas')) {
+    return defVFX(skillId, aoeRadius > 0 ? 'arrow_volley' : 'sniper_shot', {
+      casterMotion: 'recoil_shot',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      particleType: 'sparks',
+      shakeIntensity: 0.14,
+    });
+  }
+
+  // 9. Heavy Slams / Earthquakes / Hammers / Stomps
+  if (skillId.includes('esmag') || skillId.includes('martel') || skillId.includes('pisao') || skillId.includes('terremoto') || skillId.includes('mergulho') || skillId.includes('investida') || skillName.includes('concussiv')) {
+    return defVFX(skillId, 'heavy_slam', {
+      casterMotion: 'leap_slam',
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      crater: true,
+      particleType: 'dust',
+      shakeIntensity: 0.2,
+    });
+  }
+
+  // 10. Physical Slashes / Claws / Bites / Scythes (varied styles per skill hash!)
+  if (damageType === 'physical') {
+    const styles: VFXSlashStyle[] = ['single', 'cross_x', 'flurry', 'guillotine', 'spin'];
+    const motions: VFXCasterMotion[] = ['lunge', 'dash_through', 'leap_slam', 'blink_strike'];
+    const style = aoeType === 'cleave' ? 'cone_slashes' : styles[h % styles.length];
+    const motion = style === 'spin' ? 'whirlwind' : motions[h % motions.length];
+    return defVFX(skillId, 'blade_tempest', {
+      casterMotion: motion,
+      primaryColor: pColor,
+      secondaryColor: sColor,
+      slashStyle: style,
+      slashCount: style === 'flurry' ? 4 : style === 'cross_x' ? 2 : 1,
+      particleType: 'shadow',
+      shakeIntensity: 0.13,
+    });
+  }
+
+  // 11. Magical Spells (varied between combustion, frost_nova, dimensional_wave, generic_magic)
+  const magicTypes: VFXAnimationType[] = ['generic_magic', 'combustion', 'frost_nova', 'dimensional_wave'];
+  return defVFX(skillId, magicTypes[h % magicTypes.length], {
+    casterMotion: 'levitate_cast',
+    primaryColor: pColor,
+    secondaryColor: sColor,
+    castColor: pColor,
+    particleType: 'sparks',
+    shakeIntensity: 0.13,
+  });
 }
