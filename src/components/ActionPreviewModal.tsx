@@ -231,6 +231,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </div>
         )}
 
+        {preview.skill?.stealthOnKill && (
+          <div className="flex items-center justify-between text-xs bg-[#4C1D95]/40 p-2.5 rounded-lg border border-[#8B5CF6]/40">
+            <span className="text-[#DDD6FE] font-semibold">Furtividade no Abate:</span>
+            <span className="font-bold text-[#A78BFA]">👤 Fica Invisível se Abater</span>
+          </div>
+        )}
+
         {preview.skill?.buffMovBonus && (
           <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#343B50]">
             <span className="text-[#A7B0C4]">Bônus de Ritmo:</span>
@@ -331,6 +338,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           <div className="flex items-center justify-between text-xs bg-[#064E3B]/40 p-2.5 rounded-lg border border-[#10B981]/40">
             <span className="text-[#A7F3D0] font-semibold">Cura Sagrada ao Atacar:</span>
             <span className="font-bold text-[#34D399]">💚 Restaura {preview.skill?.lifestealPercent || 30}% como vida</span>
+          </div>
+        )}
+
+        {Boolean(preview.skill?.shieldFromDamagePercent && preview.skill.shieldFromDamagePercent > 0) && (
+          <div className="flex items-center justify-between text-xs bg-[#082F49]/50 p-2.5 rounded-lg border border-[#0284C7]/40">
+            <span className="text-[#BAE6FD] font-semibold">Conversão de Dano em Escudo:</span>
+            <span className="font-bold text-[#38BDF8]">🛡️ Concede {preview.skill?.shieldFromDamagePercent}% do Dano Causado como Escudo</span>
           </div>
         )}
 

@@ -131,6 +131,8 @@ export interface Skill {
   shieldPercentOfMag?: number; // Concede escudo baseado em % da magia do conjurador (ex: 0.80 para 80%)
   shieldPercentOfAtk?: number; // Concede escudo baseado em % do ataque do conjurador (ex: 0.70 para 70%)
   buffMovBonus?: number; // Bônus de movimento concedido pela habilidade
+  shieldFromDamagePercent?: number; // % do dano causado convertido em escudo para o conjurador
+  stealthOnKill?: boolean; // Concede invisibilidade ao conjurador caso abata o alvo
   scalesWithDefRes?: boolean; // Causa dano com base em 0.75 da armadura (defesa) + 0.75 da resistência
   iconName: string;
   isPassive?: boolean;

@@ -2994,6 +2994,10 @@ export function App() {
           givesShield = true;
           if (skill.shieldPercentOfMaxHp) {
             eff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+          } else if (skill.shieldPercentOfMag) {
+            eff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
+          } else if (skill.shieldPercentOfAtk) {
+            eff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
           }
           if (hadExcessShield) {
             eff.value = Math.max(1, Math.round(eff.value * 0.5));
@@ -3006,6 +3010,8 @@ export function App() {
           }
         } else if (eff.type === 'buff_atk') {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value}% Dano`, 'status', '#F97316');
+        } else if (eff.type === 'buff_mov') {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Movimento!`, 'status', '#38BDF8');
         } else if (eff.type === 'invisible') {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Invisível!', 'status', '#8B5CF6');
         } else if (eff.type === 'taunt') {
@@ -3026,6 +3032,9 @@ export function App() {
 
       handleSelfStatusEffect(skill.statusEffect);
       handleSelfStatusEffect(skill.secondaryStatusEffect);
+      if (skill.casterStatusEffect) {
+        handleSelfStatusEffect(skill.casterStatusEffect);
+      }
 
       if (isHealSkill) {
         updatedEffects = [
@@ -3320,6 +3329,10 @@ export function App() {
             isShielded = true;
             if (skill?.shieldPercentOfMaxHp) {
               eff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+            } else if (skill?.shieldPercentOfMag) {
+              eff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
+            } else if (skill?.shieldPercentOfAtk) {
+              eff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
             }
             if (hadExcessShield) {
               eff.value = Math.max(1, Math.round(eff.value * 0.5));
@@ -3722,8 +3735,6 @@ export function App() {
       skill?.lifestealPercent ??
       (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
         ? 100
-        : skill?.id === 'sedenta_de_runas'
-        ? 60
         : isGolpeSagrado
         ? 30
         : 0);
@@ -3765,6 +3776,28 @@ export function App() {
       }
     }
 
+    // Shield from damage dealt (e.g. Golpe de Luz Condensada do Cavaleiro Mágico)
+    if (skill?.shieldFromDamagePercent && totalDmgDone > 0) {
+      let shieldVal = Math.max(1, Math.round(totalDmgDone * (skill.shieldFromDamagePercent / 100)));
+      const hadExcessShield = finalAttackerEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+      if (hadExcessShield) {
+        shieldVal = Math.max(1, Math.round(shieldVal * 0.5));
+        addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+      }
+      soundManager.playShield();
+      addFloatingNumber(finalAttackerX, finalAttackerY, `+${shieldVal} Escudo (Luz Condensada)`, 'shield', '#38BDF8');
+
+      const currentShield = finalAttackerEffects.find((e) => e.type === 'shield')?.value || 0;
+      finalAttackerEffects = [
+        ...finalAttackerEffects.filter((e) => e.type !== 'shield'),
+        { type: 'shield', duration: 2, value: currentShield + shieldVal, appliedTurn: turnNumberRef.current },
+      ];
+      finalAttackerEffects = [
+        ...finalAttackerEffects.filter((e) => e.type !== 'excess_shield'),
+        { type: 'excess_shield', duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+      ];
+    }
+
     // Repositioning / movement after skill (Recuo Tático / Recuo da Lança)
     const canMoveAgain =
       skill?.id === 'recuo_tatico' ||
@@ -3779,6 +3812,13 @@ export function App() {
     if (skill?.casterStatusEffect) {
       const cEff = { ...skill.casterStatusEffect, appliedTurn: turnNumberRef.current };
       if (cEff.type === 'shield') {
+        if (skill.shieldPercentOfMaxHp) {
+          cEff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+        } else if (skill.shieldPercentOfMag) {
+          cEff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
+        } else if (skill.shieldPercentOfAtk) {
+          cEff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
+        }
         const hadExcessShield = finalAttackerEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
         if (hadExcessShield) {
           cEff.value = Math.max(1, Math.round(cEff.value * 0.5));
@@ -3819,6 +3859,20 @@ export function App() {
     if (isExecutionKill) {
       soundManager.playUpgrade();
       addFloatingNumber(finalAttackerX, finalAttackerY, 'EXECUÇÃO! +1 AÇÃO!', 'status', '#C77DFF');
+    }
+
+    // STEALTH ON KILL MECHANIC: e.g. Golpe de Execução do Assassino
+    const isStealthOnKill =
+      (skill?.stealthOnKill || skill?.id === 'execucao' || skill?.id?.startsWith('execucao')) &&
+      totalKills > 0;
+
+    if (isStealthOnKill) {
+      soundManager.playUpgrade();
+      addFloatingNumber(finalAttackerX, finalAttackerY, 'Invisível (Execução)!', 'status', '#8B5CF6');
+      finalAttackerEffects = [
+        ...finalAttackerEffects.filter((e) => e.type !== 'invisible'),
+        { type: 'invisible', duration: 1, value: 1, appliedTurn: turnNumberRef.current },
+      ];
     }
 
     if (skill?.id === 'lagrimas_rubras') {
