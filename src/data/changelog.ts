@@ -15,10 +15,54 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v1.9',
+    date: '29 de Outubro de 2026',
+    title: 'Nova Classe Oculta Omnimago & Grande Atualização de Balanceamento',
+    isLatest: true,
+    tag: 'Nova Classe & Balanceamento',
+    changes: [
+      {
+        highlight: 'Nova Classe Oculta: Omnimago (Mestre dos 4 Elementos)',
+        description: 'Desperte o poder tetra-elemental derrotando o chefe da Fase 25 com uma equipe composta estritamente por magos. O Omnimago comanda simultaneamente Fogo, Gelo, Vento e Raio com 9 habilidades arcanas devastadoras, miniatura 3D exclusiva, skins cósmicas e missões de classe.',
+        type: 'new',
+      },
+      {
+        highlight: 'Enigma dos Cristais Elementais na Fase 25',
+        description: 'Quatro cristais ancestrais interativos (Fogo, Vento, Gelo e Raio) foram espalhados no mapa do Arquimago das Runas. Ao ativá-los, a heresia e traição do Mago Rúnico que roubou a magia em busca da imortalidade são reveladas em um enigma sagrado.',
+        type: 'new',
+      },
+      {
+        highlight: 'Privacidade e Anti-Spoiler no Menu de Missões',
+        description: 'As classes secretas e ocultas (Samurai do Vazio e Omnimago) agora são mantidas em total sigilo no menu de Missões de Classe e Guarda-Roupa até que o jogador conclua seu respectivo enigma e as desbloqueie.',
+        type: 'fix',
+      },
+      {
+        highlight: 'Facilidade e Precisão na Seleção de Inimigos',
+        description: 'Otimizada a seleção de alvos inimigos para ataques básicos e magias direcionadas, permitindo selecionar o alvo tanto através da sua miniatura 3D quanto pela casa correspondente no tabuleiro.',
+        type: 'fix',
+      },
+      {
+        highlight: 'Rework Completo do Cavaleiro Mágico',
+        description: 'Conjunto de habilidades totalmente reformulado: Lâmina Radiante (dano mágico e escudo de 80% do dano causado); Corte Luminoso em cone (-20% de resistência mágica por 2 turnos); Bênção da Aurora (escudo mágico de 70% MAG para si e um aliado); Aura do Triunfo (+15% de dano por 3 turnos para si e um aliado); e Corte Perfurante em linha reta (ignora escudos e 20% de resistência).',
+        type: 'buff',
+      },
+      {
+        highlight: 'Reformulação e Dinamismo do Assassino',
+        description: 'Eliminadas habilidades repetidas com a introdução de novos recursos táticos como Arremesso de Adagas e Bomba de Fumaça. O Golpe de Execução agora concede Invisibilidade ao abater o alvo (em vez de ação extra) e o silêncio de Corte Asfixiante foi balanceado para 1 turno.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Balanceamento Global de Heróis & Magos',
+        description: 'Ajustes finos em múltiplos heróis: Druida (Ira de Gaia ajustada para 160% de dano e Santuário das Feras com 5 turnos de recarga); Mago Rúnico (Glifo para 190% e Convergência para 180%); Berserker (Execução para 180% e Frenesi para 200%); Paladino (Escudo Sagrado agora concede escudo de 10% da vida máxima própria e escala com 80% de magia, sem provocação); Lanceiro (1ª habilidade reformulada para 180% que ignora escudos; Meteoro Estelar para 170% de dano e escudo de 70% do ataque); Bardo (buff de +20% de dano, escudo de 60% MAG e +1 MOV; Réquiem para 150%); Mago de Gelo (Cometa para 170% e Esfera Criogênica para 200% com 6 de recarga); Sniper (Projétil de Antimatéria para 230% e Disparo Orbital para 200%); Mago Elétrico (Arco Voltaico para 180% com Eletrificado; Ira de Thoris para 170% com escudo de 60% MAG e Eletrificado); e Mago de Vento (Vendaval para 170% e Tufão para 160%).',
+        type: 'buff',
+      },
+    ],
+  },
+  {
     version: 'v1.8',
     date: '27 de Outubro de 2026',
     title: 'Novo Modo Treino & Bonecos de Prática 3D',
-    isLatest: true,
+    isLatest: false,
     tag: 'Novo Modo de Jogo',
     changes: [
       {
