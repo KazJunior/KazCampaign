@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
+import type { PlayerProgress } from '../types/game';
+import { CLASS_UNLOCK_QUESTS_BY_CLASS, getMonsterKillCount } from '../data/classUnlockQuests';
+import { ClassUnlockQuestsModal } from './ClassUnlockQuestsModal';
 import { getEquippedSkin } from '../data/classQuests';
+import { LineageSelectionModal } from './LineageSelectionModal';
+import { getLineageById, DEFAULT_CLASS_LINEAGES } from '../data/lineages';
 import {
   Shield,
   Swords,
@@ -27,12 +32,14 @@ import {
 } from 'lucide-react';
 
 interface PartySelectionModalProps {
+  progress?: PlayerProgress;
   initialSelected: string[];
   unlockedClasses: string[];
   playerGold?: number;
   equippedClassSkins?: Record<string, string>;
+  initialLineages?: Record<string, string>;
   onBuyClass?: (className: string, cost: number) => void;
-  onConfirmParty: (selectedClasses: string[]) => void;
+  onConfirmParty: (selectedClasses: string[], partyLineages: Record<string, string>) => void;
   onOpenClassMissions?: () => void;
   onClose?: () => void;
 }
@@ -42,6 +49,8 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
   unlockedClasses,
   playerGold = 0,
   equippedClassSkins,
+  initialLineages,
+  progress,
   onBuyClass,
   onConfirmParty,
   onOpenClassMissions,
@@ -52,6 +61,13 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
       ? initialSelected.filter((c) => unlockedClasses.includes(c))
       : ['guerreiro', 'arqueiro', 'mago', 'curandeiro']
   );
+
+  const [partyLineages, setPartyLineages] = useState<Record<string, string>>(() => {
+    const init = { ...DEFAULT_CLASS_LINEAGES, ...(initialLineages || {}) };
+    return init;
+  });
+  const [lineageModalClass, setLineageModalClass] = useState<string | null>(null);
+  const [showUnlockQuestsModal, setShowUnlockQuestsModal] = useState<boolean>(false);
 
   const allClasses = Object.keys(CLASS_DEFINITIONS);
 
@@ -117,6 +133,15 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             {unlockedClasses.length} de {allClasses.length} Desbloqueadas
           </span>
 
+          <button
+            onClick={() => setShowUnlockQuestsModal(true)}
+            className="px-3 py-1 rounded-full font-bold text-[11px] sm:text-xs bg-amber-500/20 border border-amber-400 text-amber-300 hover:bg-amber-500/30 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+            title="Abrir Missões de Desbloqueio de Classes"
+          >
+            <Flame size={13} className="text-[#FF5722]" />
+            <span>Missões de Classes</span>
+          </button>
+
           {onOpenClassMissions && (
             <button
               onClick={onOpenClassMissions}
@@ -127,6 +152,82 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
               <span>Missões & Skins</span>
             </button>
           )}
+        </div>
+
+        {/* Selected Party & Lineages Bar */}
+        <div className="bg-[#10131C] border border-[#343B50] rounded-2xl p-3 sm:p-4 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-[#FFD700]" />
+              <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-wider">
+                Equipe Escolhida & Linhagens Ancestrais ({selected.length}/4)
+              </h3>
+            </div>
+            <span className="text-[11px] text-[#A7B0C4] hidden sm:inline">
+              Clique na Linhagem para alterá-la antes de iniciar a aventura
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+            {[0, 1, 2, 3].map((slotIdx) => {
+              const cKey = selected[slotIdx];
+              if (!cKey) {
+                return (
+                  <div
+                    key={slotIdx}
+                    className="p-3 rounded-xl border border-dashed border-[#343B50] bg-[#161B26]/50 flex items-center justify-center text-xs text-[#A7B0C4]/60 font-bold"
+                  >
+                    + Vaga #{slotIdx + 1} Livre
+                  </div>
+                );
+              }
+
+              const cDef = CLASS_DEFINITIONS[cKey];
+              const linId = partyLineages[cKey] || DEFAULT_CLASS_LINEAGES[cKey] || 'humano';
+              const lineage = getLineageById(linId);
+
+              return (
+                <div
+                  key={cKey}
+                  className="bg-[#1B2030] border-2 rounded-xl p-2.5 flex items-center justify-between gap-2 shadow-sm transition-all"
+                  style={{ borderColor: `${cDef.color}60` }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
+                      style={{ backgroundColor: cDef.color }}
+                    >
+                      {getClassIcon(cDef.avatarKey, 16)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs text-white truncate">{cDef.name}</div>
+                      <div className="text-[10px] text-[#A7B0C4] truncate">{cDef.role.split('&')[0]}</div>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLineageModalClass(cKey);
+                    }}
+                    className="px-2 py-1 rounded-lg border text-left flex flex-col shrink-0 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    style={{
+                      backgroundColor: `${lineage.color}15`,
+                      borderColor: `${lineage.color}50`,
+                    }}
+                    title={`Linhagem ${lineage.name}: ${lineage.bonusDescription} (Clique para trocar)`}
+                  >
+                    <span className="text-[9px] uppercase font-bold" style={{ color: lineage.color }}>
+                      Linhagem
+                    </span>
+                    <span className="text-[10px] font-black text-white flex items-center gap-1">
+                      🧬 {lineage.name}
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Class Cards Grid */}
@@ -142,6 +243,9 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             const canAfford = isPurchasable && playerGold >= goldCost;
             const isDropOnly = !!(classDef as any).isDropOnly || cKey === 'sniper';
             const equippedSkin = getEquippedSkin(cKey, equippedClassSkins);
+            const unlockQuest = CLASS_UNLOCK_QUESTS_BY_CLASS[cKey];
+            const questKills = progress ? getMonsterKillCount(progress, unlockQuest?.monsterTypeId || '') : 0;
+            const questPercent = unlockQuest ? Math.min(100, Math.round((questKills / unlockQuest.targetCount) * 100)) : 0;
 
             return (
               <div
@@ -272,6 +376,36 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   </p>
                 </div>
 
+                {/* Class Unlock Quest Banner */}
+                {unlockQuest && !isUnlocked && (
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowUnlockQuestsModal(true);
+                    }}
+                    className="mt-2.5 p-2 rounded-xl bg-black/60 border border-[#F59E0B]/40 hover:border-[#F59E0B] text-left cursor-pointer transition-all space-y-1 shadow-inner"
+                    title="Clique para ver detalhes da Missão de Desbloqueio"
+                  >
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="font-extrabold text-[#F59E0B] flex items-center gap-1">
+                        ⚔️ Missão de Abate:
+                      </span>
+                      <span className="font-bold text-white">
+                        {questKills}/{unlockQuest.targetCount} ({questPercent}%)
+                      </span>
+                    </div>
+                    <div className="text-[9px] text-[#CBD5E1] truncate">
+                      Matar <strong>{unlockQuest.targetCount} {unlockQuest.monsterName}</strong>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-black/80 overflow-hidden border border-white/5">
+                      <div
+                        className="h-full bg-gradient-to-r from-[#EA580C] via-[#F59E0B] to-[#FACC15] rounded-full transition-all duration-300"
+                        style={{ width: `${questPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
                 {/* Unlock condition hint or purchase button */}
                 {!isUnlocked && (
                   <div className="mt-3">
@@ -350,7 +484,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
 
           <button
             disabled={!isComplete}
-            onClick={() => onConfirmParty(selected)}
+            onClick={() => onConfirmParty(selected, partyLineages)}
             className={`w-full sm:w-auto px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl transition-all ${
               isComplete
                 ? 'bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#B88E43] hover:to-[#96702D] text-[#10131C] active:scale-95 cursor-pointer'
@@ -360,6 +494,29 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             <Play size={16} fill="currentColor" /> CONFIRMAR EQUIPE & JOGAR
           </button>
         </div>
+{showUnlockQuestsModal && (
+          <ClassUnlockQuestsModal
+            progress={progress || { unlockedClasses } as any}
+            onClose={() => setShowUnlockQuestsModal(false)}
+          />
+        )}
+
+        {lineageModalClass && (
+          <LineageSelectionModal
+            progress={progress}
+            unlockedLineages={progress?.unlockedLineages}
+            classNameKey={lineageModalClass}
+            heroName={CLASS_DEFINITIONS[lineageModalClass]?.name}
+            currentLineageId={partyLineages[lineageModalClass] || DEFAULT_CLASS_LINEAGES[lineageModalClass] || 'humano'}
+            onSelectLineage={(cKey, linId) => {
+              setPartyLineages((prev) => ({
+                ...prev,
+                [cKey]: linId,
+              }));
+            }}
+            onClose={() => setLineageModalClass(null)}
+          />
+        )}
       </div>
     </div>
   );
@@ -367,6 +524,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
 
 function getClassIcon(avatarKey: string, size = 20) {
   switch (avatarKey) {
+    case 'dragonoid':
     case 'warrior':
       return <Shield size={size} />;
     case 'archer':

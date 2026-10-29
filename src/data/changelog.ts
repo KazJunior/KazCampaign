@@ -15,10 +15,87 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v2.2',
+    date: '29 de Outubro de 2026',
+    title: '5 Novas Linhagens (Minotauro, Anjo, Demônio, Nefalim, Fênix) & Missões Variadas',
+    isLatest: true,
+    tag: 'Linhagens & Missões',
+    changes: [
+      {
+        highlight: '5 Novas Linhagens Ancestrais (13 no Total)',
+        description: 'Adicionadas as linhagens Minotauro (+30 HP, +6 ATK, +4 DEF e Fúria Indomável: até +35% de dano proporcional à Vida perdida), Anjo (+1 Mov, +25% Cura/Escudo, regenera 5% HP/turno, +15 HP, +6 MAG, +5 RES), Demônio (Ignora 20% DEF/RES inimiga, 10% Lifesteal, +7 ATK, +7 MAG), Nefalim (Híbrido de Anjo e Demônio: Ignora 15% DEF/RES, 10% Lifesteal, regenera 4% HP/turno, +15 HP, +5 ATK/MAG, +3 DEF/RES) e Fênix (Renasce das cinzas com 50% HP 1x por batalha ao sofrer dano fatal, ataques aplicam Queimadura, +20 HP, +6 MAG).',
+        type: 'new',
+      },
+      {
+        highlight: 'Missões Variadas de Desbloqueio de Linhagens',
+        description: 'As 10 linhagens especiais agora possuem desafios variados de desbloqueio além de abate de monstros: Causar 30.000 de Dano Total (Orc), Abater 150 Inimigos no total (Vampiro), Restaurar 5.000 de Vida com curas (Celestial), Conjurar 100 Habilidades (Feérico), Eliminar 100 Dracos Vulcânicos (Dragonoide), Vencer 10 Batalhas Impecáveis sem perder heróis (Minotauro), Concluir 15 Fases da Campanha (Anjo), Acumular 50.000 de Ouro (Demônio), Derrotar 8 Chefes (Nefalim) e Vencer 25 Batalhas (Fênix).',
+        type: 'new',
+      },
+      {
+        highlight: 'Linhagem Ancestral: Dragonoide',
+        description: 'O Dragonoide assume exclusivamente o posto de linhagem ancestral. Concede +4 DEF, +4 RES, +15 HP e incinera inimigos com Queimadura por 2 turnos a cada ataque.',
+        type: 'new',
+      },
+    ],
+  },
+  {
+    version: 'v2.1',
+    date: '29 de Outubro de 2026',
+    title: 'Sistema de Linhagens Ancestrais: Escolha a Raça de Cada Herói',
+    isLatest: false,
+    tag: 'Novo Sistema Tático',
+    changes: [
+      {
+        highlight: 'Novo Sistema de Linhagens Ancestrais',
+        description: 'Antes de iniciar qualquer expedição, cada herói da sua equipe pode escolher sua linhagem ancestral: Humano, Elfo, Anão, Orc, Vampiro, Celestial, Draconato ou Feérico.',
+        type: 'new',
+      },
+      {
+        highlight: 'Bônus e Identidades Únicas por Linhagem',
+        description: 'Cada linhagem concede atributos e um efeito exclusivo: Humanos (+1 Mov, +15 HP, +15% Ouro), Elfos (+1 Alcance, +8 MAG, +3 RES), Anões (+35 HP, +5 DEF, +4 RES), Orcs (+8 ATK, +20 HP, +2 DEF), Vampiros (15% Roubo de Vida/Lifesteal, +4 ATK, +4 MAG), Celestiais (Regenera 6% HP/turno, +20% Cura/Escudo, +5 RES), Draconatos (Ataques aplicam Queimadura, +4 DEF, +4 RES, +15 HP) e Feéricos (Escudo Protetor inicial de 25% HP, +1 Mov, +3 RES).',
+        type: 'buff',
+      },
+      {
+        highlight: 'Configuração Rápida & Visual no Menu de Equipe',
+        description: 'Gerencie e alterne a linhagem de qualquer herói com um clique diretamente no modal de Seleção de Equipe e consulte os selos de linhagem nos cartões da expedição e na barra lateral de combate.',
+        type: 'new',
+      },
+    ],
+  },
+  {
+    version: 'v2.0',
+    date: '29 de Outubro de 2026',
+    title: 'Modo Fase Diária: Desafio Aleatório & Recompensa de 20 Mil de Ouro',
+    isLatest: false,
+    tag: 'Novo Modo de Jogo',
+    changes: [
+      {
+        highlight: 'Novo Modo: Fase Diária (Desafio Diário)',
+        description: 'Um novo modo de fase diária aleatória acessível diretamente pelo Centro de Expedição. A cada 24 horas, exatamente à meia-noite, um desafio inédito é gerado com equipe, habilidades sorteadas e monstros totalmente aleatórios.',
+        type: 'new',
+      },
+      {
+        highlight: 'Tentativas Ilimitadas & Sem Penalidades',
+        description: 'O jogador pode realizar a fase diária quantas vezes quiser ao longo do dia até conseguir passar. Derrotas ou desistências não consomem a tentativa diária nem afetam o progresso da campanha principal.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Recompensa Diária de 20.000 de Ouro',
+        description: 'Ao passar a fase diária pela primeira vez no dia, o jogador é recompensado com exatamente 20.000 de ouro adicionados diretamente ao seu saldo de tesouro permanente.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Reset Diário Sincronizado à Meia-Noite',
+        description: 'O desafio só pode ser concluído 1 vez por dia e reseta automaticamente a cada 24 horas, exatamente às 00:00:00 com um cronômetro regressivo em tempo real no menu e modal do desafio.',
+        type: 'new',
+      },
+    ],
+  },
+  {
     version: 'v1.9',
     date: '29 de Outubro de 2026',
     title: 'Nova Classe Oculta Omnimago & Grande Atualização de Balanceamento',
-    isLatest: true,
+    isLatest: false,
     tag: 'Nova Classe & Balanceamento',
     changes: [
       {

@@ -120,6 +120,7 @@ export const ClassUnlockModal: React.FC<ClassUnlockModalProps> = ({
 
 function getClassIcon(avatarKey: string, size = 24) {
   switch (avatarKey) {
+    case 'dragonoid':
     case 'warrior':
       return <Shield size={size} />;
     case 'archer':

@@ -25,11 +25,14 @@ import {
   Gift,
   Target,
   Palette,
+  Calendar,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import { getPetById } from '../data/pets';
 import { PetIcon } from './PetIcon';
 import { GAME_CHANGELOG } from '../data/changelog';
+import { getTodayDateString, getFormattedDailyDate, useMidnightCountdown } from '../utils/dailyDungeon';
+import { getLineageById, DEFAULT_CLASS_LINEAGES } from '../data/lineages';
 
 interface LevelSelectProps {
   progress: PlayerProgress;
@@ -49,6 +52,8 @@ interface LevelSelectProps {
   onOpenCoupons?: () => void;
   onOpenTrainingMode?: () => void;
   onOpenClassMissions?: () => void;
+  onOpenDailyDungeon?: () => void;
+  onOpenClassUnlockQuests?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
@@ -69,6 +74,8 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   onOpenCoupons,
   onOpenTrainingMode,
   onOpenClassMissions,
+  onOpenDailyDungeon,
+  onOpenClassUnlockQuests,
 }) => {
   const openCatalogHandler = onOpenItemCatalog || onOpenItemBestiary;
   const activeAdv = progress.activeAdventure;
@@ -79,6 +86,10 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   const latestVersion = latestChangelog?.version || 'v1.7';
 
   // Default act based on active adventure or act 1
+  const dailyCountdown = useMidnightCountdown();
+  const todayDateKey = getTodayDateString();
+  const isDailyCompletedToday = progress.dailyDungeon?.lastCompletedDate === todayDateKey;
+
   const defaultAct = Math.min(5, Math.max(1, Math.ceil(currentStageNum / 10)));
   const [selectedAct, setSelectedAct] = useState<number | 'all'>(defaultAct);
 
@@ -185,6 +196,17 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                 <span className="bg-[#FFD700] text-[#10131C] px-1.5 py-0.2 rounded-full text-[9px] font-black uppercase tracking-wider">
                   Base
                 </span>
+              </button>
+            )}
+
+            {onOpenClassUnlockQuests && (
+              <button
+                onClick={onOpenClassUnlockQuests}
+                className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-orange-500/20 to-red-600/25 border-2 border-orange-400 hover:border-orange-300 text-orange-300 hover:text-white font-black text-xs flex items-center gap-2 transition-all hover:scale-105 active:scale-95 shadow-md shadow-orange-500/15"
+                title="Missões de Desbloqueio de Classes: Elimine monstros para desbloquear o Dragonoide e outras classes"
+              >
+                <Flame size={16} className="text-orange-400" />
+                <span>Missões de Classes</span>
               </button>
             )}
 
@@ -349,6 +371,57 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
           </div>
         </div>
 
+        {/* Daily Dungeon Banner */}
+        {onOpenDailyDungeon && (
+          <div className="bg-gradient-to-r from-[#1B2030] via-[#242A3E] to-[#1B2030] border-2 border-[#D4AD65]/80 rounded-3xl p-5 sm:p-6 shadow-2xl relative overflow-hidden space-y-3">
+            <div className="absolute top-0 right-0 transform translate-x-8 -translate-y-8 w-48 h-48 bg-[#FFD700]/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#D4AD65]/20 text-[#D4AD65] text-xs font-black uppercase tracking-wider border border-[#D4AD65]/40">
+                    <Calendar size={13} /> Desafio Diário
+                  </span>
+                  <span className="text-xs text-[#A7B0C4] capitalize font-medium">
+                    {getFormattedDailyDate(todayDateKey)}
+                  </span>
+                  {isDailyCompletedToday ? (
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase flex items-center gap-1">
+                      <CheckCircle2 size={11} /> Concluído Hoje
+                    </span>
+                  ) : (
+                    <span className="bg-[#D4AD65]/20 text-[#FFD700] border border-[#D4AD65]/40 text-[10px] px-2 py-0.5 rounded-full font-bold uppercase animate-pulse flex items-center gap-1">
+                      <Sparkles size={11} /> Disponível (+20.000 Ouro)
+                    </span>
+                  )}
+                </div>
+
+                <h3 className="text-xl sm:text-2xl font-black text-white flex flex-wrap items-center gap-2">
+                  <span>Fase Diária Aleatória</span>
+                  <span className="text-xs font-mono font-bold text-[#A7B0C4] bg-[#10131C] px-2.5 py-1 rounded-lg border border-[#343B50]">
+                    Reset à meia-noite em {dailyCountdown.formatted}
+                  </span>
+                </h3>
+
+                <p className="text-xs text-[#A7B0C4] max-w-2xl">
+                  Equipe, habilidades sorteadas e monstros aleatórios a cada 24 horas. Jogue quantas vezes quiser até passar para receber{' '}
+                  <strong className="text-[#FFD700]">20.000 de Ouro</strong>!
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <button
+                  onClick={onOpenDailyDungeon}
+                  className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#D4AD65] via-[#F0B44D] to-[#D4AD65] hover:from-[#FFD700] hover:to-[#F0B44D] text-[#10131C] font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-[#D4AD65]/20 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                >
+                  <Swords size={18} />
+                  <span>{isDailyCompletedToday ? 'Ver Desafio Diário' : 'Jogar Fase Diária (+20k Ouro)'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Central Adventure CTA Card */}
         {activeAdv ? (
           <div className="bg-gradient-to-r from-[#1B2030] via-[#22293E] to-[#1B2030] border-2 border-[#D4AD65] rounded-3xl p-6 shadow-2xl space-y-4 relative overflow-hidden">
@@ -435,8 +508,23 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                       >
                         Nv.{uState.level}
                       </div>
-                      <div className="min-w-0">
-                        <div className="font-bold text-xs text-[#F3F4F8] truncate">{classDef.name}</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="font-bold text-xs text-[#F3F4F8] truncate">{classDef.name}</span>
+                          {(() => {
+                            const linId = activeAdv.partyLineages?.[cKey] || progress.selectedPartyLineages?.[cKey] || DEFAULT_CLASS_LINEAGES[cKey] || 'humano';
+                            const lin = getLineageById(linId);
+                            return (
+                              <span
+                                className="text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0 border"
+                                style={{ backgroundColor: `${lin.color}20`, borderColor: `${lin.color}40`, color: lin.color }}
+                                title={`Linhagem ${lin.name}: ${lin.bonusDescription}`}
+                              >
+                                {lin.name}
+                              </span>
+                            );
+                          })()}
+                        </div>
                         <div className="text-[10px] text-[#A7B0C4]">
                           {uState.learnedSkillIds.length} Habilidades
                         </div>

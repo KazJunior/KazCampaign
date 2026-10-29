@@ -140,8 +140,21 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5 mt-0.5">
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
               <p className="text-xs text-[#A7B0C4] truncate">{selectedUnit.className}</p>
+              {selectedUnit.lineageName && (
+                <span
+                  className="text-[9px] font-black px-1.5 py-0.2 rounded border"
+                  style={{
+                    backgroundColor: `${selectedUnit.lineageColor || '#FFD700'}20`,
+                    borderColor: `${selectedUnit.lineageColor || '#FFD700'}50`,
+                    color: selectedUnit.lineageColor || '#FFD700',
+                  }}
+                  title={`Linhagem ${selectedUnit.lineageName}: ${selectedUnit.lineageBonusDescription}`}
+                >
+                  🧬 {selectedUnit.lineageName}
+                </span>
+              )}
               {!isAlly && selectedUnit.monsterRole && (
                 <span
                   className={`text-[9px] font-bold px-1.5 py-0.2 rounded border shrink-0 ${

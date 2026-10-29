@@ -72,6 +72,10 @@ export function calculateBaseDamage(
         healAmount = Math.max(1, Math.round(healAmount * 0.5));
       }
 
+      if (attacker.lineageHealShieldBonusPercent && attacker.lineageHealShieldBonusPercent > 0) {
+        healAmount = Math.round(healAmount * (1 + attacker.lineageHealShieldBonusPercent / 100));
+      }
+
       return { base: healAmount, damageType: 'healing' };
     }
 
@@ -109,18 +113,33 @@ export function calculateBaseDamage(
       const lostHpRatio = Math.max(0, 1 - attacker.currentHp / attacker.maxHp);
       attackStat = Math.round(attackStat * (1 + lostHpRatio * 1.0));
     }
+    if (attacker.lineageMissingHpDamageScaling && attacker.maxHp > 0) {
+      const lostHpRatio = Math.max(0, 1 - attacker.currentHp / attacker.maxHp);
+      attackStat = Math.round(attackStat * (1 + lostHpRatio * 0.35));
+    }
 
     attackStat *= skill.power;
 
-    let targetDef = damageType === 'physical' ? target.def : target.res;
-    const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
-    if (defDebuff) {
-      targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
-    }
+    if (attacker.lineageMissingHpDamageScaling && attacker.maxHp > 0) {
+    const lostHpRatio = Math.max(0, 1 - attacker.currentHp / attacker.maxHp);
+    attackStat = Math.round(attackStat * (1 + lostHpRatio * 0.35));
+  }
+
+  let targetDef = damageType === 'physical' ? target.def : target.res;
+  const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+  if (defDebuff) {
+    targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
+  }
+  if (attacker.lineageDefenseIgnorePercent && attacker.lineageDefenseIgnorePercent > 0) {
+    targetDef = Math.round(targetDef * (1 - attacker.lineageDefenseIgnorePercent / 100));
+  }
 
     if (skill.defenseIgnoreRatio) {
       const effectiveRatio = Math.min(0.35, skill.defenseIgnoreRatio);
       targetDef = Math.round(targetDef * (1 - effectiveRatio));
+    }
+    if (attacker.lineageDefenseIgnorePercent && attacker.lineageDefenseIgnorePercent > 0) {
+      targetDef = Math.round(targetDef * (1 - attacker.lineageDefenseIgnorePercent / 100));
     }
 
     const base = Math.max(1, Math.round(attackStat - targetDef));

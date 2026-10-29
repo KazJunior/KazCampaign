@@ -21,8 +21,13 @@ import type {
   UnitProgression,
 } from './types/game';
 import { LEVELS, createTrainingLevel } from './data/levels';
+import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
+import { checkClassUnlockQuests } from './data/classUnlockQuests';
+import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from './data/lineageQuests';
+import { LineageUnlockCelebrationModal } from './components/LineageUnlockCelebrationModal';
+import { ClassUnlockQuestsModal } from './components/ClassUnlockQuestsModal';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
 import {
@@ -86,6 +91,8 @@ import { CouponModal } from './components/CouponModal';
 import { ClassMissionsModal } from './components/ClassMissionsModal';
 import { getEquippedSkin, incrementClassStat, incrementPartyStats } from './data/classQuests';
 import { TrainingModeModal, type TrainingModeConfig } from './components/TrainingModeModal';
+import { DailyDungeonModal } from './components/DailyDungeonModal';
+import { generateDailyDungeonConfig, getTodayDateString } from './utils/dailyDungeon';
 import { TrainingBattleHUD } from './components/TrainingBattleHUD';
 import { TrainingSkillPickerModal } from './components/TrainingSkillPickerModal';
 import { getPetById, calculatePetPassives, createNewEgg, MAX_EGGS_LIMIT } from './data/pets';
@@ -161,7 +168,11 @@ export function App() {
   const [showPetsModal, setShowPetsModal] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [showTrainingModal, setShowTrainingModal] = useState(false);
+  const [showDailyDungeonModal, setShowDailyDungeonModal] = useState(false);
+  const [isDailyMode, setIsDailyMode] = useState(false);
+  const [dailyDungeonConfig, setDailyDungeonConfig] = useState<any | null>(null);
   const [showClassMissionsModal, setShowClassMissionsModal] = useState(false);
+  const [showClassUnlockQuestsModal, setShowClassUnlockQuestsModal] = useState(false);
   const [isTrainingMode, setIsTrainingMode] = useState(false);
   const [trainingConfig, setTrainingConfig] = useState<TrainingModeConfig | null>(null);
   const [showLiveTrainingSkillPicker, setShowLiveTrainingSkillPicker] = useState(false);
@@ -485,6 +496,7 @@ export function App() {
   const [pendingStatChoices, setPendingStatChoices] = useState<{ unit: Unit; newLevel: number }[]>([]);
   const [pendingSkillChoices, setPendingSkillChoices] = useState<Unit[]>([]);
   const [pendingUnlockClasses, setPendingUnlockClasses] = useState<string[]>([]);
+  const [pendingUnlockLineages, setPendingUnlockLineages] = useState<string[]>([]);
   const [activeBossBanner, setActiveBossBanner] = useState<{ name: string; subtitle: string; phase?: number } | null>(() => {
     const liveBattle = loadLiveBattleState();
     const loadedProg = loadPlayerProgress();
@@ -565,6 +577,7 @@ export function App() {
           if (itemId) equippedItemIds.push(itemId);
         });
       }
+      const heroLineageId = progress.activeAdventure?.partyLineages?.[cKey] || progress.selectedPartyLineages?.[cKey] || DEFAULT_CLASS_LINEAGES[cKey] || 'humano';
       const createdUnit = createPlayerUnit(
         cKey as any,
         `player_${cKey}`,
@@ -583,7 +596,8 @@ export function App() {
         progress.itemUpgrades,
         getClassCumulativeBonus(cKey, progress.classUpgrades?.[cKey] || 0),
         getGlobalHeroBonus(progress),
-        getEquippedSkin(cKey, progress.equippedClassSkins)
+        getEquippedSkin(cKey, progress.equippedClassSkins),
+        heroLineageId
       );
 
       const equippedPet = getPetById(progress.equippedPetId);
@@ -850,12 +864,28 @@ export function App() {
     setPendingUnlockClasses([className]);
   };
 
-  const handleConfirmParty = (selectedPartyClasses: string[]) => {
+  const handleConfirmParty = (selectedPartyClasses: string[], partyLineages?: Record<string, string>) => {
+    const lineages = partyLineages || progress.selectedPartyLineages || {};
     if (progress.activeAdventure) {
+      const updatedAdv = {
+        ...progress.activeAdventure,
+        partyLineages: lineages,
+      };
+      const updatedProgress = {
+        ...progress,
+        selectedPartyLineages: lineages,
+        activeAdventure: updatedAdv,
+      };
+      setProgress(updatedProgress);
+      savePlayerProgress(updatedProgress);
       setCurrentView('level_select');
       return;
     }
-    const updatedProgress = { ...progress, selectedPartyClasses };
+    const updatedProgress = {
+      ...progress,
+      selectedPartyClasses,
+      selectedPartyLineages: lineages,
+    };
     setProgress(updatedProgress);
     savePlayerProgress(updatedProgress);
     setCurrentView('level_select');
@@ -865,6 +895,89 @@ export function App() {
     setPhase('player_turn');
     setSelectedUnitId(null);
     soundManager.playTurnStart(true);
+  };
+
+  const handleStartDailyDungeon = () => {
+    setShowDailyDungeonModal(false);
+    setIsDailyMode(true);
+    setIsTrainingMode(false);
+
+    const config = dailyDungeonConfig || generateDailyDungeonConfig();
+    setDailyDungeonConfig(config);
+
+    const lvlConfig = config.levelConfig;
+    setCurrentLevel(lvlConfig);
+
+    const tileGrid: TileData[][] = lvlConfig.grid.map((row: any, y: number) =>
+      row.map((cell: any, x: number) => ({
+        x,
+        y,
+        terrain: cell.terrain,
+        obstacle: cell.obstacle,
+        isWalkable: cell.obstacle === 'none',
+        blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins' || cell.obstacle === 'pillar',
+      }))
+    );
+    setGrid(tileGrid);
+
+    const playerUnits: Unit[] = config.partyClasses.map((className: string, idx: number) => {
+      const spawnPt = lvlConfig.deploymentZone[idx] || { x: 2 + idx * 2, y: 6 };
+      const skillIds = config.heroSkills[className] || [];
+
+      return createPlayerUnit(
+        className as any,
+        `daily_player_${className}_${idx}`,
+        spawnPt.x,
+        spawnPt.y,
+        config.heroLevel,
+        0, // xp
+        0, 0, 0, 0, 0, // bonus stats
+        skillIds,
+        {},
+        [],
+        progress.itemUpgrades,
+        getClassCumulativeBonus(className, progress.classUpgrades?.[className] || 0),
+        getGlobalHeroBonus(progress),
+        getEquippedSkin(className, progress.equippedClassSkins)
+      );
+    });
+
+    const enemyUnits: Unit[] = lvlConfig.enemySpawns.map((spawn: any, idx: number) => {
+      const u = createMonsterUnit(
+        spawn.monsterTypeId as any,
+        `daily_enemy_${spawn.monsterTypeId}_${idx}`,
+        spawn.x,
+        spawn.y,
+        spawn.levelOffset || 0
+      );
+      if (spawn.isBoss) {
+        u.isBoss = true;
+      }
+      return u;
+    });
+
+    const initialUnits = [...playerUnits, ...enemyUnits];
+    setUnits(initialUnits);
+    setTurnNumber(1);
+    setPhase('deployment');
+    setSelectedUnitId(null);
+    setSelectedAction('none');
+    setActiveSkill(null);
+    setActivePetSkill(null);
+    setUsedPetSkillIds([]);
+    setTargetUnitId(null);
+    setDamagePreview(null);
+    setFloatingNumbers([]);
+    setIsAnimatingAction(false);
+    setActiveBossBanner(null);
+    setCurrentView('battle');
+    soundManager.playTurnStart(true);
+  };
+
+  const handleExitDailyDungeon = () => {
+    soundManager.playSelect();
+    setIsDailyMode(false);
+    setCurrentView('level_select');
   };
 
   const handleStartTraining = (config: TrainingModeConfig) => {
@@ -1059,6 +1172,7 @@ export function App() {
   useEffect(() => {
     if (
       isTrainingMode ||
+      isDailyMode ||
       currentView !== 'battle' ||
       !currentLevel ||
       phase === 'victory' ||
@@ -1087,6 +1201,7 @@ export function App() {
     const handleBeforeUnload = () => {
       if (
         !isTrainingMode &&
+        !isDailyMode &&
         currentView === 'battle' &&
         currentLevel &&
         phase !== 'victory' &&
@@ -1230,7 +1345,8 @@ export function App() {
           progress.itemUpgrades,
           getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
           getGlobalHeroBonus(progress),
-          getEquippedSkin(heroClass, progress.equippedClassSkins)
+          getEquippedSkin(heroClass, progress.equippedClassSkins),
+          progress.activeAdventure?.partyLineages?.[heroClass] || progress.selectedPartyLineages?.[heroClass] || DEFAULT_CLASS_LINEAGES[heroClass] || 'humano'
         );
         const hpDiff = recomputed.maxHp - u.maxHp;
         return {
@@ -1609,6 +1725,10 @@ export function App() {
     clearLiveBattleState();
     setPhase('defeat');
     soundManager.playDefeat();
+
+    if (isDailyMode) {
+      return;
+    }
 
     const stageReached = currentLevel ? currentLevel.id : 1;
     const runGold = progress.activeAdventure?.goldEarnedInRun || 0;
@@ -3304,7 +3424,9 @@ export function App() {
 
     let updatedUnits = [...units];
     let totalDmgDone = 0;
+    let totalHealDone = 0;
     let totalKills = 0;
+    const killedMonsterTypeIds: string[] = [];
 
     for (const t of targetsToHit) {
       const isMain = t.id === target.id;
@@ -3380,6 +3502,7 @@ export function App() {
             isHealed = true;
             if (actualDmg > 0) {
               newHp = Math.min(t.maxHp, t.currentHp + actualDmg);
+              totalHealDone += actualDmg;
               addFloatingNumber(t.x, t.y, `+${actualDmg}`, 'healing', '#56E59A');
             }
             if (hadExcessHeal) {
@@ -3410,6 +3533,9 @@ export function App() {
               eff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
             } else if (skill?.shieldPercentOfAtk) {
               eff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
+            }
+            if (selectedUnit.lineageHealShieldBonusPercent) {
+              eff.value = Math.max(1, Math.round(eff.value * (1 + selectedUnit.lineageHealShieldBonusPercent / 100)));
             }
             if (hadExcessShield) {
               eff.value = Math.max(1, Math.round(eff.value * 0.5));
@@ -3493,6 +3619,9 @@ export function App() {
       } else if (newHp === 0) {
         soundManager.playDeath();
         totalKills++;
+        if (t.faction !== 'player' && t.monsterTypeId) {
+          killedMonsterTypeIds.push(t.monsterTypeId);
+        }
         if (boardRef.current) {
           await boardRef.current.playDeathAnimation(t.id);
         }
@@ -3549,6 +3678,18 @@ export function App() {
           }
         } else if ((skill?.statusEffect || skill?.secondaryStatusEffect) && dmgResult.damageType !== 'healing') {
           addFloatingNumber(t.x, t.y, '🛡️ Imune a Efeitos!', 'status', '#A855F7');
+        }
+      }
+
+      // Lineage: Draconato applies Burn
+      if (selectedUnit.lineageAppliesBurn && t.faction !== 'player' && dmgResult.damageType !== 'healing' && newHp > 0) {
+        const cannotBurn = currentEffects.some((e) => e.type === 'immune' || e.type === 'immune_burn_poison') || t.bossVersion === 'light';
+        if (!cannotBurn) {
+          currentEffects = [
+            ...currentEffects.filter((e) => e.type !== 'burn'),
+            { type: 'burn', duration: 2, value: 5, appliedTurn: turnNumberRef.current },
+          ];
+          addFloatingNumber(t.x, t.y, '🔥 Hálito Flamejante!', 'status', '#FF6B00');
         }
       }
 
@@ -3809,12 +3950,13 @@ export function App() {
     // LIFESTEAL & AUTO-CURA DA HABILIDADE (Golpe Sagrado: 30%, Dreno de Vida, etc.)
     const isGolpeSagrado = skill?.id === 'golpe_sagrado' || skill?.id?.startsWith('golpe_sagrado');
     const lifestealPct =
-      skill?.lifestealPercent ??
-      (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
-        ? 100
-        : isGolpeSagrado
-        ? 30
-        : 0);
+      (selectedUnit.lineageLifestealPercent || 0) +
+      (skill?.lifestealPercent ??
+        (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
+          ? 100
+          : isGolpeSagrado
+          ? 30
+          : 0));
 
     if ((lifestealPct > 0 || isGolpeSagrado) && (totalDmgDone > 0 || isGolpeSagrado)) {
       const isAttackerAntiHealed = gridRef.current?.[finalAttackerY]?.[finalAttackerX]?.antiHealPermanent;
@@ -4000,8 +4142,48 @@ export function App() {
         if (totalKills > 0) {
           p = incrementClassStat(p, selectedUnit.className, 'kills', totalKills);
         }
+        if (totalHealDone > 0) {
+          const prevStats = p.lineageQuestStats || {
+            healingDone: 0,
+            flawlessWins: 0,
+            totalGoldEarned: 0,
+            peakGold: p.gold || 0,
+            bossesDefeated: 0,
+            battlesWon: 0,
+          };
+          p = {
+            ...p,
+            lineageQuestStats: {
+              ...prevStats,
+              healingDone: (prevStats.healingDone || 0) + totalHealDone,
+            },
+          };
+        }
+        if (killedMonsterTypeIds.length > 0) {
+          const currentKills = { ...(p.monsterKills || {}) };
+          for (const mId of killedMonsterTypeIds) {
+            currentKills[mId] = (currentKills[mId] || 0) + 1;
+          }
+          p = { ...p, monsterKills: currentKills };
+          const newUnlocked = checkClassUnlockQuests(p);
+          if (newUnlocked.length > 0) {
+            p = {
+              ...p,
+              unlockedClasses: Array.from(new Set([...(p.unlockedClasses || []), ...newUnlocked])),
+            };
+            setPendingUnlockClasses((prevPending) => Array.from(new Set([...prevPending, ...newUnlocked])));
+          }
+        }
         if (skill) {
           p = incrementClassStat(p, selectedUnit.className, 'skill_uses', 1);
+        }
+        const newLineages = checkLineageUnlockQuests(p);
+        if (newLineages.length > 0) {
+          p = {
+            ...p,
+            unlockedLineages: Array.from(new Set([...(p.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+          };
+          setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
         }
         savePlayerProgress(p);
         return p;
@@ -5274,6 +5456,13 @@ export function App() {
                   }
                 }
 
+                let usedPhoenixNow = false;
+                if (newHp === 0 && t.faction === 'player' && t.lineagePhoenixRevive && !t.hasUsedPhoenixRevive) {
+                  newHp = Math.max(1, Math.round(t.maxHp * 0.5));
+                  usedPhoenixNow = true;
+                  soundManager.playHeal();
+                  addFloatingNumber(finalTargetX, finalTargetY, '🔥 Renasceu das Cinzas (50% HP)!', 'healing', '#F97316');
+                }
                 if (newHp === 0) {
                   soundManager.playDeath();
                   if (boardRef.current) {
@@ -5310,7 +5499,17 @@ export function App() {
                 }
 
                 currentUnits = currentUnits.map((u) =>
-                  u.id === t.id ? { ...u, x: finalTargetX, y: finalTargetY, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+                  u.id === t.id
+                    ? {
+                        ...u,
+                        x: finalTargetX,
+                        y: finalTargetY,
+                        currentHp: newHp,
+                        isDead: newHp === 0,
+                        statusEffects: currentEffects,
+                        hasUsedPhoenixRevive: usedPhoenixNow ? true : u.hasUsedPhoenixRevive,
+                      }
+                    : u
                 );
               }
 
@@ -5701,6 +5900,24 @@ export function App() {
       }, 500);
     }
 
+    // Lineage: Celestial HP Regeneration at turn start
+    setUnits((latest) =>
+      latest.map((u) => {
+        if (u.faction === 'player' && !u.isDead && u.lineageHpRegenPercent && u.lineageHpRegenPercent > 0) {
+          if (u.currentHp < u.maxHp) {
+            const regenAmt = Math.max(1, Math.round(u.maxHp * (u.lineageHpRegenPercent / 100)));
+            const nextHp = Math.min(u.maxHp, u.currentHp + regenAmt);
+            const diff = nextHp - u.currentHp;
+            if (diff > 0) {
+              addFloatingNumber(u.x, u.y, `+${diff} (Celestial)`, 'healing', '#FFD700');
+              return { ...u, currentHp: nextHp };
+            }
+          }
+        }
+        return u;
+      })
+    );
+
     setPhase('player_turn');
     soundManager.playTurnStart(true);
   }, [units, grid, progress.combatSpeed, handleDefeat]);
@@ -5796,20 +6013,91 @@ export function App() {
   // Handle Victory in current stage
   const handleVictory = (finalUnitsState: Unit[]) => {
     if (!currentLevel) return;
+
+    if (isDailyMode) {
+      clearLiveBattleState();
+      soundManager.playVictory();
+      setPhase('victory');
+
+      const todayStr = getTodayDateString();
+      const alreadyCompletedToday = progress.dailyDungeon?.lastCompletedDate === todayStr;
+
+      // Recompensa de 20 mil de ouro ao passar a fase diária
+      const rewardGold = alreadyCompletedToday ? 0 : 20000;
+      const updatedGold = progress.gold + rewardGold;
+      const dailyPartyUnits = finalUnitsState.filter((u) => u.faction === 'player' && !u.isSummoned);
+      const isFlawlessDaily = dailyPartyUnits.length >= 4 && dailyPartyUnits.every((u) => !u.isDead && u.currentHp > 0);
+      const prevDailyStats = progress.lineageQuestStats || {
+        healingDone: 0,
+        flawlessWins: 0,
+        totalGoldEarned: 0,
+        peakGold: progress.gold || 0,
+        bossesDefeated: 0,
+        battlesWon: 0,
+      };
+
+      let updatedProgress: PlayerProgress = {
+        ...progress,
+        gold: updatedGold,
+        dailyDungeon: {
+          lastCompletedDate: todayStr,
+          totalWins: (progress.dailyDungeon?.totalWins || 0) + 1,
+        },
+        lineageQuestStats: {
+          ...prevDailyStats,
+          flawlessWins: (prevDailyStats.flawlessWins || 0) + (isFlawlessDaily ? 1 : 0),
+          totalGoldEarned: (prevDailyStats.totalGoldEarned || 0) + rewardGold,
+          peakGold: Math.max(prevDailyStats.peakGold || 0, updatedGold),
+          battlesWon: (prevDailyStats.battlesWon || 0) + 1,
+        },
+      };
+
+      const dailyUnlockedLineages = checkLineageUnlockQuests(updatedProgress);
+      if (dailyUnlockedLineages.length > 0) {
+        updatedProgress = {
+          ...updatedProgress,
+          unlockedLineages: Array.from(
+            new Set([...(updatedProgress.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...dailyUnlockedLineages])
+          ),
+        };
+        setPendingUnlockLineages((prev) => Array.from(new Set([...prev, ...dailyUnlockedLineages])));
+      }
+
+      setProgress(updatedProgress);
+      savePlayerProgress(updatedProgress);
+
+      const partyUnits = finalUnitsState.filter((u) => u.faction === 'player' && !u.isSummoned);
+      setVictorySummary({
+        xpGained: 5000,
+        goldGained: rewardGold,
+        survivingUnits: partyUnits,
+        levelUps: [],
+        droppedEggs: [],
+      });
+      return;
+    }
+
     clearLiveBattleState();
     soundManager.playVictory();
     setPhase('victory');
 
     const xpReward = Math.round(currentLevel.rewards.xpPerUnit);
 
-    const equippedPet = getPetById(progress.equippedPetId);
-    const petPassives = calculatePetPassives(equippedPet);
-    const goldMultiplier =
-      1 + getGeneralGoldMultiplier(progress.generalUpgrades?.goldBoost || 0) + (petPassives.goldBoostPercent / 100);
-    const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);
-
     // Todos os heróis da equipe recebem o XP e evoluem de nível, mesmo que tenham caído em combate
     const partyUnits = finalUnitsState.filter((u) => u.faction === 'player' && !u.isSummoned);
+
+    const equippedPet = getPetById(progress.equippedPetId);
+    const petPassives = calculatePetPassives(equippedPet);
+    let lineageGoldBonusRatio = 0;
+    partyUnits.forEach((u) => {
+      if (u.lineageGoldBonusPercent) {
+        lineageGoldBonusRatio += u.lineageGoldBonusPercent / 100;
+      }
+    });
+
+    const goldMultiplier =
+      1 + getGeneralGoldMultiplier(progress.generalUpgrades?.goldBoost || 0) + (petPassives.goldBoostPercent / 100) + lineageGoldBonusRatio;
+    const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);
     const levelUps: { unitName: string; oldLevel: number; newLevel: number }[] = [];
     const statChoiceQueue: { unit: Unit; newLevel: number }[] = [];
     const updatedUnitsState = { ...progress.unitsState };
@@ -5881,6 +6169,25 @@ export function App() {
     // Condição: 1% de chance de drop raro ao vencer qualquer fase
     if (!currentUnlocked.includes('sniper') && Math.random() < 0.01) {
       newlyUnlocked.push('sniper');
+    }
+
+    const updatedMonsterKills: Record<string, number> = { ...(progress.monsterKills || {}) };
+    currentLevel.enemySpawns.forEach((spawn) => {
+      updatedMonsterKills[spawn.monsterTypeId] = (updatedMonsterKills[spawn.monsterTypeId] || 0) + 1;
+    });
+
+    const questsProgressCheck = {
+      ...progress,
+      monsterKills: updatedMonsterKills,
+      unlockedClasses: currentUnlocked,
+    };
+    const readyFromQuests = checkClassUnlockQuests(questsProgressCheck);
+    if (readyFromQuests.length > 0) {
+      newlyUnlocked.push(...readyFromQuests);
+    }
+    const readyLineages = checkLineageUnlockQuests(questsProgressCheck);
+    if (readyLineages.length > 0) {
+      setPendingUnlockLineages((prev) => Array.from(new Set([...prev, ...readyLineages])));
     }
 
     const finalUnlockedClasses = Array.from(new Set([...currentUnlocked, ...newlyUnlocked]));
@@ -5967,7 +6274,17 @@ export function App() {
       progressWithMissions = incrementPartyStats(progressWithMissions, activeParty, 'bosses_defeated', 1);
     }
 
-    const newProgress: PlayerProgress = {
+    const isFlawlessVictory = partyUnits.length >= 4 && partyUnits.every((u) => !u.isDead && u.currentHp > 0);
+    const prevStats = progressWithMissions.lineageQuestStats || {
+      healingDone: 0,
+      flawlessWins: 0,
+      totalGoldEarned: 0,
+      peakGold: progress.gold || 0,
+      bossesDefeated: 0,
+      battlesWon: 0,
+    };
+
+    let newProgress: PlayerProgress = {
       ...progressWithMissions,
       unlockedLevel: nextUnlocked,
       completedLevels: completedList,
@@ -5978,7 +6295,27 @@ export function App() {
       adventureHistory: updatedHistory,
       discoveredItemIds: newDiscoveredItems,
       eggs: updatedEggs,
+      lineageQuestStats: {
+        ...prevStats,
+        flawlessWins: (prevStats.flawlessWins || 0) + (isFlawlessVictory ? 1 : 0),
+        totalGoldEarned: (prevStats.totalGoldEarned || 0) + goldReward,
+        peakGold: Math.max(prevStats.peakGold || 0, totalGold),
+        bossesDefeated: (prevStats.bossesDefeated || 0) + (hasBossSpawned ? 1 : 0),
+        battlesWon: (prevStats.battlesWon || 0) + 1,
+      },
     };
+
+    const newlyUnlockedLineagesOnWin = checkLineageUnlockQuests(newProgress);
+    if (newlyUnlockedLineagesOnWin.length > 0) {
+      newProgress = {
+        ...newProgress,
+        unlockedLineages: Array.from(
+          new Set([...(newProgress.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newlyUnlockedLineagesOnWin])
+        ),
+      };
+      setPendingUnlockLineages((prev) => Array.from(new Set([...prev, ...newlyUnlockedLineagesOnWin])));
+    }
+
     setProgress(newProgress);
     savePlayerProgress(newProgress);
 
@@ -6405,7 +6742,18 @@ export function App() {
           onOpenCoupons={() => setShowCouponModal(true)}
           onOpenTrainingMode={() => setShowTrainingModal(true)}
           onOpenClassMissions={() => setShowClassMissionsModal(true)}
+          onOpenDailyDungeon={() => setShowDailyDungeonModal(true)}
+            onOpenClassUnlockQuests={() => setShowClassUnlockQuestsModal(true)}
         />
+
+        {showDailyDungeonModal && (
+          <DailyDungeonModal
+            config={dailyDungeonConfig || generateDailyDungeonConfig()}
+            dailyState={progress.dailyDungeon}
+            onStartDailyDungeon={handleStartDailyDungeon}
+            onClose={() => setShowDailyDungeonModal(false)}
+          />
+        )}
 
         {showTrainingModal && (
           <TrainingModeModal
@@ -6495,7 +6843,13 @@ export function App() {
             }}
           />
         )}
-        {showClassMissionsModal && (
+        {showClassUnlockQuestsModal && (
+        <ClassUnlockQuestsModal
+          progress={progress}
+          onClose={() => setShowClassUnlockQuestsModal(false)}
+        />
+      )}
+      {showClassMissionsModal && (
           <ClassMissionsModal
             progress={progress}
             onUpdateProgress={(newProgress) => {
@@ -6514,6 +6868,7 @@ export function App() {
       <>
         <PartySelectionModal
           initialSelected={progress.selectedPartyClasses}
+          initialLineages={progress.activeAdventure?.partyLineages || progress.selectedPartyLineages || {}}
           unlockedClasses={progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro']}
           playerGold={progress.gold}
           equippedClassSkins={progress.equippedClassSkins}
@@ -6522,6 +6877,12 @@ export function App() {
           onOpenClassMissions={() => setShowClassMissionsModal(true)}
           onClose={() => setCurrentView('level_select')}
         />
+        {pendingUnlockLineages.length > 0 && (
+          <LineageUnlockCelebrationModal
+            lineageIds={pendingUnlockLineages}
+            onDismiss={() => setPendingUnlockLineages((prev) => prev.slice(1))}
+          />
+        )}
         {pendingUnlockClasses.length > 0 && (
           <ClassUnlockModal
             unlockedClasses={pendingUnlockClasses}
@@ -6548,8 +6909,8 @@ export function App() {
   return (
     <div className="h-screen w-screen bg-[#10131C] text-[#F3F4F8] flex flex-col overflow-hidden font-sans select-none">
       <TopBar
-        levelNumber={isTrainingMode ? 9999 : currentLevel?.id || 1}
-        levelName={isTrainingMode ? 'Campo de Treinamento' : currentLevel?.name || 'Fase'}
+        levelNumber={isTrainingMode ? 9999 : isDailyMode ? 9000 : currentLevel?.id || 1}
+        levelName={isTrainingMode ? 'Campo de Treinamento' : isDailyMode ? 'Fase Diária' : currentLevel?.name || 'Fase'}
         turnNumber={turnNumber}
         alliesCount={alliesCount}
         enemiesCount={enemiesCount}
@@ -6576,6 +6937,10 @@ export function App() {
             : undefined
         }
         onSaveAndExit={() => {
+          if (isDailyMode) {
+            handleExitDailyDungeon();
+            return;
+          }
           if (isTrainingMode) {
             handleExitTraining();
             return;
@@ -6842,7 +7207,8 @@ export function App() {
         !pendingLootItems && (
           <VictoryDefeatModal
             isVictory={phase === 'victory'}
-            levelNumber={currentLevel.id}
+            levelNumber={isDailyMode ? 9000 : currentLevel.id}
+            isDailyDungeon={isDailyMode}
             summary={
               victorySummary || {
                 xpGained: currentLevel.rewards.xpPerUnit,
@@ -6851,12 +7217,12 @@ export function App() {
                 levelUps: [],
               }
             }
-            hasNextLevel={currentLevel.id < LEVELS.length}
+            hasNextLevel={!isDailyMode && currentLevel.id < LEVELS.length}
             playerGold={progress.gold}
             unlockedClassesCount={progress.unlockedClasses?.length || 4}
             onNextLevel={() => startLevel(currentLevel.id + 1)}
-            onRetry={handleStartNewAdventure}
-            onGoToMenu={() => setCurrentView('level_select')}
+            onRetry={isDailyMode ? handleStartDailyDungeon : handleStartNewAdventure}
+            onGoToMenu={() => { if (isDailyMode) setIsDailyMode(false); setCurrentView('level_select'); }}
           />
         )}
 

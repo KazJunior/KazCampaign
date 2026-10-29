@@ -20,6 +20,7 @@ interface VictoryDefeatModalProps {
   hasNextLevel: boolean;
   playerGold?: number;
   unlockedClassesCount?: number;
+  isDailyDungeon?: boolean;
   onNextLevel: () => void;
   onRetry: () => void;
   onGoToMenu: () => void;
@@ -32,6 +33,7 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
   hasNextLevel,
   playerGold = 0,
   unlockedClassesCount = 4,
+  isDailyDungeon = false,
   onNextLevel,
   onRetry,
   onGoToMenu,
@@ -39,12 +41,36 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
   useEffect(() => {
     if (isVictory) {
       confetti({
-        particleCount: 100,
-        spread: 70,
+        particleCount: isDailyDungeon ? 150 : 100,
+        spread: 80,
         origin: { y: 0.6 },
       });
     }
-  }, [isVictory]);
+  }, [isVictory, isDailyDungeon]);
+
+  const getTitle = () => {
+    if (isDailyDungeon) {
+      return isVictory ? 'Desafio Diário Conquistado!' : 'Derrota no Desafio Diário';
+    }
+    if (isVictory) {
+      return !hasNextLevel ? 'Vitória Suprema da Campanha!' : 'Fase Concluída!';
+    }
+    return 'Aventura Encerrada!';
+  };
+
+  const getSubtitle = () => {
+    if (isDailyDungeon) {
+      return isVictory
+        ? 'Parabéns! Você superou o desafio aleatório do dia e conquistou a recompensa diária de 20.000 de Ouro!'
+        : 'Sua equipe caiu em batalha! Não desanime: você pode tentar quantas vezes quiser hoje até passar!';
+    }
+    if (isVictory) {
+      return !hasNextLevel
+        ? 'Incrível! Você derrotou o Dragão Malakor e superou todas as 50 fases!'
+        : `Você eliminou todos os inimigos da Fase ${levelNumber}!`;
+    }
+    return `Sua equipe foi derrotada na Fase ${levelNumber}. A jornada chegou ao fim.`;
+  };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans">
@@ -64,18 +90,10 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
         </div>
 
         <h1 className="font-extrabold text-2xl uppercase tracking-wider mb-1">
-          {isVictory
-            ? !hasNextLevel
-              ? 'Vitória Suprema da Campanha!'
-              : 'Fase Concluída!'
-            : 'Aventura Encerrada!'}
+          {getTitle()}
         </h1>
         <p className="text-xs text-[#A7B0C4] mb-4">
-          {isVictory
-            ? !hasNextLevel
-              ? 'Incrível! Você derrotou o Dragão Malakor e superou todas as 50 fases!'
-              : `Você eliminou todos os inimigos da Fase ${levelNumber}!`
-            : `Sua equipe foi derrotada na Fase ${levelNumber}. A jornada chegou ao fim.`}
+          {getSubtitle()}
         </p>
 
         {isVictory ? (
@@ -146,7 +164,9 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
               <ShieldCheck size={16} /> Recursos Preservados
             </div>
             <p className="text-[11px] text-[#A7B0C4]">
-              Na próxima aventura, seus heróis recomeçarão do Nível 1 na Fase 1, mas todo o seu patrimônio foi mantido:
+              {isDailyDungeon
+                ? 'Sua aventura da campanha principal e todo o seu ouro permanecem intactos. Você pode tentar o Desafio Diário novamente quantas vezes quiser!'
+                : 'Na próxima aventura, seus heróis recomeçarão do Nível 1 na Fase 1, mas todo o seu patrimônio foi mantido:'}
             </p>
             <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
               <div className="bg-[#1B2030] p-2.5 rounded-lg border border-[#343B50] flex items-center gap-2">
@@ -170,7 +190,14 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
         <div className="space-y-2">
           {isVictory ? (
             <>
-              {hasNextLevel ? (
+              {isDailyDungeon ? (
+                <button
+                  onClick={onGoToMenu}
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#FFD700] hover:to-[#D4AD65] text-[#10131C] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
+                >
+                  <Home size={16} /> Concluir Desafio Diário e Voltar ao Menu
+                </button>
+              ) : hasNextLevel ? (
                 <>
                   <button
                     onClick={onNextLevel}
@@ -198,13 +225,13 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
             <>
               <button
                 onClick={onRetry}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#E65353] to-[#D33838] hover:from-[#D33838] hover:to-[#B72828] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#E65353] to-[#D33838] hover:from-[#D33838] hover:to-[#B72828] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 cursor-pointer"
               >
-                <RefreshCw size={16} /> Iniciar Nova Aventura (Fase 1)
+                <RefreshCw size={16} /> {isDailyDungeon ? 'Tentar Desafio Novamente' : 'Iniciar Nova Aventura (Fase 1)'}
               </button>
               <button
                 onClick={onGoToMenu}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#10131C] hover:bg-[#343B50] text-[#A7B0C4] hover:text-white font-bold text-xs uppercase tracking-wider border border-[#343B50] transition-colors flex items-center justify-center gap-1.5"
+                className="w-full py-2.5 px-4 rounded-xl bg-[#10131C] hover:bg-[#343B50] text-[#A7B0C4] hover:text-white font-bold text-xs uppercase tracking-wider border border-[#343B50] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Home size={14} /> Voltar ao Menu
               </button>

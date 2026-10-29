@@ -197,6 +197,24 @@ export interface Unit {
   skinId?: string;
   skinName?: string;
   skinBadge?: string;
+
+  // Linhagens (Ancestries / Lineages):
+  lineageId?: string;
+  lineageName?: string;
+  lineageIcon?: string;
+  lineageBonusTitle?: string;
+  lineageBonusDescription?: string;
+  lineageColor?: string;
+  lineageLifestealPercent?: number;
+  lineageHpRegenPercent?: number;
+  lineageHealShieldBonusPercent?: number;
+  lineageAppliesBurn?: boolean;
+  lineageStartShieldPercent?: number;
+  lineageGoldBonusPercent?: number;
+  lineageMissingHpDamageScaling?: boolean;
+  lineageDefenseIgnorePercent?: number;
+  lineagePhoenixRevive?: boolean;
+  hasUsedPhoenixRevive?: boolean;
 }
 
 export type ItemCategory = 'helmet' | 'chestplate' | 'leggings' | 'boots' | 'weapon' | 'accessory';
@@ -333,6 +351,7 @@ export interface ActiveAdventure {
   equipment?: Record<string, EquipmentSlots>; // ClassName -> EquipmentSlots
   battleState?: ActiveBattleState | null;
   combatActive?: boolean; // Se a batalha da fase já foi iniciada
+  partyLineages?: Record<string, string>; // className -> lineageId
 }
 
 export interface PlayerProgress {
@@ -342,6 +361,7 @@ export interface PlayerProgress {
   gold: number; // Persistent gold kept across all runs
   unlockedClasses: string[]; // Persistent unlocked playable class names
   selectedPartyClasses: string[]; // Current 4 classes
+  selectedPartyLineages?: Record<string, string>; // className -> lineageId
   unitsState: Record<string, {
     className: string;
     level: number;
@@ -381,6 +401,30 @@ export interface PlayerProgress {
   unlockedClassSkins?: string[];
   equippedClassSkins?: Record<string, string>; // className -> skinId
   unlockedClassSkillIds?: string[];
+  dailyDungeon?: DailyDungeonState;
+  monsterKills?: Record<string, number>;
+  unlockedLineages?: string[]; // IDs das linhagens desbloqueadas (default: ['humano', 'elfo', 'anao'])
+  lineageQuestStats?: {
+    healingDone?: number;
+    flawlessWins?: number;
+    totalGoldEarned?: number;
+    peakGold?: number;
+    bossesDefeated?: number;
+    battlesWon?: number;
+    totalDamage?: number;
+  };
+}
+
+export interface ClassUnlockQuest {
+  id: string;
+  targetClass: string;
+  title: string;
+  description: string;
+  monsterTypeId: string;
+  monsterName: string;
+  targetCount: number;
+  hintLevel?: string;
+  iconName?: string;
 }
 
 export type PetRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -478,4 +522,22 @@ export interface ClassSkin {
   accentGlow: string;
   badge: string;
   unlockedByDefault?: boolean;
+}
+
+export interface DailyDungeonState {
+  lastCompletedDate?: string;
+  totalWins?: number;
+}
+
+export interface DailyDungeonConfig {
+  dateKey: string;
+  formattedDate: string;
+  title: string;
+  subtitle: string;
+  levelConfig: LevelConfig;
+  partyClasses: string[];
+  heroSkills: Record<string, string[]>;
+  heroLevel: number;
+  rewardGold: number;
+  bossMonsterTypeId?: string;
 }

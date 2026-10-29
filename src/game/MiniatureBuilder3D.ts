@@ -3092,3 +3092,6 @@ function buildOmnimageMini(group: THREE.Group) {
     group.add(orb);
   });
 }
+
+// ============================================================================
+// DRAGONOID MINIATURE (Combatente Dracônico Híbrido & Chamas Ancestrais)

@@ -252,6 +252,19 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                     {isAlly ? 'Aliado' : 'Inimigo'}
                   </span>
                 )}
+                {selectedUnit.lineageName && (
+                  <span
+                    className="text-[8px] font-black px-1 rounded shrink-0 border"
+                    style={{
+                      backgroundColor: `${selectedUnit.lineageColor || '#FFD700'}20`,
+                      borderColor: `${selectedUnit.lineageColor || '#FFD700'}50`,
+                      color: selectedUnit.lineageColor || '#FFD700',
+                    }}
+                    title={`Linhagem ${selectedUnit.lineageName}: ${selectedUnit.lineageBonusDescription}`}
+                  >
+                    🧬 {selectedUnit.lineageName}
+                  </span>
+                )}
               </div>
 
               {/* HP Bar */}

@@ -2,6 +2,7 @@ import type { Unit, ClassSkin } from '../types/game';
 import { SKILLS, getEvolvedSkill } from './skills';
 import { getItemById } from './items';
 import { getItemEffectiveStats } from './baseUpgrades';
+import { getLineageById, DEFAULT_CLASS_LINEAGES } from './lineages';
 
 export interface StatGrowth {
   hp: number;
@@ -364,7 +365,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     description: 'Conjurador lendário que transcendeu a especialização elemental para comandar Fogo, Gelo, Vento e Raio simultaneamente. Funde as quatro forças da natureza para aniquilar qualquer adversário com cataclismos prismáticos.',
     statGrowth: { hp: 10, atk: 1, mag: 6, def: 1, res: 3 },
     isSecret: true,
-  },
+  }
 };
 
 export const INITIAL_CLASSES: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
@@ -596,7 +597,8 @@ export function createPlayerUnit(
   itemUpgrades?: Record<string, number>,
   classUpgradeBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number },
   globalBonus?: { hp?: number; atk?: number; mag?: number; def?: number; res?: number; mov?: number; range?: number },
-  skin?: ClassSkin | null
+  skin?: ClassSkin | null,
+  lineageId?: string | null
 ): Unit {
   const targetClassKey = className === 'engenheiro' ? 'druida' : className;
   const def = CLASS_DEFINITIONS[targetClassKey] || CLASS_DEFINITIONS[className] || CLASS_DEFINITIONS['guerreiro'];
@@ -627,6 +629,16 @@ export function createPlayerUnit(
     }
   }
 
+  const lineage = getLineageById(lineageId || DEFAULT_CLASS_LINEAGES[className] || 'humano');
+  const lStats = lineage.stats || {};
+  const lHp = lStats.hp || 0;
+  const lAtk = lStats.atk || 0;
+  const lMag = lStats.mag || 0;
+  const lDef = lStats.def || 0;
+  const lRes = lStats.res || 0;
+  const lMov = lStats.mov || 0;
+  const lRange = lStats.range || 0;
+
   const cBonus = classUpgradeBonus || { hp: 0, atk: 0, mag: 0, def: 0, res: 0 };
   const gHp = globalBonus?.hp || 0;
   const gAtk = globalBonus?.atk || 0;
@@ -636,14 +648,14 @@ export function createPlayerUnit(
   const gMov = globalBonus?.mov || 0;
   const gRange = globalBonus?.range || 0;
 
-  const hpBonus = levelOffsets * growth.hp + bonusHp + itemHp + (cBonus.hp || 0) + gHp;
+  const hpBonus = levelOffsets * growth.hp + bonusHp + itemHp + (cBonus.hp || 0) + gHp + lHp;
   const maxHp = def.maxHp + hpBonus;
-  const atk = def.atk + levelOffsets * growth.atk + bonusAtk + itemAtk + (cBonus.atk || 0) + gAtk;
-  const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag + (cBonus.mag || 0) + gMag;
-  const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef + (cBonus.def || 0) + gDef;
-  const res = def.res + levelOffsets * growth.res + bonusRes + itemRes + (cBonus.res || 0) + gRes;
-  const mov = Math.min(4, def.mov + itemMov + gMov);
-  const range = def.range + itemRange + gRange;
+  const atk = def.atk + levelOffsets * growth.atk + bonusAtk + itemAtk + (cBonus.atk || 0) + gAtk + lAtk;
+  const mag = def.mag + levelOffsets * growth.mag + bonusMag + itemMag + (cBonus.mag || 0) + gMag + lMag;
+  const unitDef = def.def + levelOffsets * growth.def + bonusDef + itemDef + (cBonus.def || 0) + gDef + lDef;
+  const res = def.res + levelOffsets * growth.res + bonusRes + itemRes + (cBonus.res || 0) + gRes + lRes;
+  const mov = Math.min(5, def.mov + itemMov + gMov + lMov);
+  const range = def.range + itemRange + gRange + lRange;
 
   // Max 5 skills total: baseSkill + up to 4 learnedSkillIds
   const skillListIds = Array.from(new Set([def.baseSkillId, ...learnedSkillIds])).slice(0, 5);
@@ -738,8 +750,25 @@ export function createPlayerUnit(
     learnedSkillIds: skillListIds.filter((id) => id !== def.baseSkillId),
     skillLevels,
     equippedItemIds,
-    statusEffects: [],
+    statusEffects: lineage.startShieldPercent && lineage.startShieldPercent > 0
+      ? [{ type: 'shield', duration: 4, value: Math.round(maxHp * (lineage.startShieldPercent / 100)) }]
+      : [],
     damageDealt: 0,
     kills: 0,
+    lineageId: lineage.id,
+    lineageName: lineage.name,
+    lineageIcon: lineage.iconName,
+    lineageBonusTitle: lineage.bonusTitle,
+    lineageBonusDescription: lineage.bonusDescription,
+    lineageColor: lineage.color,
+    lineageLifestealPercent: lineage.lifestealPercent,
+    lineageHpRegenPercent: lineage.hpRegenPercent,
+    lineageHealShieldBonusPercent: lineage.healShieldBonusPercent,
+    lineageAppliesBurn: lineage.appliesBurn,
+    lineageStartShieldPercent: lineage.startShieldPercent,
+    lineageGoldBonusPercent: lineage.goldBonusPercent,
+    lineageMissingHpDamageScaling: lineage.missingHpDamageScaling,
+    lineageDefenseIgnorePercent: lineage.defenseIgnorePercent,
+    lineagePhoenixRevive: lineage.phoenixRevive,
   };
 }

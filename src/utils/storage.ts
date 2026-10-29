@@ -37,6 +37,7 @@ export const DEFAULT_PROGRESS: PlayerProgress = {
   gold: 0,
   unlockedClasses: [...INITIAL_CLASSES],
   selectedPartyClasses: ['guerreiro', 'arqueiro', 'mago', 'curandeiro'],
+  selectedPartyLineages: {},
   unitsState: createInitialUnitsState(),
   combatSpeed: 'normal',
   highScore: 0,
@@ -54,6 +55,12 @@ export const DEFAULT_PROGRESS: PlayerProgress = {
   unlockedClassSkins: [],
   equippedClassSkins: {},
   unlockedClassSkillIds: [],
+  dailyDungeon: {
+    lastCompletedDate: undefined,
+    totalWins: 0,
+  },
+  monsterKills: {},
+  unlockedLineages: ['humano', 'elfo', 'anao'],
 };
 
 export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -166,6 +173,19 @@ export function loadPlayerProgress(): PlayerProgress {
       completedLevels,
       unlockedClasses,
       selectedPartyClasses,
+      selectedPartyLineages: (() => {
+        const raw = parsed.selectedPartyLineages && typeof parsed.selectedPartyLineages === 'object' ? parsed.selectedPartyLineages : {};
+        const migrated: Record<string, string> = {};
+        for (const [k, v] of Object.entries(raw)) {
+          migrated[k] = v === 'draconato' ? 'dragonoide' : (v as string);
+        }
+        return migrated;
+      })(),
+      unlockedLineages: (() => {
+        const raw = Array.isArray(parsed.unlockedLineages) ? parsed.unlockedLineages : ['humano', 'elfo', 'anao'];
+        const migrated = raw.map((id: string) => id === 'draconato' ? 'dragonoide' : id);
+        return Array.from(new Set(['humano', 'elfo', 'anao', ...migrated]));
+      })(),
       unitsState: (() => {
         const rawUnits = { ...(parsed.unitsState || {}) };
         if (rawUnits.engenheiro && !rawUnits.druida) {
@@ -185,6 +205,15 @@ export function loadPlayerProgress(): PlayerProgress {
       generalUpgrades: parsed.generalUpgrades && typeof parsed.generalUpgrades === 'object' ? parsed.generalUpgrades : {},
       itemUpgrades: parsed.itemUpgrades && typeof parsed.itemUpgrades === 'object' ? parsed.itemUpgrades : {},
       unlockedPetIds: Array.isArray(parsed.unlockedPetIds) ? parsed.unlockedPetIds : [],
+      dailyDungeon: parsed.dailyDungeon && typeof parsed.dailyDungeon === 'object'
+        ? {
+            lastCompletedDate: typeof parsed.dailyDungeon.lastCompletedDate === 'string' ? parsed.dailyDungeon.lastCompletedDate : undefined,
+            totalWins: Number(parsed.dailyDungeon.totalWins) || 0,
+          }
+        : {
+            lastCompletedDate: undefined,
+            totalWins: 0,
+          },
       equippedPetId: typeof parsed.equippedPetId === 'string' ? parsed.equippedPetId : null,
       eggs: Array.isArray(parsed.eggs)
         ? parsed.eggs.map((e: any) => ({
