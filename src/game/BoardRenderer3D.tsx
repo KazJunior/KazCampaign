@@ -603,11 +603,11 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       figure.name = `unit_${unit.id}`;
       figure.userData = { unitId: unit.id, unitX: unit.x, unitY: unit.y };
 
-      // Invisible Hit Collider for accurate 3D click & hover picking (generous tile footprint)
+      // Invisible Hit Collider for accurate 3D click & hover picking (compact body footprint)
       const isBoss = unit.isBoss || unit.isMiniBoss;
-      const colliderRadius = isBoss ? 0.65 : 0.48;
-      const colliderHeight = isBoss ? 2.4 : 1.6;
-      const hitColliderGeo = new THREE.CylinderGeometry(colliderRadius, colliderRadius, colliderHeight, 16);
+      const colliderRadius = isBoss ? 0.30 : 0.22;
+      const colliderHeight = isBoss ? 0.65 : 0.48;
+      const hitColliderGeo = new THREE.CylinderGeometry(colliderRadius, colliderRadius, colliderHeight, 12);
       const hitColliderMat = new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
@@ -616,7 +616,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const hitCollider = new THREE.Mesh(hitColliderGeo, hitColliderMat);
       hitCollider.position.set(0, colliderHeight / 2, 0);
       hitCollider.name = `hitCollider_${unit.id}`;
-      hitCollider.userData = { unitId: unit.id, unitX: unit.x, unitY: unit.y };
+      hitCollider.userData = { isHitCollider: true, unitId: unit.id, unitX: unit.x, unitY: unit.y };
       figure.add(hitCollider);
 
       // Upgrade to 3D GLB Model (Path 1) with procedural fallback
@@ -864,54 +864,62 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         }
       }
 
-      // 2. Raycast against unit figures (colliders, visual meshes, HP bar frames) - ignoring only spinning visual auras
+      // 2. Raycast strictly against compact unit hitColliders (ignoring decorative wings, hats, weapons, HP bars & auras)
       let hitUnitPos: { x: number; y: number } | null = null;
+      let hitPointY = 0;
       if (unitsGroupRef.current && unitsGroupRef.current.children.length > 0) {
-        const unitIntersects = raycaster.intersectObjects(unitsGroupRef.current.children, true);
-        const validIntersects = unitIntersects.filter((hit) => {
-          let curr: THREE.Object3D | null = hit.object;
-          while (curr && curr !== unitsGroupRef.current) {
-            if (
-              curr.name === 'auraRing' ||
-              curr.name === 'auraGroup' ||
-              curr.name === 'spinningOrb' ||
-              curr.userData?.isAura
-            ) {
-              return false;
+        const hitColliders: THREE.Object3D[] = [];
+        unitsGroupRef.current.children.forEach((unitFigure) => {
+          if (!unitFigure.visible) return;
+          unitFigure.children.forEach((child) => {
+            if (child.name.startsWith('hitCollider_')) {
+              hitColliders.push(child);
             }
-            curr = curr.parent;
-          }
-          return true;
+          });
         });
 
-        if (validIntersects.length > 0) {
-          const closest = validIntersects[0];
-          let curr: THREE.Object3D | null = closest.object;
-          let candidatePos: { x: number; y: number } | null = null;
-          while (curr && curr !== unitsGroupRef.current) {
-            if (
-              curr.userData &&
-              typeof curr.userData.unitX === 'number' &&
-              typeof curr.userData.unitY === 'number'
-            ) {
-              candidatePos = { x: curr.userData.unitX, y: curr.userData.unitY };
-              break;
-            }
-            if (curr.name && curr.name.startsWith('unit_')) {
-              const uId = curr.name.replace('unit_', '');
-              const found = units.find((u) => u.id === uId && !u.isDead);
-              if (found) {
-                candidatePos = { x: found.x, y: found.y };
-              }
-              break;
-            }
-            curr = curr.parent;
+        const unitIntersects = raycaster.intersectObjects(hitColliders, false);
+        if (unitIntersects.length > 0) {
+          const closest = unitIntersects[0];
+          hitPointY = closest.point.y;
+          const { unitX, unitY } = closest.object.userData || {};
+          if (typeof unitX === 'number' && typeof unitY === 'number') {
+            hitUnitPos = { x: unitX, y: unitY };
           }
+        }
+      }
 
-          if (candidatePos) {
-            // When ray hits any part of a unit or its collider/HP bar, select the unit directly!
-            hitUnitPos = candidatePos;
-          }
+      // 3. Smart Disambiguation when a unit's upper collider overlaps a different tile behind/in front of it
+      if (hitUnitPos && groundTile && (hitUnitPos.x !== groundTile.x || hitUnitPos.y !== groundTile.y)) {
+        const hu = hitUnitPos;
+        const gt = groundTile;
+        const unitOnGroundTile = units.find(
+          (u) =>
+            !u.isDead &&
+            u.x === gt.x &&
+            u.y === gt.y &&
+            !(u.faction === 'enemy' && u.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0))
+        );
+        const isHitUnitSelected = Boolean(
+          selectedUnit && !selectedUnit.isDead && selectedUnit.x === hu.x && selectedUnit.y === hu.y
+        );
+        const isGroundReachable = reachableTiles.some((pt) => pt.x === gt.x && pt.y === gt.y);
+        const isGroundAoE = aoeTiles.some((pt) => pt.x === gt.x && pt.y === gt.y);
+        const isGroundDeploy =
+          phase === 'deployment' && deploymentZone.some((pt) => pt.x === gt.x && pt.y === gt.y);
+        const isGroundAttackable = attackableTiles.some((pt) => pt.x === gt.x && pt.y === gt.y);
+        const isHitUnitAttackable = attackableTiles.some((pt) => pt.x === hu.x && pt.y === hu.y);
+
+        if (
+          unitOnGroundTile ||
+          isHitUnitSelected ||
+          isGroundReachable ||
+          isGroundAoE ||
+          isGroundDeploy ||
+          (isGroundAttackable && !isHitUnitAttackable) ||
+          hitPointY > 0.38
+        ) {
+          hitUnitPos = null;
         }
       }
 
@@ -927,7 +935,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
       return null;
     },
-    [gridWidth, gridHeight, units]
+    [gridWidth, gridHeight, units, selectedUnit, reachableTiles, attackableTiles, aoeTiles, deploymentZone, phase]
   );
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {

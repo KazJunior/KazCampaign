@@ -2817,8 +2817,8 @@ export function App() {
           return;
         }
 
-        // If player clicked an enemy while a hero is selected and ready to act, but target is invalid:
-        if (clickedUnit.faction === 'enemy') {
+        // If player clicked an enemy while actively aiming an attack or skill, but target is out of range:
+        if (clickedUnit.faction === 'enemy' && (selectedAction === 'attack' || !!activeSkill)) {
           soundManager.playSelect();
           if (isEnemyInvisible) {
             addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Inimigo Invisível!', 'status', '#8B5CF6');
