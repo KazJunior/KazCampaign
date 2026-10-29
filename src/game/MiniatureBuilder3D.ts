@@ -146,6 +146,10 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'wind_mage':
       buildWindMageMini(char);
       break;
+    case 'omnimage':
+    case 'omnimago':
+      buildOmnimageMini(char);
+      break;
     case 'goblin':
       buildGoblinMini(char);
       break;
@@ -2990,4 +2994,101 @@ function buildSkeletonMini(group: THREE.Group) {
   blade.position.set(0.24, 0.44, 0.10);
   blade.rotation.x = Math.PI / 6;
   group.add(blade);
+}
+
+
+function buildOmnimageMini(group: THREE.Group) {
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0x2e1065, roughness: 0.6 }); // Deep cosmic violet
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0xd946ef, emissive: 0xa21caf, emissiveIntensity: 0.6, roughness: 0.3 }); // Prismatic fuchsia
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf5d0c5, roughness: 0.6 });
+  const staffWoodMat = new THREE.MeshStandardMaterial({ color: 0x262626, roughness: 0.7 });
+
+  // Floating Robe Bottom
+  const skirtGeo = new THREE.CylinderGeometry(0.24, 0.32, 0.44, 12);
+  const skirt = new THREE.Mesh(skirtGeo, robeMat);
+  skirt.position.y = 0.22;
+  skirt.castShadow = true;
+  group.add(skirt);
+
+  // Robe Trim Ring
+  const trimGeo = new THREE.TorusGeometry(0.28, 0.02, 6, 16);
+  const trim = new THREE.Mesh(trimGeo, trimMat);
+  trim.rotation.x = Math.PI / 2;
+  trim.position.y = 0.05;
+  group.add(trim);
+
+  // Torso
+  const torsoGeo = new THREE.CylinderGeometry(0.18, 0.24, 0.35, 10);
+  const torso = new THREE.Mesh(torsoGeo, robeMat);
+  torso.position.y = 0.54;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Golden Amulet / Star Crest
+  const starGeo = new THREE.OctahedronGeometry(0.06, 0);
+  const star = new THREE.Mesh(starGeo, goldMat);
+  star.position.set(0, 0.62, 0.16);
+  group.add(star);
+
+  // Head
+  const headGeo = new THREE.SphereGeometry(0.12, 12, 10);
+  const head = new THREE.Mesh(headGeo, skinMat);
+  head.position.y = 0.82;
+  head.castShadow = true;
+  group.add(head);
+
+  // Pointed Wizard Hat with Wide Brim
+  const hatBrimGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.03, 16);
+  const hatBrim = new THREE.Mesh(hatBrimGeo, robeMat);
+  hatBrim.position.y = 0.88;
+  group.add(hatBrim);
+
+  const hatConeGeo = new THREE.ConeGeometry(0.18, 0.38, 12);
+  const hatCone = new THREE.Mesh(hatConeGeo, robeMat);
+  hatCone.position.set(0, 1.08, -0.04);
+  hatCone.rotation.x = -0.15;
+  hatCone.castShadow = true;
+  group.add(hatCone);
+
+  const hatRibbonGeo = new THREE.TorusGeometry(0.18, 0.02, 6, 16);
+  const hatRibbon = new THREE.Mesh(hatRibbonGeo, trimMat);
+  hatRibbon.rotation.x = Math.PI / 2;
+  hatRibbon.position.y = 0.90;
+  group.add(hatRibbon);
+
+  // Staff in Right Hand
+  const staffGeo = new THREE.CylinderGeometry(0.025, 0.025, 1.15, 8);
+  const staff = new THREE.Mesh(staffGeo, staffWoodMat);
+  staff.position.set(0.32, 0.58, 0.12);
+  staff.rotation.z = -0.10;
+  staff.castShadow = true;
+  group.add(staff);
+
+  // Staff Head: Prismatic Core
+  const coreMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0xd946ef,
+    emissiveIntensity: 1.2,
+    roughness: 0.1,
+  });
+  const coreGeo = new THREE.OctahedronGeometry(0.08, 0);
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  core.position.set(0.38, 1.16, 0.12);
+  group.add(core);
+
+  // 4 Orbiting Mini-Orbs on Staff (Fire, Ice, Wind, Lightning)
+  const elementColors = [0xef4444, 0x38bdf8, 0x10b981, 0xfacc15];
+  elementColors.forEach((color, i) => {
+    const orbMat = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 1.0 });
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), orbMat);
+    const angle = (i * Math.PI) / 2;
+    orb.position.set(
+      0.38 + Math.cos(angle) * 0.14,
+      1.16 + (i % 2 === 0 ? 0.03 : -0.03),
+      0.12 + Math.sin(angle) * 0.14
+    );
+    orb.name = 'spinningOrb';
+    group.add(orb);
+  });
 }

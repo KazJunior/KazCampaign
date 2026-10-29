@@ -21,7 +21,7 @@ import type {
   UnitProgression,
 } from './types/game';
 import { LEVELS, createTrainingLevel } from './data/levels';
-import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock } from './data/units';
+import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
 import { createMonsterUnit } from './data/monsters';
 import { getItemById, rollStageItemDrops, getRandomItemByRarity } from './data/items';
@@ -479,7 +479,9 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showSecretRiddle, setShowSecretRiddle] = useState(false);
+  const [riddleType, setRiddleType] = useState<'astaroth' | 'omnimago'>('astaroth');
   const [hasPedestalBeenStruck, setHasPedestalBeenStruck] = useState(false);
+  const [activatedElementalCrystals, setActivatedElementalCrystals] = useState<string[]>([]);
   const [pendingStatChoices, setPendingStatChoices] = useState<{ unit: Unit; newLevel: number }[]>([]);
   const [pendingSkillChoices, setPendingSkillChoices] = useState<Unit[]>([]);
   const [pendingUnlockClasses, setPendingUnlockClasses] = useState<string[]>([]);
@@ -2694,15 +2696,56 @@ export function App() {
       }
     }
 
-    // Inspecting or clicking pedestal directly (when not in attack mode)
+    // Inspecting or clicking pedestal directly (Level 10)
     if (isPedestalTile && !clickedUnit) {
       if (hasPedestalBeenStruck) {
+        setRiddleType('astaroth');
         setShowSecretRiddle(true);
         soundManager.playSelect();
       } else {
         soundManager.playSelect();
         addFloatingNumber(0, 0, 'Inscrição rúnica na pedra...', 'status', '#A7B0C4');
       }
+      return;
+    }
+
+    // Inspecting or clicking elemental crystals (Level 25 - Omnimago Riddle)
+    const currentObstacle = grid[y]?.[x]?.obstacle;
+    const isElementalCrystal =
+      currentLevel?.id === 25 &&
+      (currentObstacle === 'crystal_fire' ||
+       currentObstacle === 'crystal_ice' ||
+       currentObstacle === 'crystal_wind' ||
+       currentObstacle === 'crystal_lightning');
+
+    if (isElementalCrystal && !clickedUnit) {
+      const crystalType = currentObstacle as string;
+      const crystalMeta: Record<string, { name: string; color: string }> = {
+        crystal_fire: { name: 'Fogo Primordial', color: '#EF4444' },
+        crystal_ice: { name: 'Gelo Ancestral', color: '#38BDF8' },
+        crystal_wind: { name: 'Vento Ciclônico', color: '#10B981' },
+        crystal_lightning: { name: 'Raio Fulminante', color: '#FACC15' },
+      };
+      const info = crystalMeta[crystalType] || { name: 'Magia Elemental', color: '#D946EF' };
+
+      soundManager.playMagicSpell();
+
+      setActivatedElementalCrystals((prev) => {
+        const next = Array.from(new Set([...prev, crystalType]));
+        if (next.length === 4) {
+          soundManager.playUpgrade();
+          addFloatingNumber(x, y, 'Você sente um fio de magia elemental fluir até você... (4/4)!', 'status', info.color);
+          setTimeout(() => {
+            setRiddleType('omnimago');
+            setShowSecretRiddle(true);
+          }, 600);
+        } else {
+          soundManager.playSelect();
+          const count = next.length;
+          addFloatingNumber(x, y, `Você sente um fio de magia elemental fluir até você... (${count}/4)`, 'status', info.color);
+        }
+        return next;
+      });
       return;
     }
 
@@ -5821,6 +5864,19 @@ export function App() {
       }
     }
 
+    // SECRET CLASS UNLOCK: Omnimago (Mestre dos Quatro Elementos)
+    // Condição: Derrotar o Arquimago das Runas (Fase 25) utilizando uma equipe de apenas Magos
+    if (currentLevel.id === 25 && !currentUnlocked.includes('omnimago')) {
+      const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
+      const allMages =
+        activeParty.length === 4 &&
+        activeParty.every((cKey) => isMageClassForSecretUnlock(cKey));
+
+      if (allMages) {
+        newlyUnlocked.push('omnimago');
+      }
+    }
+
     // RARE DROP CLASS UNLOCK: Sniper
     // Condição: 1% de chance de drop raro ao vencer qualquer fase
     if (!currentUnlocked.includes('sniper') && Math.random() < 0.01) {
@@ -6512,7 +6568,13 @@ export function App() {
         onOpenBaseUpgrades={() => setShowBaseUpgrades(true)}
         onOpenPets={() => setShowPetsModal(true)}
         onOpenClassMissions={() => setShowClassMissionsModal(true)}
-        onOpenRiddle={currentLevel?.id === 10 && hasPedestalBeenStruck ? () => setShowSecretRiddle(true) : undefined}
+        onOpenRiddle={
+          currentLevel?.id === 10 && hasPedestalBeenStruck
+            ? () => { setRiddleType('astaroth'); setShowSecretRiddle(true); }
+            : currentLevel?.id === 25 && activatedElementalCrystals.length >= 4
+            ? () => { setRiddleType('omnimago'); setShowSecretRiddle(true); }
+            : undefined
+        }
         onSaveAndExit={() => {
           if (isTrainingMode) {
             handleExitTraining();
@@ -6720,7 +6782,11 @@ export function App() {
       )}
       {showTutorial && <TutorialModal onClose={() => setShowTutorial(false)} />}
       {showSecretRiddle && (
-        <SecretRiddleModal isOpen={showSecretRiddle} onClose={() => setShowSecretRiddle(false)} />
+        <SecretRiddleModal
+          isOpen={showSecretRiddle}
+          onClose={() => setShowSecretRiddle(false)}
+          riddleType={riddleType}
+        />
       )}
       {activeBossBanner && (
         <BossIntroBanner

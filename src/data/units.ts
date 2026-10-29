@@ -347,6 +347,24 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     statGrowth: { hp: 9, atk: 1, mag: 4, def: 2, res: 3 },
     goldCost: 100000,
   },
+  omnimago: {
+    className: 'omnimago',
+    name: 'Omnimago',
+    role: 'Mestre Supremo dos Quatro Elementos',
+    maxHp: 90,
+    atk: 10,
+    mag: 34,
+    def: 6,
+    res: 12,
+    mov: 3,
+    range: 3,
+    color: '#D946EF',
+    avatarKey: 'omnimage',
+    baseSkillId: 'disparo_elemental',
+    description: 'Conjurador lendário que transcendeu a especialização elemental para comandar Fogo, Gelo, Vento e Raio simultaneamente. Funde as quatro forças da natureza para aniquilar qualquer adversário com cataclismos prismáticos.',
+    statGrowth: { hp: 10, atk: 1, mag: 6, def: 1, res: 3 },
+    isSecret: true,
+  },
 };
 
 export const INITIAL_CLASSES: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
@@ -413,12 +431,34 @@ Se desejas empunhar a lâmina proibida que rasga o espaço, abandone a covardia 
 
 Desça ao abismo com coragem e encare Astaroth de frente. Façam o Soberano tombar sentindo o peso do aço em sua carne...`,
   },
+  omnimago: {
+    title: 'Omnimago',
+    description: 'Derrote o Arquimago das Runas (Fase 25) utilizando uma equipe composta exclusivamente por Magos.',
+    riddle: `Aquele que outrora caminhou entre nós cometeu o mais vil dos sacrilégios: o Mago Rúnico corrompeu os pilares sagrados do arcano, roubando os segredos proibidos da magia pura para desafiar o destino e forjar sua falsa imortalidade.
+
+Preso entre as runas roubadas, o traidor zomba da morte terrena. O aço vulgar de espadas e flechas jamais romperá o elo eterno que o sustenta — sua heresia só pode ser expurgada na própria fonte.
+
+Para que ele morra de verdade e seus pecados sejam purificados, o traidor deve ser subjugado pela retribuição dos magos originais. Formem uma irmandade tecida apenas pelo arcano e restaurem a harmonia que ele violou.`,
+  },
 };
 
 export function isMeleeClassForSecretUnlock(className: string): boolean {
   const cDef = CLASS_DEFINITIONS[className];
   if (!cDef) return false;
   return cDef.range === 1 || className === 'cavaleiro_arcano' || className === 'lanceiro';
+}
+
+export function isMageClassForSecretUnlock(className: string): boolean {
+  const mageClasses = [
+    'mago',           // Mago de Fogo
+    'mago_gelo',      // Mago de Gelo
+    'mago_eletrico',  // Mago Elétrico
+    'mago_vento',     // Mago de Vento
+    'mago_runico',    // Mago Rúnico
+    'necromante',     // Necromante
+    'omnimago',       // Omnimago
+  ];
+  return mageClasses.includes(className);
 }
 
 export function getMaxCompletedLevel(progress: {

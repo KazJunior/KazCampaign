@@ -700,6 +700,10 @@ export const LEVELS: LevelConfig[] = [
       'Cuidado com a tempestade de glifos e apocalipse rúnico.',
     ],
     grid: createGrid(10, 8, 'stone', {
+      '0,2': { obstacle: 'crystal_fire' },
+      '9,2': { obstacle: 'crystal_wind' },
+      '0,5': { obstacle: 'crystal_ice' },
+      '9,5': { obstacle: 'crystal_lightning' },
       '1,2': { obstacle: 'shrine' }, '8,2': { obstacle: 'shrine' },
       '4,3': { obstacle: 'pillar' }, '5,3': { obstacle: 'pillar' },
     }),

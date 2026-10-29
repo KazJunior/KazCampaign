@@ -565,6 +565,9 @@ export function getUnitAvatar(key: string, size = 16) {
       return <Music size={size} />;
     case 'ice_mage':
       return <Snowflake size={size} />;
+    case 'omnimage':
+    case 'omnimago':
+      return <Sparkles size={size} />;
     case 'goblin':
     case 'abyssal_tentacle':
       return <Zap size={size} />;

@@ -7,7 +7,7 @@ import {
   isSkinUnlocked,
   getMissionProgress,
 } from '../data/classQuests';
-import { CLASS_DEFINITIONS } from '../data/units';
+import { CLASS_DEFINITIONS, SECRET_CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import { SKILLS } from '../data/skills';
 import { soundManager } from '../utils/audio';
 import {
@@ -47,19 +47,27 @@ export const ClassMissionsModal: React.FC<ClassMissionsModalProps> = ({
   onUpdateProgress,
   onClose,
 }) => {
-  const allClasses = Object.keys(CLASS_DEFINITIONS);
-  const [selectedClass, setSelectedClass] = useState<string>(allClasses[0] || 'guerreiro');
+  const allClasses = Object.keys(CLASS_DEFINITIONS).filter((cKey) => {
+    const def = CLASS_DEFINITIONS[cKey];
+    const isSecret = Boolean(def?.isSecret || SECRET_CLASS_UNLOCK_CONDITIONS[cKey]);
+    if (isSecret) {
+      return Boolean(progress.unlockedClasses?.includes(cKey));
+    }
+    return true;
+  });
+  const [selectedClass, setSelectedClass] = useState<string>(() => allClasses[0] || 'guerreiro');
+  const currentClassKey = allClasses.includes(selectedClass) ? selectedClass : (allClasses[0] || 'guerreiro');
   const [activeTab, setActiveTab] = useState<'missions' | 'skins'>('missions');
   const [claimCelebration, setClaimCelebration] = useState<string | null>(null);
 
-  const classDef = CLASS_DEFINITIONS[selectedClass] || CLASS_DEFINITIONS['guerreiro'];
-  const missions = CLASS_MISSIONS[selectedClass] || [];
-  const skins = CLASS_SKINS[selectedClass] || [];
+  const classDef = CLASS_DEFINITIONS[currentClassKey] || CLASS_DEFINITIONS['guerreiro'];
+  const missions = CLASS_MISSIONS[currentClassKey] || [];
+  const skins = CLASS_SKINS[currentClassKey] || [];
 
-  const classStats = progress.classMissionsProgress?.[selectedClass]?.stats || {};
-  const completedMissionIds = progress.classMissionsProgress?.[selectedClass]?.completedMissions || [];
+  const classStats = progress.classMissionsProgress?.[currentClassKey]?.stats || {};
+  const completedMissionIds = progress.classMissionsProgress?.[currentClassKey]?.completedMissions || [];
   const unlockedSkins = progress.unlockedClassSkins || [];
-  const equippedSkin = getEquippedSkin(selectedClass, progress.equippedClassSkins);
+  const equippedSkin = getEquippedSkin(currentClassKey, progress.equippedClassSkins);
 
   // Claim Mission Reward
   const handleClaimReward = (missionId: string) => {
@@ -69,12 +77,12 @@ export const ClassMissionsModal: React.FC<ClassMissionsModalProps> = ({
     soundManager.playUpgrade();
 
     // 1. Mark mission completed
-    const currentCompleted = progress.classMissionsProgress?.[selectedClass]?.completedMissions || [];
+    const currentCompleted = progress.classMissionsProgress?.[currentClassKey]?.completedMissions || [];
     const newCompleted = Array.from(new Set([...currentCompleted, missionId]));
 
     const updatedMissionsProgress = {
       ...(progress.classMissionsProgress || {}),
-      [selectedClass]: {
+      [currentClassKey]: {
         stats: classStats,
         completedMissions: newCompleted,
       },
@@ -116,7 +124,7 @@ export const ClassMissionsModal: React.FC<ClassMissionsModalProps> = ({
     soundManager.playSelect();
     const updatedEquipped = {
       ...(progress.equippedClassSkins || {}),
-      [selectedClass]: skinId,
+      [currentClassKey]: skinId,
     };
 
     const updatedProgress: PlayerProgress = {
@@ -164,7 +172,7 @@ export const ClassMissionsModal: React.FC<ClassMissionsModalProps> = ({
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-[#343B50] scrollbar-track-transparent">
           {allClasses.map((cKey) => {
             const def = CLASS_DEFINITIONS[cKey];
-            const isSelected = selectedClass === cKey;
+            const isSelected = currentClassKey === cKey;
             const isUnlocked = progress.unlockedClasses?.includes(cKey);
             const cMissions = CLASS_MISSIONS[cKey] || [];
             const cCompleted = progress.classMissionsProgress?.[cKey]?.completedMissions?.length || 0;

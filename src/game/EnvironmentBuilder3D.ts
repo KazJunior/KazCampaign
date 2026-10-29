@@ -631,6 +631,84 @@ export function createRichObstacle(type: ObstacleType, x: number, y: number): TH
       break;
     }
 
+    case 'crystal_fire':
+    case 'crystal_ice':
+    case 'crystal_wind':
+    case 'crystal_lightning': {
+      const crystalGroup = new THREE.Group();
+      crystalGroup.name = `elementalCrystal_${type}`;
+
+      let crystalColor = 0xef4444; // Fire: Ruby Red
+      let emissiveColor = 0xb91c1c;
+
+      if (type === 'crystal_ice') {
+        crystalColor = 0x38bdf8; // Ice: Azure Cyan
+        emissiveColor = 0x0284c7;
+      } else if (type === 'crystal_wind') {
+        crystalColor = 0x10b981; // Wind: Emerald Green
+        emissiveColor = 0x047857;
+      } else if (type === 'crystal_lightning') {
+        crystalColor = 0xfacc15; // Lightning: Radiant Golden Yellow
+        emissiveColor = 0xb45309;
+      }
+
+      // Stone Base Pedestal
+      const baseMat = new THREE.MeshStandardMaterial({
+        color: 0x181424,
+        roughness: 0.8,
+        metalness: 0.2,
+        flatShading: true,
+      });
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 0.18, 8), baseMat);
+      base.position.y = 0.09;
+      base.castShadow = true;
+      base.receiveShadow = true;
+      crystalGroup.add(base);
+
+      // Carved Rune Ring on Base
+      const runeRingMat = new THREE.MeshBasicMaterial({ color: crystalColor, wireframe: true });
+      const runeRing = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.04, 8), runeRingMat);
+      runeRing.position.y = 0.17;
+      crystalGroup.add(runeRing);
+
+      // Central Floating Elemental Crystal (Octahedron / Diamond)
+      const crystalMat = new THREE.MeshStandardMaterial({
+        color: crystalColor,
+        emissive: emissiveColor,
+        emissiveIntensity: 0.95,
+        roughness: 0.15,
+        metalness: 0.85,
+        transparent: true,
+        opacity: 0.92,
+      });
+      const crystalGeo = new THREE.OctahedronGeometry(0.24, 0);
+      crystalGeo.scale(1, 1.6, 1);
+      const crystalMesh = new THREE.Mesh(crystalGeo, crystalMat);
+      crystalMesh.position.y = 0.50;
+      crystalMesh.name = 'floatingCrystal';
+      crystalMesh.castShadow = true;
+      crystalGroup.add(crystalMesh);
+
+      // 4 orbiting mini crystal shards
+      for (let i = 0; i < 4; i++) {
+        const shardGeo = new THREE.ConeGeometry(0.05, 0.14, 5);
+        const shard = new THREE.Mesh(shardGeo, crystalMat);
+        const angle = (i * Math.PI) / 2;
+        shard.position.set(Math.cos(angle) * 0.26, 0.46 + (i % 2 === 0 ? 0.06 : -0.06), Math.sin(angle) * 0.26);
+        shard.rotation.z = Math.PI;
+        shard.name = 'spinningOrb';
+        crystalGroup.add(shard);
+      }
+
+      // Point Light casting elemental hue
+      const light = new THREE.PointLight(crystalColor, 1.2, 2.5);
+      light.position.set(0, 0.55, 0);
+      crystalGroup.add(light);
+
+      group.add(crystalGroup);
+      break;
+    }
+
     default:
       break;
   }
