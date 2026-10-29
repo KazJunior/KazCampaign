@@ -412,6 +412,14 @@ export interface PlayerProgress {
     bossesDefeated?: number;
     battlesWon?: number;
     totalDamage?: number;
+    fastBlitzWins?: number;
+    noHealerWins?: number;
+    statusInflicted?: number;
+    lowHpKills?: number;
+    flawlessBossWins?: number;
+    massiveHits?: number;
+    lightDarkWins?: number;
+    comebackWins?: number;
   };
 }
 

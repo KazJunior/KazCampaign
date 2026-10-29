@@ -27,8 +27,8 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
         type: 'new',
       },
       {
-        highlight: 'Missões Variadas de Desbloqueio de Linhagens',
-        description: 'As 10 linhagens especiais agora possuem desafios variados de desbloqueio além de abate de monstros: Causar 30.000 de Dano Total (Orc), Abater 150 Inimigos no total (Vampiro), Restaurar 5.000 de Vida com curas (Celestial), Conjurar 100 Habilidades (Feérico), Eliminar 100 Dracos Vulcânicos (Dragonoide), Vencer 10 Batalhas Impecáveis sem perder heróis (Minotauro), Concluir 15 Fases da Campanha (Anjo), Acumular 50.000 de Ouro (Demônio), Derrotar 8 Chefes (Nefalim) e Vencer 25 Batalhas (Fênix).',
+        highlight: 'Desafios Táticos Hardcore de Desbloqueio de Linhagens',
+        description: 'Cada uma das 10 linhagens especiais exige uma façanha tática hardcore: 200 Dracos Vulcânicos abatidos (Dragonoide), 15 Vitórias acima da Fase 10 em até 5 turnos (Orc), 15 Vitórias Consecutivas sem classes de cura/suporte (Vampiro), 25.000 de Vida restaurada (Celestial), 120 Efeitos de Status aplicados em inimigos (Feérico), 50 Abates com herói abaixo de 20% HP (Minotauro), 15 Chefes derrotados sem perder heróis (Anjo), 100 Golpes de 400+ de dano em um único inimigo (Demônio), 100 Vitórias combinando Luz e Trevas na equipe (Nefalim) e 10 Vitórias contra Chefes restando apenas 1 herói vivo (Fênix).',
         type: 'new',
       },
       {

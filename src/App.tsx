@@ -1726,6 +1726,18 @@ export function App() {
     soundManager.playDefeat();
 
     if (isDailyMode) {
+      setProgress((prev) => {
+        const prevStats = prev.lineageQuestStats || {};
+        if ((prevStats.noHealerWins || 0) > 0 && (prevStats.noHealerWins || 0) < 15) {
+          const next = {
+            ...prev,
+            lineageQuestStats: { ...prevStats, noHealerWins: 0 },
+          };
+          savePlayerProgress(next);
+          return next;
+        }
+        return prev;
+      });
       return;
     }
 
@@ -1751,12 +1763,20 @@ export function App() {
       progress.activeAdventure
     );
 
+    const prevDefeatStats = progress.lineageQuestStats || {};
+    const nextNoHealerWinsOnDefeat =
+      (prevDefeatStats.noHealerWins || 0) >= 15 ? prevDefeatStats.noHealerWins : 0;
+
     const updatedProgress: PlayerProgress = {
       ...progress,
       activeAdventure: null,
       unitsState: initialUnits,
       adventureHistory: updatedHistory,
       discoveredItemIds: preservedDiscoveredItems,
+      lineageQuestStats: {
+        ...prevDefeatStats,
+        noHealerWins: nextNoHealerWinsOnDefeat,
+      },
     };
     setProgress(updatedProgress);
     savePlayerProgress(updatedProgress);
@@ -3425,6 +3445,8 @@ export function App() {
     let totalDmgDone = 0;
     let totalHealDone = 0;
     let totalKills = 0;
+    let massiveHitsCount = 0;
+    let statusInflictedCount = 0;
     const killedMonsterTypeIds: string[] = [];
 
     for (const t of targetsToHit) {
@@ -3583,6 +3605,9 @@ export function App() {
         if (actualDmg > 0) {
           const color = dmgResult.damageType === 'magical' ? '#B58AFF' : '#FF5252';
           addFloatingNumber(t.x, t.y, `-${actualDmg}`, dmgResult.damageType, color);
+          if (t.faction !== 'player' && actualDmg >= 400) {
+            massiveHitsCount++;
+          }
         }
         totalDmgDone += actualDmg;
       }
@@ -3637,6 +3662,7 @@ export function App() {
               addFloatingNumber(t.x, t.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
             } else {
               currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+              if (t.faction !== 'player') statusInflictedCount++;
               if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
               else if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
               else if (eff.type === 'stun') {
@@ -3661,6 +3687,7 @@ export function App() {
               addFloatingNumber(t.x, t.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
             } else {
               currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+              if (t.faction !== 'player') statusInflictedCount++;
               if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
               else if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
               else if (eff2.type === 'stun') {
@@ -3688,6 +3715,7 @@ export function App() {
             ...currentEffects.filter((e) => e.type !== 'burn'),
             { type: 'burn', duration: 2, value: 5, appliedTurn: turnNumberRef.current },
           ];
+          statusInflictedCount++;
           addFloatingNumber(t.x, t.y, '🔥 Hálito Flamejante!', 'status', '#FF6B00');
         }
       }
@@ -4141,20 +4169,18 @@ export function App() {
         if (totalKills > 0) {
           p = incrementClassStat(p, selectedUnit.className, 'kills', totalKills);
         }
-        if (totalHealDone > 0) {
-          const prevStats = p.lineageQuestStats || {
-            healingDone: 0,
-            flawlessWins: 0,
-            totalGoldEarned: 0,
-            peakGold: p.gold || 0,
-            bossesDefeated: 0,
-            battlesWon: 0,
-          };
+        const attackerWasLowHp = selectedUnit.currentHp < selectedUnit.maxHp * 0.2;
+        const lowHpKillsEarned = attackerWasLowHp ? totalKills : 0;
+        if (totalHealDone > 0 || massiveHitsCount > 0 || statusInflictedCount > 0 || lowHpKillsEarned > 0) {
+          const prevStats = p.lineageQuestStats || {};
           p = {
             ...p,
             lineageQuestStats: {
               ...prevStats,
               healingDone: (prevStats.healingDone || 0) + totalHealDone,
+              massiveHits: (prevStats.massiveHits || 0) + massiveHitsCount,
+              statusInflicted: (prevStats.statusInflicted || 0) + statusInflictedCount,
+              lowHpKills: (prevStats.lowHpKills || 0) + lowHpKillsEarned,
             },
           };
         }
@@ -6017,15 +6043,22 @@ export function App() {
       const rewardGold = alreadyCompletedToday ? 0 : 20000;
       const updatedGold = progress.gold + rewardGold;
       const dailyPartyUnits = finalUnitsState.filter((u) => u.faction === 'player' && !u.isSummoned);
-      const isFlawlessDaily = dailyPartyUnits.length >= 4 && dailyPartyUnits.every((u) => !u.isDead && u.currentHp > 0);
-      const prevDailyStats = progress.lineageQuestStats || {
-        healingDone: 0,
-        flawlessWins: 0,
-        totalGoldEarned: 0,
-        peakGold: progress.gold || 0,
-        bossesDefeated: 0,
-        battlesWon: 0,
-      };
+      const aliveDailyCount = dailyPartyUnits.filter((u) => !u.isDead && u.currentHp > 0).length;
+      const isFlawlessDaily = dailyPartyUnits.length >= 4 && aliveDailyCount === dailyPartyUnits.length;
+      const hasBossDaily = Boolean(
+        currentLevel.hasFinalBoss ||
+        currentLevel.hasMiniBoss ||
+        currentLevel.enemySpawns.some((s) => s.isBoss || s.isMiniBoss)
+      );
+      const isComebackDaily = hasBossDaily && aliveDailyCount === 1;
+      const dailyClasses = dailyPartyUnits.map((u) => u.className);
+      const isNoHealerDaily = !dailyClasses.some((c) => ['curandeiro', 'paladino', 'druida', 'bardo'].includes(c));
+      const hasLightDaily = dailyClasses.some((c) => ['curandeiro', 'paladino'].includes(c));
+      const hasDarkDaily = dailyClasses.some((c) => ['necromante', 'assassino', 'carrasco_vazio'].includes(c));
+      const isLightDarkDaily = hasLightDaily && hasDarkDaily;
+      const prevDailyStats = progress.lineageQuestStats || {};
+      const prevStreakDaily = prevDailyStats.noHealerWins || 0;
+      const nextNoHealerDaily = prevStreakDaily >= 15 ? prevStreakDaily : (isNoHealerDaily ? prevStreakDaily + 1 : 0);
 
       let updatedProgress: PlayerProgress = {
         ...progress,
@@ -6040,6 +6073,9 @@ export function App() {
           totalGoldEarned: (prevDailyStats.totalGoldEarned || 0) + rewardGold,
           peakGold: Math.max(prevDailyStats.peakGold || 0, updatedGold),
           battlesWon: (prevDailyStats.battlesWon || 0) + 1,
+          noHealerWins: nextNoHealerDaily,
+          lightDarkWins: (prevDailyStats.lightDarkWins || 0) + (isLightDarkDaily ? 1 : 0),
+          comebackWins: (prevDailyStats.comebackWins || 0) + (isComebackDaily ? 1 : 0),
         },
       };
 
@@ -6261,15 +6297,20 @@ export function App() {
       progressWithMissions = incrementPartyStats(progressWithMissions, activeParty, 'bosses_defeated', 1);
     }
 
-    const isFlawlessVictory = partyUnits.length >= 4 && partyUnits.every((u) => !u.isDead && u.currentHp > 0);
-    const prevStats = progressWithMissions.lineageQuestStats || {
-      healingDone: 0,
-      flawlessWins: 0,
-      totalGoldEarned: 0,
-      peakGold: progress.gold || 0,
-      bossesDefeated: 0,
-      battlesWon: 0,
-    };
+    const aliveHeroesCount = partyUnits.filter((u) => !u.isDead && u.currentHp > 0).length;
+    const isFlawlessVictory = partyUnits.length >= 4 && aliveHeroesCount === partyUnits.length;
+    const isComebackVictory = hasBossSpawned && aliveHeroesCount === 1;
+    const isFastBlitzVictory = currentLevel.id > 10 && turnNumberRef.current <= 5;
+    const partyClassKeys = partyUnits.map((u) => u.className);
+    const isNoHealerVictory = !partyClassKeys.some((c) => ['curandeiro', 'paladino', 'druida', 'bardo'].includes(c));
+    const hasLightHero = partyClassKeys.some((c) => ['curandeiro', 'paladino'].includes(c));
+    const hasDarkHero = partyClassKeys.some((c) => ['necromante', 'assassino', 'carrasco_vazio'].includes(c));
+    const isLightDarkVictory = hasLightHero && hasDarkHero;
+    const isFlawlessBossVictory = hasBossSpawned && isFlawlessVictory;
+    const prevStats = progressWithMissions.lineageQuestStats || {};
+    const prevNoHealerStreak = prevStats.noHealerWins || 0;
+    const nextNoHealerStreak =
+      prevNoHealerStreak >= 15 ? prevNoHealerStreak : (isNoHealerVictory ? prevNoHealerStreak + 1 : 0);
 
     let newProgress: PlayerProgress = {
       ...progressWithMissions,
@@ -6289,6 +6330,11 @@ export function App() {
         peakGold: Math.max(prevStats.peakGold || 0, totalGold),
         bossesDefeated: (prevStats.bossesDefeated || 0) + (hasBossSpawned ? 1 : 0),
         battlesWon: (prevStats.battlesWon || 0) + 1,
+        fastBlitzWins: (prevStats.fastBlitzWins || 0) + (isFastBlitzVictory ? 1 : 0),
+        noHealerWins: nextNoHealerStreak,
+        flawlessBossWins: (prevStats.flawlessBossWins || 0) + (isFlawlessBossVictory ? 1 : 0),
+        lightDarkWins: (prevStats.lightDarkWins || 0) + (isLightDarkVictory ? 1 : 0),
+        comebackWins: (prevStats.comebackWins || 0) + (isComebackVictory ? 1 : 0),
       },
     };
 
