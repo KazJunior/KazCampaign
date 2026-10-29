@@ -27,6 +27,10 @@ import {
 interface SidePanelProps {
   selectedUnit: Unit | null;
   selectedAction: SelectedAction;
+  activeSkill?: any | null;
+  units?: Unit[];
+  attackableTiles?: { x: number; y: number }[];
+  onTargetTile?: (x: number, y: number) => void;
   onSelectAction: (action: SelectedAction) => void;
   onWaitUnit: () => void;
   onCancelSelection: () => void;
@@ -37,6 +41,10 @@ interface SidePanelProps {
 export const SidePanel: React.FC<SidePanelProps> = ({
   selectedUnit,
   selectedAction,
+  activeSkill,
+  units = [],
+  attackableTiles = [],
+  onTargetTile,
   onSelectAction,
   onWaitUnit,
   onCancelSelection,
@@ -428,6 +436,47 @@ export const SidePanel: React.FC<SidePanelProps> = ({
                 <X size={15} /> Cancelar (Esc)
               </button>
             </div>
+
+            {/* Quick Targets in Range (Desktop) */}
+            {isAlly && (selectedAction === 'attack' || !!activeSkill) && (() => {
+              const inRangeEnemies = units.filter(
+                (u) =>
+                  u.faction === 'enemy' &&
+                  !u.isDead &&
+                  !u.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0) &&
+                  attackableTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+              );
+              if (inRangeEnemies.length === 0) {
+                return (
+                  <div className="mt-2.5 p-2 bg-[#1C1613] border border-amber-500/30 rounded-xl text-[11px] text-amber-300 font-medium text-center">
+                    ⚠️ Nenhum inimigo no alcance de ataque. Aproxime-se para atacar!
+                  </div>
+                );
+              }
+              return (
+                <div className="mt-2.5 p-2 bg-[#1B1117] border border-red-500/40 rounded-xl flex flex-col gap-1.5 shadow-md">
+                  <div className="flex items-center gap-1.5 text-[11px] font-black text-red-400 uppercase tracking-wider">
+                    <Crosshair size={13} className="text-red-400 animate-pulse" />
+                    <span>Inimigos no Alcance ({inRangeEnemies.length}):</span>
+                  </div>
+                  <div className="flex flex-col gap-1 max-h-36 overflow-y-auto pr-1">
+                    {inRangeEnemies.map((enemy) => (
+                      <button
+                        key={enemy.id}
+                        type="button"
+                        onClick={() => onTargetTile?.(enemy.x, enemy.y)}
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-red-950/70 hover:bg-red-800/80 active:scale-95 border border-red-500/40 text-white font-bold text-xs flex items-center justify-between transition-all"
+                      >
+                        <span className="truncate">🎯 {enemy.name}</span>
+                        <span className="text-[10px] text-red-300 font-mono shrink-0 ml-1">
+                          {enemy.currentHp}/{enemy.maxHp} HP
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         ) : (
           <button

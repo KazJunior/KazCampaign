@@ -526,9 +526,14 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       addTileHighlight(pt.x, pt.y, 0x2563eb, 0.42, 0x38bdf8, false, 0.055);
     });
 
-    // 4. Attackable Range (Vibrant Crimson Red)
+    // 4. Attackable Range (Vibrant Crimson Red with intense pulse on enemies)
     attackableTiles.forEach((pt) => {
-      addTileHighlight(pt.x, pt.y, 0xdc2626, 0.48, 0xef4444, false, 0.055);
+      const hasEnemy = units.some((u) => u.faction === 'enemy' && !u.isDead && u.x === pt.x && u.y === pt.y);
+      if (hasEnemy) {
+        addTileHighlight(pt.x, pt.y, 0xef4444, 0.70, 0xff2222, true, 0.062);
+      } else {
+        addTileHighlight(pt.x, pt.y, 0xdc2626, 0.48, 0xef4444, false, 0.055);
+      }
     });
 
     // 5. AoE Skill Area (Radiant Orange / Gold)
@@ -592,10 +597,10 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       figure.name = `unit_${unit.id}`;
       figure.userData = { unitId: unit.id, unitX: unit.x, unitY: unit.y };
 
-      // Invisible Hit Collider for accurate 3D click & hover picking (calibrated to miniature body)
+      // Invisible Hit Collider for accurate 3D click & hover picking (generous tile footprint)
       const isBoss = unit.isBoss || unit.isMiniBoss;
-      const colliderRadius = isBoss ? 0.50 : 0.36;
-      const colliderHeight = isBoss ? 1.1 : 0.70;
+      const colliderRadius = isBoss ? 0.65 : 0.48;
+      const colliderHeight = isBoss ? 2.4 : 1.6;
       const hitColliderGeo = new THREE.CylinderGeometry(colliderRadius, colliderRadius, colliderHeight, 16);
       const hitColliderMat = new THREE.MeshBasicMaterial({
         transparent: true,
@@ -842,7 +847,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
       const targetPoint = new THREE.Vector3();
       const groundHit = raycaster.ray.intersectPlane(plane, targetPoint);
-      const groundDist = groundHit ? camera.position.distanceTo(targetPoint) : Infinity;
+      
 
       let groundTile: { x: number; y: number } | null = null;
       if (groundHit) {
@@ -853,7 +858,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         }
       }
 
-      // 2. Raycast against unit figures (colliders, visual meshes, pedestals) - strictly ignoring HP bars and auras
+      // 2. Raycast against unit figures (colliders, visual meshes, HP bar frames) - ignoring only spinning visual auras
       let hitUnitPos: { x: number; y: number } | null = null;
       if (unitsGroupRef.current && unitsGroupRef.current.children.length > 0) {
         const unitIntersects = raycaster.intersectObjects(unitsGroupRef.current.children, true);
@@ -861,12 +866,9 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           let curr: THREE.Object3D | null = hit.object;
           while (curr && curr !== unitsGroupRef.current) {
             if (
-              curr.name === 'hpBarBillboard' ||
-              curr.name.startsWith('hpBar') ||
               curr.name === 'auraRing' ||
               curr.name === 'auraGroup' ||
               curr.name === 'spinningOrb' ||
-              curr.userData?.isHpBar ||
               curr.userData?.isAura
             ) {
               return false;
@@ -901,17 +903,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           }
 
           if (candidatePos) {
-            // If the ground tile is directly above this unit (gy === candidatePos.y - 1)
-            // and the ray hit the top of the collider / mesh (closest.point.y > 0.65):
-            // prioritize selecting the ground tile above if it has no unit on it.
-            const isTileAbove = groundTile && groundTile.x === candidatePos.x && groundTile.y === candidatePos.y - 1;
-            const unitOnGroundTile = groundTile ? units.find((u) => !u.isDead && u.x === groundTile.x && u.y === groundTile.y) : null;
-
-            if (isTileAbove && !unitOnGroundTile && closest.point.y > 0.65) {
-              hitUnitPos = null;
-            } else if (closest.distance <= groundDist + 0.15) {
-              hitUnitPos = candidatePos;
-            }
+            // When ray hits any part of a unit or its collider/HP bar, select the unit directly!
+            hitUnitPos = candidatePos;
           }
         }
       }
@@ -992,8 +985,18 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
       const target = getTargetTileFromPointer(e.clientX, e.clientY);
       if (target) {
         onTileHover(target.x, target.y);
+        const hasUnit = units.some((u) => !u.isDead && u.x === target.x && u.y === target.y);
+        const isAttackable = attackableTiles.some((pt) => pt.x === target.x && pt.y === target.y);
+        if (isAttackable) {
+          container.style.cursor = 'crosshair';
+        } else if (hasUnit) {
+          container.style.cursor = 'pointer';
+        } else {
+          container.style.cursor = 'grab';
+        }
       } else {
         onTileHover(-1, null);
+        container.style.cursor = 'grab';
       }
     }
   };
@@ -1181,20 +1184,18 @@ BoardRenderer3D.displayName = 'BoardRenderer3D';
 function createUnitHpBar(unit: Unit): THREE.Group {
   const hpGroup = new THREE.Group();
   hpGroup.name = 'hpBarBillboard';
-  hpGroup.userData = { isHpBar: true };
-  hpGroup.raycast = () => {};
+  hpGroup.userData = { isHpBar: true, unitId: unit.id, unitX: unit.x, unitY: unit.y };
 
   // Height above unit head
   const barY = unit.isBoss ? 2.15 : unit.isMiniBoss ? 1.85 : 1.48;
   hpGroup.position.set(0, barY, 0);
 
-  // Background frame
-  const bgGeo = new THREE.PlaneGeometry(0.82, 0.13);
+  // Background frame (clickable for unit targeting)
+  const bgGeo = new THREE.PlaneGeometry(0.90, 0.20);
   const bgMat = new THREE.MeshBasicMaterial({ color: 0x0f172a, side: THREE.DoubleSide });
   const bg = new THREE.Mesh(bgGeo, bgMat);
   bg.name = 'hpBarBg';
-  bg.userData = { isHpBar: true };
-  bg.raycast = () => {};
+  bg.userData = { isHpBar: true, unitId: unit.id, unitX: unit.x, unitY: unit.y };
   hpGroup.add(bg);
 
   // Lost HP background (dark crimson)
@@ -1202,8 +1203,7 @@ function createUnitHpBar(unit: Unit): THREE.Group {
   const lostHpMat = new THREE.MeshBasicMaterial({ color: 0x450a0a, side: THREE.DoubleSide });
   const lostHp = new THREE.Mesh(lostHpGeo, lostHpMat);
   lostHp.name = 'hpBarLost';
-  lostHp.userData = { isHpBar: true };
-  lostHp.raycast = () => {};
+  lostHp.userData = { isHpBar: true, unitId: unit.id, unitX: unit.x, unitY: unit.y };
   lostHp.position.z = 0.002;
   hpGroup.add(lostHp);
 

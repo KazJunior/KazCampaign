@@ -13,6 +13,7 @@ import {
   Crown,
   Play,
   Zap,
+  Crosshair,
 } from 'lucide-react';
 import type { PetDefinition, PetActiveSkill } from '../types/game';
 import { PetIcon } from './PetIcon';
@@ -34,6 +35,9 @@ interface MobileBattleHUDProps {
   onSelectPetSkill?: (skill: PetActiveSkill) => void;
   onClearPetSkill?: () => void;
   usedPetSkillIds?: string[];
+  units?: Unit[];
+  attackableTiles?: { x: number; y: number }[];
+  onTargetTile?: (x: number, y: number) => void;
 }
 
 export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
@@ -53,6 +57,9 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
   onSelectPetSkill,
   onClearPetSkill,
   usedPetSkillIds = [],
+  units = [],
+  attackableTiles = [],
+  onTargetTile,
 }) => {
   const isTurn3OrMore = turnNumber >= 3;
   const [showPetDrawer, setShowPetDrawer] = useState(false);
@@ -304,6 +311,42 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Quick Targets in Range Bar */}
+        {isAlly && (selectedAction === 'attack' || !!activeSkill) && (() => {
+          const inRangeEnemies = units.filter(
+            (u) =>
+              u.faction === 'enemy' &&
+              !u.isDead &&
+              !u.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0) &&
+              attackableTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+          );
+          if (inRangeEnemies.length === 0) {
+            return (
+              <div className="px-3 py-1 bg-[#1C1613] border-b border-amber-500/30 flex items-center gap-1.5 text-[11px] text-amber-300 font-medium">
+                <span>⚠️ Nenhum inimigo no alcance. Aproxime-se para atacar!</span>
+              </div>
+            );
+          }
+          return (
+            <div className="px-3 py-1.5 bg-[#1F1318] border-b border-red-500/40 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+              <span className="text-[10px] font-black text-red-400 uppercase tracking-wider shrink-0 flex items-center gap-1">
+                <Crosshair size={12} className="text-red-400 animate-pulse" /> Alvos:
+              </span>
+              {inRangeEnemies.map((enemy) => (
+                <button
+                  key={enemy.id}
+                  type="button"
+                  onClick={() => onTargetTile?.(enemy.x, enemy.y)}
+                  className="px-2.5 py-1 rounded-lg bg-red-950/90 hover:bg-red-800/90 active:scale-95 border border-red-500/50 text-white font-bold text-xs flex items-center gap-1.5 shrink-0 transition-all shadow-sm"
+                >
+                  <span>🎯 {enemy.name}</span>
+                  <span className="text-[10px] text-red-300 font-mono">({enemy.currentHp} HP)</span>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Action Buttons Row */}
         {isAlly && (

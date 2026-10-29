@@ -2540,7 +2540,7 @@ export function App() {
         }
       }
 
-      const isTargeting = selectedAction === 'attack' || !!activeSkill;
+      // isTargeting determined by action or activeSkill
       const targetType = activeSkill ? activeSkill.targetType : 'enemy';
 
       // Self-targeting skill or Ally-targeting skill clicked directly on self
@@ -2638,13 +2638,31 @@ export function App() {
       // Single-target Unit targeting (Enemy, Ally or Any)
       if (clickedUnit) {
         const isEnemyInvisible = clickedUnit.faction === 'enemy' && clickedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
-        const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         const isFactionValid =
           (targetType === 'enemy' && clickedUnit.faction === 'enemy') ||
           (targetType === 'ally' && clickedUnit.faction === 'player') ||
           targetType === 'any';
 
-        if (!isEnemyInvisible && isTargetTileValid && (isTargeting ? isFactionValid : clickedUnit.faction === 'enemy')) {
+        let isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
+
+        // AUTO-ATTACK ASSIST: If player has a hero selected (none or move mode) and directly clicks an enemy in basic attack range:
+        if (!isTargetTileValid && !activeSkill && clickedUnit.faction === 'enemy') {
+          const defaultRangeMin = 1;
+          const defaultRangeMax = selectedUnit.range || 1;
+          const validAttackTiles = getAttackableTiles(
+            { x: selectedUnit.x, y: selectedUnit.y },
+            defaultRangeMin,
+            defaultRangeMax,
+            grid[0]?.length || 0,
+            grid.length
+          );
+          if (validAttackTiles.some((pt) => pt.x === x && pt.y === y)) {
+            setSelectedAction('attack');
+            isTargetTileValid = true;
+          }
+        }
+
+        if (!isEnemyInvisible && isTargetTileValid && isFactionValid) {
           setTargetTeleportPoint(null);
           setTargetAoEPoint({ x: clickedUnit.x, y: clickedUnit.y });
           const effectiveSkill = activeSkill || undefined;
@@ -2655,6 +2673,22 @@ export function App() {
           setDamagePreview(preview);
           setTargetUnitId(clickedUnit.id);
           soundManager.playSelect();
+          return;
+        }
+
+        // If player clicked an enemy while a hero is selected and ready to act, but target is invalid:
+        if (clickedUnit.faction === 'enemy') {
+          soundManager.playSelect();
+          if (isEnemyInvisible) {
+            addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Inimigo Invisível!', 'status', '#8B5CF6');
+          } else if (activeSkill) {
+            addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Fora do alcance da habilidade!', 'status', '#F87171');
+          } else if (!selectedUnit.hasMoved) {
+            addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Aproxime-se para atacar!', 'status', '#FACC15');
+          } else {
+            addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Alvo fora de alcance!', 'status', '#F87171');
+          }
+          // PREVENT accidental hero deselection!
           return;
         }
       }
@@ -6596,6 +6630,10 @@ export function App() {
         <SidePanel
           selectedUnit={selectedUnit}
           selectedAction={selectedAction}
+          activeSkill={activeSkill}
+          units={units}
+          attackableTiles={attackableTiles}
+          onTargetTile={(tx, ty) => handleTileClick(tx, ty)}
           onSelectAction={(act) => {
             setSelectedAction(act);
             setActiveSkill(null);
@@ -6619,6 +6657,9 @@ export function App() {
           selectedUnit={selectedUnit}
           selectedAction={selectedAction}
           activeSkill={activeSkill}
+          units={units}
+          attackableTiles={attackableTiles}
+          onTargetTile={(tx, ty) => handleTileClick(tx, ty)}
           phase={phase}
           turnNumber={turnNumber}
           onSelectAction={(act) => {
