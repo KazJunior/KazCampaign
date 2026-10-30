@@ -919,22 +919,12 @@ export function App() {
   };
 
   const handleConfirmParty = (selectedPartyClasses: string[], partyLineages?: Record<string, string>) => {
-    const lineages = partyLineages || progress.selectedPartyLineages || {};
     if (progress.activeAdventure) {
-      const updatedAdv = {
-        ...progress.activeAdventure,
-        partyLineages: lineages,
-      };
-      const updatedProgress = {
-        ...progress,
-        selectedPartyLineages: lineages,
-        activeAdventure: updatedAdv,
-      };
-      setProgress(updatedProgress);
-      savePlayerProgress(updatedProgress);
+      // Bloqueia qualquer alteração de linhagens e classes no meio de uma aventura ativa
       setCurrentView('level_select');
       return;
     }
+    const lineages = partyLineages || progress.selectedPartyLineages || {};
     const updatedProgress = {
       ...progress,
       selectedPartyClasses,
@@ -7500,7 +7490,8 @@ export function App() {
       <>
         <PartySelectionModal
           progress={progress}
-          initialSelected={progress.selectedPartyClasses}
+          isAdventureActive={Boolean(progress.activeAdventure)}
+          initialSelected={progress.activeAdventure?.partyClasses || progress.selectedPartyClasses}
           initialLineages={progress.activeAdventure?.partyLineages || progress.selectedPartyLineages || {}}
           unlockedClasses={progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro']}
           playerGold={progress.gold}

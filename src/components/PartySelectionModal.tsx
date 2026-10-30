@@ -6,6 +6,7 @@ import { getEquippedSkin } from '../data/classQuests';
 import { LineageSelectionModal } from './LineageSelectionModal';
 import { getLineageById, DEFAULT_CLASS_LINEAGES } from '../data/lineages';
 import { ClassLineageAvatar } from './ClassLineageAvatar';
+import { soundManager } from '../utils/audio';
 import {
   Shield,
   Swords,
@@ -29,6 +30,7 @@ import {
   Zap,
   X,
   Palette,
+  Lock,
 } from 'lucide-react';
 
 interface PartySelectionModalProps {
@@ -38,6 +40,7 @@ interface PartySelectionModalProps {
   playerGold?: number;
   equippedClassSkins?: Record<string, string>;
   initialLineages?: Record<string, string>;
+  isAdventureActive?: boolean;
   onBuyClass?: (className: string, cost: number) => void;
   onConfirmParty: (selectedClasses: string[], partyLineages: Record<string, string>) => void;
   onOpenClassMissions?: () => void;
@@ -50,12 +53,15 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
   playerGold = 0,
   equippedClassSkins,
   initialLineages,
+  isAdventureActive: isAdventureActiveProp,
   progress,
   onBuyClass,
   onConfirmParty,
   onOpenClassMissions,
   onClose,
 }) => {
+  const isAdventureActive = Boolean(isAdventureActiveProp ?? progress?.activeAdventure);
+
   const [selected, setSelected] = useState<string[]>(
     initialSelected.length === 4
       ? initialSelected.filter((c) => unlockedClasses.includes(c))
@@ -72,6 +78,12 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
   const allClasses = Object.keys(CLASS_DEFINITIONS);
 
   const toggleClass = (className: string) => {
+    // Cannot change party roster during an active adventure
+    if (isAdventureActive) {
+      soundManager.playError();
+      return;
+    }
+
     // Cannot select locked classes
     if (!unlockedClasses.includes(className)) return;
 
@@ -82,6 +94,14 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
         setSelected([...selected, className]);
       }
     }
+  };
+
+  const handleOpenLineageModal = (className: string) => {
+    if (isAdventureActive) {
+      soundManager.playError();
+      return;
+    }
+    setLineageModalClass(className);
   };
 
   const isComplete = selected.length === 4;
@@ -105,12 +125,24 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             <Sparkles size={14} /> Seleção da Equipe de Heróis & Recrutamento
           </div>
           <h2 className="text-xl sm:text-3xl font-extrabold text-[#F3F4F8]">
-            Escolha 4 Heróis para a Campanha
+            {isAdventureActive ? 'Equipe da Aventura em Andamento' : 'Escolha 4 Heróis para a Campanha'}
           </h2>
           <p className="text-[11px] sm:text-xs text-[#A7B0C4]">
-            Monte seu grupo tático ou recrute novos heróis lendários por 100.000 de Ouro cada!
+            {isAdventureActive
+              ? 'A composição e linhagens da equipe estão travadas durante a expedição ativa.'
+              : 'Monte seu grupo tático ou recrute novos heróis lendários por 100.000 de Ouro cada!'}
           </p>
         </div>
+
+        {/* Banner de Aventura Ativa */}
+        {isAdventureActive && (
+          <div className="p-2.5 sm:p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[#FBBF24] text-xs flex items-center justify-center gap-2 font-bold shadow-inner">
+            <Lock size={14} className="shrink-0" />
+            <span>
+              Aventura ativa em andamento: a troca de classes e linhagens está bloqueada até o fim ou abandono da expedição.
+            </span>
+          </div>
+        )}
 
         {/* Counter & Gold Badges */}
         <div className="flex justify-center items-center gap-2 sm:gap-3 flex-wrap">
@@ -163,9 +195,15 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                 Equipe Escolhida & Linhagens Ancestrais ({selected.length}/4)
               </h3>
             </div>
-            <span className="text-[11px] text-[#A7B0C4] hidden sm:inline">
-              Clique na Linhagem para alterá-la antes de iniciar a aventura
-            </span>
+            {isAdventureActive ? (
+              <span className="text-[11px] text-[#FBBF24] hidden sm:inline-flex items-center gap-1 font-bold">
+                <Lock size={12} /> Linhagens travadas na aventura em andamento
+              </span>
+            ) : (
+              <span className="text-[11px] text-[#A7B0C4] hidden sm:inline">
+                Clique na Linhagem para alterá-la antes de iniciar a aventura
+              </span>
+            )}
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -205,17 +243,26 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      setLineageModalClass(cKey);
+                      handleOpenLineageModal(cKey);
                     }}
-                    className="px-2 py-1 rounded-lg border text-left flex flex-col shrink-0 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                    disabled={isAdventureActive}
+                    className={`px-2 py-1 rounded-lg border text-left flex flex-col shrink-0 transition-all ${
+                      isAdventureActive
+                        ? 'opacity-85 cursor-not-allowed'
+                        : 'hover:scale-105 active:scale-95 cursor-pointer'
+                    }`}
                     style={{
                       backgroundColor: `${lineage.color}15`,
                       borderColor: `${lineage.color}50`,
                     }}
-                    title={`Linhagem ${lineage.name}: ${lineage.bonusDescription} (Clique para trocar)`}
+                    title={
+                      isAdventureActive
+                        ? `Linhagem ${lineage.name} travada durante a aventura. Conclua ou abandone para alterar.`
+                        : `Linhagem ${lineage.name}: ${lineage.bonusDescription} (Clique para trocar)`
+                    }
                   >
-                    <span className="text-[9px] uppercase font-bold" style={{ color: lineage.color }}>
-                      Linhagem
+                    <span className="text-[9px] uppercase font-bold flex items-center gap-1" style={{ color: lineage.color }}>
+                      {isAdventureActive && <Lock size={9} />} Linhagem
                     </span>
                     <span className="text-[10px] font-black text-white flex items-center gap-1">
                       🧬 {lineage.name}
@@ -258,12 +305,13 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                       : 'bg-[#0B0D13]/90 border-[#343B50]/50 opacity-60 cursor-not-allowed'
                     : isSelected
                     ? isSecret
-                      ? 'bg-[#181126] border-[#9D4EDD] shadow-lg shadow-[#9D4EDD]/30 scale-[1.02] cursor-pointer'
-                      : 'bg-[#10131C] border-[#4C8DFF] shadow-lg shadow-[#4C8DFF]/20 scale-[1.02] cursor-pointer'
+                      ? `bg-[#181126] border-[#9D4EDD] shadow-lg shadow-[#9D4EDD]/30 scale-[1.02] ${isAdventureActive ? 'cursor-default' : 'cursor-pointer'}`
+                      : `bg-[#10131C] border-[#4C8DFF] shadow-lg shadow-[#4C8DFF]/20 scale-[1.02] ${isAdventureActive ? 'cursor-default' : 'cursor-pointer'}`
                     : isSecret
-                    ? 'bg-[#140E20]/80 border-[#7B2CBF]/60 hover:border-[#9D4EDD] opacity-95 cursor-pointer shadow-sm shadow-[#7B2CBF]/20'
-                    : 'bg-[#10131C]/60 border-[#343B50] hover:border-[#D4AD65]/60 opacity-90 cursor-pointer'
+                    ? `bg-[#140E20]/80 border-[#7B2CBF]/60 hover:border-[#9D4EDD] opacity-95 shadow-sm shadow-[#7B2CBF]/20 ${isAdventureActive ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`
+                    : `bg-[#10131C]/60 border-[#343B50] hover:border-[#D4AD65]/60 opacity-90 ${isAdventureActive ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`
                 }`}
+                title={isAdventureActive && isUnlocked ? 'A composição da equipe está travada durante a aventura.' : undefined}
               >
                 <div className="space-y-2.5">
                   {/* Top Status & Badge Header */}
@@ -356,18 +404,32 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setLineageModalClass(cKey);
+                          handleOpenLineageModal(cKey);
                         }}
-                        className="flex-1 flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold transition-all hover:scale-[1.02] cursor-pointer"
+                        disabled={isAdventureActive}
+                        className={`flex-1 flex items-center justify-between gap-1.5 px-2 py-1 rounded-lg border text-[10px] font-bold transition-all ${
+                          isAdventureActive
+                            ? 'opacity-85 cursor-not-allowed'
+                            : 'hover:scale-[1.02] cursor-pointer'
+                        }`}
                         style={{
                           backgroundColor: `${cardLineage.color}18`,
                           borderColor: `${cardLineage.color}55`,
                           color: cardLineage.color,
                         }}
-                        title={`Visual e Bônus da Linhagem ${cardLineage.name}: ${cardLineage.bonusDescription} (Clique para alterar)`}
+                        title={
+                          isAdventureActive
+                            ? `Linhagem ${cardLineage.name} travada durante a aventura. Conclua ou abandone para alterar.`
+                            : `Visual e Bônus da Linhagem ${cardLineage.name}: ${cardLineage.bonusDescription} (Clique para alterar)`
+                        }
                       >
-                        <span className="truncate">🧬 Linhagem: <strong className="text-white">{cardLineage.name}</strong></span>
-                        <span className="text-[9px] underline opacity-85 shrink-0">Trocar</span>
+                        <span className="truncate flex items-center gap-1">
+                          {isAdventureActive && <Lock size={10} />}
+                          🧬 Linhagem: <strong className="text-white">{cardLineage.name}</strong>
+                        </span>
+                        <span className="text-[9px] underline opacity-85 shrink-0">
+                          {isAdventureActive ? 'Travada' : 'Trocar'}
+                        </span>
                       </button>
                     </div>
                   )}
@@ -467,7 +529,7 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
           {onClose && (
             <button
               onClick={onClose}
-              className="px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider bg-[#10131C] hover:bg-[#343B50] text-[#A7B0C4] border border-[#343B50] transition-all"
+              className="px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider bg-[#10131C] hover:bg-[#343B50] text-[#A7B0C4] border border-[#343B50] transition-all cursor-pointer"
             >
               Voltar ao Menu
             </button>
@@ -482,17 +544,18 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                 : 'bg-[#10131C] text-[#A7B0C4]/40 border border-[#343B50] cursor-not-allowed'
             }`}
           >
-            <Play size={16} fill="currentColor" /> CONFIRMAR EQUIPE & JOGAR
+            <Play size={16} fill="currentColor" /> {isAdventureActive ? 'VOLTAR À AVENTURA' : 'CONFIRMAR EQUIPE & JOGAR'}
           </button>
         </div>
-{showUnlockQuestsModal && (
+
+        {showUnlockQuestsModal && (
           <ClassUnlockQuestsModal
             progress={progress || { unlockedClasses } as any}
             onClose={() => setShowUnlockQuestsModal(false)}
           />
         )}
 
-        {lineageModalClass && (
+        {!isAdventureActive && lineageModalClass && (
           <LineageSelectionModal
             progress={progress}
             unlockedLineages={progress?.unlockedLineages}
@@ -555,6 +618,6 @@ function getClassIcon(avatarKey: string, size = 20) {
     case 'wind_mage':
       return <Wind size={size} />;
     default:
-      return <Sparkles size={size} />;
+      return <Shield size={size} />;
   }
 }
