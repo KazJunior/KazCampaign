@@ -110,15 +110,15 @@ export const LineageSelectionModal: React.FC<LineageSelectionModalProps> = ({
           </p>
         </div>
 
-        {/* Prévia Visual Ao Vivo da Classe com a Linhagem Escolhida */}
+        {/* Prévia Visual Ao Vivo da Classe com a Linhagem Escolhida e Botão de Confirmação no Começo */}
         {(() => {
           const previewLineage = getLineageById(selectedId);
           return (
             <div
-              className="p-3.5 sm:p-4 rounded-2xl border-2 flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#10131C]/90 shadow-lg transition-all"
+              className="p-3.5 sm:p-4 rounded-2xl border-2 flex flex-col md:flex-row items-center justify-between gap-4 bg-[#10131C]/90 shadow-lg transition-all"
               style={{ borderColor: `${previewLineage.color}70` }}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 w-full md:w-auto">
                 <ClassLineageAvatar
                   lineageId={selectedId}
                   classColor={classDef.color}
@@ -147,6 +147,23 @@ export const LineageSelectionModal: React.FC<LineageSelectionModalProps> = ({
                     {previewLineage.bonusDescription}
                   </p>
                 </div>
+              </div>
+
+              {/* Botão de confirmação posicionado no começo */}
+              <div className="flex items-center gap-2.5 w-full md:w-auto justify-end shrink-0">
+                <button
+                  onClick={onClose}
+                  className="flex-1 md:flex-initial px-4 py-2.5 rounded-xl bg-[#1B2030] hover:bg-[#252C42] border border-[#343B50] text-[#A7B0C4] hover:text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  className="flex-1 md:flex-initial px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#FFD700] hover:to-[#D4AD65] text-[#10131C] font-black text-xs uppercase tracking-wider shadow-lg shadow-[#D4AD65]/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Check size={16} strokeWidth={3} />
+                  <span>Confirmar Linhagem</span>
+                </button>
               </div>
             </div>
           );
@@ -411,28 +428,19 @@ export const LineageSelectionModal: React.FC<LineageSelectionModalProps> = ({
           })}
         </div>
 
-        {/* Rodapé */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#343B50]">
+        {/* Rodapé Informativo */}
+        <div className="pt-2 flex items-center justify-between gap-3 border-t border-[#343B50]">
           <div className="text-xs text-[#A7B0C4] flex items-center gap-1.5">
             <Info size={14} className="text-[#FFD700]" />
             <span>Linhagem selecionada: <strong className="text-white">{getLineageById(selectedId).name}</strong></span>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            <button
-              onClick={onClose}
-              className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-[#1B2030] hover:bg-[#252C42] border border-[#343B50] text-[#A7B0C4] hover:text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={handleConfirm}
-              className="flex-1 sm:flex-initial px-7 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AD65] to-[#B88E43] hover:from-[#FFD700] hover:to-[#D4AD65] text-[#10131C] font-black text-xs uppercase tracking-wider shadow-lg shadow-[#D4AD65]/20 hover:scale-[1.02] active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              <Check size={16} strokeWidth={3} />
-              <span>Confirmar Linhagem</span>
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="px-4 py-1.5 rounded-lg bg-[#1B2030] hover:bg-[#252C42] border border-[#343B50] text-[#A7B0C4] hover:text-white font-medium text-xs transition-all cursor-pointer"
+          >
+            Fechar
+          </button>
         </div>
       </div>
     </div>
