@@ -4308,7 +4308,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 99,
     aoeRadius: 99,
     cooldownMax: 99,
-    currentCooldown: 0,
+    currentCooldown: 99,
     targetType: 'enemy',
     pullToAdjacent: true,
     leavesCorruptionPuddle: true,

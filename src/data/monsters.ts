@@ -1528,6 +1528,9 @@ export function createMonsterUnit(
 
       // Bosses e Mini Bosses preservam seus cooldowns e efeitos específicos configurados
       if (def.isBoss || def.isMiniBoss) {
+        if (clone.id.startsWith('boss_') || clone.cooldownMax >= 90) {
+          clone.currentCooldown = clone.cooldownMax;
+        }
         return clone;
       }
 

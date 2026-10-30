@@ -72,6 +72,8 @@ export function decideMonsterAction(
     const isSilenced = monster.statusEffects?.some((e) => e.type === 'silence' && e.duration > 0);
     if (!isSilenced) {
       activeSkills.forEach((sk) => {
+        // Habilidades únicas de 50% HP (como Cataclismo do Abismo) são ativadas exclusivamente pelo evento de limiar de 50% HP do boss
+        if (sk.id.startsWith('boss_') || sk.cooldownMax >= 90) return;
         if (sk.currentCooldown === 0) {
           availableActions.push({ skill: sk, rangeMin: sk.rangeMin, rangeMax: sk.rangeMax });
         }

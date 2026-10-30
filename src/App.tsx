@@ -5221,7 +5221,15 @@ export function App() {
 
         // Marca que o boss utilizou sua habilidade única de 50% HP (ativa 1 única vez por combate)
         currentUnits = currentUnits.map((u) =>
-          u.id === freshMonster.id ? { ...u, hasUsedHalfHpSkill: true } : u
+          u.id === freshMonster.id
+            ? {
+                ...u,
+                hasUsedHalfHpSkill: true,
+                skills: u.skills.map((s) =>
+                  s.id === bossSkill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
+                ),
+              }
+            : u
         );
         setUnits([...currentUnits]);
 
