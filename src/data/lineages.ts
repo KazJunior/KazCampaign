@@ -302,7 +302,7 @@ export const LINEAGES: LineageDefinition[] = [
     title: 'Abençoados da Primavera',
     description: 'Homens-coelho dotados de sentidos apurados para farejar tesouros raros e ninhos de companheiros.',
     bonusTitle: 'Pata da Fortuna',
-    bonusDescription: '2x mais chance de encontrar ovos de companheiro em combate. +20 de vida máxima.',
+    bonusDescription: '2x mais chance de encontrar ovos de companheiro em combate (limite de 1 por equipe; ter mais de um não acumula). +20 de vida máxima.',
     iconName: 'Sparkles',
     color: '#34D399',
     stats: {

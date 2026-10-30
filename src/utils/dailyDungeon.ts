@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import type { DailyDungeonConfig, LevelConfig, TerrainType, ObstacleType } from '../types/game';
+import type { DailyDungeonConfig, LevelConfig, TerrainType, ObstacleType, ItemDefinition } from '../types/game';
 import { CLASS_DEFINITIONS } from '../data/units';
 import { SKILLS, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from '../data/skills';
 import { MONSTER_DEFINITIONS } from '../data/monsters';
+import { ITEMS } from '../data/items';
 
 // Retorna a chave do dia de hoje no formato YYYY-MM-DD baseado no horário local do jogador
 export function getTodayDateString(d: Date = new Date()): string {
@@ -126,7 +127,6 @@ const CANDIDATE_BOSSES = [
   'valgar_sanguinario',
   'devorador',
   'leviata_vazio',
-  'cavaleiro_apocalipse',
 ];
 
 const CANDIDATE_MINIONS = [
@@ -275,13 +275,13 @@ export function generateDailyDungeonConfig(targetDateKey?: string): DailyDungeon
     grid.push(row);
   }
 
-  // Posições dos monstros
+  // Posições dos monstros (todos no nível 10 / levelOffset 9 na fase diária)
   const enemySpawns: LevelConfig['enemySpawns'] = [
-    { monsterTypeId: bossId, x: 4, y: 2, levelOffset: 5, isBoss: true },
-    { monsterTypeId: minionIds[0], x: 2, y: 1, levelOffset: 4 },
-    { monsterTypeId: minionIds[1], x: 6, y: 1, levelOffset: 4 },
-    { monsterTypeId: minionIds[2], x: 1, y: 3, levelOffset: 4 },
-    { monsterTypeId: minionIds[3], x: 7, y: 3, levelOffset: 4 },
+    { monsterTypeId: bossId, x: 4, y: 2, levelOffset: 9, isBoss: true },
+    { monsterTypeId: minionIds[0], x: 2, y: 1, levelOffset: 9 },
+    { monsterTypeId: minionIds[1], x: 6, y: 1, levelOffset: 9 },
+    { monsterTypeId: minionIds[2], x: 1, y: 3, levelOffset: 9 },
+    { monsterTypeId: minionIds[3], x: 7, y: 3, levelOffset: 9 },
   ];
 
   // Zona de implantação da equipe de 4 heróis
@@ -297,6 +297,24 @@ export function generateDailyDungeonConfig(targetDateKey?: string): DailyDungeon
 
   const formattedDate = getFormattedDailyDate(dateKey);
 
+  // 5. Sortear 6 rodadas de 3 opções de itens para a escolha antes da batalha da Fase Diária
+  const allItems = Object.values(ITEMS);
+  const itemDraftRounds: ItemDefinition[][] = [];
+  const usedItemIds = new Set<string>();
+
+  for (let r = 0; r < 6; r++) {
+    const roundOptions: ItemDefinition[] = [];
+    const available = allItems.filter((it) => !usedItemIds.has(it.id));
+    for (let c = 0; c < 3; c++) {
+      if (available.length === 0) break;
+      const idx = Math.floor(rng() * available.length);
+      const picked = available.splice(idx, 1)[0];
+      roundOptions.push(picked);
+      usedItemIds.add(picked.id);
+    }
+    itemDraftRounds.push(roundOptions);
+  }
+
   const levelConfig: LevelConfig = {
     id: 9000,
     name: 'Desafio Diário',
@@ -304,7 +322,7 @@ export function generateDailyDungeonConfig(targetDateKey?: string): DailyDungeon
     environment,
     width,
     height,
-    description: `Fase Diária de ${formattedDate}. Enfrente ${bossName} e sua comitiva com uma equipe e habilidades sorteadas exclusivamente para o dia de hoje!`,
+    description: `Fase Diária de ${formattedDate}. Enfrente ${bossName} e sua comitiva com uma equipe, habilidades e 6 itens sorteados exclusivamente para o dia de hoje!`,
     objectives: [
       `Derrotar ${bossName}`,
       'Eliminar todos os inimigos da comitiva',
@@ -331,6 +349,7 @@ export function generateDailyDungeonConfig(targetDateKey?: string): DailyDungeon
     heroLevel: 10,
     rewardGold: 20000,
     bossMonsterTypeId: bossId,
+    itemDraftRounds,
   };
 }
 

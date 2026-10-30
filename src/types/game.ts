@@ -580,4 +580,5 @@ export interface DailyDungeonConfig {
   heroLevel: number;
   rewardGold: number;
   bossMonsterTypeId?: string;
+  itemDraftRounds?: ItemDefinition[][];
 }

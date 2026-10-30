@@ -165,7 +165,7 @@ export const DailyDungeonModal: React.FC<DailyDungeonModalProps> = ({
             <div className="text-xs">
               <strong className="text-white block font-bold">Tudo Aleatório</strong>
               <span className="text-[#A7B0C4] text-[11px]">
-                Heróis, habilidades sorteadas, monstros e chefe mudam a cada 24 horas.
+                Heróis, habilidades, seleção de 6 itens, monstros e chefe mudam a cada 24 horas.
               </span>
             </div>
           </div>

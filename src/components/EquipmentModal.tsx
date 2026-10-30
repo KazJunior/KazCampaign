@@ -27,6 +27,7 @@ interface EquipmentModalProps {
   onEquipItem: (className: string, itemId: string, inventoryIndex?: number) => void;
   onUnequipItem: (className: string, category: ItemCategory) => void;
   onClose: () => void;
+  isDailyDungeon?: boolean;
 }
 
 interface InventoryEntry {
@@ -43,6 +44,7 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
   onEquipItem,
   onUnequipItem,
   onClose,
+  isDailyDungeon = false,
 }) => {
   const [activeClass, setActiveClass] = useState<string>(partyClasses[0] || 'guerreiro');
   const [selectedInventoryIndex, setSelectedInventoryIndex] = useState<number | null>(null);
@@ -144,13 +146,20 @@ export const EquipmentModal: React.FC<EquipmentModalProps> = ({
             </div>
             <div className="min-w-0">
               <h2 className="font-black text-sm sm:text-lg text-[#F3F4F8] flex items-center gap-1.5 truncate">
-                <span>Arsenal & Equipamentos</span>
+                <span>{isDailyDungeon ? 'Equipamentos da Fase Diária' : 'Arsenal & Equipamentos'}</span>
                 <span className="text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded-full bg-[#10131C] text-[#D4AD65] border border-[#D4AD65]/40 shrink-0">
                   {inventory.length} Itens
                 </span>
+                {isDailyDungeon && (
+                  <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 shrink-0">
+                    Modo Diário
+                  </span>
+                )}
               </h2>
               <p className="text-[10px] sm:text-xs text-[#A7B0C4] truncate">
-                Equipe até 1 item por categoria em cada herói.
+                {isDailyDungeon
+                  ? 'Itens temporários exclusivos para o Desafio Diário (não afetam a campanha).'
+                  : 'Equipe até 1 item por categoria em cada herói.'}
               </p>
             </div>
           </div>

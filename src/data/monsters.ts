@@ -1409,17 +1409,56 @@ export function createMonsterUnit(
   id: string,
   x: number,
   y: number,
-  levelOffset = 0
+  levelOffset = 0,
+  isDailyDungeon = false
 ): Unit {
-  const def = MONSTER_DEFINITIONS[typeId];
-  const level = 1 + levelOffset;
+  const def = MONSTER_DEFINITIONS[typeId] || MONSTER_DEFINITIONS['goblin'];
+  const level = isDailyDungeon ? 10 : 1 + levelOffset;
 
   let maxHp: number;
   let atk: number;
   let mag: number;
   let unitDef: number;
   let res: number;
-  if (typeId.startsWith('boneco_')) {
+  if (isDailyDungeon) {
+    // Padronização precisa para Nível 10 (Fase 10) na Fase Diária
+    const isBoss = Boolean(def.isBoss || def.isMiniBoss);
+    if (isBoss) {
+      // Chefe Padronizado para Nível 10 (equivalente a Astaroth, Boss da Fase 10)
+      maxHp = Math.round(1950 * (def.role === 'tank' ? 1.12 : def.role === 'support' ? 0.90 : 1.0));
+      const isMagical = def.mag > def.atk;
+      const isHybrid = Math.abs(def.atk - def.mag) <= 10;
+      if (isHybrid) {
+        atk = 72;
+        mag = 72;
+      } else if (isMagical) {
+        atk = 35;
+        mag = 84;
+      } else {
+        atk = 84;
+        mag = 35;
+      }
+      unitDef = def.role === 'tank' ? 46 : 38;
+      res = def.role === 'tank' ? 44 : 36;
+    } else {
+      // Lacaios Padronizados para Nível 10 (equivalentes aos monstros da Fase 10)
+      maxHp = Math.round(380 * (def.role === 'tank' ? 1.15 : def.role === 'support' ? 0.88 : 1.0));
+      const isMagical = def.mag > def.atk;
+      const isHybrid = Math.abs(def.atk - def.mag) <= 8;
+      if (isHybrid) {
+        atk = 54;
+        mag = 54;
+      } else if (isMagical) {
+        atk = 24;
+        mag = 62;
+      } else {
+        atk = 62;
+        mag = 24;
+      }
+      unitDef = def.role === 'tank' ? 30 : 22;
+      res = def.role === 'tank' ? 28 : 20;
+    }
+  } else if (typeId.startsWith('boneco_')) {
     maxHp = def.maxHp;
     atk = def.atk;
     mag = def.mag;
@@ -1471,11 +1510,11 @@ export function createMonsterUnit(
       const clone = JSON.parse(JSON.stringify(s));
 
       // Escalonamento de dano dos bosses a partir da Fase 20 (>= 200% progressivo)
-      if (STAGE_20_PLUS_BOSS_SKILL_POWERS[typeId]?.[clone.id]) {
+      if (!isDailyDungeon && STAGE_20_PLUS_BOSS_SKILL_POWERS[typeId]?.[clone.id]) {
         clone.power = STAGE_20_PLUS_BOSS_SKILL_POWERS[typeId][clone.id];
         const pct = Math.round(clone.power * 100);
         clone.description = clone.description.replace(/\d+%/g, `${pct}%`);
-      } else if ((def.isBoss || def.isMiniBoss) && levelOffset >= 19 && clone.power > 0) {
+      } else if (!isDailyDungeon && (def.isBoss || def.isMiniBoss) && levelOffset >= 19 && clone.power > 0) {
         clone.power = Math.max(2.0, clone.power);
         const pct = Math.round(clone.power * 100);
         clone.description = clone.description.replace(/\d+%/g, `${pct}%`);
@@ -1572,12 +1611,12 @@ export function createMonsterUnit(
     avatarKey: def.avatarKey,
     skills: skillList,
     learnedSkillIds: [],
-    statusEffects: typeId === 'cavaleiro_apocalipse' ? [{ type: 'immune', duration: 999, value: 1 }] : [],
+    statusEffects: (!isDailyDungeon && typeId === 'cavaleiro_apocalipse') ? [{ type: 'immune', duration: 999, value: 1 }] : [],
     isBoss: def.isBoss,
     isMiniBoss: def.isMiniBoss,
     bossPhase: def.isBoss || def.isMiniBoss ? 1 : undefined,
-    crystalsAlive: typeId === 'cavaleiro_apocalipse' ? true : undefined,
-    bossVersion: typeId === 'cavaleiro_apocalipse' ? 'neutral' : undefined,
+    crystalsAlive: (!isDailyDungeon && typeId === 'cavaleiro_apocalipse') ? true : undefined,
+    bossVersion: (!isDailyDungeon && typeId === 'cavaleiro_apocalipse') ? 'neutral' : undefined,
     damageDealt: 0,
     kills: 0,
   };

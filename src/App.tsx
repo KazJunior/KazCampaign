@@ -91,6 +91,7 @@ import { ClassMissionsModal } from './components/ClassMissionsModal';
 import { getEquippedSkin, incrementClassStat, incrementPartyStats } from './data/classQuests';
 import { TrainingModeModal, type TrainingModeConfig } from './components/TrainingModeModal';
 import { DailyDungeonModal } from './components/DailyDungeonModal';
+import { DailyItemDraftModal } from './components/DailyItemDraftModal';
 import { generateDailyDungeonConfig, getTodayDateString } from './utils/dailyDungeon';
 import { TrainingBattleHUD } from './components/TrainingBattleHUD';
 import { TrainingSkillPickerModal } from './components/TrainingSkillPickerModal';
@@ -170,6 +171,9 @@ export function App() {
   const [showDailyDungeonModal, setShowDailyDungeonModal] = useState(false);
   const [isDailyMode, setIsDailyMode] = useState(false);
   const [dailyDungeonConfig, setDailyDungeonConfig] = useState<any | null>(null);
+  const [showDailyItemDraft, setShowDailyItemDraft] = useState(false);
+  const [dailyInventory, setDailyInventory] = useState<string[]>([]);
+  const [dailyEquipment, setDailyEquipment] = useState<Record<string, EquipmentSlots>>({});
   const [showClassMissionsModal, setShowClassMissionsModal] = useState(false);
   const [showClassUnlockQuestsModal, setShowClassUnlockQuestsModal] = useState(false);
   const [isTrainingMode, setIsTrainingMode] = useState(false);
@@ -898,8 +902,19 @@ export function App() {
 
   const handleStartDailyDungeon = () => {
     setShowDailyDungeonModal(false);
+    const config = dailyDungeonConfig || generateDailyDungeonConfig();
+    setDailyDungeonConfig(config);
+    setDailyInventory([]);
+    setDailyEquipment({});
+    setShowDailyItemDraft(true);
+  };
+
+  const handleConfirmDailyItemDraft = (chosenItemIds: string[]) => {
+    setShowDailyItemDraft(false);
     setIsDailyMode(true);
     setIsTrainingMode(false);
+    setDailyInventory(chosenItemIds);
+    setDailyEquipment({});
 
     const config = dailyDungeonConfig || generateDailyDungeonConfig();
     setDailyDungeonConfig(config);
@@ -928,16 +943,17 @@ export function App() {
         `daily_player_${className}_${idx}`,
         spawnPt.x,
         spawnPt.y,
-        config.heroLevel,
+        10, // Todos os heróis padronizados no Nível 10 na Fase Diária
         0, // xp
         0, 0, 0, 0, 0, // bonus stats
         skillIds,
         {},
-        [],
+        [], // Equipamentos inicialmente vazios; jogador equipa os 6 itens na implantação
         progress.itemUpgrades,
         getClassCumulativeBonus(className, progress.classUpgrades?.[className] || 0),
         getGlobalHeroBonus(progress),
-        getEquippedSkin(className, progress.equippedClassSkins)
+        getEquippedSkin(className, progress.equippedClassSkins),
+        progress.selectedPartyLineages?.[className] || DEFAULT_CLASS_LINEAGES[className] || 'humano'
       );
     });
 
@@ -947,7 +963,8 @@ export function App() {
         `daily_enemy_${spawn.monsterTypeId}_${idx}`,
         spawn.x,
         spawn.y,
-        spawn.levelOffset || 0
+        spawn.levelOffset || 9,
+        true // isDailyDungeon: padroniza status e habilidades para Nível 10
       );
       if (spawn.isBoss) {
         u.isBoss = true;
@@ -970,12 +987,16 @@ export function App() {
     setIsAnimatingAction(false);
     setActiveBossBanner(null);
     setCurrentView('battle');
+    setShowEquipment(true); // Abre o modal de equipamentos para o jogador distribuir os 6 itens nos heróis
     soundManager.playTurnStart(true);
   };
 
   const handleExitDailyDungeon = () => {
     soundManager.playSelect();
     setIsDailyMode(false);
+    setShowDailyItemDraft(false);
+    setDailyInventory([]);
+    setDailyEquipment({});
     setCurrentView('level_select');
   };
 
@@ -1421,6 +1442,139 @@ export function App() {
       })
     );
   };
+
+  // Gerenciamento de Equipamentos exclusivo da Fase Diária (isolado da Aventura)
+  const handleEquipDailyItem = (heroClass: string, itemId: string, inventoryIndex?: number) => {
+    const item = getItemById(itemId);
+    if (!item) return;
+    const category = item.category;
+
+    const currentInventory = [...dailyInventory];
+    const currentEquipment = { ...dailyEquipment };
+    const heroEquip = { ...(currentEquipment[heroClass] || {}) };
+
+    const oldItemId = heroEquip[category];
+    if (oldItemId) {
+      currentInventory.push(oldItemId);
+    }
+
+    const itemIdx =
+      inventoryIndex !== undefined &&
+      inventoryIndex >= 0 &&
+      inventoryIndex < currentInventory.length &&
+      currentInventory[inventoryIndex] === itemId
+        ? inventoryIndex
+        : currentInventory.indexOf(itemId);
+
+    if (itemIdx >= 0) {
+      currentInventory.splice(itemIdx, 1);
+    }
+
+    heroEquip[category] = itemId;
+    currentEquipment[heroClass] = heroEquip;
+
+    setDailyInventory(currentInventory);
+    setDailyEquipment(currentEquipment);
+
+    // Atualiza imediatamente a unidade no tabuleiro
+    setUnits((prevUnits) =>
+      prevUnits.map((u) => {
+        if (u.className !== heroClass || u.faction !== 'player') return u;
+        const skillIds = dailyDungeonConfig?.heroSkills[heroClass] || u.skills.map((s) => s.id);
+        const equippedIds = Object.values(heroEquip).filter((id): id is string => Boolean(id));
+        const recomputed = createPlayerUnit(
+          heroClass as any,
+          u.id,
+          u.x,
+          u.y,
+          10,
+          0,
+          0, 0, 0, 0, 0,
+          skillIds,
+          {},
+          equippedIds,
+          progress.itemUpgrades,
+          getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
+          getGlobalHeroBonus(progress),
+          getEquippedSkin(heroClass, progress.equippedClassSkins),
+          progress.selectedPartyLineages?.[heroClass] || DEFAULT_CLASS_LINEAGES[heroClass] || 'humano'
+        );
+        const hpDiff = recomputed.maxHp - u.maxHp;
+        return {
+          ...recomputed,
+          currentHp: Math.min(recomputed.maxHp, Math.max(1, u.currentHp + hpDiff)),
+          hasMoved: u.hasMoved,
+          hasAttacked: u.hasAttacked,
+        };
+      })
+    );
+  };
+
+  const handleUnequipDailyItem = (heroClass: string, category: ItemCategory) => {
+    const currentEquipment = { ...dailyEquipment };
+    const heroEquip = { ...(currentEquipment[heroClass] || {}) };
+
+    const oldItemId = heroEquip[category];
+    if (!oldItemId) return;
+
+    delete heroEquip[category];
+    currentEquipment[heroClass] = heroEquip;
+
+    const currentInventory = [...dailyInventory, oldItemId];
+    setDailyInventory(currentInventory);
+    setDailyEquipment(currentEquipment);
+
+    setUnits((prevUnits) =>
+      prevUnits.map((u) => {
+        if (u.className !== heroClass || u.faction !== 'player') return u;
+        const skillIds = dailyDungeonConfig?.heroSkills[heroClass] || u.skills.map((s) => s.id);
+        const equippedIds = Object.values(heroEquip).filter((id): id is string => Boolean(id));
+        const recomputed = createPlayerUnit(
+          heroClass as any,
+          u.id,
+          u.x,
+          u.y,
+          10,
+          0,
+          0, 0, 0, 0, 0,
+          skillIds,
+          {},
+          equippedIds,
+          progress.itemUpgrades,
+          getClassCumulativeBonus(heroClass, progress.classUpgrades?.[heroClass] || 0),
+          getGlobalHeroBonus(progress),
+          getEquippedSkin(heroClass, progress.equippedClassSkins),
+          progress.selectedPartyLineages?.[heroClass] || DEFAULT_CLASS_LINEAGES[heroClass] || 'humano'
+        );
+        const hpDiff = recomputed.maxHp - u.maxHp;
+        return {
+          ...recomputed,
+          currentHp: Math.min(recomputed.maxHp, Math.max(1, u.currentHp + hpDiff)),
+          hasMoved: u.hasMoved,
+          hasAttacked: u.hasAttacked,
+        };
+      })
+    );
+  };
+
+  const dailyUnitsState = useMemo<Record<string, UnitProgression>>(() => {
+    if (!dailyDungeonConfig) return {};
+    const map: Record<string, UnitProgression> = {};
+    for (const c of dailyDungeonConfig.partyClasses || []) {
+      map[c] = {
+        className: c,
+        level: 10,
+        xp: 0,
+        bonusHp: 0,
+        bonusAtk: 0,
+        bonusDef: 0,
+        bonusMag: 0,
+        bonusRes: 0,
+        learnedSkillIds: dailyDungeonConfig.heroSkills?.[c] || [],
+      };
+    }
+    return map;
+  }, [dailyDungeonConfig]);
 
   const handleToggleSpeed = () => {
     const nextSpeed: 'normal' | 'fast' = progress.combatSpeed === 'normal' ? 'fast' : 'normal';
@@ -6486,7 +6640,7 @@ export function App() {
     let updatedEggs = [...(progress.eggs || [])];
     const newDroppedEggs: PetEgg[] = [];
 
-    // Linhagem Lagomorfo: 2x mais chance de encontrar ovos
+    // Linhagem Lagomorfo: 2x mais chance de encontrar ovos (limite de 1 por equipe; colocar mais de um não acumula adicional)
     const hasLagomorfo = partyUnits.some((u) => u.lineageEggDropRateMultiplier || u.lineageId === 'lagomorfo');
     const eggChanceMultiplier = hasLagomorfo ? 2 : 1;
 
@@ -7006,6 +7160,14 @@ export function App() {
           />
         )}
 
+        {showDailyItemDraft && dailyDungeonConfig && (
+          <DailyItemDraftModal
+            draftRounds={dailyDungeonConfig.itemDraftRounds || []}
+            onConfirmDraft={handleConfirmDailyItemDraft}
+            onClose={() => setShowDailyItemDraft(false)}
+          />
+        )}
+
         {showTrainingModal && (
           <TrainingModeModal
             onStartTraining={handleStartTraining}
@@ -7034,14 +7196,15 @@ export function App() {
         )}
         {showEquipment && (
           <EquipmentModal
-            partyClasses={progress.activeAdventure?.partyClasses || progress.selectedPartyClasses}
-            unitsState={progress.activeAdventure?.unitsState || progress.unitsState}
-            equipment={progress.activeAdventure?.equipment || {}}
-            inventory={progress.activeAdventure?.inventory || []}
+            partyClasses={isDailyMode ? (dailyDungeonConfig?.partyClasses || []) : (progress.activeAdventure?.partyClasses || progress.selectedPartyClasses)}
+            unitsState={isDailyMode ? dailyUnitsState : (progress.activeAdventure?.unitsState || progress.unitsState)}
+            equipment={isDailyMode ? dailyEquipment : (progress.activeAdventure?.equipment || {})}
+            inventory={isDailyMode ? dailyInventory : (progress.activeAdventure?.inventory || [])}
             itemUpgrades={progress.itemUpgrades || {}}
-            onEquipItem={handleEquipItem}
-            onUnequipItem={handleUnequipItem}
+            onEquipItem={isDailyMode ? handleEquipDailyItem : handleEquipItem}
+            onUnequipItem={isDailyMode ? handleUnequipDailyItem : handleUnequipItem}
             onClose={() => setShowEquipment(false)}
+            isDailyDungeon={isDailyMode}
           />
         )}
         {showItemBestiary && (
@@ -7473,7 +7636,7 @@ export function App() {
             unlockedClassesCount={progress.unlockedClasses?.length || 4}
             onNextLevel={() => startLevel(currentLevel.id + 1)}
             onRetry={isDailyMode ? handleStartDailyDungeon : handleStartNewAdventure}
-            onGoToMenu={() => { if (isDailyMode) setIsDailyMode(false); setCurrentView('level_select'); }}
+            onGoToMenu={() => { if (isDailyMode) { handleExitDailyDungeon(); } else { setCurrentView('level_select'); } }}
           />
         )}
 
@@ -7493,14 +7656,15 @@ export function App() {
       )}
       {showEquipment && (
         <EquipmentModal
-          partyClasses={progress.activeAdventure?.partyClasses || progress.selectedPartyClasses}
-          unitsState={progress.activeAdventure?.unitsState || progress.unitsState}
-          equipment={progress.activeAdventure?.equipment || {}}
-          inventory={progress.activeAdventure?.inventory || []}
+          partyClasses={isDailyMode ? (dailyDungeonConfig?.partyClasses || []) : (progress.activeAdventure?.partyClasses || progress.selectedPartyClasses)}
+          unitsState={isDailyMode ? dailyUnitsState : (progress.activeAdventure?.unitsState || progress.unitsState)}
+          equipment={isDailyMode ? dailyEquipment : (progress.activeAdventure?.equipment || {})}
+          inventory={isDailyMode ? dailyInventory : (progress.activeAdventure?.inventory || [])}
           itemUpgrades={progress.itemUpgrades || {}}
-          onEquipItem={handleEquipItem}
-          onUnequipItem={handleUnequipItem}
+          onEquipItem={isDailyMode ? handleEquipDailyItem : handleEquipItem}
+          onUnequipItem={isDailyMode ? handleUnequipDailyItem : handleUnequipItem}
           onClose={() => setShowEquipment(false)}
+          isDailyDungeon={isDailyMode}
         />
       )}
       {showItemBestiary && (
