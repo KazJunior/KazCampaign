@@ -4911,16 +4911,18 @@ export function App() {
             }
           }
           if (puddleTiles.length > 0) {
-            setGrid((prevGrid) =>
-              prevGrid.map((row, rY) =>
+            setGrid((prevGrid) => {
+              const nextGrid = prevGrid.map((row, rY) =>
                 row.map((cell, cX) => {
                   if (puddleTiles.some((pt) => pt.x === cX && pt.y === rY)) {
                     return { ...cell, corruptionTurns: 3 };
                   }
                   return cell;
                 })
-              )
-            );
+              );
+              gridRef.current = nextGrid;
+              return nextGrid;
+            });
           }
 
           // Puxa todos os heróis sobreviventes para casas adjacentes a Astaroth
@@ -5219,15 +5221,7 @@ export function App() {
 
         // Marca que o boss utilizou sua habilidade única de 50% HP (ativa 1 única vez por combate)
         currentUnits = currentUnits.map((u) =>
-          u.id === freshMonster.id
-            ? {
-                ...u,
-                hasUsedHalfHpSkill: true,
-                skills: u.skills.map((s) =>
-                  s.id === bossSkill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
-                ),
-              }
-            : u
+          u.id === freshMonster.id ? { ...u, hasUsedHalfHpSkill: true } : u
         );
         setUnits([...currentUnits]);
 
