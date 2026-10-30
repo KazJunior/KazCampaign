@@ -37,13 +37,16 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
     if (token) headers.Authorization = `Bearer ${token}`;
   }
 
+  const serializedBody = options.body !== undefined ? JSON.stringify(options.body) : undefined;
+  const safeKeepalive = Boolean(options.keepalive && (!serializedBody || serializedBody.length < 60000));
+
   let res: Response;
   try {
     res = await fetch(path, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      keepalive: options.keepalive,
+      body: serializedBody,
+      keepalive: safeKeepalive,
     });
   } catch {
     throw new Error('Não foi possível conectar ao servidor.');

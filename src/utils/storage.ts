@@ -1,6 +1,8 @@
 import type { AudioSettings, PlayerProgress, ActiveBattleState } from '../types/game';
 import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
 import { getHatchDuration } from '../data/pets';
+import { ALL_CLASS_MISSIONS } from '../data/classQuests';
+import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from '../data/lineageQuests';
 import { saveCloudProgress } from './api';
 
 const PROGRESS_KEY = 'rpg_tactics_progress_v4';
@@ -27,6 +29,7 @@ export function createInitialUnitsState(): PlayerProgress['unitsState'] {
     sniper: { className: 'sniper', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     mago_eletrico: { className: 'mago_eletrico', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     mago_vento: { className: 'mago_vento', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    omnimago: { className: 'omnimago', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
   };
 }
 
@@ -61,6 +64,7 @@ export const DEFAULT_PROGRESS: PlayerProgress = {
   },
   monsterKills: {},
   unlockedLineages: ['humano', 'elfo', 'anao'],
+  lineageQuestStats: {},
 };
 
 export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
@@ -69,6 +73,190 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   sfxVolume: 0.8,
   bgmVolume: 0.5,
 };
+
+export function mergeNumericRecord(
+  base?: Record<string, number> | null,
+  incoming?: Record<string, number> | null
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  if (base && typeof base === 'object') {
+    for (const [k, v] of Object.entries(base)) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n > 0) result[k] = n;
+    }
+  }
+  if (incoming && typeof incoming === 'object') {
+    for (const [k, v] of Object.entries(incoming)) {
+      const n = Number(v);
+      if (Number.isFinite(n) && n >= 0) {
+        result[k] = Math.max(result[k] || 0, n);
+      }
+    }
+  }
+  return result;
+}
+
+export function mergeClassMissionsProgress(
+  base?: PlayerProgress['classMissionsProgress'] | null,
+  incoming?: PlayerProgress['classMissionsProgress'] | null
+): NonNullable<PlayerProgress['classMissionsProgress']> {
+  const result: NonNullable<PlayerProgress['classMissionsProgress']> = {};
+
+  const apply = (src?: PlayerProgress['classMissionsProgress'] | null) => {
+    if (!src || typeof src !== 'object') return;
+    for (const [rawClass, entry] of Object.entries(src)) {
+      if (!entry || typeof entry !== 'object') continue;
+      const cKey = rawClass === 'engenheiro' ? 'druida' : rawClass;
+      const prev = result[cKey] || { completedMissions: [], stats: {} };
+      const completedSet = new Set<string>([
+        ...(Array.isArray(prev.completedMissions) ? prev.completedMissions : []),
+        ...(Array.isArray(entry.completedMissions) ? entry.completedMissions : []),
+      ]);
+      result[cKey] = {
+        completedMissions: Array.from(completedSet),
+        stats: mergeNumericRecord(prev.stats, entry.stats),
+      };
+    }
+  };
+
+  apply(base);
+  apply(incoming);
+  return result;
+}
+
+export function mergeLineageQuestStats(
+  base?: PlayerProgress['lineageQuestStats'] | null,
+  incoming?: PlayerProgress['lineageQuestStats'] | null,
+  preferMaxStreak = false
+): NonNullable<PlayerProgress['lineageQuestStats']> {
+  const merged = mergeNumericRecord(
+    base as Record<string, number> | undefined,
+    incoming as Record<string, number> | undefined
+  ) as NonNullable<PlayerProgress['lineageQuestStats']>;
+
+  const baseStreak = Number(base?.noHealerWins) || 0;
+  const incomingHasStats = Boolean(incoming && typeof incoming === 'object' && Object.keys(incoming).length > 0);
+  if (preferMaxStreak || baseStreak >= 15) {
+    merged.noHealerWins = Math.max(baseStreak, Number(incoming?.noHealerWins) || 0);
+  } else if (incomingHasStats && typeof incoming?.noHealerWins === 'number') {
+    merged.noHealerWins = Math.max(0, incoming.noHealerWins);
+  }
+  return merged;
+}
+
+export function mergeMissionAndLineageFields(
+  base?: Partial<PlayerProgress> | null,
+  incoming?: Partial<PlayerProgress> | null,
+  preferMaxStreak = false
+) {
+  const classMissionsProgress = mergeClassMissionsProgress(
+    base?.classMissionsProgress,
+    incoming?.classMissionsProgress
+  );
+
+  // Derive rewards from any completed class mission so unlocked skins/skills are always consistent
+  const derivedSkinIds: string[] = [];
+  const derivedSkillIds: string[] = [];
+  for (const mission of ALL_CLASS_MISSIONS) {
+    const cProg = classMissionsProgress[mission.className];
+    if (cProg?.completedMissions?.includes(mission.id)) {
+      if (mission.rewardSkinId) derivedSkinIds.push(mission.rewardSkinId);
+      if (mission.rewardSkillId) derivedSkillIds.push(mission.rewardSkillId);
+    }
+  }
+
+  const unlockedClassSkins = Array.from(
+    new Set([
+      ...(Array.isArray(base?.unlockedClassSkins) ? base!.unlockedClassSkins! : []),
+      ...(Array.isArray(incoming?.unlockedClassSkins) ? incoming!.unlockedClassSkins! : []),
+      ...derivedSkinIds,
+    ])
+  );
+
+  const unlockedClassSkillIds = Array.from(
+    new Set([
+      ...(Array.isArray(base?.unlockedClassSkillIds) ? base!.unlockedClassSkillIds! : []),
+      ...(Array.isArray(incoming?.unlockedClassSkillIds) ? incoming!.unlockedClassSkillIds! : []),
+      ...derivedSkillIds,
+    ])
+  );
+
+  const equippedClassSkins: Record<string, string> = {};
+  if (base?.equippedClassSkins && typeof base.equippedClassSkins === 'object') {
+    for (const [k, v] of Object.entries(base.equippedClassSkins)) {
+      if (typeof v === 'string' && v) equippedClassSkins[k === 'engenheiro' ? 'druida' : k] = v;
+    }
+  }
+  if (incoming?.equippedClassSkins && typeof incoming.equippedClassSkins === 'object') {
+    for (const [k, v] of Object.entries(incoming.equippedClassSkins)) {
+      if (typeof v === 'string' && v) equippedClassSkins[k === 'engenheiro' ? 'druida' : k] = v;
+    }
+  }
+
+  const monsterKills = mergeNumericRecord(base?.monsterKills, incoming?.monsterKills);
+  const lineageQuestStats = mergeLineageQuestStats(
+    base?.lineageQuestStats,
+    incoming?.lineageQuestStats,
+    preferMaxStreak
+  );
+
+  const rawLineages = [
+    ...INITIAL_UNLOCKED_LINEAGES,
+    ...(Array.isArray(base?.unlockedLineages) ? base!.unlockedLineages! : []),
+    ...(Array.isArray(incoming?.unlockedLineages) ? incoming!.unlockedLineages! : []),
+  ].map((id) => (id === 'draconato' ? 'dragonoide' : id));
+
+  const tempProgressForCheck = {
+    ...DEFAULT_PROGRESS,
+    monsterKills,
+    lineageQuestStats,
+    unlockedLineages: Array.from(new Set(rawLineages)),
+  };
+  const newlyCompletedLineages = checkLineageUnlockQuests(tempProgressForCheck);
+  const unlockedLineages = Array.from(new Set([...rawLineages, ...newlyCompletedLineages]));
+
+  const selectedPartyLineages: Record<string, string> = {};
+  if (base?.selectedPartyLineages && typeof base.selectedPartyLineages === 'object') {
+    for (const [k, v] of Object.entries(base.selectedPartyLineages)) {
+      if (typeof v === 'string' && v) {
+        selectedPartyLineages[k === 'engenheiro' ? 'druida' : k] = v === 'draconato' ? 'dragonoide' : v;
+      }
+    }
+  }
+  if (incoming?.selectedPartyLineages && typeof incoming.selectedPartyLineages === 'object') {
+    for (const [k, v] of Object.entries(incoming.selectedPartyLineages)) {
+      if (typeof v === 'string' && v) {
+        selectedPartyLineages[k === 'engenheiro' ? 'druida' : k] = v === 'draconato' ? 'dragonoide' : v;
+      }
+    }
+  }
+
+  const dates = [
+    base?.dailyDungeon?.lastCompletedDate,
+    incoming?.dailyDungeon?.lastCompletedDate,
+  ].filter((d): d is string => typeof d === 'string' && d.trim().length > 0);
+  dates.sort();
+
+  const dailyDungeon = {
+    lastCompletedDate: dates.length > 0 ? dates[dates.length - 1] : undefined,
+    totalWins: Math.max(
+      Number(base?.dailyDungeon?.totalWins) || 0,
+      Number(incoming?.dailyDungeon?.totalWins) || 0
+    ),
+  };
+
+  return {
+    classMissionsProgress,
+    unlockedClassSkins,
+    equippedClassSkins,
+    unlockedClassSkillIds,
+    monsterKills,
+    lineageQuestStats,
+    unlockedLineages,
+    selectedPartyLineages,
+    dailyDungeon,
+  };
+}
 
 export function loadPlayerProgress(): PlayerProgress {
   try {
@@ -165,27 +353,21 @@ export function loadPlayerProgress(): PlayerProgress {
       };
     }
 
+    const missionAndLineage = mergeMissionAndLineageFields(null, parsed, true);
+
     return {
       ...DEFAULT_PROGRESS,
       ...parsed,
       version: 4,
       gold: typeof parsed.gold === 'number' ? parsed.gold : 0,
+      unlockedLevel: Math.max(1, Number(parsed.unlockedLevel) || 1, maxCompleted + 1),
       completedLevels,
       unlockedClasses,
       selectedPartyClasses,
-      selectedPartyLineages: (() => {
-        const raw = parsed.selectedPartyLineages && typeof parsed.selectedPartyLineages === 'object' ? parsed.selectedPartyLineages : {};
-        const migrated: Record<string, string> = {};
-        for (const [k, v] of Object.entries(raw)) {
-          migrated[k] = v === 'draconato' ? 'dragonoide' : (v as string);
-        }
-        return migrated;
-      })(),
-      unlockedLineages: (() => {
-        const raw = Array.isArray(parsed.unlockedLineages) ? parsed.unlockedLineages : ['humano', 'elfo', 'anao'];
-        const migrated = raw.map((id: string) => id === 'draconato' ? 'dragonoide' : id);
-        return Array.from(new Set(['humano', 'elfo', 'anao', ...migrated]));
-      })(),
+      selectedPartyLineages: missionAndLineage.selectedPartyLineages,
+      unlockedLineages: missionAndLineage.unlockedLineages,
+      monsterKills: missionAndLineage.monsterKills,
+      lineageQuestStats: missionAndLineage.lineageQuestStats,
       unitsState: (() => {
         const rawUnits = { ...(parsed.unitsState || {}) };
         if (rawUnits.engenheiro && !rawUnits.druida) {
@@ -205,15 +387,7 @@ export function loadPlayerProgress(): PlayerProgress {
       generalUpgrades: parsed.generalUpgrades && typeof parsed.generalUpgrades === 'object' ? parsed.generalUpgrades : {},
       itemUpgrades: parsed.itemUpgrades && typeof parsed.itemUpgrades === 'object' ? parsed.itemUpgrades : {},
       unlockedPetIds: Array.isArray(parsed.unlockedPetIds) ? parsed.unlockedPetIds : [],
-      dailyDungeon: parsed.dailyDungeon && typeof parsed.dailyDungeon === 'object'
-        ? {
-            lastCompletedDate: typeof parsed.dailyDungeon.lastCompletedDate === 'string' ? parsed.dailyDungeon.lastCompletedDate : undefined,
-            totalWins: Number(parsed.dailyDungeon.totalWins) || 0,
-          }
-        : {
-            lastCompletedDate: undefined,
-            totalWins: 0,
-          },
+      dailyDungeon: missionAndLineage.dailyDungeon,
       equippedPetId: typeof parsed.equippedPetId === 'string' ? parsed.equippedPetId : null,
       eggs: Array.isArray(parsed.eggs)
         ? parsed.eggs.map((e: any) => ({
@@ -221,10 +395,10 @@ export function loadPlayerProgress(): PlayerProgress {
             hatchDurationMs: getHatchDuration(e.rarity),
           }))
         : [],
-      classMissionsProgress: parsed.classMissionsProgress && typeof parsed.classMissionsProgress === 'object' ? parsed.classMissionsProgress : {},
-      unlockedClassSkins: Array.isArray(parsed.unlockedClassSkins) ? parsed.unlockedClassSkins : [],
-      equippedClassSkins: parsed.equippedClassSkins && typeof parsed.equippedClassSkins === 'object' ? parsed.equippedClassSkins : {},
-      unlockedClassSkillIds: Array.isArray(parsed.unlockedClassSkillIds) ? parsed.unlockedClassSkillIds : [],
+      classMissionsProgress: missionAndLineage.classMissionsProgress,
+      unlockedClassSkins: missionAndLineage.unlockedClassSkins,
+      equippedClassSkins: missionAndLineage.equippedClassSkins,
+      unlockedClassSkillIds: missionAndLineage.unlockedClassSkillIds,
     };
   } catch (err) {
     console.error('Failed to load progress from localStorage:', err);
@@ -234,12 +408,26 @@ export function loadPlayerProgress(): PlayerProgress {
 
 export function savePlayerProgress(progress: PlayerProgress): void {
   try {
-    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
-    saveCloudProgress(progress).then((res) => {
-      if (res && typeof res.gold === 'number' && res.gold !== progress.gold) {
+    let existingLocal: Partial<PlayerProgress> | null = null;
+    try {
+      const rawExisting = localStorage.getItem(PROGRESS_KEY);
+      if (rawExisting) existingLocal = JSON.parse(rawExisting);
+    } catch {
+      existingLocal = null;
+    }
+
+    const mergedMissionAndLineage = mergeMissionAndLineageFields(existingLocal, progress, false);
+    const safeProgress: PlayerProgress = {
+      ...progress,
+      ...mergedMissionAndLineage,
+    };
+
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(safeProgress));
+    saveCloudProgress(safeProgress, true).then((res) => {
+      if (res && typeof res.gold === 'number' && res.gold !== safeProgress.gold) {
         try {
           const raw = localStorage.getItem(PROGRESS_KEY);
-          const current = raw ? JSON.parse(raw) : { ...progress };
+          const current = raw ? JSON.parse(raw) : { ...safeProgress };
           current.gold = res.gold;
           localStorage.setItem(PROGRESS_KEY, JSON.stringify(current));
           if (typeof window !== 'undefined') {
@@ -289,10 +477,16 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
           if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
           saveCloudProgress(parsed, keepalive).catch(() => {});
         } else {
-          // Sincronização periódica suave na nuvem (debounced 800ms)
+          // Sincronização periódica suave na nuvem (debounced 800ms) lendo o estado mais recente
           if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
           cloudSyncTimeout = setTimeout(() => {
-            saveCloudProgress(parsed).catch(() => {});
+            try {
+              const latestRaw = localStorage.getItem(PROGRESS_KEY);
+              const latestParsed = latestRaw ? JSON.parse(latestRaw) : parsed;
+              saveCloudProgress(latestParsed).catch(() => {});
+            } catch {
+              saveCloudProgress(parsed).catch(() => {});
+            }
           }, 800);
         }
       }
@@ -338,7 +532,7 @@ export function clearLiveBattleState(): void {
         parsed.activeAdventure.battleState = null;
         parsed.activeAdventure.combatActive = false;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
-        saveCloudProgress(parsed).catch(() => {});
+        saveCloudProgress(parsed, true).catch(() => {});
       }
     }
   } catch (err) {

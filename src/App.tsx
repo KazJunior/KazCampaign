@@ -51,6 +51,7 @@ import {
   saveLiveBattleState,
   loadLiveBattleState,
   clearLiveBattleState,
+  mergeMissionAndLineageFields,
 } from './utils/storage';
 import { soundManager } from './utils/audio';
 import { getAttackableTiles, getAoETiles, getReachableTiles, getPathTo } from './utils/pathfinding';
@@ -191,30 +192,42 @@ export function App() {
   const authUserRef = useRef<AuthUser | null>(null);
   authUserRef.current = authUser;
 
+  const progressRef = useRef<PlayerProgress>(progress);
+  progressRef.current = progress;
+
   const syncUserCloudProgress = async (user: AuthUser) => {
     setAuthUser(user);
     try {
+      const localP = loadPlayerProgress();
       const cloudP = await fetchCloudProgress();
       if (cloudP) {
+        const mergedCompletedLevels = Array.from(
+          new Set([
+            ...(Array.isArray(localP.completedLevels) ? localP.completedLevels : []),
+            ...(Array.isArray(cloudP.completedLevels) ? cloudP.completedLevels : []),
+          ])
+        ).sort((a, b) => a - b);
+
         const maxCompleted = getMaxCompletedLevel({
-          activeAdventure: cloudP.activeAdventure,
-          adventureHistory: cloudP.adventureHistory,
-          leaderboardHighestLevel: cloudP.highestLevel || progress.highScore,
+          activeAdventure: cloudP.activeAdventure ?? localP.activeAdventure,
+          adventureHistory: cloudP.adventureHistory ?? localP.adventureHistory,
+          completedLevels: mergedCompletedLevels,
+          leaderboardHighestLevel: cloudP.highestLevel || localP.highScore || progressRef.current.highScore,
         });
 
         // Merge local unlocked classes and cloud unlocked classes so no valid unlock is lost
         const combinedUnlocked = Array.from(
           new Set([
-            ...(progress.unlockedClasses || []),
+            ...(localP.unlockedClasses || []),
             ...(cloudP.unlockedClasses || []),
           ])
         ).map((c) => (c === 'engenheiro' ? 'druida' : c));
-        const safeUnlocked = sanitizeUnlockedClasses(combinedUnlocked, maxCompleted, progress.completedLevels || []);
+        const safeUnlocked = sanitizeUnlockedClasses(combinedUnlocked, maxCompleted, mergedCompletedLevels);
         
         // Prefer local selectedPartyClasses if it has 4 valid classes (to prevent stale cloud overwrites)
         const rawPartyChoice =
-          Array.isArray(progress.selectedPartyClasses) && progress.selectedPartyClasses.length === 4
-            ? progress.selectedPartyClasses
+          Array.isArray(localP.selectedPartyClasses) && localP.selectedPartyClasses.length === 4
+            ? localP.selectedPartyClasses
             : (Array.isArray(cloudP.selectedPartyClasses) && cloudP.selectedPartyClasses.length === 4
                 ? cloudP.selectedPartyClasses
                 : INITIAL_CLASSES);
@@ -240,53 +253,79 @@ export function App() {
           return result;
         };
 
+        const missionAndLineage = mergeMissionAndLineageFields(cloudP, localP, true);
+
         const merged: PlayerProgress = {
           ...DEFAULT_PROGRESS,
-          gold: typeof cloudP.gold === 'number' ? cloudP.gold : 0,
+          gold: typeof cloudP.gold === 'number' ? cloudP.gold : (localP.gold || 0),
+          unlockedLevel: Math.max(
+            1,
+            Number(cloudP.unlockedLevel) || 1,
+            Number(localP.unlockedLevel) || 1,
+            maxCompleted + 1
+          ),
+          completedLevels: mergedCompletedLevels,
           unlockedClasses: safeUnlocked,
           selectedPartyClasses: safeParty,
-          unitsState: cloudP.unitsState || createInitialUnitsState(),
-          discoveredMonsterIds: Array.isArray(cloudP.discoveredMonsterIds) && cloudP.discoveredMonsterIds.length > 0
-            ? Array.from(new Set(cloudP.discoveredMonsterIds))
-            : ['goblin'],
+          selectedPartyLineages: missionAndLineage.selectedPartyLineages,
+          unitsState: cloudP.unitsState || localP.unitsState || createInitialUnitsState(),
+          discoveredMonsterIds: Array.from(
+            new Set([
+              'goblin',
+              ...(Array.isArray(cloudP.discoveredMonsterIds) ? cloudP.discoveredMonsterIds : []),
+              ...(Array.isArray(localP.discoveredMonsterIds) ? localP.discoveredMonsterIds : []),
+            ])
+          ),
           discoveredItemIds: consolidateDiscoveredItems(
             Array.isArray(cloudP.discoveredItemIds) ? cloudP.discoveredItemIds : [],
-            cloudP.activeAdventure ?? progress.activeAdventure,
-            progress.discoveredItemIds || []
+            cloudP.activeAdventure ?? localP.activeAdventure,
+            localP.discoveredItemIds || []
           ),
           activeAdventure: cloudP.activeAdventure
             ? {
                 ...cloudP.activeAdventure,
                 partyClasses: Array.isArray(cloudP.activeAdventure.partyClasses) && cloudP.activeAdventure.partyClasses.length === 4
                   ? sanitizePartyClasses(cloudP.activeAdventure.partyClasses, safeUnlocked)
-                  : (progress.activeAdventure?.partyClasses || safeParty),
-                battleState: loadLiveBattleState() || cloudP.activeAdventure.battleState || progress.activeAdventure?.battleState || null,
+                  : (localP.activeAdventure?.partyClasses || safeParty),
+                partyLineages: cloudP.activeAdventure.partyLineages || localP.activeAdventure?.partyLineages || missionAndLineage.selectedPartyLineages,
+                battleState: loadLiveBattleState() || cloudP.activeAdventure.battleState || localP.activeAdventure?.battleState || null,
               }
-            : progress.activeAdventure?.battleState || loadLiveBattleState()
+            : localP.activeAdventure?.battleState || loadLiveBattleState()
               ? {
-                  currentLevelId: (loadLiveBattleState() || progress.activeAdventure?.battleState)!.levelId,
-                  partyClasses: progress.activeAdventure?.partyClasses || safeParty,
+                  currentLevelId: (loadLiveBattleState() || localP.activeAdventure?.battleState)!.levelId,
+                  partyClasses: localP.activeAdventure?.partyClasses || safeParty,
+                  partyLineages: localP.activeAdventure?.partyLineages || missionAndLineage.selectedPartyLineages,
                   startedAt: new Date().toISOString(),
                   goldEarnedInRun: 0,
-                  unitsState: cloudP.unitsState || createInitialUnitsState(),
-                  battleState: loadLiveBattleState() || progress.activeAdventure?.battleState || null,
+                  unitsState: cloudP.unitsState || localP.unitsState || createInitialUnitsState(),
+                  battleState: loadLiveBattleState() || localP.activeAdventure?.battleState || null,
                 }
               : null,
-          adventureHistory: Array.isArray(cloudP.adventureHistory) ? cloudP.adventureHistory : [],
-          combatSpeed: cloudP.combatSpeed || 'normal',
-          classUpgrades: mergeLevelMaps(progress.classUpgrades, cloudP.classUpgrades),
-          generalUpgrades: mergeLevelMaps(progress.generalUpgrades, cloudP.generalUpgrades),
-          itemUpgrades: mergeLevelMaps(progress.itemUpgrades, cloudP.itemUpgrades),
+          adventureHistory: Array.isArray(cloudP.adventureHistory) && cloudP.adventureHistory.length > 0
+            ? cloudP.adventureHistory
+            : (Array.isArray(localP.adventureHistory) ? localP.adventureHistory : []),
+          combatSpeed: cloudP.combatSpeed || localP.combatSpeed || 'normal',
+          classUpgrades: mergeLevelMaps(localP.classUpgrades, cloudP.classUpgrades),
+          generalUpgrades: mergeLevelMaps(localP.generalUpgrades, cloudP.generalUpgrades),
+          itemUpgrades: mergeLevelMaps(localP.itemUpgrades, cloudP.itemUpgrades),
           unlockedPetIds: Array.from(new Set([
             ...(Array.isArray(cloudP.unlockedPetIds) ? cloudP.unlockedPetIds : []),
-            ...(Array.isArray(progress.unlockedPetIds) ? progress.unlockedPetIds : []),
+            ...(Array.isArray(localP.unlockedPetIds) ? localP.unlockedPetIds : []),
           ])),
           equippedPetId: (typeof cloudP.equippedPetId === 'string' && cloudP.equippedPetId)
             ? cloudP.equippedPetId
-            : (progress.equippedPetId || null),
+            : (localP.equippedPetId || null),
           eggs: (Array.isArray(cloudP.eggs) && cloudP.eggs.length > 0)
             ? cloudP.eggs
-            : (Array.isArray(progress.eggs) ? progress.eggs : []),
+            : (Array.isArray(localP.eggs) ? localP.eggs : []),
+          classMissionsProgress: missionAndLineage.classMissionsProgress,
+          unlockedClassSkins: missionAndLineage.unlockedClassSkins,
+          equippedClassSkins: missionAndLineage.equippedClassSkins,
+          unlockedClassSkillIds: missionAndLineage.unlockedClassSkillIds,
+          dailyDungeon: missionAndLineage.dailyDungeon,
+          monsterKills: missionAndLineage.monsterKills,
+          unlockedLineages: missionAndLineage.unlockedLineages,
+          lineageQuestStats: missionAndLineage.lineageQuestStats,
         };
 
         const incomingBattle = merged.activeAdventure?.battleState || loadLiveBattleState();
@@ -297,13 +336,18 @@ export function App() {
           }, 0);
         }
 
+        progressRef.current = merged;
         setProgress(merged);
         savePlayerProgress(merged);
       } else {
         // Nova conta ou modo offline: preserva progresso local existente se houver
         const existingLocal = loadPlayerProgress();
         if (existingLocal && Array.isArray(existingLocal.unlockedClasses) && existingLocal.unlockedClasses.length > 0) {
+          progressRef.current = existingLocal;
           setProgress(existingLocal);
+          if (user.id !== 0) {
+            await saveCloudProgress(existingLocal, true);
+          }
         } else {
           const freshProgress: PlayerProgress = {
             ...DEFAULT_PROGRESS,
@@ -311,10 +355,11 @@ export function App() {
             selectedPartyClasses: [...INITIAL_CLASSES],
             unitsState: createInitialUnitsState(),
           };
+          progressRef.current = freshProgress;
           setProgress(freshProgress);
           savePlayerProgress(freshProgress);
           if (user.id !== 0) {
-            await saveCloudProgress(freshProgress);
+            await saveCloudProgress(freshProgress, true);
           }
         }
       }
@@ -337,14 +382,16 @@ export function App() {
     });
   }, []);
 
-  // Sincronização em tempo real de ouro vindo de reconciliação de créditos na nuvem
+  // Sincronização em tempo real de ouro e missões/linhagens vindo da nuvem
   useEffect(() => {
     const handleGoldSync = (e: Event) => {
       const custom = e as CustomEvent<{ gold: number }>;
       if (custom.detail && typeof custom.detail.gold === 'number') {
         setProgress((prev) => {
           if (prev.gold !== custom.detail.gold) {
-            return { ...prev, gold: custom.detail.gold };
+            const next = { ...prev, gold: custom.detail.gold };
+            progressRef.current = next;
+            return next;
           }
           return prev;
         });
@@ -355,18 +402,22 @@ export function App() {
       if (!authUser || authUser.id === 0) return;
       try {
         const cloudP = await fetchCloudProgress();
-        if (cloudP && typeof cloudP.gold === 'number') {
+        if (cloudP) {
           setProgress((prev) => {
-            if (prev.gold !== cloudP.gold) {
-              const updated = { ...prev, gold: cloudP.gold };
-              try {
-                localStorage.setItem('rpg_tactics_progress_v4', JSON.stringify(updated));
-              } catch {
-                // ignore
-              }
-              return updated;
+            const missionAndLineage = mergeMissionAndLineageFields(prev, cloudP, true);
+            const nextGold = typeof cloudP.gold === 'number' ? cloudP.gold : prev.gold;
+            const updated: PlayerProgress = {
+              ...prev,
+              gold: nextGold,
+              ...missionAndLineage,
+            };
+            progressRef.current = updated;
+            try {
+              localStorage.setItem('rpg_tactics_progress_v4', JSON.stringify(updated));
+            } catch {
+              // ignore
             }
-            return prev;
+            return updated;
           });
         }
       } catch {
@@ -1887,6 +1938,7 @@ export function App() {
             ...prev,
             lineageQuestStats: { ...prevStats, noHealerWins: 0 },
           };
+          progressRef.current = next;
           savePlayerProgress(next);
           return next;
         }
@@ -1895,13 +1947,14 @@ export function App() {
       return;
     }
 
+    const latestProg = progressRef.current;
     const stageReached = currentLevel ? currentLevel.id : 1;
-    const runGold = progress.activeAdventure?.goldEarnedInRun || 0;
-    const party = progress.selectedPartyClasses;
+    const runGold = latestProg.activeAdventure?.goldEarnedInRun || 0;
+    const party = latestProg.selectedPartyClasses;
 
     const record: AdventureRecord = {
       id: `adv_${Date.now()}`,
-      startedAt: progress.activeAdventure?.startedAt || new Date().toISOString(),
+      startedAt: latestProg.activeAdventure?.startedAt || new Date().toISOString(),
       endedAt: new Date().toISOString(),
       farthestLevel: stageReached,
       farthestLevelName: currentLevel ? currentLevel.name : `Fase ${stageReached}`,
@@ -1910,19 +1963,19 @@ export function App() {
       goldEarned: runGold,
     };
 
-    const updatedHistory = [record, ...(progress.adventureHistory || [])].slice(0, 10);
+    const updatedHistory = [record, ...(latestProg.adventureHistory || [])].slice(0, 10);
     const initialUnits = createInitialUnitsState();
     const preservedDiscoveredItems = consolidateDiscoveredItems(
-      progress.discoveredItemIds,
-      progress.activeAdventure
+      latestProg.discoveredItemIds,
+      latestProg.activeAdventure
     );
 
-    const prevDefeatStats = progress.lineageQuestStats || {};
+    const prevDefeatStats = latestProg.lineageQuestStats || {};
     const nextNoHealerWinsOnDefeat =
       (prevDefeatStats.noHealerWins || 0) >= 15 ? prevDefeatStats.noHealerWins : 0;
 
     const updatedProgress: PlayerProgress = {
-      ...progress,
+      ...latestProg,
       activeAdventure: null,
       unitsState: initialUnits,
       adventureHistory: updatedHistory,
@@ -1932,6 +1985,7 @@ export function App() {
         noHealerWins: nextNoHealerWinsOnDefeat,
       },
     };
+    progressRef.current = updatedProgress;
     setProgress(updatedProgress);
     savePlayerProgress(updatedProgress);
 
@@ -1940,7 +1994,7 @@ export function App() {
         console.error('Falha ao registrar no ranking:', err)
       );
     }
-  }, [currentLevel, progress]);
+  }, [currentLevel, isDailyMode]);
 
   // Divisão Quimérica (Fase 2 da Quimera na Fase 30 quando <= 30% HP)
   const checkAndTriggerChimeraSplit = useCallback(
@@ -2733,6 +2787,7 @@ export function App() {
               };
               setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
             }
+            progressRef.current = p;
             savePlayerProgress(p);
             return p;
           });
@@ -3153,6 +3208,30 @@ export function App() {
       );
 
       setUnits(updatedUnits);
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => {
+          let updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          const prevStats = updated.lineageQuestStats || {};
+          updated = {
+            ...updated,
+            lineageQuestStats: {
+              ...prevStats,
+              skillsCast: (prevStats.skillsCast || 0) + 1,
+            },
+          };
+          const newLineages = checkLineageUnlockQuests(updated);
+          if (newLineages.length > 0) {
+            updated = {
+              ...updated,
+              unlockedLineages: Array.from(new Set([...(updated.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+            };
+            setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
+          }
+          progressRef.current = updated;
+          savePlayerProgress(updated);
+          return updated;
+        });
+      }
       setTargetTeleportPoint(null);
       setTargetUnitId(null);
       setSelectedAction('none');
@@ -3222,6 +3301,30 @@ export function App() {
 
       updatedUnits.push(newSkeleton);
       setUnits(updatedUnits);
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => {
+          let updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          const prevStats = updated.lineageQuestStats || {};
+          updated = {
+            ...updated,
+            lineageQuestStats: {
+              ...prevStats,
+              skillsCast: (prevStats.skillsCast || 0) + 1,
+            },
+          };
+          const newLineages = checkLineageUnlockQuests(updated);
+          if (newLineages.length > 0) {
+            updated = {
+              ...updated,
+              unlockedLineages: Array.from(new Set([...(updated.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+            };
+            setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
+          }
+          progressRef.current = updated;
+          savePlayerProgress(updated);
+          return updated;
+        });
+      }
       setTargetTeleportPoint(null);
       setTargetUnitId(null);
       setSelectedAction('none');
@@ -3308,6 +3411,30 @@ export function App() {
       );
 
       setUnits([...updatedUnits, ...spawnedSkeletons]);
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => {
+          let updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          const prevStats = updated.lineageQuestStats || {};
+          updated = {
+            ...updated,
+            lineageQuestStats: {
+              ...prevStats,
+              skillsCast: (prevStats.skillsCast || 0) + 1,
+            },
+          };
+          const newLineages = checkLineageUnlockQuests(updated);
+          if (newLineages.length > 0) {
+            updated = {
+              ...updated,
+              unlockedLineages: Array.from(new Set([...(updated.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+            };
+            setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
+          }
+          progressRef.current = updated;
+          savePlayerProgress(updated);
+          return updated;
+        });
+      }
       setTargetTeleportPoint(null);
       setTargetUnitId(null);
       setSelectedAction('none');
@@ -3474,9 +3601,28 @@ export function App() {
 
       setUnits(updatedUnits);
 
-      if (selectedUnit.faction === 'player') {
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        const selfHealDone = Math.max(0, currentUnitHp - selectedUnit.currentHp);
         setProgress((prev) => {
-          const updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          let updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          const prevStats = updated.lineageQuestStats || {};
+          updated = {
+            ...updated,
+            lineageQuestStats: {
+              ...prevStats,
+              skillsCast: (prevStats.skillsCast || 0) + 1,
+              healingDone: (prevStats.healingDone || 0) + selfHealDone,
+            },
+          };
+          const newLineages = checkLineageUnlockQuests(updated);
+          if (newLineages.length > 0) {
+            updated = {
+              ...updated,
+              unlockedLineages: Array.from(new Set([...(updated.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+            };
+            setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
+          }
+          progressRef.current = updated;
           savePlayerProgress(updated);
           return updated;
         });
@@ -4486,6 +4632,7 @@ export function App() {
           };
           setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
         }
+        progressRef.current = p;
         savePlayerProgress(p);
         return p;
       });
@@ -4536,6 +4683,7 @@ export function App() {
 
     // DoT damage tick (Burn & Poison) for monsters at start of AI turn
     let anyMonsterDamagedByDoT = false;
+    const dotKilledMonsterTypes: string[] = [];
     currentUnits = currentUnits.map((u) => {
       if (u.faction === 'enemy' && !u.isDead) {
         let currentHp = u.currentHp;
@@ -4561,12 +4709,37 @@ export function App() {
           addFloatingNumber(u.x, u.y, `-${pDmg} Veneno (2%)`, 'status', '#A855F7');
         }
 
+        if (isDead && !u.isDead && u.monsterTypeId) {
+          dotKilledMonsterTypes.push(u.monsterTypeId);
+        }
+
         if (isDead !== u.isDead || currentHp !== u.currentHp) {
           return { ...u, currentHp, isDead };
         }
       }
       return u;
     });
+
+    if (!isTrainingMode && dotKilledMonsterTypes.length > 0) {
+      setProgress((prev) => {
+        const currentKills = { ...(prev.monsterKills || {}) };
+        for (const mId of dotKilledMonsterTypes) {
+          currentKills[mId] = (currentKills[mId] || 0) + 1;
+        }
+        let p: PlayerProgress = { ...prev, monsterKills: currentKills };
+        const newLineages = checkLineageUnlockQuests(p);
+        if (newLineages.length > 0) {
+          p = {
+            ...p,
+            unlockedLineages: Array.from(new Set([...(p.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+          };
+          setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
+        }
+        progressRef.current = p;
+        savePlayerProgress(p);
+        return p;
+      });
+    }
 
     if (anyMonsterDamagedByDoT) {
       setUnits([...currentUnits]);
@@ -5826,6 +5999,7 @@ export function App() {
                         };
                         setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
                       }
+                      progressRef.current = p;
                       savePlayerProgress(p);
                       return p;
                     });
@@ -6430,17 +6604,19 @@ export function App() {
   const handleVictory = (finalUnitsState: Unit[]) => {
     if (!currentLevel) return;
 
+    const latestProg = progressRef.current;
+
     if (isDailyMode) {
       clearLiveBattleState();
       soundManager.playVictory();
       setPhase('victory');
 
       const todayStr = getTodayDateString();
-      const alreadyCompletedToday = progress.dailyDungeon?.lastCompletedDate === todayStr;
+      const alreadyCompletedToday = latestProg.dailyDungeon?.lastCompletedDate === todayStr;
 
       // Recompensa de 20 mil de ouro ao passar a fase diária
       const rewardGold = alreadyCompletedToday ? 0 : 20000;
-      const updatedGold = progress.gold + rewardGold;
+      const updatedGold = latestProg.gold + rewardGold;
       const dailyPartyUnits = finalUnitsState.filter((u) => u.faction === 'player' && !u.isSummoned);
       const aliveDailyCount = dailyPartyUnits.filter((u) => !u.isDead && u.currentHp > 0).length;
       const isFlawlessDaily = dailyPartyUnits.length >= 4 && aliveDailyCount === dailyPartyUnits.length;
@@ -6455,16 +6631,22 @@ export function App() {
       const hasLightDaily = dailyClasses.some((c) => ['curandeiro', 'paladino'].includes(c));
       const hasDarkDaily = dailyClasses.some((c) => ['necromante', 'assassino', 'carrasco_vazio'].includes(c));
       const isLightDarkDaily = hasLightDaily && hasDarkDaily;
-      const prevDailyStats = progress.lineageQuestStats || {};
+
+      let dailyProgWithMissions = incrementPartyStats(latestProg, dailyClasses, 'battles_won', 1);
+      if (hasBossDaily) {
+        dailyProgWithMissions = incrementPartyStats(dailyProgWithMissions, dailyClasses, 'bosses_defeated', 1);
+      }
+
+      const prevDailyStats = dailyProgWithMissions.lineageQuestStats || {};
       const prevStreakDaily = prevDailyStats.noHealerWins || 0;
       const nextNoHealerDaily = prevStreakDaily >= 15 ? prevStreakDaily : (isNoHealerDaily ? prevStreakDaily + 1 : 0);
 
       let updatedProgress: PlayerProgress = {
-        ...progress,
+        ...dailyProgWithMissions,
         gold: updatedGold,
         dailyDungeon: {
           lastCompletedDate: todayStr,
-          totalWins: (progress.dailyDungeon?.totalWins || 0) + 1,
+          totalWins: (latestProg.dailyDungeon?.totalWins || 0) + 1,
         },
         lineageQuestStats: {
           ...prevDailyStats,
@@ -6489,6 +6671,7 @@ export function App() {
         setPendingUnlockLineages((prev) => Array.from(new Set([...prev, ...dailyUnlockedLineages])));
       }
 
+      progressRef.current = updatedProgress;
       setProgress(updatedProgress);
       savePlayerProgress(updatedProgress);
 
@@ -6512,7 +6695,7 @@ export function App() {
     // Todos os heróis da equipe recebem o XP e evoluem de nível, mesmo que tenham caído em combate
     const partyUnits = finalUnitsState.filter((u) => u.faction === 'player' && !u.isSummoned);
 
-    const equippedPet = getPetById(progress.equippedPetId);
+    const equippedPet = getPetById(latestProg.equippedPetId);
     const petPassives = calculatePetPassives(equippedPet);
     let lineageGoldBonusRatio = 0;
     partyUnits.forEach((u) => {
@@ -6522,11 +6705,11 @@ export function App() {
     });
 
     const goldMultiplier =
-      1 + getGeneralGoldMultiplier(progress.generalUpgrades?.goldBoost || 0) + (petPassives.goldBoostPercent / 100) + lineageGoldBonusRatio;
+      1 + getGeneralGoldMultiplier(latestProg.generalUpgrades?.goldBoost || 0) + (petPassives.goldBoostPercent / 100) + lineageGoldBonusRatio;
     const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);
     const levelUps: { unitName: string; oldLevel: number; newLevel: number }[] = [];
     const statChoiceQueue: { unit: Unit; newLevel: number }[] = [];
-    const updatedUnitsState = { ...progress.unitsState };
+    const updatedUnitsState = { ...latestProg.unitsState };
 
     partyUnits.forEach((match) => {
       const uState = updatedUnitsState[match.className] || {
@@ -6557,7 +6740,7 @@ export function App() {
     });
 
     // Check for newly unlocked classes
-    const currentUnlocked = progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
+    const currentUnlocked = latestProg.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
     const newlyUnlocked: string[] = [];
     Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
       if (currentLevel.id === cond.requiredLevel && !currentUnlocked.includes(cName)) {
@@ -6568,7 +6751,7 @@ export function App() {
     // SECRET CLASS UNLOCK: Carrasco do Vazio
     // Condição: Derrotar Astaroth (Fase 10) utilizando apenas classes corpo a corpo (Alcance 1, Cavaleiro Arcano ou Lanceiro)
     if (currentLevel.id === 10 && !currentUnlocked.includes('carrasco_vazio')) {
-      const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
+      const activeParty = latestProg.activeAdventure?.partyClasses || latestProg.selectedPartyClasses;
       const allMelee =
         activeParty.length === 4 &&
         activeParty.every((cKey) => isMeleeClassForSecretUnlock(cKey));
@@ -6581,7 +6764,7 @@ export function App() {
     // SECRET CLASS UNLOCK: Omnimago (Mestre dos Quatro Elementos)
     // Condição: Derrotar o Arquimago das Runas (Fase 25) utilizando uma equipe de apenas Magos
     if (currentLevel.id === 25 && !currentUnlocked.includes('omnimago')) {
-      const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
+      const activeParty = latestProg.activeAdventure?.partyClasses || latestProg.selectedPartyClasses;
       const allMages =
         activeParty.length === 4 &&
         activeParty.every((cKey) => isMageClassForSecretUnlock(cKey));
@@ -6597,13 +6780,10 @@ export function App() {
       newlyUnlocked.push('sniper');
     }
 
-    const updatedMonsterKills: Record<string, number> = { ...(progress.monsterKills || {}) };
-    currentLevel.enemySpawns.forEach((spawn) => {
-      updatedMonsterKills[spawn.monsterTypeId] = (updatedMonsterKills[spawn.monsterTypeId] || 0) + 1;
-    });
+    const updatedMonsterKills: Record<string, number> = { ...(latestProg.monsterKills || {}) };
 
     const questsProgressCheck = {
-      ...progress,
+      ...latestProg,
       monsterKills: updatedMonsterKills,
       unlockedClasses: currentUnlocked,
     };
@@ -6614,37 +6794,37 @@ export function App() {
 
     const finalUnlockedClasses = Array.from(new Set([...currentUnlocked, ...newlyUnlocked]));
 
-    const nextUnlocked = Math.max(progress.unlockedLevel, currentLevel.id + 1);
-    const completedList = Array.from(new Set([...progress.completedLevels, currentLevel.id]));
-    const totalGold = progress.gold + goldReward;
-    const totalRunGold = (progress.activeAdventure?.goldEarnedInRun || 0) + goldReward;
+    const nextUnlocked = Math.max(latestProg.unlockedLevel, currentLevel.id + 1);
+    const completedList = Array.from(new Set([...latestProg.completedLevels, currentLevel.id]));
+    const totalGold = latestProg.gold + goldReward;
+    const totalRunGold = (latestProg.activeAdventure?.goldEarnedInRun || 0) + goldReward;
 
     // Drop de itens ao final da fase com base nos monstros presentes e no bônus de drop
-    const dropBonusLvl = getGeneralDropBonus(progress.generalUpgrades?.dropRate || 0);
+    const dropBonusLvl = getGeneralDropBonus(latestProg.generalUpgrades?.dropRate || 0);
     const isBossStage = Boolean(currentLevel.hasFinalBoss || currentLevel.hasMiniBoss);
     const enemyMonsterTypeIds = currentLevel.enemySpawns.map((s) => s.monsterTypeId);
     const droppedItems = rollStageItemDrops(enemyMonsterTypeIds, 3, isBossStage, dropBonusLvl);
 
-    const prevDiscoveredItems = progress.discoveredItemIds || [];
+    const prevDiscoveredItems = latestProg.discoveredItemIds || [];
     const newDiscoveredItems = consolidateDiscoveredItems(
       prevDiscoveredItems,
-      progress.activeAdventure,
+      latestProg.activeAdventure,
       droppedItems.map((it) => it.id)
     );
 
     const isFinalCampaignLevel = currentLevel.id >= LEVELS.length;
 
-    let updatedHistory = progress.adventureHistory || [];
+    let updatedHistory = latestProg.adventureHistory || [];
     let updatedActiveAdventure: ActiveAdventure | null = null;
     let nextUnitsState = updatedUnitsState;
 
-    const activeParty = progress.activeAdventure?.partyClasses || progress.selectedPartyClasses;
+    const activeParty = latestProg.activeAdventure?.partyClasses || latestProg.selectedPartyClasses;
 
     if (isFinalCampaignLevel) {
       // Supreme victory! Archive finished run
       const record: AdventureRecord = {
         id: `adv_${Date.now()}`,
-        startedAt: progress.activeAdventure?.startedAt || new Date().toISOString(),
+        startedAt: latestProg.activeAdventure?.startedAt || new Date().toISOString(),
         endedAt: new Date().toISOString(),
         farthestLevel: 50,
         farthestLevelName: currentLevel.name,
@@ -6659,17 +6839,18 @@ export function App() {
       // Advance active adventure to next stage
       updatedActiveAdventure = {
         currentLevelId: currentLevel.id + 1,
-        startedAt: progress.activeAdventure?.startedAt || new Date().toISOString(),
+        startedAt: latestProg.activeAdventure?.startedAt || new Date().toISOString(),
         unitsState: updatedUnitsState,
         partyClasses: activeParty,
+        partyLineages: latestProg.activeAdventure?.partyLineages || latestProg.selectedPartyLineages,
         goldEarnedInRun: totalRunGold,
-        inventory: progress.activeAdventure?.inventory || [],
-        equipment: progress.activeAdventure?.equipment || {},
+        inventory: latestProg.activeAdventure?.inventory || [],
+        equipment: latestProg.activeAdventure?.equipment || {},
       };
     }
 
     // Drop de ovos de companheiro: 1% para monstros normais, 25% para mini-chefes, 100% para chefes reais
-    let updatedEggs = [...(progress.eggs || [])];
+    let updatedEggs = [...(latestProg.eggs || [])];
     const newDroppedEggs: PetEgg[] = [];
 
     // Linhagem Lagomorfo: 2x mais chance de encontrar ovos (limite de 1 por equipe; colocar mais de um não acumula adicional)
@@ -6696,7 +6877,7 @@ export function App() {
       currentLevel.enemySpawns.some((s) => s.isBoss || s.isMiniBoss)
     );
 
-    let progressWithMissions = incrementPartyStats(progress, activeParty, 'battles_won', 1);
+    let progressWithMissions = incrementPartyStats(latestProg, activeParty, 'battles_won', 1);
     if (hasBossSpawned) {
       progressWithMissions = incrementPartyStats(progressWithMissions, activeParty, 'bosses_defeated', 1);
     }
@@ -6727,6 +6908,7 @@ export function App() {
       adventureHistory: updatedHistory,
       discoveredItemIds: newDiscoveredItems,
       eggs: updatedEggs,
+      monsterKills: updatedMonsterKills,
       lineageQuestStats: {
         ...prevStats,
         flawlessWins: (prevStats.flawlessWins || 0) + (isFlawlessVictory ? 1 : 0),
@@ -6753,6 +6935,7 @@ export function App() {
       setPendingUnlockLineages((prev) => Array.from(new Set([...prev, ...newlyUnlockedLineagesOnWin])));
     }
 
+    progressRef.current = newProgress;
     setProgress(newProgress);
     savePlayerProgress(newProgress);
 
@@ -7266,6 +7449,7 @@ export function App() {
           <PetModal
             progress={progress}
             onUpdateProgress={(newProgress) => {
+              progressRef.current = newProgress;
               setProgress(newProgress);
               savePlayerProgress(newProgress);
             }}
@@ -7283,6 +7467,7 @@ export function App() {
                 if (typeof newGold === 'number') next.gold = newGold;
                 if (Array.isArray(newEggs)) next.eggs = newEggs;
                 if (Array.isArray(newClasses)) next.unlockedClasses = newClasses;
+                progressRef.current = next;
                 savePlayerProgress(next);
                 return next;
               });
@@ -7299,6 +7484,7 @@ export function App() {
           <ClassMissionsModal
             progress={progress}
             onUpdateProgress={(newProgress) => {
+              progressRef.current = newProgress;
               setProgress(newProgress);
               savePlayerProgress(newProgress);
             }}
@@ -7313,6 +7499,7 @@ export function App() {
     return (
       <>
         <PartySelectionModal
+          progress={progress}
           initialSelected={progress.selectedPartyClasses}
           initialLineages={progress.activeAdventure?.partyLineages || progress.selectedPartyLineages || {}}
           unlockedClasses={progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro']}
@@ -7339,6 +7526,7 @@ export function App() {
           <ClassMissionsModal
             progress={progress}
             onUpdateProgress={(newProgress) => {
+              progressRef.current = newProgress;
               setProgress(newProgress);
               savePlayerProgress(newProgress);
             }}
@@ -7726,6 +7914,7 @@ export function App() {
         <PetModal
           progress={progress}
           onUpdateProgress={(newProgress) => {
+            progressRef.current = newProgress;
             setProgress(newProgress);
             savePlayerProgress(newProgress);
           }}
@@ -7736,6 +7925,7 @@ export function App() {
         <ClassMissionsModal
           progress={progress}
           onUpdateProgress={(newProgress) => {
+            progressRef.current = newProgress;
             setProgress(newProgress);
             savePlayerProgress(newProgress);
           }}
