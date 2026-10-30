@@ -86,13 +86,13 @@ export const LINEAGES: LineageDefinition[] = [
     title: 'Fortaleza da Montanha',
     description: 'Mestres forjadores de constituição rochosa e vigor lendário. Extraem o potencial máximo de cada liga metálica e artefato forjado.',
     bonusTitle: 'Mestre da Forja Titânica',
-    bonusDescription: 'Recebe 30% de status a mais de todos os equipamentos. +15 de vida máxima.',
+    bonusDescription: 'Recebe 20% de status a mais de todos os equipamentos. +15 de vida máxima.',
     iconName: 'Shield',
     color: '#F59E0B',
     stats: {
       hp: 15,
     },
-    equipmentStatsBonusPercent: 30,
+    equipmentStatsBonusPercent: 20,
   },
   {
     id: 'orc',

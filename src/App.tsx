@@ -334,6 +334,12 @@ export function App() {
           setTimeout(() => {
             resumeBattleRef.current?.(incomingBattle);
           }, 0);
+        } else if (merged.activeAdventure?.combatActive) {
+          // Combate estava ativo na expedição mas o estado da batalha está ausente (aba fechada no meio do combate).
+          // Computa Derrota em vez de permitir reiniciar a fase.
+          setTimeout(() => {
+            handleDefeat();
+          }, 0);
         }
 
         progressRef.current = merged;
@@ -376,6 +382,13 @@ export function App() {
         const offlineSession = localStorage.getItem('kazcampaign_offline_mode');
         if (offlineSession === 'true') {
           await syncUserCloudProgress({ id: 0, username: 'Convidado' });
+        } else {
+          // Modo local sem login: se o combate estava ativo mas o estado da batalha se perdeu
+          const localP = loadPlayerProgress();
+          const liveB = loadLiveBattleState();
+          if (localP.activeAdventure?.combatActive && !liveB) {
+            handleDefeat();
+          }
         }
       }
       setAuthChecked(true);
@@ -849,6 +862,8 @@ export function App() {
     }
 
     const savedBattle = loadLiveBattleState() || progress.activeAdventure.battleState;
+    const isCombatActive = Boolean(progress.activeAdventure.combatActive);
+
     if (
       savedBattle &&
       savedBattle.levelId === progress.activeAdventure.currentLevelId &&
@@ -856,6 +871,10 @@ export function App() {
       savedBattle.units.length > 0
     ) {
       resumeBattle(savedBattle);
+    } else if (isCombatActive) {
+      // O combate já havia sido iniciado nesta fase, mas o estado não está disponível
+      // (ex: aba fechada ou tentativa de resetar). Computa Derrota em vez de reiniciar a fase do zero.
+      handleDefeat();
     } else {
       startLevel(progress.activeAdventure.currentLevelId, progress.activeAdventure.unitsState);
     }
@@ -1259,7 +1278,7 @@ export function App() {
 
   // Garante persistência síncrona antes do recarregamento da página (F5) ou fechamento de aba
   useEffect(() => {
-    const handleBeforeUnload = () => {
+    const handleUnloadOrHide = () => {
       if (
         !isTrainingMode &&
         !isDailyMode &&
@@ -1285,8 +1304,12 @@ export function App() {
         );
       }
     };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('beforeunload', handleUnloadOrHide);
+    window.addEventListener('pagehide', handleUnloadOrHide);
+    return () => {
+      window.removeEventListener('beforeunload', handleUnloadOrHide);
+      window.removeEventListener('pagehide', handleUnloadOrHide);
+    };
   }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure, isTrainingMode, waterTornadoActive, waterTornadoCenter]);
 
   const handleResetProgress = () => {

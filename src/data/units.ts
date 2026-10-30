@@ -631,7 +631,7 @@ export function createPlayerUnit(
 
   const lineage = getLineageById(lineageId || DEFAULT_CLASS_LINEAGES[className] || 'humano');
 
-  // Bônus de status de equipamentos da Linhagem Anão (+30%)
+  // Bônus de status de equipamentos da Linhagem Anão (+20%)
   const equipBonusMult = 1 + (lineage.equipmentStatsBonusPercent || 0) / 100;
   itemHp = Math.round(itemHp * equipBonusMult);
   itemAtk = Math.round(itemAtk * equipBonusMult);
