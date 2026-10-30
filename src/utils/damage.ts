@@ -47,11 +47,14 @@ export function calculateBaseDamage(
 
     if (damageType === 'healing') {
       let healAmount = 0;
+      let power = skill.power ?? 0;
+      if (attacker.lineageHealShieldFlatScalingBonus) {
+        power += attacker.lineageHealShieldFlatScalingBonus;
+      }
       if (skill.id === 'resistencia_suprema') {
-        const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
+        const ratio = skill.power ? Math.min(1.0, power) : 0.5;
         healAmount = Math.max(1, Math.round(attacker.maxHp * ratio));
       } else {
-        const power = skill.power ?? 0;
         healAmount = Math.round(attacker.mag * power);
       }
 
@@ -125,24 +128,34 @@ export function calculateBaseDamage(
     attackStat = Math.round(attackStat * (1 + lostHpRatio * 0.35));
   }
 
-  let targetDef = damageType === 'physical' ? target.def : target.res;
-  const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
-  if (defDebuff) {
-    targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
-  }
-  if (attacker.lineageDefenseIgnorePercent && attacker.lineageDefenseIgnorePercent > 0) {
-    targetDef = Math.round(targetDef * (1 - attacker.lineageDefenseIgnorePercent / 100));
-  }
+    if (attacker.lineageCentaurCharge && attacker.centaurMovedTilesThisTurn && attacker.centaurMovedTilesThisTurn > 0) {
+      attackStat = Math.round(attackStat * (1 + (attacker.centaurMovedTilesThisTurn * 5) / 100));
+    }
+
+    const isTargetBleeding = target.statusEffects?.some(
+      (e) => (e.type === 'burn' || e.type === 'bleed') && e.duration > 0
+    );
+    if (attacker.lineageBleedBonusDamagePercent && isTargetBleeding) {
+      attackStat = Math.round(attackStat * (1 + attacker.lineageBleedBonusDamagePercent / 100));
+    }
+
+    let targetDef = damageType === 'physical' ? target.def : target.res;
+    const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
+    if (defDebuff) {
+      targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
+    }
 
     if (skill.defenseIgnoreRatio) {
       const effectiveRatio = Math.min(0.35, skill.defenseIgnoreRatio);
       targetDef = Math.round(targetDef * (1 - effectiveRatio));
-    }
-    if (attacker.lineageDefenseIgnorePercent && attacker.lineageDefenseIgnorePercent > 0) {
-      targetDef = Math.round(targetDef * (1 - attacker.lineageDefenseIgnorePercent / 100));
+    } else if (attacker.lineageIgnoreDefenseExclusive && attacker.lineageIgnoreDefenseExclusive > 0) {
+      targetDef = Math.round(targetDef * (1 - attacker.lineageIgnoreDefenseExclusive / 100));
     }
 
-    const base = Math.max(1, Math.round(attackStat - targetDef));
+    let base = Math.max(1, Math.round(attackStat - targetDef));
+    if (damageType === 'physical' && target.lineagePhysicalDamageReductionPercent) {
+      base = Math.max(1, Math.round(base * (1 - target.lineagePhysicalDamageReductionPercent / 100)));
+    }
     return { base, damageType };
   }
 
@@ -178,10 +191,24 @@ export function calculateBaseDamage(
     attackStat = Math.round(attackStat * (1 + invisBuff.value / 100));
   }
 
+  if (attacker.lineageCentaurCharge && attacker.centaurMovedTilesThisTurn && attacker.centaurMovedTilesThisTurn > 0) {
+    attackStat = Math.round(attackStat * (1 + (attacker.centaurMovedTilesThisTurn * 5) / 100));
+  }
+
+  const isTargetBleeding = target.statusEffects?.some(
+    (e) => (e.type === 'burn' || e.type === 'bleed') && e.duration > 0
+  );
+  if (attacker.lineageBleedBonusDamagePercent && isTargetBleeding) {
+    attackStat = Math.round(attackStat * (1 + attacker.lineageBleedBonusDamagePercent / 100));
+  }
+
   let targetDef = damageType === 'physical' ? target.def : target.res;
   const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
   if (defDebuff) {
     targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
+  }
+  if (attacker.lineageIgnoreDefenseExclusive && attacker.lineageIgnoreDefenseExclusive > 0) {
+    targetDef = Math.round(targetDef * (1 - attacker.lineageIgnoreDefenseExclusive / 100));
   }
 
   let base = Math.max(1, Math.round(attackStat - targetDef));
@@ -191,6 +218,10 @@ export function calculateBaseDamage(
   const minBossDmg = getBossMinimumDamage(target);
   if (minBossDmg > 0) {
     base = Math.max(base, minBossDmg);
+  }
+
+  if (damageType === 'physical' && target.lineagePhysicalDamageReductionPercent) {
+    base = Math.max(1, Math.round(base * (1 - target.lineagePhysicalDamageReductionPercent / 100)));
   }
 
   return { base, damageType };

@@ -13,6 +13,7 @@ import {
 } from '../data/pets';
 import { PetIcon, EggDisplay } from './PetIcon';
 import { PetHatchModal } from './PetHatchModal';
+import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from '../data/lineageQuests';
 import {
   X,
   Sparkles,
@@ -116,12 +117,25 @@ export const PetModal: React.FC<PetModalProps> = ({
     const updatedUnlocked = isDuplicate ? unlockedPetIds : [...unlockedPetIds, pet.id];
     const updatedEggs = eggs.filter((e) => e.id !== eggId);
 
-    const newProgress: PlayerProgress = {
+    const prevQuestStats = progress.lineageQuestStats || {};
+    let newProgress: PlayerProgress = {
       ...progress,
       gold: updatedGold,
       unlockedPetIds: updatedUnlocked,
       eggs: updatedEggs,
+      lineageQuestStats: {
+        ...prevQuestStats,
+        eggsHatched: (prevQuestStats.eggsHatched || 0) + 1,
+      },
     };
+
+    const newLineages = checkLineageUnlockQuests(newProgress);
+    if (newLineages.length > 0) {
+      newProgress = {
+        ...newProgress,
+        unlockedLineages: Array.from(new Set([...(newProgress.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+      };
+    }
     onUpdateProgress(newProgress);
 
     setHatchedPetResult({

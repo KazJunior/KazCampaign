@@ -630,6 +630,17 @@ export function createPlayerUnit(
   }
 
   const lineage = getLineageById(lineageId || DEFAULT_CLASS_LINEAGES[className] || 'humano');
+
+  // Bônus de status de equipamentos da Linhagem Anão (+30%)
+  const equipBonusMult = 1 + (lineage.equipmentStatsBonusPercent || 0) / 100;
+  itemHp = Math.round(itemHp * equipBonusMult);
+  itemAtk = Math.round(itemAtk * equipBonusMult);
+  itemMag = Math.round(itemMag * equipBonusMult);
+  itemDef = Math.round(itemDef * equipBonusMult);
+  itemRes = Math.round(itemRes * equipBonusMult);
+  itemMov = Math.round(itemMov * equipBonusMult);
+  itemRange = Math.round(itemRange * equipBonusMult);
+
   const lStats = lineage.stats || {};
   const lHp = lStats.hp || 0;
   const lAtk = lStats.atk || 0;
@@ -770,5 +781,28 @@ export function createPlayerUnit(
     lineageMissingHpDamageScaling: lineage.missingHpDamageScaling,
     lineageDefenseIgnorePercent: lineage.defenseIgnorePercent,
     lineagePhoenixRevive: lineage.phoenixRevive,
+    lineageEquipmentStatsBonusPercent: lineage.equipmentStatsBonusPercent,
+    lineageStandStillDamageBonusPercent: lineage.standStillDamageBonusPercent,
+    lineageOrcHalfHpTrigger: Boolean(lineage.halfHpTrigger),
+    hasUsedOrcHalfHpTrigger: false,
+    lineageCrowdControlImmunity: lineage.crowdControlImmunity,
+    lineageHealShieldAlliesDamageBuff: lineage.healShieldAlliesDamageBuff,
+    lineageSevereBurn: lineage.severeBurn,
+    lineageBurnImmune: lineage.burnImmune,
+    lineageShieldReflectRatio: lineage.shieldReflectRatio,
+    lineageHealShieldFlatScalingBonus: lineage.healShieldFlatScalingBonus,
+    lineageIgnoreDefenseExclusive: lineage.ignoreDefenseExclusive,
+    lineagePhoenixRevive1Hp: lineage.phoenixRevive1Hp,
+    lineageExtraAttackEveryTurn: lineage.extraAttackEveryTurn,
+    nefalimExtraAttackUsed: false,
+    lineageCentaurCharge: Boolean(lineage.centaurCharge),
+    centaurMovedTilesThisTurn: 0,
+    lineageBleedBonusDamagePercent: lineage.bleedBonusDamagePercent,
+    lineageExtraPushDistance: lineage.extraPushDistance,
+    lineageEggDropRateMultiplier: lineage.eggDropRateMultiplier,
+    lineageKitsuneFreeSkillReset: Boolean(lineage.kitsuneFreeSkillReset),
+    hasUsedKitsuneReset: false,
+    lineagePhysicalDamageReductionPercent: lineage.physicalDamageReductionPercent,
+    lineagePotentPoison: Boolean(lineage.potentPoison),
   };
 }

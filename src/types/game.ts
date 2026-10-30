@@ -49,6 +49,7 @@ export type StatusEffectType =
   | 'dark_cocoon'
   | 'immune_burn_poison'
   | 'dodge_counter'
+  | 'bleed'
   | 'summon_lifetime';
 
 export interface StatusEffect {
@@ -215,6 +216,29 @@ export interface Unit {
   lineageDefenseIgnorePercent?: number;
   lineagePhoenixRevive?: boolean;
   hasUsedPhoenixRevive?: boolean;
+  lineageEquipmentStatsBonusPercent?: number;
+  lineageStandStillDamageBonusPercent?: number;
+  lineageOrcHalfHpTrigger?: boolean;
+  hasUsedOrcHalfHpTrigger?: boolean;
+  lineageCrowdControlImmunity?: boolean;
+  lineageHealShieldAlliesDamageBuff?: number;
+  lineageSevereBurn?: boolean;
+  lineageBurnImmune?: boolean;
+  lineageShieldReflectRatio?: number;
+  lineageHealShieldFlatScalingBonus?: number;
+  lineageIgnoreDefenseExclusive?: number;
+  lineagePhoenixRevive1Hp?: boolean;
+  lineageExtraAttackEveryTurn?: boolean;
+  nefalimExtraAttackUsed?: boolean;
+  lineageCentaurCharge?: boolean;
+  centaurMovedTilesThisTurn?: number;
+  lineageBleedBonusDamagePercent?: number;
+  lineageExtraPushDistance?: number;
+  lineageEggDropRateMultiplier?: number;
+  lineageKitsuneFreeSkillReset?: boolean;
+  hasUsedKitsuneReset?: boolean;
+  lineagePhysicalDamageReductionPercent?: number;
+  lineagePotentPoison?: boolean;
 }
 
 export type ItemCategory = 'helmet' | 'chestplate' | 'leggings' | 'boots' | 'weapon' | 'accessory';
@@ -420,6 +444,14 @@ export interface PlayerProgress {
     massiveHits?: number;
     lightDarkWins?: number;
     comebackWins?: number;
+    basicAttackKills?: number;
+    tilesMoved?: number;
+    bleedInflicted?: number;
+    enemiesPushed?: number;
+    eggsHatched?: number;
+    skillsCast?: number;
+    heroesFallen?: number;
+    poisonInflicted?: number;
   };
 }
 

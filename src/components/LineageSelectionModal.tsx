@@ -304,49 +304,104 @@ export const LineageSelectionModal: React.FC<LineageSelectionModalProps> = ({
                         +{lineage.stats.range} Alcance
                       </span>
                     )}
-                    {lineage.lifestealPercent && (
-                      <span className="bg-purple-950/40 border border-purple-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-purple-300">
-                        {lineage.lifestealPercent}% Lifesteal
-                      </span>
-                    )}
-                    {lineage.hpRegenPercent && (
+                    {lineage.equipmentStatsBonusPercent && (
                       <span className="bg-amber-950/40 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-amber-300">
-                        Regen {lineage.hpRegenPercent}%/turno
-                      </span>
-                    )}
-                    {lineage.healShieldBonusPercent && (
-                      <span className="bg-sky-950/40 border border-sky-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-sky-300">
-                        +{lineage.healShieldBonusPercent}% Cura/Escudo
-                      </span>
-                    )}
-                    {lineage.appliesBurn && (
-                      <span className="bg-orange-950/40 border border-orange-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-orange-300">
-                        Aplica Queimadura
-                      </span>
-                    )}
-                    {lineage.startShieldPercent && (
-                      <span className="bg-cyan-950/40 border border-cyan-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-cyan-300">
-                        Escudo {lineage.startShieldPercent}% HP
+                        +{lineage.equipmentStatsBonusPercent}% Status dos Equipamentos
                       </span>
                     )}
                     {lineage.goldBonusPercent && (
                       <span className="bg-yellow-950/40 border border-yellow-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-yellow-300">
-                        +{lineage.goldBonusPercent}% Ouro
+                        +{lineage.goldBonusPercent}% Ouro (Não acumulável)
                       </span>
                     )}
-                    {lineage.missingHpDamageScaling && (
-                      <span className="bg-amber-950/40 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-amber-300">
-                        Até +35% Dano por Vida Perdida
+                    {lineage.standStillDamageBonusPercent && (
+                      <span className="bg-emerald-950/40 border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-emerald-300">
+                        +{lineage.standStillDamageBonusPercent}% Dano se não mover
                       </span>
                     )}
-                    {lineage.defenseIgnorePercent && (
+                    {lineage.halfHpTrigger && (
                       <span className="bg-red-950/40 border border-red-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-red-300">
-                        Ignora {lineage.defenseIgnorePercent}% DEF/RES
+                        50% HP: Escudo 20% + 15% Dano (2T)
                       </span>
                     )}
-                    {lineage.phoenixRevive && (
+                    {lineage.crowdControlImmunity && (
+                      <span className="bg-stone-800 border border-stone-500/50 px-2 py-0.5 rounded text-[10px] font-bold text-stone-300">
+                        Imunidade CC / Veneno / Sangramento / Queimadura
+                      </span>
+                    )}
+                    {lineage.lifestealPercent && (
+                      <span className="bg-purple-950/40 border border-purple-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-purple-300">
+                        {lineage.lifestealPercent}% Roubo de Vida Total
+                      </span>
+                    )}
+                    {lineage.healShieldAlliesDamageBuff && (
+                      <span className="bg-sky-950/40 border border-sky-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-sky-300">
+                        Cura/Escudo dá +{lineage.healShieldAlliesDamageBuff}% Dano a Aliados (2T)
+                      </span>
+                    )}
+                    {lineage.severeBurn && (
                       <span className="bg-orange-950/40 border border-orange-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-orange-300">
-                        Renasce das Cinzas (50% HP)
+                        Queimadura Severa (3%/turno) & Imune a Fogo
+                      </span>
+                    )}
+                    {lineage.shieldReflectRatio && (
+                      <span className="bg-pink-950/40 border border-pink-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-pink-300">
+                        Escudos Refletem {Math.round(lineage.shieldReflectRatio * 100)}% de Dano
+                      </span>
+                    )}
+                    {lineage.healShieldFlatScalingBonus && (
+                      <span className="bg-blue-950/40 border border-blue-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-blue-300">
+                        +{Math.round(lineage.healShieldFlatScalingBonus * 100)}% Escalonamento Curas/Escudos
+                      </span>
+                    )}
+                    {lineage.ignoreDefenseExclusive && (
+                      <span className="bg-rose-950/40 border border-rose-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-rose-300">
+                        Ignora {lineage.ignoreDefenseExclusive}% DEF/RES
+                      </span>
+                    )}
+                    {lineage.phoenixRevive1Hp && (
+                      <span className="bg-orange-950/40 border border-orange-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-orange-300">
+                        Sobrevive a Dano Letal com 1 HP
+                      </span>
+                    )}
+                    {lineage.extraAttackEveryTurn && (
+                      <span className="bg-indigo-950/40 border border-indigo-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-indigo-300">
+                        +1 Ataque Adicional por Turno
+                      </span>
+                    )}
+                    {lineage.centaurCharge && (
+                      <span className="bg-amber-950/40 border border-amber-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-amber-300">
+                        +5% Dano por casa movida no próximo golpe
+                      </span>
+                    )}
+                    {lineage.bleedBonusDamagePercent && (
+                      <span className="bg-red-950/40 border border-red-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-red-300">
+                        +{lineage.bleedBonusDamagePercent}% Dano contra Alvos Sangrando
+                      </span>
+                    )}
+                    {lineage.extraPushDistance && (
+                      <span className="bg-sky-950/40 border border-sky-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-sky-300">
+                        +{lineage.extraPushDistance} Casa em Efeitos de Empurrão
+                      </span>
+                    )}
+                    {lineage.eggDropRateMultiplier && (
+                      <span className="bg-emerald-950/40 border border-emerald-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-emerald-300">
+                        {lineage.eggDropRateMultiplier}x Chance de Dropar Ovos de Companheiro
+                      </span>
+                    )}
+                    {lineage.kitsuneFreeSkillReset && (
+                      <span className="bg-pink-950/40 border border-pink-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-pink-300">
+                        1ª Habilidade em Combate tem Cooldown Restaurado
+                      </span>
+                    )}
+                    {lineage.physicalDamageReductionPercent && (
+                      <span className="bg-purple-950/40 border border-purple-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-purple-300">
+                        -{lineage.physicalDamageReductionPercent}% Dano Físico Recebido
+                      </span>
+                    )}
+                    {lineage.potentPoison && (
+                      <span className="bg-lime-950/40 border border-lime-500/40 px-2 py-0.5 rounded text-[10px] font-bold text-lime-300">
+                        Veneno Potente (2% HP/T e -15% DEF)
                       </span>
                     )}
                   </div>

@@ -10,7 +10,15 @@ export type LineageQuestType =
   | 'flawless_boss_wins'
   | 'massive_hits'
   | 'light_dark_wins'
-  | 'comeback_wins';
+  | 'comeback_wins'
+  | 'basic_attack_kills'
+  | 'tiles_moved'
+  | 'bleed_inflicted'
+  | 'enemies_pushed'
+  | 'eggs_hatched'
+  | 'skills_cast'
+  | 'heroes_fallen'
+  | 'poison_inflicted';
 
 export interface LineageUnlockQuest {
   id: string;
@@ -69,9 +77,9 @@ export const LINEAGE_UNLOCK_QUESTS: LineageUnlockQuest[] = [
     lineageId: 'celestial',
     questType: 'healing_done',
     title: 'Milagre da Preservação Divina',
-    description: 'Restaure um total acumulado de 25.000 de Vida nos seus aliados usando magias de cura em combate para liberar a Linhagem Celestial.',
+    description: 'Restaure um total acumulado de 30.000 de Vida nos seus aliados usando magias de cura em combate para liberar a Linhagem Celestial.',
     unitLabel: 'Vida Restaurada com Curas',
-    targetCount: 25000,
+    targetCount: 30000,
     hintLevel: 'Usando habilidades de cura em batalhas intensas',
     iconName: 'Sun',
   },
@@ -122,24 +130,101 @@ export const LINEAGE_UNLOCK_QUESTS: LineageUnlockQuest[] = [
   {
     id: 'quest_lineage_nefalim',
     lineageId: 'nefalim',
-    questType: 'light_dark_wins',
-    title: 'Convergência de Luz e Trevas',
-    description: 'Vença 100 Batalhas tendo simultaneamente na equipe pelo menos uma classe da Luz (Curandeiro ou Paladino) e uma das Trevas (Necromante, Assassino ou Carrasco do Vazio).',
-    unitLabel: 'Vitórias (Luz & Trevas)',
-    targetCount: 100,
-    hintLevel: 'Vencer 100 batalhas com Luz e Trevas na equipe',
-    iconName: 'Sparkles',
+    questType: 'basic_attack_kills',
+    title: 'Purificação pelo Golpe Puro',
+    description: 'Derrote 200 inimigos usando o ataque normal (sem habilidades) para liberar a Linhagem Nefalim.',
+    unitLabel: 'Inimigos Derrotados com Ataque Normal',
+    targetCount: 200,
+    hintLevel: 'Eliminar inimigos usando apenas o ataque básico (sem habilidades)',
+    iconName: 'Swords',
   },
   {
     id: 'quest_lineage_fenix',
     lineageId: 'fenix',
     questType: 'comeback_wins',
     title: 'Última Chama Contra o Abismo',
-    description: 'Vença 10 Batalhas contra Chefes (Bosses ou Mini-Bosses) restando apenas 1 personagem vivo no final do combate para liberar a Linhagem Fênix.',
+    description: 'Vença 15 Batalhas contra Chefes (Bosses ou Mini-Bosses) restando apenas 1 personagem vivo no final do combate para liberar a Linhagem Fênix.',
     unitLabel: 'Chefes Vencidos com Apenas 1 Herói Vivo',
-    targetCount: 10,
+    targetCount: 15,
     hintLevel: 'Derrotar Boss/Mini-Boss terminando com exatamente 1 herói vivo',
     iconName: 'Flame',
+  },
+  {
+    id: 'quest_lineage_centauro',
+    lineageId: 'centauro',
+    questType: 'tiles_moved',
+    title: 'Caminhada das Estepes Infinitas',
+    description: 'Percorra um total acumulado de 2.000 casas em combate com seus heróis para liberar a Linhagem Centauro.',
+    unitLabel: 'Casas Percorridas em Combate',
+    targetCount: 2000,
+    hintLevel: 'Mover-se pelas casas do campo de batalha',
+    iconName: 'Footprints',
+  },
+  {
+    id: 'quest_lineage_lobisomem',
+    lineageId: 'lobisomem',
+    questType: 'bleed_inflicted',
+    title: 'Rastro de Sangue Lunar',
+    description: 'Aplique o efeito de Sangramento em inimigos 200 vezes para despertar a Linhagem Lobisomem.',
+    unitLabel: 'Sangramentos Infligidos',
+    targetCount: 200,
+    hintLevel: 'Usar habilidades ou armas que causem sangramento',
+    iconName: 'Skull',
+  },
+  {
+    id: 'quest_lineage_zephyros',
+    lineageId: 'zephyros',
+    questType: 'enemies_pushed',
+    title: 'Vendaval Arrebatador',
+    description: 'Empurre inimigos 200 vezes através de habilidades de impacto ou vento para liberar a Linhagem Zephyros.',
+    unitLabel: 'Inimigos Empurrados',
+    targetCount: 200,
+    hintLevel: 'Usar habilidades com efeito de empurrão (Disparo de Impacto, Vento, etc.)',
+    iconName: 'Sparkles',
+  },
+  {
+    id: 'quest_lineage_lagomorfo',
+    lineageId: 'lagomorfo',
+    questType: 'eggs_hatched',
+    title: 'Ninho da Fertilidade Sagrada',
+    description: 'Choque 20 ovos de companheiro no ninho de pets para liberar a Linhagem Lagomorfo.',
+    unitLabel: 'Ovos Chocados no Ninho',
+    targetCount: 20,
+    hintLevel: 'Chocar ovos no menu de Companheiros (Pets)',
+    iconName: 'Sparkles',
+  },
+  {
+    id: 'quest_lineage_kitsune',
+    lineageId: 'kitsune',
+    questType: 'skills_cast',
+    title: 'Encantamento das Nove Chamas',
+    description: 'Conjure 500 habilidades em combate para liberar a Linhagem Kitsune.',
+    unitLabel: 'Habilidades Conjuradas',
+    targetCount: 500,
+    hintLevel: 'Usar habilidades em combate com seus heróis',
+    iconName: 'Sparkles',
+  },
+  {
+    id: 'quest_lineage_espectro',
+    lineageId: 'espectro',
+    questType: 'heroes_fallen',
+    title: 'Passagem pelo Véu do Além',
+    description: 'Acumule 100 heróis caídos em combate para que suas almas façam a travessia e liberem a Linhagem Espectro.',
+    unitLabel: 'Heróis Caídos em Batalha',
+    targetCount: 100,
+    hintLevel: 'Heróis derrotados durante combates difíceis',
+    iconName: 'Skull',
+  },
+  {
+    id: 'quest_lineage_murideo',
+    lineageId: 'murideo',
+    questType: 'poison_inflicted',
+    title: 'Praga dos Esgotos Profundos',
+    description: 'Envenene inimigos 200 vezes para liberar a Linhagem Murídeo.',
+    unitLabel: 'Inimigos Envenenados',
+    targetCount: 200,
+    hintLevel: 'Usar habilidades que apliquem veneno (Veneno Mortal, Chuva Tóxica, etc.)',
+    iconName: 'Skull',
   },
 ];
 
@@ -194,6 +279,30 @@ export function getLineageQuestCurrentValue(progress: PlayerProgress, quest: Lin
     }
     case 'comeback_wins': {
       return lStats.comebackWins || 0;
+    }
+    case 'basic_attack_kills': {
+      return lStats.basicAttackKills || 0;
+    }
+    case 'tiles_moved': {
+      return lStats.tilesMoved || 0;
+    }
+    case 'bleed_inflicted': {
+      return lStats.bleedInflicted || 0;
+    }
+    case 'enemies_pushed': {
+      return lStats.enemiesPushed || 0;
+    }
+    case 'eggs_hatched': {
+      return lStats.eggsHatched || 0;
+    }
+    case 'skills_cast': {
+      return lStats.skillsCast || 0;
+    }
+    case 'heroes_fallen': {
+      return lStats.heroesFallen || 0;
+    }
+    case 'poison_inflicted': {
+      return lStats.poisonInflicted || 0;
     }
     default:
       return 0;

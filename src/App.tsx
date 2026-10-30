@@ -2554,10 +2554,48 @@ export function App() {
           }
         }
 
+        const movedDistance = Math.abs(x - fromX) + Math.abs(y - fromY);
+        let centaurBonus = 0;
+        if (selectedUnit.lineageCentaurCharge) {
+          centaurBonus = (selectedUnit.centaurMovedTilesThisTurn || 0) + movedDistance;
+          addFloatingNumber(x, y, `+${centaurBonus * 5}% Dano (Carga Centauro)`, 'status', '#D97706');
+        }
+
+        if (!isTrainingMode && movedDistance > 0) {
+          setProgress((prev) => {
+            const prevStats = prev.lineageQuestStats || {};
+            let p = {
+              ...prev,
+              lineageQuestStats: {
+                ...prevStats,
+                tilesMoved: (prevStats.tilesMoved || 0) + movedDistance,
+              },
+            };
+            const newLineages = checkLineageUnlockQuests(p);
+            if (newLineages.length > 0) {
+              p = {
+                ...p,
+                unlockedLineages: Array.from(new Set([...(p.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+              };
+              setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
+            }
+            savePlayerProgress(p);
+            return p;
+          });
+        }
+
         setUnits((prev) =>
           prev.map((u) =>
             u.id === selectedUnit.id
-              ? { ...u, x, y, hasMoved: true, currentHp: updatedHp, isDead: unitDead }
+              ? {
+                  ...u,
+                  x,
+                  y,
+                  hasMoved: true,
+                  currentHp: updatedHp,
+                  isDead: unitDead,
+                  centaurMovedTilesThisTurn: selectedUnit.lineageCentaurCharge ? centaurBonus : u.centaurMovedTilesThisTurn,
+                }
               : u
           )
         );
@@ -3208,12 +3246,16 @@ export function App() {
         const eff = { ...effToProcess, appliedTurn: turnNumberRef.current };
         if (eff.type === 'shield') {
           givesShield = true;
+          const scalingBonus = selectedUnit.lineageHealShieldFlatScalingBonus || 0;
           if (skill.shieldPercentOfMaxHp) {
-            eff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+            eff.value = Math.max(1, Math.round(selectedUnit.maxHp * (skill.shieldPercentOfMaxHp + scalingBonus)));
           } else if (skill.shieldPercentOfMag) {
-            eff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
+            eff.value = Math.max(1, Math.round(selectedUnit.mag * (skill.shieldPercentOfMag + scalingBonus)));
           } else if (skill.shieldPercentOfAtk) {
-            eff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
+            eff.value = Math.max(1, Math.round(selectedUnit.atk * (skill.shieldPercentOfAtk + scalingBonus)));
+          }
+          if (selectedUnit.lineageShieldReflectRatio) {
+            eff.reflectRatio = Math.max(eff.reflectRatio || 0, selectedUnit.lineageShieldReflectRatio);
           }
           if (hadExcessShield) {
             eff.value = Math.max(1, Math.round(eff.value * 0.5));
@@ -3447,6 +3489,9 @@ export function App() {
     let totalKills = 0;
     let massiveHitsCount = 0;
     let statusInflictedCount = 0;
+    let poisonInflictedCount = 0;
+    let bleedInflictedCount = 0;
+    let enemiesPushedCount = 0;
     const killedMonsterTypeIds: string[] = [];
 
     for (const t of targetsToHit) {
@@ -3548,12 +3593,16 @@ export function App() {
           const eff = { ...effToProcess, appliedTurn: turnNumberRef.current };
           if (eff.type === 'shield') {
             isShielded = true;
+            const scalingBonus = selectedUnit.lineageHealShieldFlatScalingBonus || 0;
             if (skill?.shieldPercentOfMaxHp) {
-              eff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+              eff.value = Math.max(1, Math.round(selectedUnit.maxHp * (skill.shieldPercentOfMaxHp + scalingBonus)));
             } else if (skill?.shieldPercentOfMag) {
-              eff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
+              eff.value = Math.max(1, Math.round(selectedUnit.mag * (skill.shieldPercentOfMag + scalingBonus)));
             } else if (skill?.shieldPercentOfAtk) {
-              eff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
+              eff.value = Math.max(1, Math.round(selectedUnit.atk * (skill.shieldPercentOfAtk + scalingBonus)));
+            }
+            if (selectedUnit.lineageShieldReflectRatio) {
+              eff.reflectRatio = Math.max(eff.reflectRatio || 0, selectedUnit.lineageShieldReflectRatio);
             }
             if (selectedUnit.lineageHealShieldBonusPercent) {
               eff.value = Math.max(1, Math.round(eff.value * (1 + selectedUnit.lineageHealShieldBonusPercent / 100)));
@@ -3585,6 +3634,12 @@ export function App() {
 
         if (skill?.secondaryStatusEffect) {
           applyTargetSupportEffect(skill.secondaryStatusEffect);
+        }
+
+        // Linhagem Celestial: Escudos e curas também fornecem aos aliados +15% de dano por 2 turnos
+        if ((isHealed || isShielded) && selectedUnit.lineageHealShieldAlliesDamageBuff && t.faction === 'player' && t.id !== selectedUnit.id) {
+          applyTargetSupportEffect({ type: 'buff_atk', duration: 2, value: selectedUnit.lineageHealShieldAlliesDamageBuff });
+          addFloatingNumber(t.x, t.y, '+15% Dano (Graça Celestial)', 'status', '#F97316');
         }
 
         if (isHealed) {
@@ -3661,10 +3716,23 @@ export function App() {
             } else if ((eff.type === 'burn' || eff.type === 'poison') && isTargetBurnPoisonImmune) {
               addFloatingNumber(t.x, t.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
             } else {
-              currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-              if (t.faction !== 'player') statusInflictedCount++;
+              let appliedEff = { ...eff };
+              if (eff.type === 'poison' && selectedUnit.lineagePotentPoison) {
+                appliedEff.value = 2;
+                currentEffects = [
+                  ...currentEffects.filter((e) => e.type !== 'debuff_def'),
+                  { type: 'debuff_def', duration: eff.duration || 2, value: 15, appliedTurn: turnNumberRef.current },
+                ];
+                addFloatingNumber(t.x, t.y, '☠️ Veneno Potente (-15% DEF)!', 'status', '#84CC16');
+              }
+              currentEffects = [...currentEffects.filter((e) => e.type !== appliedEff.type), appliedEff];
+              if (t.faction !== 'player') {
+                statusInflictedCount++;
+                if (eff.type === 'poison') poisonInflictedCount++;
+                if (eff.type === 'burn' || eff.type === 'bleed') bleedInflictedCount++;
+              }
               if (eff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
-              else if (eff.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+              else if (eff.type === 'poison' && !selectedUnit.lineagePotentPoison) addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
               else if (eff.type === 'stun') {
                 addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
                 if (isBossMonster) {
@@ -3686,10 +3754,23 @@ export function App() {
             } else if ((eff2.type === 'burn' || eff2.type === 'poison') && isTargetBurnPoisonImmune) {
               addFloatingNumber(t.x, t.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
             } else {
-              currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-              if (t.faction !== 'player') statusInflictedCount++;
+              let appliedEff2 = { ...eff2 };
+              if (eff2.type === 'poison' && selectedUnit.lineagePotentPoison) {
+                appliedEff2.value = 2;
+                currentEffects = [
+                  ...currentEffects.filter((e) => e.type !== 'debuff_def'),
+                  { type: 'debuff_def', duration: eff2.duration || 2, value: 15, appliedTurn: turnNumberRef.current },
+                ];
+                addFloatingNumber(t.x, t.y, '☠️ Veneno Potente (-15% DEF)!', 'status', '#84CC16');
+              }
+              currentEffects = [...currentEffects.filter((e) => e.type !== appliedEff2.type), appliedEff2];
+              if (t.faction !== 'player') {
+                statusInflictedCount++;
+                if (eff2.type === 'poison') poisonInflictedCount++;
+                if (eff2.type === 'burn' || eff2.type === 'bleed') bleedInflictedCount++;
+              }
               if (eff2.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
-              else if (eff2.type === 'poison') addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+              else if (eff2.type === 'poison' && !selectedUnit.lineagePotentPoison) addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
               else if (eff2.type === 'stun') {
                 addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
                 if (isBossMonster) {
@@ -3707,16 +3788,16 @@ export function App() {
         }
       }
 
-      // Lineage: Draconato applies Burn
-      if (selectedUnit.lineageAppliesBurn && t.faction !== 'player' && dmgResult.damageType !== 'healing' && newHp > 0) {
+      // Lineage: Dragonoide applies Severe Burn (3% max HP per turn)
+      if (selectedUnit.lineageSevereBurn && t.faction !== 'player' && dmgResult.damageType !== 'healing' && newHp > 0) {
         const cannotBurn = currentEffects.some((e) => e.type === 'immune' || e.type === 'immune_burn_poison') || t.bossVersion === 'light';
         if (!cannotBurn) {
           currentEffects = [
             ...currentEffects.filter((e) => e.type !== 'burn'),
-            { type: 'burn', duration: 2, value: 5, appliedTurn: turnNumberRef.current },
+            { type: 'burn', duration: 2, value: 3, appliedTurn: turnNumberRef.current },
           ];
           statusInflictedCount++;
-          addFloatingNumber(t.x, t.y, '🔥 Hálito Flamejante!', 'status', '#FF6B00');
+          addFloatingNumber(t.x, t.y, '🔥 Queimadura Severa (3%)!', 'status', '#FF6B00');
         }
       }
 
@@ -3746,7 +3827,8 @@ export function App() {
         let currX = t.x;
         let currY = t.y;
         let stepsPushed = 0;
-        const maxSteps = skill.knockback;
+        const extraPush = selectedUnit.lineageExtraPushDistance || 0;
+        const maxSteps = skill.knockback + extraPush;
 
         for (let s = 0; s < maxSteps; s++) {
           const nextX = currX + pushX;
@@ -3811,6 +3893,7 @@ export function App() {
         if (stepsPushed > 0) {
           finalTargetX = currX;
           finalTargetY = currY;
+          if (t.faction !== 'player') enemiesPushedCount++;
           if (boardRef.current) {
             await boardRef.current.playMoveAnimation(t.id, t.x, t.y, currX, currY);
           }
@@ -4058,12 +4141,16 @@ export function App() {
     if (skill?.casterStatusEffect) {
       const cEff = { ...skill.casterStatusEffect, appliedTurn: turnNumberRef.current };
       if (cEff.type === 'shield') {
+        const scalingBonus = selectedUnit.lineageHealShieldFlatScalingBonus || 0;
         if (skill.shieldPercentOfMaxHp) {
-          cEff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+          cEff.value = Math.max(1, Math.round(selectedUnit.maxHp * (skill.shieldPercentOfMaxHp + scalingBonus)));
         } else if (skill.shieldPercentOfMag) {
-          cEff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
+          cEff.value = Math.max(1, Math.round(selectedUnit.mag * (skill.shieldPercentOfMag + scalingBonus)));
         } else if (skill.shieldPercentOfAtk) {
-          cEff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
+          cEff.value = Math.max(1, Math.round(selectedUnit.atk * (skill.shieldPercentOfAtk + scalingBonus)));
+        }
+        if (selectedUnit.lineageShieldReflectRatio) {
+          cEff.reflectRatio = Math.max(cEff.reflectRatio || 0, selectedUnit.lineageShieldReflectRatio);
         }
         const hadExcessShield = finalAttackerEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
         if (hadExcessShield) {
@@ -4071,8 +4158,7 @@ export function App() {
           addFloatingNumber(finalAttackerX, finalAttackerY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
         }
         soundManager.playShield();
-        if (skill.casterStatusEffect.reflectRatio) {
-          cEff.reflectRatio = skill.casterStatusEffect.reflectRatio;
+        if (cEff.reflectRatio) {
           addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Escudo Espinhoso (${Math.round(cEff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
         } else {
           addFloatingNumber(finalAttackerX, finalAttackerY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
@@ -4128,10 +4214,25 @@ export function App() {
 
     updatedUnits = updatedUnits.map((u) => {
       if (u.id === selectedUnit.id) {
+        const isKitsuneEligible =
+          skill &&
+          Boolean(u.lineageKitsuneFreeSkillReset) &&
+          !u.hasUsedKitsuneReset &&
+          skill.statusEffect?.type !== 'stun' &&
+          skill.secondaryStatusEffect?.type !== 'stun' &&
+          skill.id !== 'golpe_atordoante';
+
+        if (isKitsuneEligible) {
+          addFloatingNumber(finalAttackerX, finalAttackerY, '🦊 Astúcia da Kitsune (Cooldown Restaurado)!', 'status', '#F472B6');
+        }
+
         const updatedSkills = u.skills.map((s) => {
           if (skill && s.id === skill.id) {
             if (isExecutionKill && (skill.resetsCooldownOnKill || skill.id === 'avanco_dimensional')) {
               return { ...s, currentCooldown: 0 };
+            }
+            if (isKitsuneEligible) {
+              return { ...s, currentCooldown: 0, lastUsedTurn: turnNumberRef.current };
             }
             return { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current };
           }
@@ -4143,13 +4244,25 @@ export function App() {
           ? 0
           : (u.skillUsesCount || 0) + (skill ? 1 : 0);
 
+        const isNefalimExtra =
+          !isExecutionKill &&
+          Boolean(u.lineageExtraAttackEveryTurn) &&
+          !u.nefalimExtraAttackUsed;
+
+        if (isNefalimExtra) {
+          addFloatingNumber(finalAttackerX, finalAttackerY, '⚔️ Ataque Adicional (Nefalim)!', 'status', '#F59E0B');
+        }
+
         return {
           ...u,
           x: finalAttackerX,
           y: finalAttackerY,
           currentHp: finalAttackerHp,
           hasMoved: isExecutionKill ? false : (canMoveAgain ? false : u.hasMoved),
-          hasAttacked: isExecutionKill ? false : true,
+          hasAttacked: isExecutionKill ? false : (isNefalimExtra ? false : true),
+          nefalimExtraAttackUsed: isNefalimExtra ? true : u.nefalimExtraAttackUsed,
+          centaurMovedTilesThisTurn: 0,
+          hasUsedKitsuneReset: isKitsuneEligible ? true : u.hasUsedKitsuneReset,
           skills: updatedSkills,
           statusEffects: finalAttackerEffects,
           damageDealt: u.damageDealt + totalDmgDone,
@@ -4171,7 +4284,19 @@ export function App() {
         }
         const attackerWasLowHp = selectedUnit.currentHp < selectedUnit.maxHp * 0.2;
         const lowHpKillsEarned = attackerWasLowHp ? totalKills : 0;
-        if (totalHealDone > 0 || massiveHitsCount > 0 || statusInflictedCount > 0 || lowHpKillsEarned > 0) {
+        const basicKillsEarned = !skill ? totalKills : 0;
+        const skillsCastEarned = skill ? 1 : 0;
+        if (
+          totalHealDone > 0 ||
+          massiveHitsCount > 0 ||
+          statusInflictedCount > 0 ||
+          lowHpKillsEarned > 0 ||
+          basicKillsEarned > 0 ||
+          poisonInflictedCount > 0 ||
+          bleedInflictedCount > 0 ||
+          enemiesPushedCount > 0 ||
+          skillsCastEarned > 0
+        ) {
           const prevStats = p.lineageQuestStats || {};
           p = {
             ...p,
@@ -4181,6 +4306,11 @@ export function App() {
               massiveHits: (prevStats.massiveHits || 0) + massiveHitsCount,
               statusInflicted: (prevStats.statusInflicted || 0) + statusInflictedCount,
               lowHpKills: (prevStats.lowHpKills || 0) + lowHpKillsEarned,
+              basicAttackKills: (prevStats.basicAttackKills || 0) + basicKillsEarned,
+              poisonInflicted: (prevStats.poisonInflicted || 0) + poisonInflictedCount,
+              bleedInflicted: (prevStats.bleedInflicted || 0) + bleedInflictedCount,
+              enemiesPushed: (prevStats.enemiesPushed || 0) + enemiesPushedCount,
+              skillsCast: (prevStats.skillsCast || 0) + skillsCastEarned,
             },
           };
         }
@@ -4238,6 +4368,8 @@ export function App() {
     } else if (canMoveAgain) {
       setSelectedUnitId(selectedUnit.id);
       setSelectedAction('move');
+    } else if (selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed) {
+      setSelectedUnitId(selectedUnit.id);
     }
 
     setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 200);
@@ -4262,7 +4394,7 @@ export function App() {
           const bDmg = Math.max(1, Math.round(u.maxHp * ((burn.value || 2) / 100)));
           currentHp = Math.max(0, currentHp - bDmg);
           isDead = currentHp === 0;
-          addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura (2%)`, 'status', '#F97316');
+          addFloatingNumber(u.x, u.y, `-${bDmg} Queimadura (${burn.value || 2}%)`, 'status', '#F97316');
         }
 
         // Poison tick (Veneno) - 2% da vida máxima
@@ -5276,6 +5408,9 @@ export function App() {
                 let finalTargetX = t.x;
                 let finalTargetY = t.y;
                 if (skill?.knockback && skill.knockback > 0 && newHp > 0) {
+                  if (t.lineageCrowdControlImmunity) {
+                    addFloatingNumber(t.x, t.y, '🛡️ Imune a Empurrão!', 'status', '#60A5FA');
+                  } else {
                   const originX = finalMonsterX;
                   const originY = finalMonsterY;
                   const dx = t.x - originX;
@@ -5319,10 +5454,11 @@ export function App() {
                     finalTargetY = currY;
                     addFloatingNumber(currX, currY, `Empurrado (${stepsPushed})!`, 'status', '#60A5FA');
                   }
+                  }
                 }
 
                 // Jato Pressurizado do Leviatã: empurra até o fim da linha de 5. Se atingir obstáculo ou outro inimigo, atordoa e causa dano adicional
-                if (skill?.id === 'leviata_jato_pressurizado' && newHp > 0) {
+                if (skill?.id === 'leviata_jato_pressurizado' && newHp > 0 && !t.lineageCrowdControlImmunity) {
                   const originX = finalMonsterX;
                   const originY = finalMonsterY;
                   let pushDirX = Math.sign(freshTarget.x - originX);
@@ -5384,6 +5520,9 @@ export function App() {
 
                 // Monster Pull (e.g. Astaroth Garras do Vazio - puxa 2 casas em direção ao boss)
                 if (skill?.pull && skill.pull > 0 && newHp > 0) {
+                  if (t.lineageCrowdControlImmunity) {
+                    addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imune a Puxão!', 'status', '#60A5FA');
+                  } else {
                   const originX = finalMonsterX;
                   const originY = finalMonsterY;
                   const dx = originX - finalTargetX;
@@ -5428,10 +5567,11 @@ export function App() {
                     addFloatingNumber(currX, currY, `Puxado (${stepsPulled})!`, 'status', '#A855F7');
                     soundManager.playStep();
                   }
+                  }
                 }
 
                 // Monster Pull to Adjacent (e.g. Astaroth Cataclismo do Abismo)
-                if (skill?.pullToAdjacent && newHp > 0) {
+                if (skill?.pullToAdjacent && newHp > 0 && !t.lineageCrowdControlImmunity) {
                   const originX = finalMonsterX;
                   const originY = finalMonsterY;
                   const isAlreadyAdj = Math.abs(finalTargetX - originX) <= 1 && Math.abs(finalTargetY - originY) <= 1;
@@ -5474,45 +5614,104 @@ export function App() {
                 }
 
                 let usedPhoenixNow = false;
-                if (newHp === 0 && t.faction === 'player' && t.lineagePhoenixRevive && !t.hasUsedPhoenixRevive) {
-                  newHp = Math.max(1, Math.round(t.maxHp * 0.5));
+                if (newHp === 0 && t.faction === 'player' && (t.lineagePhoenixRevive || t.lineagePhoenixRevive1Hp) && !t.hasUsedPhoenixRevive) {
+                  newHp = 1;
                   usedPhoenixNow = true;
                   soundManager.playHeal();
-                  addFloatingNumber(finalTargetX, finalTargetY, '🔥 Renasceu das Cinzas (50% HP)!', 'healing', '#F97316');
+                  addFloatingNumber(finalTargetX, finalTargetY, '🔥 Sobreviveu com 1 HP (Fênix)!', 'healing', '#F97316');
                 }
                 if (newHp === 0) {
                   soundManager.playDeath();
+                  if (t.faction === 'player' && !t.isSummoned) {
+                    setProgress((prev) => {
+                      const prevStats = prev.lineageQuestStats || {};
+                      let p = {
+                        ...prev,
+                        lineageQuestStats: {
+                          ...prevStats,
+                          heroesFallen: (prevStats.heroesFallen || 0) + 1,
+                        },
+                      };
+                      const newLineages = checkLineageUnlockQuests(p);
+                      if (newLineages.length > 0) {
+                        p = {
+                          ...p,
+                          unlockedLineages: Array.from(new Set([...(p.unlockedLineages || INITIAL_UNLOCKED_LINEAGES), ...newLineages])),
+                        };
+                        setPendingUnlockLineages((prevPending) => Array.from(new Set([...prevPending, ...newLineages])));
+                      }
+                      savePlayerProgress(p);
+                      return p;
+                    });
+                  }
                   if (boardRef.current) {
                     await boardRef.current.playDeathAnimation(t.id);
                   }
                 } else {
                   const isValgarSkill = choice.skillToUse?.id?.startsWith('valgar') || choice.skillToUse?.id === 'boss_valgar_banquete_sangue';
                   const isBleedSkill = isValgarSkill || choice.skillToUse?.id === 'quimera_garras_leao';
+                  const isMinotaurImmune = (type: string) =>
+                    Boolean(t.lineageCrowdControlImmunity) && (type === 'burn' || type === 'poison' || type === 'slow');
+                  const isDragonImmune = (type: string) =>
+                    Boolean(t.lineageBurnImmune) && type === 'burn';
+
                   if (choice.skillToUse?.statusEffect) {
                     const eff = choice.skillToUse.statusEffect;
-                    currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
-                    if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
-                    else if (eff.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
-                    else if (eff.type === 'stun') addFloatingNumber(finalTargetX, finalTargetY, 'Atordoado!', 'status', '#FACC15');
-                    else if (eff.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff.value || 1} Mov)!`, 'status', '#60A5FA');
-                    else if (eff.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff.value}%!`, 'status', '#EF4444');
-                    else if (eff.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff.value}%!`, 'status', '#EF4444');
-                    else if (eff.type === 'electrified') addFloatingNumber(finalTargetX, finalTargetY, '⚡ Eletrificado!', 'status', '#FACC15');
-                    else if (eff.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
-                    else if (eff.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
+                    if (isMinotaurImmune(eff.type)) {
+                      addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imunidade (Minotauro)!', 'status', '#60A5FA');
+                    } else if (isDragonImmune(eff.type)) {
+                      addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imune a Queimadura!', 'status', '#F97316');
+                    } else {
+                      currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+                      if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
+                      else if (eff.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
+                      else if (eff.type === 'stun') addFloatingNumber(finalTargetX, finalTargetY, 'Atordoado!', 'status', '#FACC15');
+                      else if (eff.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff.value || 1} Mov)!`, 'status', '#60A5FA');
+                      else if (eff.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff.value}%!`, 'status', '#EF4444');
+                      else if (eff.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff.value}%!`, 'status', '#EF4444');
+                      else if (eff.type === 'electrified') addFloatingNumber(finalTargetX, finalTargetY, '⚡ Eletrificado!', 'status', '#FACC15');
+                      else if (eff.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
+                      else if (eff.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
+                    }
                   }
 
                   if (choice.skillToUse?.secondaryStatusEffect) {
                     const eff2 = choice.skillToUse.secondaryStatusEffect;
-                    currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
-                    if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
-                    else if (eff2.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
-                    else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
-                    else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
-                    else if (eff2.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff2.value || 1} Mov)!`, 'status', '#60A5FA');
-                    else if (eff2.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
-                    else if (eff2.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
+                    if (isMinotaurImmune(eff2.type)) {
+                      addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imunidade (Minotauro)!', 'status', '#60A5FA');
+                    } else if (isDragonImmune(eff2.type)) {
+                      addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imune a Queimadura!', 'status', '#F97316');
+                    } else {
+                      currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+                      if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
+                      else if (eff2.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
+                      else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
+                      else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
+                      else if (eff2.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff2.value || 1} Mov)!`, 'status', '#60A5FA');
+                      else if (eff2.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
+                      else if (eff2.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
+                    }
                   }
+                }
+
+                // Linhagem Orc: na primeira vez que ficar com <= 50% de vida, ganha escudo de 20% maxHp e +15% dano por 2 turnos
+                let orcTriggered = false;
+                if (
+                  t.faction === 'player' &&
+                  !t.hasUsedOrcHalfHpTrigger &&
+                  t.lineageOrcHalfHpTrigger &&
+                  newHp > 0 &&
+                  newHp <= Math.floor(t.maxHp * 0.5)
+                ) {
+                  orcTriggered = true;
+                  const orcShieldVal = Math.max(1, Math.round(t.maxHp * 0.20));
+                  currentEffects = [
+                    ...currentEffects,
+                    { type: 'shield', duration: 2, value: orcShieldVal, appliedTurn: turnNumberRef.current },
+                    { type: 'buff_atk', duration: 2, value: 15, appliedTurn: turnNumberRef.current },
+                  ];
+                  addFloatingNumber(finalTargetX, finalTargetY, `+${orcShieldVal} Escudo (Fúria Orc)`, 'shield', '#38BDF8');
+                  addFloatingNumber(finalTargetX, finalTargetY, '+15% Dano (Fúria Orc)', 'status', '#F97316');
                 }
 
                 currentUnits = currentUnits.map((u) =>
@@ -5525,6 +5724,7 @@ export function App() {
                         isDead: newHp === 0,
                         statusEffects: currentEffects,
                         hasUsedPhoenixRevive: usedPhoenixNow ? true : u.hasUsedPhoenixRevive,
+                        hasUsedOrcHalfHpTrigger: orcTriggered ? true : u.hasUsedOrcHalfHpTrigger,
                       }
                     : u
                 );
@@ -5745,20 +5945,20 @@ export function App() {
             .filter((e) => e.duration > 0);
 
           if (!isDead) {
-            // Burn tick (Queimadura) - 2% da vida máxima
+            // Burn tick (Queimadura)
             const burn = u.statusEffects?.find((e) => e.type === 'burn');
-            if (burn) {
+            if (burn && !u.lineageBurnImmune && !u.lineageCrowdControlImmunity) {
               const bDmg = Math.max(1, Math.round(u.maxHp * ((burn.value || 2) / 100)));
               currentHp = Math.max(0, currentHp - bDmg);
               isDead = currentHp === 0;
               if (isDead) anyPlayerDiedFromDoT = true;
-              addFloatingNumber(unitX, unitY, `-${bDmg} Queimadura (2%)`, 'status', '#F97316');
+              addFloatingNumber(unitX, unitY, `-${bDmg} Queimadura (${burn.value || 2}%)`, 'status', '#F97316');
             }
 
-            // Poison tick (Veneno) - 2% da vida máxima
+            // Poison tick (Veneno)
             if (!isDead) {
               const poison = u.statusEffects?.find((e) => e.type === 'poison');
-              if (poison) {
+              if (poison && !u.lineageCrowdControlImmunity) {
                 const pDmg = Math.max(1, Math.round(u.maxHp * ((poison.value || 2) / 100)));
                 currentHp = Math.max(0, currentHp - pDmg);
                 isDead = currentHp === 0;
@@ -5871,6 +6071,7 @@ export function App() {
             statusEffects: updatedEffects,
             hasMoved: isCocooned ? true : false,
             hasAttacked: isCocooned ? true : false,
+            nefalimExtraAttackUsed: false,
           };
         } else {
           // Enemy units: AI turn has ended, decrement status effects & cooldowns
@@ -6006,8 +6207,20 @@ export function App() {
             })
             .filter((e) => e.duration > 0);
 
+          // Linhagem Elfo: Se finalizar o turno sem se mover, recebe +15% de dano no próximo turno
+          if (!u.hasMoved && u.lineageStandStillDamageBonusPercent) {
+            updatedEffects.push({
+              type: 'buff_atk',
+              duration: 2,
+              value: u.lineageStandStillDamageBonusPercent,
+              appliedTurn: currentTurn,
+            });
+            addFloatingNumber(u.x, u.y, `+${u.lineageStandStillDamageBonusPercent}% Dano (Foco Élfico)`, 'status', '#10B981');
+          }
+
           return {
             ...u,
+            centaurMovedTilesThisTurn: 0,
             statusEffects: updatedEffects,
             skills: u.skills.map((s) => {
               if (s.lastUsedTurn === currentTurn) return s;
@@ -6118,7 +6331,7 @@ export function App() {
     let lineageGoldBonusRatio = 0;
     partyUnits.forEach((u) => {
       if (u.lineageGoldBonusPercent) {
-        lineageGoldBonusRatio += u.lineageGoldBonusPercent / 100;
+        lineageGoldBonusRatio = Math.max(lineageGoldBonusRatio, u.lineageGoldBonusPercent / 100);
       }
     });
 
@@ -6273,10 +6486,15 @@ export function App() {
     let updatedEggs = [...(progress.eggs || [])];
     const newDroppedEggs: PetEgg[] = [];
 
+    // Linhagem Lagomorfo: 2x mais chance de encontrar ovos
+    const hasLagomorfo = partyUnits.some((u) => u.lineageEggDropRateMultiplier || u.lineageId === 'lagomorfo');
+    const eggChanceMultiplier = hasLagomorfo ? 2 : 1;
+
     currentLevel.enemySpawns.forEach((spawn) => {
       const isBoss = Boolean(spawn.isBoss && !spawn.isMiniBoss);
       const isMiniBoss = Boolean(spawn.isMiniBoss);
-      const dropChance = isBoss ? 1.0 : isMiniBoss ? 0.25 : 0.01;
+      const baseDropChance = isBoss ? 1.0 : isMiniBoss ? 0.25 : 0.01;
+      const dropChance = Math.min(1.0, baseDropChance * eggChanceMultiplier);
       if (Math.random() < dropChance) {
         if (updatedEggs.length < MAX_EGGS_LIMIT) {
           const egg = createNewEgg();
