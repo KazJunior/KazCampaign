@@ -112,12 +112,26 @@ export function applyLineageBodyScale(charMesh: THREE.Group, unit: Unit): void {
     charMesh.scale.multiply(new THREE.Vector3(0.95, 1.05, 0.95));
   } else if (lin === 'feerico') {
     charMesh.scale.multiply(new THREE.Vector3(0.92, 0.96, 0.92));
+  } else if (lin === 'centauro') {
+    charMesh.scale.multiply(new THREE.Vector3(1.10, 1.05, 1.14));
+  } else if (lin === 'lobisomem') {
+    charMesh.scale.multiply(new THREE.Vector3(1.12, 1.07, 1.12));
+  } else if (lin === 'zephyros') {
+    charMesh.scale.multiply(new THREE.Vector3(0.95, 1.06, 0.95));
+  } else if (lin === 'lagomorfo') {
+    charMesh.scale.multiply(new THREE.Vector3(0.96, 1.03, 0.96));
+  } else if (lin === 'kitsune') {
+    charMesh.scale.multiply(new THREE.Vector3(0.96, 1.03, 0.96));
+  } else if (lin === 'espectro') {
+    charMesh.scale.multiply(new THREE.Vector3(0.96, 1.06, 0.96));
+  } else if (lin === 'murideo') {
+    charMesh.scale.multiply(new THREE.Vector3(0.94, 0.94, 0.98));
   }
 }
 
 /**
- * Cria os traços visuais 3D exclusivos de cada uma das 13 Linhagens Ancestrais
- * (Asas articuladas, Chifres, Auréolas, Orelhas Élficas, Presas, Caudas e Orbes).
+ * Cria os traços visuais 3D exclusivos de cada uma das 20 Linhagens Ancestrais
+ * (Asas articuladas, Chifres, Auréolas, Orelhas, Presas, Caudas, Garupas e Orbes).
  */
 function createLineageVisualFeatures3D(unit: Unit): THREE.Group {
   const linGroup = new THREE.Group();
@@ -563,6 +577,460 @@ function createLineageVisualFeatures3D(unit: Unit): THREE.Group {
       }
       linGroup.add(wGroup);
     }
+  } else if (lin === 'centauro') {
+    // CENTAURO: Garupa Equina Traseira com Patas & Cascos Dourados + Crina Real + Cauda Equina + Rastro de Carga
+    const coatMat = new THREE.MeshStandardMaterial({
+      color: 0x92400e,
+      roughness: 0.45,
+      metalness: 0.1,
+    });
+    const maneMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0xb45309,
+      emissiveIntensity: 0.45,
+      roughness: 0.3,
+    });
+
+    // Orelhas Equinas e Penacho Dourado na Cabeça
+    for (const side of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.11, 6), coatMat);
+      ear.position.set(side * 0.11, 0.78, 0.01);
+      ear.rotation.set(0.15, 0, -side * 0.25);
+      linGroup.add(ear);
+    }
+    const maneCrest = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.16, 0.18), goldMat);
+    maneCrest.position.set(0, 0.80, -0.04);
+    maneCrest.rotation.x = -0.25;
+    linGroup.add(maneCrest);
+
+    // Garupa Equina Traseira compacta com manta dourada e 2 patas traseiras com cascos de ouro
+    const hindGroup = new THREE.Group();
+    hindGroup.position.set(0, 0.26, -0.17);
+
+    const equineBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.12, 0.16, 8, 12), coatMat);
+    equineBody.rotation.x = Math.PI / 2;
+    hindGroup.add(equineBody);
+
+    const saddleTrim = new THREE.Mesh(new THREE.TorusGeometry(0.122, 0.018, 8, 16), goldMat);
+    saddleTrim.position.set(0, 0.02, 0.02);
+    hindGroup.add(saddleTrim);
+
+    for (const side of [-1, 1]) {
+      const hindLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.032, 0.20, 8), coatMat);
+      hindLeg.position.set(side * 0.085, -0.10, -0.04);
+      hindGroup.add(hindLeg);
+
+      const goldenHoof = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.044, 0.05, 8), goldMat);
+      goldenHoof.position.set(side * 0.085, -0.18, -0.04);
+      hindGroup.add(goldenHoof);
+    }
+
+    // Longa Cauda Equina Esvoaçante
+    const horseTail = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.28, 8), maneMat);
+    horseTail.position.set(0, 0.02, -0.18);
+    horseTail.rotation.x = -Math.PI * 0.68;
+    hindGroup.add(horseTail);
+
+    linGroup.add(hindGroup);
+
+    // Cristais/Ferraduras de Ímpeto Cinético orbitando
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.32, 0);
+    for (const side of [-1, 1]) {
+      const windHoof = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 6, 12, Math.PI * 1.4), goldMat);
+      windHoof.position.set(side * 0.34, 0, 0);
+      windHoof.rotation.x = Math.PI / 2;
+      orbit.add(windHoof);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'lobisomem') {
+    // LOBISOMEM: Orelhas de Lobo Peludas + Presas e Garras Sanguinárias + Cauda de Lobo + Lua Sangrenta
+    const wolfFurMat = new THREE.MeshStandardMaterial({
+      color: 0x1f2937,
+      roughness: 0.6,
+    });
+    const bloodRedMat = new THREE.MeshStandardMaterial({
+      color: 0xdc2626,
+      emissive: 0x991b1b,
+      emissiveIntensity: 0.85,
+      roughness: 0.25,
+    });
+    const fangMat = new THREE.MeshStandardMaterial({
+      color: 0xfef2f2,
+      roughness: 0.2,
+    });
+
+    // Orelhas de Lobo Pontiagudas no Topo da Cabeça
+    for (const side of [-1, 1]) {
+      const earOuter = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.16, 5), wolfFurMat);
+      earOuter.position.set(side * 0.12, 0.80, 0.0);
+      earOuter.rotation.set(0.1, 0, -side * 0.22);
+      linGroup.add(earOuter);
+
+      const earInner = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 5), bloodRedMat);
+      earInner.position.set(side * 0.12, 0.79, 0.02);
+      earInner.rotation.set(0.1, 0, -side * 0.22);
+      linGroup.add(earInner);
+
+      // Presas Lupinas frontais
+      const fang = new THREE.Mesh(new THREE.ConeGeometry(0.022, 0.09, 5), fangMat);
+      fang.position.set(side * 0.055, 0.61, 0.15);
+      fang.rotation.x = -0.2;
+      linGroup.add(fang);
+
+      // Pelagem eriçada e garras carmesim nos ombros
+      const shoulderFur = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.15, 6), wolfFurMat);
+      shoulderFur.position.set(side * 0.26, 0.56, -0.02);
+      shoulderFur.rotation.z = -side * 0.55;
+      linGroup.add(shoulderFur);
+    }
+
+    // Cauda de Lobo Espessa e Selvagem
+    const wolfTail = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.30, 8), wolfFurMat);
+    wolfTail.position.set(0, 0.24, -0.22);
+    wolfTail.rotation.x = -Math.PI * 0.62;
+    linGroup.add(wolfTail);
+
+    // Lua Sangrenta Carmesim pairando acima
+    const bloodHalo = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.02, 8, 24), bloodRedMat);
+    bloodHalo.name = 'lineageHalo';
+    bloodHalo.rotation.x = Math.PI / 2;
+    bloodHalo.position.set(0, 0.90, 0);
+    linGroup.add(bloodHalo);
+
+    // Orbes de Sangue Orbitantes
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.48, 0);
+    for (const side of [-1, 1]) {
+      const clawMark = new THREE.Mesh(new THREE.OctahedronGeometry(0.038, 0), bloodRedMat);
+      clawMark.scale.set(0.6, 1.8, 0.6);
+      clawMark.position.set(side * 0.34, 0.04, 0);
+      orbit.add(clawMark);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'zephyros') {
+    // ZEPHYROS: Grandes Asas de Falcão dos Ventos + Crista Real de Plumas Celestes + Correntes Ciclônicas
+    const skyWingMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.65,
+      roughness: 0.2,
+    });
+    const whitePlumeMat = new THREE.MeshStandardMaterial({
+      color: 0xe0f2fe,
+      emissive: 0x7dd3fc,
+      emissiveIntensity: 0.75,
+      roughness: 0.15,
+    });
+
+    // Crista de 3 Plumas Aerodinâmicas na Cabeça
+    for (let i = -1; i <= 1; i++) {
+      const crestPlume = new THREE.Mesh(
+        new THREE.ConeGeometry(0.032, i === 0 ? 0.22 : 0.17, 6),
+        i === 0 ? whitePlumeMat : skyWingMat
+      );
+      crestPlume.position.set(i * 0.06, 0.81, -0.02);
+      crestPlume.rotation.set(-0.45, 0, -i * 0.35);
+      linGroup.add(crestPlume);
+    }
+
+    // Grandes Asas Emplumadas de Ave dos Ventos (animadas por lineageWingL / lineageWingR)
+    for (const side of [-1, 1]) {
+      const wGroup = new THREE.Group();
+      wGroup.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      wGroup.position.set(side * 0.08, 0.48, -0.14);
+
+      for (let f = 0; f < 4; f++) {
+        const feather = new THREE.Mesh(
+          new THREE.CapsuleGeometry(0.038 - f * 0.005, 0.26 - f * 0.035, 6, 8),
+          f % 2 === 0 ? whitePlumeMat : skyWingMat
+        );
+        feather.position.set(side * (0.14 + f * 0.065), 0.12 - f * 0.055, -0.02);
+        feather.rotation.z = -side * (0.50 + f * 0.16);
+        wGroup.add(feather);
+      }
+      linGroup.add(wGroup);
+    }
+
+    // Cauda de Penas de Falcão
+    const tailFan = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.02, 0.18), skyWingMat);
+    tailFan.position.set(0, 0.20, -0.20);
+    tailFan.rotation.x = -0.35;
+    linGroup.add(tailFan);
+
+    // Redemoinho Ciclônico Orbitante
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.46, 0);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const windShard = new THREE.Mesh(new THREE.OctahedronGeometry(0.034, 0), whitePlumeMat);
+      windShard.scale.set(1.5, 0.5, 0.5);
+      windShard.position.set(Math.cos(a) * 0.36, 0.04, Math.sin(a) * 0.36);
+      orbit.add(windShard);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'lagomorfo') {
+    // LAGOMORFO: Longas Orelhas de Coelho Erguidas + Cauda Pompom Felpuda + Ovos Dourados/Esmeralda da Fortuna
+    const whiteFurMat = new THREE.MeshStandardMaterial({
+      color: 0xf8fafc,
+      roughness: 0.35,
+    });
+    const pinkEarMat = new THREE.MeshStandardMaterial({
+      color: 0xf472b6,
+      emissive: 0xdb2777,
+      emissiveIntensity: 0.35,
+      roughness: 0.3,
+    });
+    const springGreenMat = new THREE.MeshStandardMaterial({
+      color: 0x34d399,
+      emissive: 0x059669,
+      emissiveIntensity: 0.75,
+      roughness: 0.2,
+    });
+
+    // Longas Orelhas de Coelho no Topo da Cabeça
+    for (const side of [-1, 1]) {
+      const earGroup = new THREE.Group();
+      earGroup.position.set(side * 0.085, 0.84, 0.0);
+      earGroup.rotation.set(-0.1, 0, -side * 0.18);
+
+      const outerEar = new THREE.Mesh(new THREE.CapsuleGeometry(0.036, 0.22, 6, 10), whiteFurMat);
+      outerEar.scale.set(1.0, 1.0, 0.55);
+      earGroup.add(outerEar);
+
+      const innerEar = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.16, 6, 8), pinkEarMat);
+      innerEar.scale.set(1.0, 1.0, 0.4);
+      innerEar.position.z = 0.015;
+      earGroup.add(innerEar);
+
+      const earTip = new THREE.Mesh(new THREE.SphereGeometry(0.034, 8, 8), springGreenMat);
+      earTip.position.y = 0.12;
+      earGroup.add(earTip);
+
+      linGroup.add(earGroup);
+    }
+
+    // Cauda Pompom Redonda e Felpuda nas Costas
+    const cottonTail = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), whiteFurMat);
+    cottonTail.position.set(0, 0.22, -0.18);
+    linGroup.add(cottonTail);
+
+    // Ovos da Fortuna Místicos Orbitantes
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.46, 0);
+    const eggMats = [goldMat, springGreenMat, pinkEarMat];
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const egg = new THREE.Mesh(new THREE.SphereGeometry(0.038, 10, 10), eggMats[i]);
+      egg.scale.set(0.85, 1.25, 0.85);
+      egg.position.set(Math.cos(a) * 0.34, 0.04, Math.sin(a) * 0.34);
+      orbit.add(egg);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'kitsune') {
+    // KITSUNE: Orelhas de Raposa + Leque Majestoso das Nove Caudas Místicas + Chamas Kitsunebi
+    const foxPinkMat = new THREE.MeshStandardMaterial({
+      color: 0xf472b6,
+      emissive: 0xdb2777,
+      emissiveIntensity: 0.65,
+      roughness: 0.25,
+    });
+    const foxTipMat = new THREE.MeshStandardMaterial({
+      color: 0xfef08a,
+      emissive: 0xfacc15,
+      emissiveIntensity: 0.9,
+      roughness: 0.15,
+    });
+    const kitsunebiMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0xec4899,
+      emissiveIntensity: 1.0,
+      roughness: 0.1,
+    });
+
+    // Orelhas de Raposa com pontas douradas + Joia Solar na testa
+    for (const side of [-1, 1]) {
+      const foxEar = new THREE.Mesh(new THREE.ConeGeometry(0.048, 0.17, 5), foxPinkMat);
+      foxEar.position.set(side * 0.12, 0.80, 0.01);
+      foxEar.rotation.set(0.1, 0, -side * 0.26);
+      linGroup.add(foxEar);
+
+      const earTip = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.07, 5), foxTipMat);
+      earTip.position.set(side * 0.14, 0.86, 0.015);
+      earTip.rotation.set(0.1, 0, -side * 0.26);
+      linGroup.add(earTip);
+    }
+
+    const foreheadGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.036, 0), foxTipMat);
+    foreheadGem.position.set(0, 0.75, 0.13);
+    linGroup.add(foreheadGem);
+
+    // Leque das Nove Caudas (4 na esquerda em lineageWingL, 4 na direita em lineageWingR, + 1 central)
+    for (const side of [-1, 1]) {
+      const tailFanGroup = new THREE.Group();
+      tailFanGroup.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      tailFanGroup.position.set(side * 0.06, 0.30, -0.15);
+
+      for (let t = 0; t < 4; t++) {
+        const singleTail = new THREE.Group();
+        const angleZ = -side * (0.28 + t * 0.28);
+        singleTail.rotation.z = angleZ;
+        singleTail.rotation.x = -0.35;
+
+        const bodyMesh = new THREE.Mesh(new THREE.CapsuleGeometry(0.036, 0.18, 6, 8), foxPinkMat);
+        bodyMesh.position.y = 0.12;
+        singleTail.add(bodyMesh);
+
+        const tipMesh = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.10, 6), foxTipMat);
+        tipMesh.position.y = 0.24;
+        singleTail.add(tipMesh);
+
+        tailFanGroup.add(singleTail);
+      }
+      linGroup.add(tailFanGroup);
+    }
+
+    // Nona Cauda Central Imperial
+    const centerTail = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.22, 6, 8), foxTipMat);
+    centerTail.position.set(0, 0.44, -0.20);
+    centerTail.rotation.x = -0.3;
+    linGroup.add(centerTail);
+
+    // Fogos-Fátuos (Kitsunebi) Orbitantes
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.52, 0);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const wisp = new THREE.Mesh(new THREE.OctahedronGeometry(0.038, 0), i % 2 === 0 ? foxPinkMat : kitsunebiMat);
+      wisp.position.set(Math.cos(a) * 0.35, 0.05, Math.sin(a) * 0.35);
+      orbit.add(wisp);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'espectro') {
+    // ESPECTRO: Mortalha Etérea Translúcida + Coroa Fantasmagórica + Almas do Além Orbitantes
+    const spectralVioletMat = new THREE.MeshStandardMaterial({
+      color: 0xa855f7,
+      emissive: 0x7e22ce,
+      emissiveIntensity: 0.85,
+      transparent: true,
+      opacity: 0.78,
+      roughness: 0.15,
+    });
+    const spectralCyanMat = new THREE.MeshStandardMaterial({
+      color: 0x22d3ee,
+      emissive: 0x0891b2,
+      emissiveIntensity: 1.0,
+      transparent: true,
+      opacity: 0.85,
+      roughness: 0.1,
+    });
+
+    // Halo/Coroa Espectral de Almas
+    const ghostHalo = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.018, 8, 24), spectralCyanMat);
+    ghostHalo.name = 'lineageHalo';
+    ghostHalo.rotation.x = Math.PI / 2;
+    ghostHalo.position.set(0, 0.89, 0);
+    linGroup.add(ghostHalo);
+
+    // Mortalhas/Asas Fantasmagóricas Flutuantes nas Costas
+    for (const side of [-1, 1]) {
+      const shroudGroup = new THREE.Group();
+      shroudGroup.name = side < 0 ? 'lineageWingL' : 'lineageWingR';
+      shroudGroup.position.set(side * 0.08, 0.48, -0.14);
+
+      for (let s = 0; s < 3; s++) {
+        const wispTendril = new THREE.Mesh(
+          new THREE.ConeGeometry(0.048 - s * 0.008, 0.28 - s * 0.03, 6),
+          s === 1 ? spectralCyanMat : spectralVioletMat
+        );
+        wispTendril.position.set(side * (0.14 + s * 0.06), 0.08 - s * 0.07, -0.02);
+        wispTendril.rotation.z = -side * (0.45 + s * 0.22);
+        shroudGroup.add(wispTendril);
+      }
+      linGroup.add(shroudGroup);
+    }
+
+    // Orbes de Alma / Fogos-Fátuos do Véu Etéreo
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.46, 0);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const soulOrb = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), i === 0 ? spectralCyanMat : spectralVioletMat);
+      soulOrb.position.set(Math.cos(a) * 0.35, 0.05, Math.sin(a) * 0.35);
+      orbit.add(soulOrb);
+    }
+    linGroup.add(orbit);
+  } else if (lin === 'murideo') {
+    // MURÍDEO: Grandes Orelhas Redondas de Rato + Incisivos + Longa Cauda Sinuosa + Orbes de Veneno Potente
+    const ratFurMat = new THREE.MeshStandardMaterial({
+      color: 0x374151,
+      roughness: 0.55,
+    });
+    const ratPinkMat = new THREE.MeshStandardMaterial({
+      color: 0xfda4af,
+      roughness: 0.45,
+    });
+    const toxicLimeMat = new THREE.MeshStandardMaterial({
+      color: 0x84cc16,
+      emissive: 0x4d7c0f,
+      emissiveIntensity: 0.95,
+      roughness: 0.15,
+    });
+    const toothMat = new THREE.MeshStandardMaterial({
+      color: 0xfefce8,
+      roughness: 0.25,
+    });
+
+    // Grandes Orelhas Redondas nas Laterais da Cabeça
+    for (const side of [-1, 1]) {
+      const earOuter = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.022, 14), ratFurMat);
+      earOuter.rotation.x = Math.PI / 2;
+      earOuter.rotation.z = -side * 0.25;
+      earOuter.position.set(side * 0.16, 0.76, 0.0);
+      linGroup.add(earOuter);
+
+      const earInner = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.048, 0.026, 12), ratPinkMat);
+      earInner.rotation.x = Math.PI / 2;
+      earInner.rotation.z = -side * 0.25;
+      earInner.position.set(side * 0.16, 0.76, 0.005);
+      linGroup.add(earInner);
+
+      // Dentes Incisivos de Roedor
+      const incisor = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.055, 0.018), toothMat);
+      incisor.position.set(side * 0.018, 0.59, 0.155);
+      linGroup.add(incisor);
+    }
+
+    // Frasco de Pestilência nas Costas
+    const plagueVial = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, 0.12, 6, 10), toxicLimeMat);
+    plagueVial.position.set(0, 0.42, -0.17);
+    plagueVial.rotation.z = 0.35;
+    linGroup.add(plagueVial);
+
+    // Longa Cauda Sinuosa de Rato
+    const ratTail = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.34, 8), ratPinkMat);
+    ratTail.position.set(0, 0.18, -0.22);
+    ratTail.rotation.x = -Math.PI * 0.42;
+    ratTail.rotation.z = 0.25;
+    linGroup.add(ratTail);
+
+    // Gotas/Esferas de Veneno Potente Orbitantes
+    const orbit = new THREE.Group();
+    orbit.name = 'lineageOrbit';
+    orbit.position.set(0, 0.46, 0);
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const poisonGlobe = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), toxicLimeMat);
+      poisonGlobe.position.set(Math.cos(a) * 0.34, 0.04, Math.sin(a) * 0.34);
+      orbit.add(poisonGlobe);
+    }
+    linGroup.add(orbit);
   }
 
   return linGroup;

@@ -198,7 +198,7 @@ function swapMiniatureChar(unitFigure: THREE.Group, newModel: THREE.Group, unit:
 
   newModel.name = 'miniatureChar';
 
-  // Apply lineage physical proportions (Dwarf, Orc, Minotaur, Elf, etc.)
+  // Apply lineage physical proportions (Dwarf, Orc, Minotaur, Elf, Centaur, Werewolf, etc.)
   if (unit.faction === 'player' && unit.lineageId) {
     const lin = unit.lineageId;
     if (lin === 'anao') {
@@ -211,6 +211,20 @@ function swapMiniatureChar(unitFigure: THREE.Group, newModel: THREE.Group, unit:
       newModel.scale.multiply(new THREE.Vector3(0.95, 1.05, 0.95));
     } else if (lin === 'feerico') {
       newModel.scale.multiply(new THREE.Vector3(0.92, 0.96, 0.92));
+    } else if (lin === 'centauro') {
+      newModel.scale.multiply(new THREE.Vector3(1.10, 1.05, 1.14));
+    } else if (lin === 'lobisomem') {
+      newModel.scale.multiply(new THREE.Vector3(1.12, 1.07, 1.12));
+    } else if (lin === 'zephyros') {
+      newModel.scale.multiply(new THREE.Vector3(0.95, 1.06, 0.95));
+    } else if (lin === 'lagomorfo') {
+      newModel.scale.multiply(new THREE.Vector3(0.96, 1.03, 0.96));
+    } else if (lin === 'kitsune') {
+      newModel.scale.multiply(new THREE.Vector3(0.96, 1.03, 0.96));
+    } else if (lin === 'espectro') {
+      newModel.scale.multiply(new THREE.Vector3(0.96, 1.06, 0.96));
+    } else if (lin === 'murideo') {
+      newModel.scale.multiply(new THREE.Vector3(0.94, 0.94, 0.98));
     }
   }
 

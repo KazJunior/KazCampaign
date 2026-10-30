@@ -23,7 +23,9 @@ import {
   Skull,
   Sun,
   Dna,
+  Footprints,
 } from 'lucide-react';
+import { ClassLineageAvatar } from './ClassLineageAvatar';
 
 interface ClassUnlockQuestsModalProps {
   progress: PlayerProgress;
@@ -54,6 +56,8 @@ export const ClassUnlockQuestsModal: React.FC<ClassUnlockQuestsModalProps> = ({
         return <Skull size={18} className="text-[#A855F7]" />;
       case 'Sun':
         return <Sun size={18} className="text-[#FFD700]" />;
+      case 'Footprints':
+        return <Footprints size={18} className="text-[#F59E0B]" />;
       case 'Sparkles':
       default:
         return <Sparkles size={18} className="text-[#06B6D4]" />;
@@ -100,7 +104,7 @@ export const ClassUnlockQuestsModal: React.FC<ClassUnlockQuestsModalProps> = ({
               (Desbloqueadas por padrão)
             </span>
             <span className="text-[11px] text-[#FFD700]">
-              As 10 linhagens abaixo são desbloqueadas exclusivamente por estas missões.
+              As {LINEAGE_UNLOCK_QUESTS.length} linhagens abaixo são desbloqueadas exclusivamente por estas missões.
             </span>
           </div>
 
@@ -146,13 +150,14 @@ export const ClassUnlockQuestsModal: React.FC<ClassUnlockQuestsModalProps> = ({
                     </div>
 
                     {/* Target Lineage Identity & Bonus */}
-                    <div className="flex items-center gap-3 bg-[#1B2030]/80 p-2.5 rounded-xl border border-white/5">
-                      <div
-                        className="w-11 h-11 rounded-xl flex items-center justify-center font-bold text-white shadow border border-white/20 shrink-0"
-                        style={{ backgroundColor: lineage?.color || '#FF6B00' }}
+                    <div className="flex items-center gap-3.5 bg-[#1B2030]/80 p-3 rounded-xl border border-white/5">
+                      <ClassLineageAvatar
+                        lineageId={quest.lineageId}
+                        classColor={lineage?.color || '#FF6B00'}
+                        size="md"
                       >
                         {getQuestIcon(quest.iconName)}
-                      </div>
+                      </ClassLineageAvatar>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <h3 className="font-extrabold text-sm text-white truncate" style={{ color: lineage?.color }}>

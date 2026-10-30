@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Sparkles, Check, Flame, Swords, Skull, Sun, Dna } from 'lucide-react';
+import { Sparkles, Check, Flame, Swords, Skull, Sun, Dna, Footprints, Shield, Target } from 'lucide-react';
 import { getLineageById } from '../data/lineages';
 import { soundManager } from '../utils/audio';
+import { ClassLineageAvatar } from './ClassLineageAvatar';
 
 interface LineageUnlockCelebrationModalProps {
   lineageIds: string[];
@@ -30,15 +31,23 @@ export const LineageUnlockCelebrationModal: React.FC<LineageUnlockCelebrationMod
   const getLineageIcon = (iconName: string) => {
     switch (iconName) {
       case 'Flame':
-        return <Flame size={48} className="text-[#FF6B00]" />;
+        return <Flame size={30} className="text-[#FF6B00]" />;
       case 'Swords':
-        return <Swords size={48} className="text-[#EF4444]" />;
+        return <Swords size={30} className="text-[#EF4444]" />;
       case 'Skull':
-        return <Skull size={48} className="text-[#A855F7]" />;
+        return <Skull size={30} className="text-[#A855F7]" />;
       case 'Sun':
-        return <Sun size={48} className="text-[#FFD700]" />;
+        return <Sun size={30} className="text-[#FFD700]" />;
+      case 'Footprints':
+        return <Footprints size={30} className="text-[#F59E0B]" />;
+      case 'Shield':
+        return <Shield size={30} className="text-[#F59E0B]" />;
+      case 'Target':
+        return <Target size={30} className="text-[#10B981]" />;
+      case 'Sparkles':
+        return <Sparkles size={30} style={{ color: lineage.color }} />;
       default:
-        return <Dna size={48} style={{ color: lineage.color }} />;
+        return <Dna size={30} style={{ color: lineage.color }} />;
     }
   };
 
@@ -60,13 +69,16 @@ export const LineageUnlockCelebrationModal: React.FC<LineageUnlockCelebrationMod
           <Sparkles size={16} /> NOVA LINHAGEM DESBLOQUEADA!
         </div>
 
-        {/* Emblem */}
-        <div className="flex justify-center">
-          <div
-            className="w-24 h-24 rounded-3xl flex items-center justify-center shadow-2xl border-2 border-white/20 transform hover:scale-105 transition-transform"
-            style={{ backgroundColor: `${lineage.color}25`, borderColor: lineage.color }}
-          >
-            {getLineageIcon(lineage.iconName)}
+        {/* Emblem with Lineage Visuals */}
+        <div className="flex justify-center py-2">
+          <div className="transform scale-125 hover:scale-135 transition-transform">
+            <ClassLineageAvatar
+              lineageId={lineage.id}
+              classColor={lineage.color}
+              size="xl"
+            >
+              {getLineageIcon(lineage.iconName)}
+            </ClassLineageAvatar>
           </div>
         </div>
 
