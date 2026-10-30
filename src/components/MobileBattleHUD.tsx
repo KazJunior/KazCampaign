@@ -551,8 +551,8 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                               {typeName}
                             </span>
                             {isChargingUltimate && (
-                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-purple-500/25 text-purple-300 border border-purple-400">
-                                ⚡ {currentUses}/{reqUses}
+                              <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#E65353]/20 text-[#E65353] border border-[#E65353]/40">
+                                CD: {Math.max(1, reqUses - currentUses)} Hab. ({currentUses}/{reqUses})
                               </span>
                             )}
                             {!isChargingUltimate && reqUses > 0 && (
@@ -560,7 +560,7 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                                 ULTIMATE!
                               </span>
                             )}
-                            {isOnCd && (
+                            {isOnCd && reqUses === 0 && (
                               <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#E65353]/20 text-[#E65353] border border-[#E65353]/40">
                                 CD: {skill.currentCooldown}T
                               </span>

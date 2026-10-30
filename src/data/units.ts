@@ -728,6 +728,10 @@ export function createPlayerUnit(
       if (evolved.secondaryStatusEffect?.type === 'slow') {
         evolved.secondaryStatusEffect = { ...evolved.secondaryStatusEffect, duration: Math.min(2, evolved.secondaryStatusEffect.duration), value: 1 };
       }
+      if (evolved.requiredSkillUses && evolved.requiredSkillUses > 0) {
+        evolved.cooldownMax = evolved.requiredSkillUses;
+        evolved.currentCooldown = evolved.requiredSkillUses;
+      }
       return evolved;
     });
 
@@ -766,6 +770,7 @@ export function createPlayerUnit(
       : [],
     damageDealt: 0,
     kills: 0,
+    skillUsesCount: 0,
     lineageId: lineage.id,
     lineageName: lineage.name,
     lineageIcon: lineage.iconName,

@@ -507,6 +507,13 @@ export function App() {
           if (isHealing) cd = Math.max(2, cd);
           if (isTaunt) cd = Math.max(3, cd);
           if (isStun) cd = Math.max(3, cd);
+          if (evolved.requiredSkillUses && evolved.requiredSkillUses > 0) {
+            return {
+              ...evolved,
+              currentCooldown: Math.max(0, evolved.requiredSkillUses - (u.skillUsesCount || 0)),
+              cooldownMax: evolved.requiredSkillUses,
+            };
+          }
           return {
             ...evolved,
             currentCooldown: s.currentCooldown ?? 0,
@@ -780,6 +787,13 @@ export function App() {
           if (isHealing) cd = Math.max(2, cd);
           if (isTaunt) cd = Math.max(3, cd);
           if (isStun) cd = Math.max(3, cd);
+          if (evolved.requiredSkillUses && evolved.requiredSkillUses > 0) {
+            return {
+              ...evolved,
+              currentCooldown: Math.max(0, evolved.requiredSkillUses - (u.skillUsesCount || 0)),
+              cooldownMax: evolved.requiredSkillUses,
+            };
+          }
           return {
             ...evolved,
             currentCooldown: s.currentCooldown ?? 0,
@@ -1157,6 +1171,7 @@ export function App() {
         if (u.faction === 'player') {
           return {
             ...u,
+            skillUsesCount: 5,
             skills: u.skills.map((s) => ({ ...s, currentCooldown: 0 })),
           };
         }
@@ -1179,7 +1194,11 @@ export function App() {
             .filter(Boolean)
             .map((sk) => {
               const evolved = getEvolvedSkill(sk, skLvl);
-              return { ...evolved, currentCooldown: 0 };
+              const reqUses = evolved.requiredSkillUses || 0;
+              return {
+                ...evolved,
+                currentCooldown: reqUses > 0 ? Math.max(0, reqUses - (u.skillUsesCount || 0)) : 0,
+              };
             });
           return {
             ...u,
@@ -3210,13 +3229,17 @@ export function App() {
         updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), eff];
       }
 
-      const updatedSkills = selectedUnit.skills.map((s) =>
-        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
-      );
+      const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedSkills = selectedUnit.skills.map((s) => {
+        if (s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+          return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+        }
+        return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+      });
 
       const updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
-          ? { ...u, x: destX, y: destY, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects }
+          ? { ...u, x: destX, y: destY, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects, skillUsesCount: nextSkillUsesCount }
           : u
       );
 
@@ -3602,13 +3625,17 @@ export function App() {
         ];
       }
 
-      const updatedSkills = selectedUnit.skills.map((s) =>
-        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
-      );
+      const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedSkills = selectedUnit.skills.map((s) => {
+        if (s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+          return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+        }
+        return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+      });
 
       const updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
-          ? { ...u, currentHp: currentUnitHp, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects }
+          ? { ...u, currentHp: currentUnitHp, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects, skillUsesCount: nextSkillUsesCount }
           : u
       );
 
@@ -4539,7 +4566,19 @@ export function App() {
           addFloatingNumber(finalAttackerX, finalAttackerY, '🦊 Astúcia da Kitsune (Cooldown Restaurado)!', 'status', '#F472B6');
         }
 
+        const isLayingRubras = skill?.id === 'lagrimas_rubras' || Boolean(skill?.requiredSkillUses && skill.requiredSkillUses > 0);
+        const nextSkillUsesCount = isLayingRubras
+          ? 0
+          : (u.skillUsesCount || 0) + (skill ? 1 : 0);
+
         const updatedSkills = u.skills.map((s) => {
+          if (s.requiredSkillUses && s.requiredSkillUses > 0) {
+            return {
+              ...s,
+              currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount),
+              lastUsedTurn: skill && s.id === skill.id ? turnNumberRef.current : s.lastUsedTurn,
+            };
+          }
           if (skill && s.id === skill.id) {
             if (isExecutionKill && (skill.resetsCooldownOnKill || skill.id === 'avanco_dimensional')) {
               return { ...s, currentCooldown: 0 };
@@ -4551,11 +4590,6 @@ export function App() {
           }
           return s;
         });
-
-        const isLayingRubras = skill?.id === 'lagrimas_rubras';
-        const nextSkillUsesCount = isLayingRubras
-          ? 0
-          : (u.skillUsesCount || 0) + (skill ? 1 : 0);
 
         const isNefalimExtra =
           !isExecutionKill &&
@@ -6472,6 +6506,7 @@ export function App() {
             ...u,
             statusEffects: updatedEffects,
             skills: u.skills.map((s) => {
+              if (s.requiredSkillUses && s.requiredSkillUses > 0) return s;
               if (s.lastUsedTurn === aiTurnNumber) return s;
               return {
                 ...s,
@@ -6598,6 +6633,7 @@ export function App() {
             centaurMovedTilesThisTurn: 0,
             statusEffects: updatedEffects,
             skills: u.skills.map((s) => {
+              if (s.requiredSkillUses && s.requiredSkillUses > 0) return s;
               if (s.lastUsedTurn === currentTurn) return s;
               return {
                 ...s,
@@ -7119,9 +7155,10 @@ export function App() {
           if (s.id === chosenSkill.id) {
             const base = SKILLS[s.id] || s;
             const evolved = getEvolvedSkill(base, targetLvl);
+            const reqUses = evolved.requiredSkillUses || 0;
             return {
               ...evolved,
-              currentCooldown: s.currentCooldown ?? 0,
+              currentCooldown: reqUses > 0 ? Math.max(0, reqUses - (u.skillUsesCount || 0)) : (s.currentCooldown ?? 0),
             };
           }
           return s;
@@ -7150,7 +7187,8 @@ export function App() {
         addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Silenciado!', 'status', '#A855F7');
         return;
       }
-      if (sk.currentCooldown > 0) return;
+      const reqUses = sk.requiredSkillUses || 0;
+      if (sk.currentCooldown > 0 || (reqUses > 0 && (selectedUnit.skillUsesCount || 0) < reqUses)) return;
 
       if (activeSkill?.id === sk.id) {
         // Toggle off
@@ -7248,7 +7286,8 @@ export function App() {
         if (digitMatch && !selectedUnit.hasAttacked && !isStunned) {
           const index = parseInt(digitMatch[1], 10) - 1;
           const skill = selectedUnit.skills?.[index];
-          if (skill && skill.currentCooldown === 0) {
+          const reqUses = skill?.requiredSkillUses || 0;
+          if (skill && skill.currentCooldown === 0 && (reqUses === 0 || (selectedUnit.skillUsesCount || 0) >= reqUses)) {
             e.preventDefault();
             handleSelectSkill(skill);
             return;

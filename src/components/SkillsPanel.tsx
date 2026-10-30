@@ -231,9 +231,12 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
         ) : (
           skills.map((skill, index) => {
             const isSelected = activeSkill?.id === skill.id;
-            const isOnCd = skill.currentCooldown > 0;
+            const reqUses = skill.requiredSkillUses || 0;
+            const currentUses = selectedUnit.skillUsesCount || 0;
+            const isChargingUltimate = reqUses > 0 && currentUses < reqUses;
+            const isOnCd = skill.currentCooldown > 0 || isChargingUltimate;
             const isSilenced = selectedUnit.statusEffects?.some((e) => e.type === 'silence' && e.duration > 0);
-            const disabled = !isAlly || !canAct || isOnCd || isSilenced;
+            const disabled = !isAlly || !canAct || isOnCd || isSilenced || isChargingUltimate;
 
             // Damage type badge color
             let badgeBg = 'bg-[#4C8DFF]/20 text-[#4C8DFF] border-[#4C8DFF]/30';
@@ -302,9 +305,20 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#A855F7] shrink-0">
                           Silenciado
                         </span>
+                      ) : isChargingUltimate ? (
+                        <span
+                          className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#E65353]/20 border border-[#E65353]/40 text-[#E65353] shrink-0"
+                          title={`Requer ${reqUses} habilidades utilizadas (${currentUses}/${reqUses})`}
+                        >
+                          CD: {Math.max(1, reqUses - currentUses)} Hab. ({currentUses}/{reqUses})
+                        </span>
                       ) : isOnCd ? (
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#E65353]/20 border border-[#E65353]/40 text-[#E65353] shrink-0">
                           {skill.currentCooldown}T CD
+                        </span>
+                      ) : reqUses > 0 ? (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-red-500/25 border border-red-400 text-red-200 animate-pulse shrink-0">
+                          ULTIMATE!
                         </span>
                       ) : (
                         <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-[#43C878]/20 border border-[#43C878]/40 text-[#43C878] shrink-0">

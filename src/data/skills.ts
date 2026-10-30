@@ -3221,8 +3221,8 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 0,
     aoeRadius: 2,
     aoeType: 'square_5x5',
-    cooldownMax: 1,
-    currentCooldown: 0,
+    cooldownMax: 5,
+    currentCooldown: 5,
     targetType: 'self',
     defenseIgnoreRatio: 0.30,
     ignoresShield: true,
@@ -6833,6 +6833,10 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     if (clone.defenseIgnoreRatio && clone.defenseIgnoreRatio > 0.20) {
       clone.defenseIgnoreRatio = 0.20;
     }
+    if (clone.requiredSkillUses && clone.requiredSkillUses > 0) {
+      clone.cooldownMax = clone.requiredSkillUses;
+      clone.currentCooldown = clone.requiredSkillUses;
+    }
     return clone;
   }
 
@@ -7070,6 +7074,10 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
   }
 
   clone.description = evolvedDesc;
+  if (clone.requiredSkillUses && clone.requiredSkillUses > 0) {
+    clone.cooldownMax = clone.requiredSkillUses;
+    clone.currentCooldown = clone.requiredSkillUses;
+  }
 
   return clone;
 }
