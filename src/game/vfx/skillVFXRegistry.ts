@@ -137,7 +137,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
     shakeIntensity: 0.16,
   }),
   lagrimas_rubras: defVFX('lagrimas_rubras', 'crimson_horizon', {
-    durationMs: 1100,
+    durationMs: 2800,
     casterMotion: 'levitate_cast',
     primaryColor: 0xdc2626,
     secondaryColor: 0x9d4edd,
@@ -146,9 +146,9 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
     castRing: 1.8,
     crater: true,
     particleType: 'shadow',
-    burstCount: 36,
-    shakeIntensity: 0.28,
-    shakeDuration: 480,
+    burstCount: 48,
+    shakeIntensity: 0.34,
+    shakeDuration: 750,
   }),
   passo_das_mil_sombras: defVFX('passo_das_mil_sombras', 'void_miasma', {
     durationMs: 500,

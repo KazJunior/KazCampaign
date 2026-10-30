@@ -559,6 +559,8 @@ export function App() {
   const [targetAoEPoint, setTargetAoEPoint] = useState<Point | null>(null);
 
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNumber[]>([]);
+  const [isVoidColorDrainActive, setIsVoidColorDrainActive] = useState(false);
+  const voidColorDrainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -3753,6 +3755,17 @@ export function App() {
       await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius, skill, targetAoEPoint || undefined);
     }
 
+    if (skill?.id === 'lagrimas_rubras') {
+      soundManager.playVictory();
+      if (voidColorDrainTimerRef.current) {
+        clearTimeout(voidColorDrainTimerRef.current);
+      }
+      setIsVoidColorDrainActive(true);
+      voidColorDrainTimerRef.current = setTimeout(() => {
+        setIsVoidColorDrainActive(false);
+      }, 3200);
+    }
+
     // Ice / Obstacle Creation (Mago de Gelo)
     if (skill?.createsObstacle) {
       const obsType = skill.createsObstacle;
@@ -4545,11 +4558,6 @@ export function App() {
         ...finalAttackerEffects.filter((e) => e.type !== 'invisible'),
         { type: 'invisible', duration: 1, value: 1, appliedTurn: turnNumberRef.current },
       ];
-    }
-
-    if (skill?.id === 'lagrimas_rubras') {
-      soundManager.playVictory();
-      addFloatingNumber(finalAttackerX, finalAttackerY, '🌌 O MUNDO PERDE AS CORES...', 'status', '#EF4444');
     }
 
     updatedUnits = updatedUnits.map((u) => {
@@ -7596,7 +7604,12 @@ export function App() {
   const enemiesCount = units.filter((u) => u.faction === 'enemy' && !u.isDead).length;
 
   return (
-    <div className="h-screen w-screen bg-[#10131C] text-[#F3F4F8] flex flex-col overflow-hidden font-sans select-none">
+    <div className="h-screen w-screen bg-[#10131C] text-[#F3F4F8] flex flex-col overflow-hidden font-sans select-none relative">
+      <div
+        className={`h-full w-full flex flex-col overflow-hidden transition-all ${
+          isVoidColorDrainActive ? 'grayscale contrast-125 brightness-90 duration-75' : 'duration-500'
+        }`}
+      >
       <TopBar
         levelNumber={isTrainingMode ? 9999 : isDailyMode ? 9000 : currentLevel?.id || 1}
         levelName={isTrainingMode ? 'Campo de Treinamento' : isDailyMode ? 'Fase Diária' : currentLevel?.name || 'Fase'}
@@ -8010,6 +8023,25 @@ export function App() {
           onSaveSkills={handleSaveLiveTrainingSkills}
           onClose={() => setShowLiveTrainingSkillPicker(false)}
         />
+      )}
+      </div>
+
+      {isVoidColorDrainActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center">
+          <div className="absolute inset-0 bg-black/25 backdrop-grayscale" />
+          <div className="relative flex flex-col items-center gap-3 animate-pulse">
+            <span
+              className="text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-[0.15em] text-[#C77DFF] select-none"
+              style={{
+                textShadow:
+                  '0 0 20px rgba(168, 85, 247, 0.95), 0 0 45px rgba(147, 51, 234, 0.85), 0 0 80px rgba(88, 28, 135, 0.9), 0 4px 12px rgba(0, 0, 0, 0.95)',
+              }}
+            >
+              O MUNDO PERDE AS CORES...
+            </span>
+            <div className="h-1 w-64 sm:w-96 rounded-full bg-gradient-to-r from-transparent via-[#A855F7] to-transparent shadow-[0_0_20px_#A855F7]" />
+          </div>
+        </div>
       )}
     </div>
   );

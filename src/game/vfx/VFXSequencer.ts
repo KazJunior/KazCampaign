@@ -1708,16 +1708,16 @@ export class VFXSequencer {
     horizon.position.y = 0.06;
     group.add(horizon);
 
-    // 3. 18 Criss-Crossing Dimensional Crimson Slash Threads across the 5x5 space
+    // 3. 28 Criss-Crossing Dimensional Crimson Slash Threads across the 5x5 space
     const slashLines: THREE.Line[] = [];
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 28; i++) {
       const a1 = Math.random() * Math.PI * 2;
       const a2 = a1 + Math.PI + (Math.random() - 0.5) * 1.1;
       const p1 = new THREE.Vector3(Math.cos(a1) * domeRad, 0.15 + Math.random() * 1.8, Math.sin(a1) * domeRad);
       const p2 = new THREE.Vector3(Math.cos(a2) * domeRad, 0.15 + Math.random() * 1.8, Math.sin(a2) * domeRad);
       const lGeo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
       const lMat = new THREE.LineBasicMaterial({
-        color: i % 3 === 0 ? 0xffffff : primary,
+        color: i % 3 === 0 ? 0xffffff : i % 3 === 1 ? primary : secondary,
         transparent: true,
         opacity: 0,
       });
@@ -1739,19 +1739,24 @@ export class VFXSequencer {
       duration,
       isComplete: false,
       onUpdate: (progress) => {
-        if (progress < 0.25) {
-          // Phase 1: World loses color (dome expands rapidly)
-          const t = progress / 0.25;
-          dome.scale.setScalar(t);
-          horizon.scale.setScalar(t);
-        } else if (progress < 0.78) {
-          // Phase 2: Flurry of crimson horizon threads & falling crimson tears
-          const flurryP = (progress - 0.25) / 0.53;
+        if (progress < 0.28) {
+          // Phase 1: World loses color (dome expands slowly and dramatically)
+          const t = progress / 0.28;
+          const smoothT = 1 - Math.pow(1 - t, 2);
+          dome.scale.setScalar(smoothT);
+          horizon.scale.setScalar(smoothT);
+          horizon.rotation.z = progress * Math.PI * 2;
+        } else if (progress < 0.80) {
+          // Phase 2: Deliberate flurry of crimson horizon threads & falling crimson tears
+          dome.scale.setScalar(1);
+          horizon.scale.setScalar(1);
+          horizon.rotation.z = progress * Math.PI * 2;
+          const flurryP = (progress - 0.28) / 0.52;
           slashLines.forEach((line, idx) => {
             const appearT = idx / slashLines.length;
             const mat = line.material as THREE.LineBasicMaterial;
             if (flurryP >= appearT) {
-              mat.opacity = Math.sin(Math.min(1, (flurryP - appearT) * 3) * Math.PI);
+              mat.opacity = Math.sin(Math.min(1, (flurryP - appearT) * 2.4) * Math.PI);
             }
           });
 
@@ -1759,14 +1764,14 @@ export class VFXSequencer {
           for (let k = 0; k < 2; k++) {
             const rx = center.x + (Math.random() - 0.5) * domeRad * 1.6;
             const rz = center.z + (Math.random() - 0.5) * domeRad * 1.6;
-            this.deps.spawnParticleDot(rx, 0.3 + Math.random() * 1.5, rz, Math.random() > 0.3 ? primary : secondary, 0.055, 0.04);
+            this.deps.spawnParticleDot(rx, 0.3 + Math.random() * 1.5, rz, Math.random() > 0.3 ? primary : secondary, 0.055, 0.032);
           }
         } else {
-          // Phase 3: Final Horizon Cleave shatters the dome
-          const endT = (progress - 0.78) / 0.22;
+          // Phase 3: Final Horizon Cleave shatters the dome in slow motion
+          const endT = (progress - 0.80) / 0.20;
           giantSlash.visible = true;
-          giantSlash.rotation.y += 0.35;
-          giantSlash.scale.setScalar(0.8 + endT * 0.5);
+          giantSlash.rotation.y += 0.14;
+          giantSlash.scale.setScalar(0.8 + endT * 0.55);
           domeMat.opacity = Math.max(0, 0.72 * (1 - endT));
           horizonMat.opacity = Math.max(0, 0.95 * (1 - endT));
         }
