@@ -4713,7 +4713,31 @@ export function App() {
             );
           }
 
-          // Puxa todos os heróis sobreviventes para casas adjacentes a Astaroth (sem deixar poças)
+          // Espalha poças de corrupção ao redor de Astaroth (área 3x3 ao seu redor, 3 turnos)
+          const puddleTiles: { x: number; y: number }[] = [];
+          for (let dy = -1; dy <= 1; dy++) {
+            for (let dx = -1; dx <= 1; dx++) {
+              const px = freshMonster.x + dx;
+              const py = freshMonster.y + dy;
+              if (px >= 0 && px < grid[0].length && py >= 0 && py < grid.length && grid[py][px].isWalkable) {
+                puddleTiles.push({ x: px, y: py });
+              }
+            }
+          }
+          if (puddleTiles.length > 0) {
+            setGrid((prevGrid) =>
+              prevGrid.map((row, rY) =>
+                row.map((cell, cX) => {
+                  if (puddleTiles.some((pt) => pt.x === cX && pt.y === rY)) {
+                    return { ...cell, corruptionTurns: 3 };
+                  }
+                  return cell;
+                })
+              )
+            );
+          }
+
+          // Puxa todos os heróis sobreviventes para casas adjacentes a Astaroth
           const survivingHeroes = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
           if (survivingHeroes.length > 0) {
             const adjacentOffsets = [
@@ -5009,7 +5033,15 @@ export function App() {
 
         // Marca que o boss utilizou sua habilidade única de 50% HP (ativa 1 única vez por combate)
         currentUnits = currentUnits.map((u) =>
-          u.id === freshMonster.id ? { ...u, hasUsedHalfHpSkill: true } : u
+          u.id === freshMonster.id
+            ? {
+                ...u,
+                hasUsedHalfHpSkill: true,
+                skills: u.skills.map((s) =>
+                  s.id === bossSkill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
+                ),
+              }
+            : u
         );
         setUnits([...currentUnits]);
 
@@ -6068,7 +6100,7 @@ export function App() {
           if (cell.corruptionTurns && cell.corruptionTurns > 0) {
             changed = true;
             const newTurns = cell.corruptionTurns - 1;
-            updatedCell.corruptionTurns = newTurns > 0 ? newTurns : undefined;
+            updatedCell = { ...updatedCell, corruptionTurns: newTurns > 0 ? newTurns : undefined };
           }
           if (cell.mistTurns && cell.mistTurns > 0) {
             changed = true;

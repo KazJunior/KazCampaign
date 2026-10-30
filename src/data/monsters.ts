@@ -1528,6 +1528,9 @@ export function createMonsterUnit(
 
       // Bosses e Mini Bosses preservam seus cooldowns e efeitos específicos configurados
       if (def.isBoss || def.isMiniBoss) {
+        if (clone.id.startsWith('boss_') || clone.cooldownMax >= 90) {
+          clone.currentCooldown = clone.cooldownMax;
+        }
         return clone;
       }
 
@@ -1600,7 +1603,7 @@ export function createMonsterUnit(
     def: unitDef,
     res,
     // Aumento do alcance de movimentação a partir da Fase 10 (+1 MOV tanto para bosses quanto monstros normais, máximo de 4 casas)
-    mov: (typeId === 'cristal_da_luz' || typeId === 'cristal_das_trevas') ? 0 : Math.min(4, def.mov + (levelOffset >= 9 ? 1 : 0)),
+    mov: (typeId === 'cristal_da_luz' || typeId === 'cristal_das_trevas') ? 0 : Math.min(4, def.mov + (!isDailyDungeon && levelOffset >= 9 ? 1 : 0)),
     range: def.range,
     x,
     y,

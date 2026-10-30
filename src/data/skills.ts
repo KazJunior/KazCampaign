@@ -4300,7 +4300,7 @@ export const SKILLS: Record<string, Skill> = {
   boss_astaroth_cataclismo: {
     id: 'boss_astaroth_cataclismo',
     name: 'Cataclismo do Abismo (Ultimate)',
-    description: 'Habilidade 5 (Ultimate): Causa dano mágico global devastador (200%) em todos os heróis no mapa e puxa todos os inimigos sobreviventes para casas adjacentes a Astaroth. Não deixa poças.',
+    description: 'Habilidade 5 (Ultimate): Causa dano mágico global devastador (200%) em todos os heróis no mapa, puxa todos os sobreviventes para casas adjacentes a Astaroth e espalha poças de corrupção ao seu redor (3 turnos).',
     damageType: 'magical',
     category: 'attack',
     power: 2.0,
@@ -4308,10 +4308,10 @@ export const SKILLS: Record<string, Skill> = {
     rangeMax: 99,
     aoeRadius: 99,
     cooldownMax: 99,
-    currentCooldown: 0,
+    currentCooldown: 99,
     targetType: 'enemy',
     pullToAdjacent: true,
-    leavesCorruptionPuddle: false,
+    leavesCorruptionPuddle: true,
     iconName: 'Flame',
   },
   vulcanus_golpe_esmagador: {

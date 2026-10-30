@@ -78,11 +78,11 @@ check(
 
 // 7. Habilidade 5 (Ultimate): Dano global, puxa para casas adjacentes, NÃO deixa poças
 check(
-  'Habilidade 5 (boss_astaroth_cataclismo): Dano global 200% mágico, pullToAdjacent: true, leavesCorruptionPuddle: false',
+  'Habilidade 5 (boss_astaroth_cataclismo): Dano global 200% mágico, pullToAdjacent: true, leavesCorruptionPuddle: true',
   skillsContent.includes("id: 'boss_astaroth_cataclismo'") &&
   skillsContent.includes("power: 2.0") &&
   skillsContent.includes("pullToAdjacent: true") &&
-  skillsContent.includes("leavesCorruptionPuddle: false")
+  skillsContent.includes("leavesCorruptionPuddle: true")
 );
 
 // 8. Cooldowns preservation for bosses in createMonsterUnit
