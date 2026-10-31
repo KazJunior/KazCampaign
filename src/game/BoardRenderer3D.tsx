@@ -549,11 +549,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
     // 6. Selected Unit Runic Glow Ring
     if (selectedUnit && !selectedUnit.isDead) {
-      const isLeviathan = selectedUnit.avatarKey === 'void_leviathan_boss';
       const isBoss = selectedUnit.isBoss || selectedUnit.isMiniBoss;
-      const ringRadiusInner = isLeviathan ? 1.05 : isBoss ? 0.58 : 0.36;
-      const ringRadiusOuter = isLeviathan ? 1.18 : isBoss ? 0.68 : 0.46;
-      const ringGeo = new THREE.RingGeometry(ringRadiusInner, ringRadiusOuter, 32);
+      const ringGeo = new THREE.RingGeometry(isBoss ? 0.58 : 0.36, isBoss ? 0.68 : 0.46, 32);
       ringGeo.rotateX(-Math.PI / 2);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0xfacc15,
@@ -609,9 +606,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
       // Invisible Hit Collider for accurate 3D click & hover picking (compact body footprint)
       const isBoss = unit.isBoss || unit.isMiniBoss;
-      const isLeviathan = unit.avatarKey === 'void_leviathan_boss';
-      const colliderRadius = isLeviathan ? 1.15 : isBoss ? 0.30 : 0.22;
-      const colliderHeight = isLeviathan ? 2.6 : isBoss ? 0.65 : 0.48;
+      const colliderRadius = isBoss ? 0.30 : 0.22;
+      const colliderHeight = isBoss ? 0.65 : 0.48;
       const hitColliderGeo = new THREE.CylinderGeometry(colliderRadius, colliderRadius, colliderHeight, 12);
       const hitColliderMat = new THREE.MeshBasicMaterial({
         transparent: true,
@@ -1206,7 +1202,7 @@ function createUnitHpBar(unit: Unit): THREE.Group {
   hpGroup.userData = { isHpBar: true, unitId: unit.id, unitX: unit.x, unitY: unit.y };
 
   // Height above unit head
-  const barY = unit.avatarKey === 'void_leviathan_boss' ? 2.65 : unit.isBoss ? 2.15 : unit.isMiniBoss ? 1.85 : 1.48;
+  const barY = unit.isBoss ? 2.15 : unit.isMiniBoss ? 1.85 : 1.48;
   hpGroup.position.set(0, barY, 0);
 
   // Background frame (clickable for unit targeting)

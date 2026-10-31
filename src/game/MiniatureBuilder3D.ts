@@ -44,10 +44,8 @@ function createMiniaturePedestal(unit: Unit): THREE.Group {
   const baseGroup = new THREE.Group();
   const isPlayer = unit.faction === 'player';
   const isBoss = unit.isBoss || unit.isMiniBoss;
-  const isLeviathan = unit.avatarKey === 'void_leviathan_boss';
-
-  const radiusTop = isLeviathan ? 1.05 : isBoss ? 0.58 : 0.38;
-  const radiusBottom = isLeviathan ? 1.15 : isBoss ? 0.64 : 0.42;
+  const radiusTop = isBoss ? 0.58 : 0.38;
+  const radiusBottom = isBoss ? 0.64 : 0.42;
   const height = 0.075;
 
   // Base platform
@@ -3409,348 +3407,319 @@ function buildChimeraGoatMini(group: THREE.Group) {
 // 28. VOID LEVIATHAN BOSS (Ato 4 Boss Poderoso - Cosmic Serpent)
 // -------------------------------------------------------------
 function buildVoidLeviathanBossMini(group: THREE.Group) {
-  // --- Materials ---
-  const cosmicSkin = new THREE.MeshStandardMaterial({
-    color: 0x090d16,
-    roughness: 0.35,
-    metalness: 0.7,
+  // --- Materials inspired by the Abyssal Leviathan Concept Art ---
+  const chitinMat = new THREE.MeshStandardMaterial({
+    color: 0x09262b, // Deep aquatic abyssal teal-slate carapace
+    roughness: 0.28,
+    metalness: 0.72,
   });
-  const carapaceMat = new THREE.MeshStandardMaterial({
-    color: 0x2e1065, // Imperial Void Purple Chitin
-    roughness: 0.22,
-    metalness: 0.85,
+  const fleshMat = new THREE.MeshStandardMaterial({
+    color: 0x061c20, // Dark organic sea-reptile flesh
+    roughness: 0.45,
+    metalness: 0.4,
   });
   const bellyMat = new THREE.MeshStandardMaterial({
-    color: 0x0369a1, // Deep Oceanic Abyssal Scales
-    roughness: 0.38,
-    metalness: 0.5,
+    color: 0x0f4c4a, // Murky mossy-teal / bio-organic ventral scales
+    roughness: 0.42,
+    metalness: 0.3,
+  });
+  const bioGlowMat = new THREE.MeshStandardMaterial({
+    color: 0x14b8a6,
+    emissive: 0x0d9488,
+    emissiveIntensity: 1.6,
+    roughness: 0.2,
   });
   const finMat = new THREE.MeshStandardMaterial({
-    color: 0x38bdf8,
-    emissive: 0x0284c7,
-    emissiveIntensity: 1.4,
+    color: 0x0f766e, // Translucent aquatic webbed fin membrane
+    emissive: 0x115e59,
+    emissiveIntensity: 0.9,
     transparent: true,
     opacity: 0.82,
     side: THREE.DoubleSide,
-    roughness: 0.15,
+    roughness: 0.25,
   });
-  const finWebMat = new THREE.MeshStandardMaterial({
-    color: 0x6366f1,
-    emissive: 0x4338ca,
-    emissiveIntensity: 1.5,
-    transparent: true,
-    opacity: 0.75,
-    side: THREE.DoubleSide,
+  const spineMat = new THREE.MeshStandardMaterial({
+    color: 0x041619, // Dark chitinous spikes and horns
+    metalness: 0.85,
+    roughness: 0.2,
   });
-  const voidEye = new THREE.MeshStandardMaterial({
-    color: 0x22d3ee,
-    emissive: 0x00f0ff,
-    emissiveIntensity: 3.0,
-    roughness: 0.1,
-  });
-  const coreMat = new THREE.MeshStandardMaterial({
-    color: 0xd8b4fe,
-    emissive: 0x9333ea,
-    emissiveIntensity: 3.2,
+  const eyeMat = new THREE.MeshStandardMaterial({
+    color: 0x2dd4bf, // Piercing bioluminescent pale cyan eye
+    emissive: 0x5eead4,
+    emissiveIntensity: 2.8,
     roughness: 0.1,
   });
   const fangMat = new THREE.MeshStandardMaterial({
-    color: 0xf8fafc,
-    emissive: 0x38bdf8,
-    emissiveIntensity: 0.4,
-    roughness: 0.1,
-    metalness: 0.3,
-  });
-  const hornMat = new THREE.MeshStandardMaterial({
-    color: 0x050811,
+    color: 0xe0f2fe, // Translucent ivory-cyan sharp raptorial talons/fangs
+    emissive: 0x14b8a6,
+    emissiveIntensity: 0.35,
     roughness: 0.15,
-    metalness: 0.95,
-  });
-  const runeNodeMat = new THREE.MeshStandardMaterial({
-    color: 0x00f0ff,
-    emissive: 0x0284c7,
-    emissiveIntensity: 2.6,
-    roughness: 0.2,
+    metalness: 0.4,
   });
 
-  // --- Serpentine Spine Path (28 Segments Spanning 4 Spaces: ~2.1 x 2.1 area) ---
-  const spinePoints: THREE.Vector3[] = [
-    // Tail Tip & Caudal Base (Curled in quadrant -X, -Z)
-    new THREE.Vector3(-0.80, 0.32, -0.75),
-    new THREE.Vector3(-0.95, 0.24, -0.45),
-    new THREE.Vector3(-1.02, 0.18, -0.10),
-    // Perimeter Base Outer Coils traversing all 4 tiles
-    new THREE.Vector3(-0.98, 0.16, 0.30),
-    new THREE.Vector3(-0.80, 0.16, 0.70),
-    new THREE.Vector3(-0.45, 0.17, 0.95),
-    new THREE.Vector3(-0.05, 0.18, 1.02),
-    new THREE.Vector3(0.40, 0.19, 0.95),
-    new THREE.Vector3(0.80, 0.20, 0.72),
-    new THREE.Vector3(1.00, 0.22, 0.35),
-    new THREE.Vector3(1.02, 0.24, -0.10),
-    new THREE.Vector3(0.90, 0.26, -0.55),
-    new THREE.Vector3(0.65, 0.28, -0.88),
-    new THREE.Vector3(0.25, 0.32, -1.00),
-    new THREE.Vector3(-0.20, 0.36, -0.92),
-    // Mid-Body Breaching Arch / Internal Loop
-    new THREE.Vector3(-0.60, 0.44, -0.65),
-    new THREE.Vector3(-0.72, 0.55, -0.25),
-    new THREE.Vector3(-0.55, 0.72, 0.15), // High Breaching Arch Crest
-    new THREE.Vector3(-0.20, 0.65, 0.40),
-    new THREE.Vector3(0.25, 0.52, 0.35),
-    new THREE.Vector3(0.50, 0.48, -0.05),
-    new THREE.Vector3(0.35, 0.58, -0.45),
-    new THREE.Vector3(-0.05, 0.70, -0.35),
-    // Rearing Serpentine Neck & Hood
-    new THREE.Vector3(-0.05, 0.92, -0.15),
-    new THREE.Vector3(-0.02, 1.18, 0.05),
-    new THREE.Vector3(0.00, 1.45, 0.22),
-    new THREE.Vector3(0.00, 1.70, 0.35),
-    // Serpentine Head Anchor
-    new THREE.Vector3(0.00, 1.95, 0.48),
+  // --- 1. Continuous Serpentine Spine (18 Interlocking Segments from Tail to Head) ---
+  // Coiling tightly within 1-tile footprint: X: [-0.32, 0.32], Z: [-0.30, 0.32]
+  const spine: THREE.Vector3[] = [
+    new THREE.Vector3(0.18, 0.12, -0.16),  // 0: Tail Tip
+    new THREE.Vector3(0.28, 0.15, -0.02),  // 1: Outer lower coil
+    new THREE.Vector3(0.26, 0.20, 0.18),   // 2
+    new THREE.Vector3(0.08, 0.25, 0.28),   // 3: Front lower turn
+    new THREE.Vector3(-0.16, 0.30, 0.22),  // 4
+    new THREE.Vector3(-0.28, 0.36, 0.05),  // 5: Left flank
+    new THREE.Vector3(-0.25, 0.44, -0.18), // 6: Rear base turn
+    new THREE.Vector3(-0.10, 0.52, -0.28), // 7
+    new THREE.Vector3(0.10, 0.60, -0.22),  // 8: Mid-body rising loop
+    new THREE.Vector3(0.24, 0.68, -0.05),  // 9
+    new THREE.Vector3(0.20, 0.78, 0.15),   // 10: Ascending serpent chest
+    new THREE.Vector3(0.06, 0.88, 0.22),   // 11
+    new THREE.Vector3(-0.10, 0.98, 0.12),  // 12
+    new THREE.Vector3(-0.14, 1.10, -0.04), // 13: Rearing neck S-curve
+    new THREE.Vector3(-0.06, 1.22, -0.12), // 14: Neck nape arch
+    new THREE.Vector3(0.04, 1.34, -0.05),  // 15: Rising throat
+    new THREE.Vector3(0.06, 1.44, 0.08),   // 16: Base of skull
+    new THREE.Vector3(0.02, 1.50, 0.22),   // 17: Head anchor
   ];
 
-  // 1. Build Undulating Muscular Segments
-  const numSegs = spinePoints.length;
+  const numSegs = spine.length;
+
   for (let i = 0; i < numSegs - 1; i++) {
-    const pt = spinePoints[i];
-    const nextPt = spinePoints[i + 1];
+    const pt = spine[i];
+    const nextPt = spine[i + 1];
     const fwd = new THREE.Vector3().subVectors(nextPt, pt).normalize();
 
-    // Radius tapering calculation
-    let r = 0.32;
-    if (i < 5) {
-      r = 0.14 + i * 0.038; // Taper towards tail
-    } else if (i < 15) {
-      r = 0.28 + (i - 5) * 0.008; // Base outer coils
-    } else if (i < 23) {
-      r = 0.34 + Math.sin(((i - 15) / 8) * Math.PI) * 0.04; // Thick muscular mid-arch
+    // Radius tapering: slender at tail (0.07), thick muscular mid-serpent (0.17), slender rearing neck (0.13)
+    let r = 0.14;
+    if (i < 4) {
+      r = 0.07 + i * 0.022; // Tail taper
+    } else if (i < 11) {
+      r = 0.15 + Math.sin(((i - 4) / 7) * Math.PI) * 0.03; // Thick muscular serpent body
     } else {
-      r = 0.34 - (i - 23) * 0.02; // Rearing neck
+      r = 0.16 - ((i - 11) / 6) * 0.04; // Sinuous neck
     }
 
-    // Main muscular body segment
-    const segGeo = new THREE.SphereGeometry(r, 10, 8);
-    const seg = new THREE.Mesh(segGeo, cosmicSkin);
+    // Muscular cylindrical/ellipsoid snake body segment
+    const seg = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), fleshMat);
     seg.position.copy(pt);
-    // Broaden laterally for a powerful serpentine look
-    seg.scale.set(1.18, 0.88, 1.18);
+    // Flatten slightly vertically and broaden horizontally for authentic snake cross-section
+    seg.scale.set(1.18, 0.92, 1.18);
     seg.castShadow = true;
-    seg.receiveShadow = true;
     group.add(seg);
 
-    // Carapace plate on dorsal ridge
-    const plateGeo = new THREE.BoxGeometry(r * 1.5, r * 0.35, r * 1.3);
-    const plate = new THREE.Mesh(plateGeo, carapaceMat);
-    plate.position.set(pt.x, pt.y + r * 0.52, pt.z);
-    plate.rotation.y = Math.atan2(fwd.x, fwd.z);
-    group.add(plate);
-
-    // Ventral belly scale (underneath)
-    const bellyGeo = new THREE.CylinderGeometry(r * 0.85, r * 0.95, r * 0.3, 8);
-    const belly = new THREE.Mesh(bellyGeo, bellyMat);
-    belly.position.set(pt.x, pt.y - r * 0.45, pt.z);
+    // Ventral Belly Plates (Gastrosteges - broad transverse scales underneath each segment)
+    const belly = new THREE.Mesh(new THREE.BoxGeometry(r * 1.5, r * 0.32, r * 1.1), bellyMat);
+    belly.position.set(pt.x, pt.y - r * 0.42, pt.z);
     belly.rotation.y = Math.atan2(fwd.x, fwd.z);
     group.add(belly);
 
-    // Lateral Bioluminescent Cosmic Nodes
-    const perpX = -fwd.z;
-    const perpZ = fwd.x;
-    const nodeL = new THREE.Mesh(new THREE.SphereGeometry(0.036, 6, 6), runeNodeMat);
-    nodeL.position.set(pt.x + perpX * (r * 1.05), pt.y, pt.z + perpZ * (r * 1.05));
-    const nodeR = new THREE.Mesh(new THREE.SphereGeometry(0.036, 6, 6), runeNodeMat);
-    nodeR.position.set(pt.x - perpX * (r * 1.05), pt.y, pt.z - perpZ * (r * 1.05));
-    group.add(nodeL, nodeR);
+    // Bioluminescent ventral groove seam
+    if (i % 2 === 0) {
+      const glowSeam = new THREE.Mesh(new THREE.BoxGeometry(r * 1.1, 0.015, r * 0.5), bioGlowMat);
+      glowSeam.position.set(pt.x, pt.y - r * 0.46, pt.z);
+      glowSeam.rotation.y = Math.atan2(fwd.x, fwd.z);
+      group.add(glowSeam);
+    }
 
-    // Dorsal Spines & Ethereal Fin Webbing
-    if (i >= 2 && i <= 25) {
-      const finSpineHeight = 0.22 + Math.sin((i / numSegs) * Math.PI) * 0.28;
-      const finSpine = new THREE.Mesh(new THREE.ConeGeometry(0.032, finSpineHeight, 4), hornMat);
-      finSpine.position.set(pt.x, pt.y + r * 0.85 + finSpineHeight / 2, pt.z);
-      finSpine.rotation.x = -0.15;
-      group.add(finSpine);
+    // Dorsal Carapace Scute (overlapping armored chitin plate on back)
+    const scute = new THREE.Mesh(new THREE.BoxGeometry(r * 1.35, r * 0.38, r * 1.15), chitinMat);
+    scute.position.set(pt.x, pt.y + r * 0.42, pt.z);
+    scute.rotation.y = Math.atan2(fwd.x, fwd.z);
+    group.add(scute);
 
-      const finSail = new THREE.Mesh(new THREE.BoxGeometry(0.018, finSpineHeight * 0.8, r * 1.4), finWebMat);
-      finSail.position.set(pt.x, pt.y + r * 0.75 + finSpineHeight * 0.4, pt.z);
-      finSail.rotation.y = Math.atan2(fwd.x, fwd.z);
-      group.add(finSail);
+    // Continuous Spined Dorsal Fin Sail along the entire serpent's spine
+    if (i >= 2 && i <= 15) {
+      const sailHeight = 0.12 + Math.sin((i / numSegs) * Math.PI) * 0.16;
+      // Fin spine ray
+      const finRay = new THREE.Mesh(new THREE.ConeGeometry(0.022, sailHeight, 4), spineMat);
+      finRay.position.set(pt.x, pt.y + r * 0.8 + sailHeight / 2, pt.z);
+      finRay.rotation.x = -0.2;
+      group.add(finRay);
+
+      // Translucent webbed dorsal fin membrane
+      const finWeb = new THREE.Mesh(new THREE.BoxGeometry(0.012, sailHeight * 0.85, r * 1.4), finMat);
+      finWeb.position.set(pt.x, pt.y + r * 0.7 + sailHeight * 0.4, pt.z);
+      finWeb.rotation.y = Math.atan2(fwd.x, fwd.z);
+      group.add(finWeb);
     }
   }
 
-  // 2. Caudal Tail Fin (Twin Abyssal Flukes & Void Stinger at Tail Tip)
-  const tailPt = spinePoints[0];
-  const tailStinger = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.48, 5), carapaceMat);
-  tailStinger.position.set(tailPt.x - 0.12, tailPt.y + 0.15, tailPt.z - 0.12);
-  tailStinger.rotation.set(-Math.PI / 4, 0, Math.PI / 4);
-  group.add(tailStinger);
+  // --- 2. Caudal Scythe Fin & Tail Stinger (at spine[0]) ---
+  const tailTip = spine[0];
+  const caudalBlade = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.32, 0.24), finMat);
+  caudalBlade.position.set(tailTip.x + 0.10, tailTip.y + 0.06, tailTip.z - 0.08);
+  caudalBlade.rotation.set(-0.35, 0.45, -0.65);
+  group.add(caudalBlade);
 
-  const flukeL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.45, 0.28), finMat);
-  flukeL.position.set(tailPt.x - 0.22, tailPt.y + 0.22, tailPt.z - 0.05);
-  flukeL.rotation.set(-Math.PI / 6, 0, Math.PI / 3);
-  const flukeR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.45, 0.28), finMat);
-  flukeR.position.set(tailPt.x - 0.05, tailPt.y + 0.22, tailPt.z - 0.22);
-  flukeR.rotation.set(-Math.PI / 3, 0, -Math.PI / 6);
-  group.add(flukeL, flukeR);
+  const caudalSpur = new THREE.Mesh(new THREE.ConeGeometry(0.032, 0.34, 5), spineMat);
+  caudalSpur.position.set(tailTip.x + 0.12, tailTip.y + 0.10, tailTip.z - 0.10);
+  caudalSpur.rotation.set(-0.4, 0.45, -0.7);
+  group.add(caudalSpur);
 
-  // 3. Flared Serpentine Cobra/Abyssal Hood (Spreading on the rearing neck)
-  const hoodAnchor = spinePoints[25];
+  // --- 3. Sleek Aquatic Swimming Finlets (tucked along mid-serpent coils) ---
+  // Mid-body flippers (replacing bulky mantis arms with graceful serpentine swimming fins)
+  for (let s = -1; s <= 1; s += 2) {
+    const finletGroup = new THREE.Group();
+    finletGroup.position.set(s * 0.22, 0.75, 0.10);
+
+    const finletBlade = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.015, 0.16), finMat);
+    finletBlade.position.set(s * 0.10, -0.06, 0.05);
+    finletBlade.rotation.set(0.4, s * -0.4, s * -0.3);
+    finletGroup.add(finletBlade);
+
+    // Sharp finlet claw/talon
+    const talon = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.14, 4), fangMat);
+    talon.position.set(s * 0.18, -0.12, 0.12);
+    talon.rotation.set(0.8, 0, s * -0.4);
+    finletGroup.add(talon);
+
+    group.add(finletGroup);
+  }
+
+  // Pelvic finlets on lower coil
+  const pelvicL = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.012, 0.12), finMat);
+  pelvicL.position.set(-0.26, 0.34, 0.12);
+  pelvicL.rotation.set(0.2, -0.3, -0.4);
+  const pelvicR = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.012, 0.12), finMat);
+  pelvicR.position.set(0.24, 0.22, 0.15);
+  pelvicR.rotation.set(0.2, 0.3, 0.4);
+  group.add(pelvicL, pelvicR);
+
+  // --- 4. Flared Cobra-like Serpentine Neck Hood (Segments 13-16) ---
+  const hoodAnchor = spine[15];
   const hoodGroup = new THREE.Group();
   hoodGroup.position.set(hoodAnchor.x, hoodAnchor.y, hoodAnchor.z);
 
-  // Curved lateral hood fin wings
   for (let s = -1; s <= 1; s += 2) {
-    const wingRib = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.045, 0.08), hornMat);
-    wingRib.position.set(s * 0.35, 0.05, -0.05);
-    wingRib.rotation.set(0, s * -0.25, s * 0.18);
-    hoodGroup.add(wingRib);
+    // Ribbed lateral hood struts
+    const hoodStrut = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.022, 0.04), spineMat);
+    hoodStrut.position.set(s * 0.12, -0.02, -0.02);
+    hoodStrut.rotation.set(0, s * -0.2, s * 0.15);
+    hoodGroup.add(hoodStrut);
 
-    const wingWeb = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.52, 0.02), finWebMat);
-    wingWeb.position.set(s * 0.36, -0.05, -0.06);
-    wingWeb.rotation.set(0, s * -0.22, s * 0.12);
-    hoodGroup.add(wingWeb);
+    // Webbed aquatic hood flap
+    const hoodFlap = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.24, 0.012), finMat);
+    hoodFlap.position.set(s * 0.14, -0.05, -0.03);
+    hoodFlap.rotation.set(0, s * -0.18, s * 0.12);
+    hoodGroup.add(hoodFlap);
 
-    // Glowing cosmic ocelli / eye-spots on the hood
-    const ocellus = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), voidEye);
-    ocellus.position.set(s * 0.38, -0.02, -0.04);
-    hoodGroup.add(ocellus);
-
-    const ocellusBack = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), runeNodeMat);
-    ocellusBack.position.set(s * 0.38, -0.02, -0.08);
-    hoodGroup.add(ocellusBack);
+    // Bioluminescent eyespot on hood
+    const eyespot = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), bioGlowMat);
+    eyespot.position.set(s * 0.15, -0.04, -0.02);
+    hoodGroup.add(eyespot);
   }
   group.add(hoodGroup);
 
-  // 4. Terrifying Serpentine Leviathan Head
-  const headPt = spinePoints[numSegs - 1]; // (0, 1.95, 0.48)
+  // --- 5. Long Dorsal Whip-Tentacles with Scythe-Fins (Signature Artwork Feature!) ---
+  // Left Dorsal Whip-Tentacle (arching high overhead from nape)
+  const whipSplineL: THREE.Vector3[] = [
+    new THREE.Vector3(-0.06, 1.30, -0.06),
+    new THREE.Vector3(-0.14, 1.45, -0.08),
+    new THREE.Vector3(-0.16, 1.62, 0.02),
+    new THREE.Vector3(-0.10, 1.76, 0.14),
+  ];
+  for (let i = 0; i < whipSplineL.length - 1; i++) {
+    const p1 = whipSplineL[i];
+    const p2 = whipSplineL[i + 1];
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    const len = dir.length();
+    const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.026 - i * 0.004, 0.034 - i * 0.004, len, 6), chitinMat);
+    seg.position.copy(p1).addScaledVector(dir, 0.5);
+    seg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    group.add(seg);
+  }
+  const scytheL = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.26, 0.15), finMat);
+  scytheL.position.set(-0.08, 1.74, 0.22);
+  scytheL.rotation.set(0.6, -0.2, 0.3);
+  const scytheSpineL = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.28, 5), spineMat);
+  scytheSpineL.position.set(-0.08, 1.75, 0.24);
+  scytheSpineL.rotation.set(0.65, -0.2, 0.3);
+  group.add(scytheL, scytheSpineL);
+
+  // Right Dorsal Whip-Tentacle
+  const whipSplineR: THREE.Vector3[] = [
+    new THREE.Vector3(0.06, 1.30, -0.06),
+    new THREE.Vector3(0.14, 1.46, -0.09),
+    new THREE.Vector3(0.16, 1.64, -0.01),
+    new THREE.Vector3(0.10, 1.78, 0.10),
+  ];
+  for (let i = 0; i < whipSplineR.length - 1; i++) {
+    const p1 = whipSplineR[i];
+    const p2 = whipSplineR[i + 1];
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    const len = dir.length();
+    const seg = new THREE.Mesh(new THREE.CylinderGeometry(0.026 - i * 0.004, 0.034 - i * 0.004, len, 6), chitinMat);
+    seg.position.copy(p1).addScaledVector(dir, 0.5);
+    seg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    group.add(seg);
+  }
+  const scytheR = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.25, 0.14), finMat);
+  scytheR.position.set(0.09, 1.76, 0.16);
+  scytheR.rotation.set(0.4, 0.3, -0.3);
+  const scytheSpineR = new THREE.Mesh(new THREE.ConeGeometry(0.024, 0.26, 5), spineMat);
+  scytheSpineR.position.set(0.09, 1.78, 0.18);
+  scytheSpineR.rotation.set(0.45, 0.3, -0.3);
+  group.add(scytheR, scytheSpineR);
+
+  // --- 6. Aquatic Serpent Head (Pitted Viper / Sea Dragon Skull) ---
+  const headPt = spine[numSegs - 1]; // (0.02, 1.50, 0.22)
   const headGroup = new THREE.Group();
   headGroup.position.set(headPt.x, headPt.y, headPt.z);
 
-  // Upper Cranium & Snout
-  const skull = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.22, 0.65), carapaceMat);
-  skull.position.set(0, 0.08, 0.22);
-  skull.castShadow = true;
+  // Elongated streamlined serpentine skull
+  const skull = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.14, 0.36), chitinMat);
+  skull.position.set(0, 0.03, 0.08);
+  skull.rotation.x = 0.14;
   headGroup.add(skull);
 
-  const snoutTip = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.32, 5), carapaceMat);
-  snoutTip.position.set(0, 0.06, 0.62);
-  snoutTip.rotation.x = Math.PI / 2;
-  headGroup.add(snoutTip);
+  // Pointed serpent snout
+  const snout = new THREE.Mesh(new THREE.ConeGeometry(0.10, 0.22, 5), chitinMat);
+  snout.position.set(0, 0.01, 0.32);
+  snout.rotation.x = Math.PI / 2 + 0.14;
+  headGroup.add(snout);
 
-  // Nostrils / Void Vents
-  const ventL = new THREE.Mesh(new THREE.SphereGeometry(0.028, 4, 4), runeNodeMat);
-  ventL.position.set(0.08, 0.14, 0.64);
-  const ventR = new THREE.Mesh(new THREE.SphereGeometry(0.028, 4, 4), runeNodeMat);
-  ventR.position.set(-0.08, 0.14, 0.64);
-  headGroup.add(ventL, ventR);
+  // Swept-Back Aquatic Serpent Crown Horns
+  const crownHornC = new THREE.Mesh(new THREE.ConeGeometry(0.040, 0.38, 5), spineMat);
+  crownHornC.position.set(0, 0.15, -0.08);
+  crownHornC.rotation.set(-1.18, 0, 0);
+  headGroup.add(crownHornC);
 
-  // Gaping Hinged Lower Jaw
-  const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.12, 0.58), cosmicSkin);
-  jaw.position.set(0, -0.22, 0.24);
-  jaw.rotation.x = -0.38; // Wide gaping predatory maw
-  jaw.castShadow = true;
+  const crownHornL = new THREE.Mesh(new THREE.ConeGeometry(0.034, 0.32, 5), spineMat);
+  crownHornL.position.set(0.09, 0.12, -0.06);
+  crownHornL.rotation.set(-1.12, 0.22, 0.18);
+  const crownHornR = new THREE.Mesh(new THREE.ConeGeometry(0.034, 0.32, 5), spineMat);
+  crownHornR.position.set(-0.09, 0.12, -0.06);
+  crownHornR.rotation.set(-1.12, -0.22, -0.18);
+  headGroup.add(crownHornL, crownHornR);
+
+  // Gaping predatory serpent jaw
+  const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.30), fleshMat);
+  jaw.position.set(0, -0.09, 0.12);
+  jaw.rotation.x = -0.25;
   headGroup.add(jaw);
 
-  // Vicious Translucent Void Fangs
-  // Upper Primary Curved Viper Fangs
-  const fangUL = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.26, 6), fangMat);
-  fangUL.position.set(0.14, -0.08, 0.42);
-  fangUL.rotation.set(0.2, 0, -0.15);
-  const fangUR = new THREE.Mesh(new THREE.ConeGeometry(0.042, 0.26, 6), fangMat);
-  fangUR.position.set(-0.14, -0.08, 0.42);
-  fangUR.rotation.set(0.2, 0, 0.15);
-  headGroup.add(fangUL, fangUR);
+  // Curved venomous fangs
+  const fangL = new THREE.Mesh(new THREE.ConeGeometry(0.020, 0.14, 4), fangMat);
+  fangL.position.set(0.07, -0.03, 0.22);
+  fangL.rotation.set(0.25, 0, -0.1);
+  const fangR = new THREE.Mesh(new THREE.ConeGeometry(0.020, 0.14, 4), fangMat);
+  fangR.position.set(-0.07, -0.03, 0.22);
+  fangR.rotation.set(0.25, 0, 0.1);
+  headGroup.add(fangL, fangR);
 
-  // Secondary Upper Serrations
-  for (let s = -1; s <= 1; s += 2) {
-    const fMid = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.16, 5), fangMat);
-    fMid.position.set(s * 0.13, -0.06, 0.26);
-    fMid.rotation.x = 0.15;
-    headGroup.add(fMid);
-  }
-
-  // Lower Jaw Fangs
-  const fangLL = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.22, 6), fangMat);
-  fangLL.position.set(0.12, -0.18, 0.44);
-  fangLL.rotation.set(-0.4, 0, 0.1);
-  const fangLR = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.22, 6), fangMat);
-  fangLR.position.set(-0.12, -0.18, 0.44);
-  fangLR.rotation.set(-0.4, 0, -0.1);
-  headGroup.add(fangLL, fangLR);
-
-  // Black Hole Singularity Core in Mouth
-  const singularity = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), coreMat);
-  singularity.position.set(0, -0.06, 0.12);
-  singularity.name = 'spinningOrb';
-  headGroup.add(singularity);
-
-  const mawAccretion = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.022, 6, 20), runeNodeMat);
-  mawAccretion.position.set(0, -0.06, 0.12);
-  mawAccretion.rotation.x = Math.PI / 4;
-  mawAccretion.name = 'spinningOrb';
-  headGroup.add(mawAccretion);
-
-  // 6 Glowing Cosmic Eyes (3 on each side along the brow)
-  for (let eyeIdx = 0; eyeIdx < 3; eyeIdx++) {
-    const eyeZ = 0.12 + eyeIdx * 0.14;
-    const eyeY = 0.12 + (eyeIdx === 1 ? 0.03 : 0);
-    const eyeScale = eyeIdx === 0 ? 0.038 : eyeIdx === 1 ? 0.046 : 0.032;
-
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(eyeScale, 6, 6), voidEye);
-    eyeL.position.set(0.19, eyeY, eyeZ);
-    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(eyeScale, 6, 6), voidEye);
-    eyeR.position.set(-0.19, eyeY, eyeZ);
-    headGroup.add(eyeL, eyeR);
-  }
-
-  // Swept-Back Abyssal Void Horns
-  // Grand Primary Horns (sweeping backwards over the hood)
-  const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.72, 6), hornMat);
-  hornL.position.set(0.22, 0.32, -0.15);
-  hornL.rotation.set(-1.15, 0.25, 0.35);
-  const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.72, 6), hornMat);
-  hornR.position.set(-0.22, 0.32, -0.15);
-  hornR.rotation.set(-1.15, -0.25, -0.35);
-  headGroup.add(hornL, hornR);
-
-  // Secondary Cheek Horns / Mandibles
-  const cheekHornL = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.38, 5), carapaceMat);
-  cheekHornL.position.set(0.25, -0.05, 0.12);
-  cheekHornL.rotation.set(-0.4, 0.6, 0.2);
-  const cheekHornR = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.38, 5), carapaceMat);
-  cheekHornR.position.set(-0.25, -0.05, 0.12);
-  cheekHornR.rotation.set(-0.4, -0.6, -0.2);
-  headGroup.add(cheekHornL, cheekHornR);
-
-  // Deep-Sea Sensory Barbels / Abyssal Whisker Tendrils
-  const barbelL = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.55, 4, 8), finMat);
-  barbelL.position.set(0.12, -0.42, 0.40);
-  barbelL.rotation.set(0.35, 0, -0.15);
-  const barbelR = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.55, 4, 8), finMat);
-  barbelR.position.set(-0.12, -0.42, 0.40);
-  barbelR.rotation.set(0.35, 0, 0.15);
-  headGroup.add(barbelL, barbelR);
+  // Slanted glowing cyan serpent eyes
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), eyeMat);
+  eyeL.position.set(0.10, 0.06, 0.14);
+  const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.026, 6, 6), eyeMat);
+  eyeR.position.set(-0.10, 0.06, 0.14);
+  headGroup.add(eyeL, eyeR);
 
   group.add(headGroup);
 
-  // 5. Giant Concentric Orbital Void Rings (Spanning around the 4 spaces)
-  const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.92, 0.028, 6, 32), coreMat);
-  ring1.position.set(0, 0.85, 0);
-  ring1.rotation.set(Math.PI / 4, Math.PI / 6, 0);
-  ring1.name = 'spinningOrb';
-
-  const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.022, 6, 32), runeNodeMat);
-  ring2.position.set(0, 0.85, 0);
-  ring2.rotation.set(-Math.PI / 3, 0, Math.PI / 4);
-  ring2.name = 'spinningOrb';
-
-  group.add(ring1, ring2);
-
-  // 6. Ambient Void Motes around the 4-space perimeter
-  for (let m = 0; m < 8; m++) {
-    const angle = (m / 8) * Math.PI * 2;
-    const dist = 0.85 + (m % 3) * 0.18;
-    const mote = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), runeNodeMat);
-    mote.position.set(Math.cos(angle) * dist, 0.25 + (m % 4) * 0.22, Math.sin(angle) * dist);
+  // --- 7. Ambient Bioluminescent Deep-Sea Motes ---
+  for (let m = 0; m < 6; m++) {
+    const angle = (m / 6) * Math.PI * 2;
+    const dist = 0.28 + (m % 3) * 0.08;
+    const mote = new THREE.Mesh(new THREE.OctahedronGeometry(0.022, 0), bioGlowMat);
+    mote.position.set(Math.cos(angle) * dist, 0.45 + (m % 4) * 0.25, Math.sin(angle) * dist);
     mote.name = 'spinningOrb';
     group.add(mote);
   }
