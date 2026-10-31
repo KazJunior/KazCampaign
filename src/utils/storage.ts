@@ -408,6 +408,11 @@ export function loadPlayerProgress(): PlayerProgress {
 
 export function savePlayerProgress(progress: PlayerProgress): void {
   try {
+    if (cloudSyncTimeout) {
+      clearTimeout(cloudSyncTimeout);
+      cloudSyncTimeout = null;
+    }
+
     let existingLocal: Partial<PlayerProgress> | null = null;
     try {
       const rawExisting = localStorage.getItem(PROGRESS_KEY);
@@ -523,7 +528,10 @@ export function loadLiveBattleState(): ActiveBattleState | null {
 
 export function clearLiveBattleState(): void {
   try {
-    if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+    if (cloudSyncTimeout) {
+      clearTimeout(cloudSyncTimeout);
+      cloudSyncTimeout = null;
+    }
     localStorage.removeItem(BATTLE_STATE_KEY);
     const raw = localStorage.getItem(PROGRESS_KEY);
     if (raw) {

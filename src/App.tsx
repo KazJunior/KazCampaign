@@ -281,7 +281,12 @@ export function App() {
             cloudP.activeAdventure ?? localP.activeAdventure,
             localP.discoveredItemIds || []
           ),
-          activeAdventure: cloudP.activeAdventure
+          // Sincronização da expedição ativa:
+          // Se o progresso local não possui activeAdventure (expedição terminada/derrota/vitória),
+          // não ressuscite a expedição antiga vinda da nuvem.
+          activeAdventure: localP.activeAdventure === null
+            ? null
+            : cloudP.activeAdventure
             ? {
                 ...cloudP.activeAdventure,
                 partyClasses: Array.isArray(cloudP.activeAdventure.partyClasses) && cloudP.activeAdventure.partyClasses.length === 4
@@ -560,7 +565,9 @@ export function App() {
 
   const [floatingNumbers, setFloatingNumbers] = useState<FloatingNumber[]>([]);
   const [isVoidColorDrainActive, setIsVoidColorDrainActive] = useState(false);
+  const [isVoidTextBannerActive, setIsVoidTextBannerActive] = useState(false);
   const voidColorDrainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voidTextBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -3760,10 +3767,21 @@ export function App() {
       if (voidColorDrainTimerRef.current) {
         clearTimeout(voidColorDrainTimerRef.current);
       }
+      if (voidTextBannerTimerRef.current) {
+        clearTimeout(voidTextBannerTimerRef.current);
+      }
       setIsVoidColorDrainActive(true);
+      setIsVoidTextBannerActive(true);
+
+      // O texto roxo gigante permanece na tela por 3 segundos
+      voidTextBannerTimerRef.current = setTimeout(() => {
+        setIsVoidTextBannerActive(false);
+      }, 3000);
+
+      // A tela permanece cinza durante a mensagem e por mais 10 segundos adicionais após a mensagem sumir (total: 13s)
       voidColorDrainTimerRef.current = setTimeout(() => {
         setIsVoidColorDrainActive(false);
-      }, 3200);
+      }, 13000);
     }
 
     // Ice / Obstacle Creation (Mago de Gelo)
@@ -8026,9 +8044,8 @@ export function App() {
       )}
       </div>
 
-      {isVoidColorDrainActive && (
-        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center">
-          <div className="absolute inset-0 bg-black/25 backdrop-grayscale" />
+      {isVoidTextBannerActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center animate-fade-in transition-opacity">
           <div className="relative flex flex-col items-center gap-3 animate-pulse">
             <span
               className="text-4xl sm:text-6xl md:text-7xl font-black uppercase tracking-[0.15em] text-[#C77DFF] select-none"
