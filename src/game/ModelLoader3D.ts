@@ -162,6 +162,12 @@ export function apply3DModelToMiniature(
   unit: Unit,
   onModelApplied?: () => void
 ): void {
+  // Se o jogador equipou uma skin customizada (épica ou lendária),
+  // preservamos a miniatura procedural que exibe as cores, armaduras e adornos 3D da skin!
+  if (unit.faction === 'player' && unit.skinId && !unit.skinId.endsWith('_default')) {
+    return;
+  }
+
   const isBoss = Boolean(unit.isBoss || unit.isMiniBoss);
 
   // 1. Try immediate synchronous cache

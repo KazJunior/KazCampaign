@@ -960,6 +960,25 @@ export function App() {
     setPendingUnlockClasses([className]);
   };
 
+  const handleUpdateProgressWithSkins = (newProgress: PlayerProgress) => {
+    progressRef.current = newProgress;
+    setProgress(newProgress);
+    savePlayerProgress(newProgress);
+    setUnits((prev) =>
+      prev.map((u) => {
+        if (u.faction !== 'player') return u;
+        const skin = getEquippedSkin(u.className, newProgress.equippedClassSkins);
+        return {
+          ...u,
+          color: skin?.color || u.color,
+          skinId: skin?.id,
+          skinName: skin?.name,
+          skinBadge: skin?.badge,
+        };
+      })
+    );
+  };
+
   const handleConfirmParty = (selectedPartyClasses: string[], partyLineages?: Record<string, string>) => {
     if (progress.activeAdventure) {
       // Bloqueia qualquer alteração de linhagens e classes no meio de uma aventura ativa
@@ -1012,7 +1031,7 @@ export function App() {
         terrain: cell.terrain,
         obstacle: cell.obstacle,
         isWalkable: cell.obstacle === 'none',
-        blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins' || cell.obstacle === 'pillar',
+        blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins' || cell.obstacle === 'pillar' || cell.obstacle === 'ice_pillar',
       }))
     );
     setGrid(tileGrid);
@@ -1099,7 +1118,7 @@ export function App() {
         terrain: cell.terrain,
         obstacle: cell.obstacle,
         isWalkable: cell.obstacle === 'none',
-        blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins' || cell.obstacle === 'pillar',
+        blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins' || cell.obstacle === 'pillar' || cell.obstacle === 'ice_pillar',
       }))
     );
     setGrid(tileGrid);
@@ -3033,7 +3052,7 @@ export function App() {
               hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
           );
 
-          if (affectedTargets.length > 0 || (activeSkill.createsObstacle && !clickedUnit)) {
+          if (affectedTargets.length > 0 || activeSkill.createsObstacle) {
             setTargetTeleportPoint(null);
             setTargetAoEPoint({ x, y });
 
@@ -3784,28 +3803,7 @@ export function App() {
       }, 13000);
     }
 
-    // Ice / Obstacle Creation (Mago de Gelo)
-    if (skill?.createsObstacle) {
-      const obsType = skill.createsObstacle;
-      setGrid((prevGrid) =>
-        prevGrid.map((row, rY) =>
-          row.map((cell, cX) => {
-            if (cX === aoeCenter.x && rY === aoeCenter.y) {
-              return {
-                ...cell,
-                obstacle: obsType,
-                isWalkable: false,
-                blocksVision: obsType === 'wall' || obsType === 'ruins' || obsType === 'pillar',
-              };
-            }
-            return cell;
-          })
-        )
-      );
-      addFloatingNumber(aoeCenter.x, aoeCenter.y, 'Barreira Sólida!', 'status', '#38BDF8');
-    }
-
-    const aoeRadius = skill?.aoeRadius || 0;
+        const aoeRadius = skill?.aoeRadius || 0;
     let targetsToHit: Unit[] = [];
     if (skill?.chainCount && skill.chainCount > 1) {
       const chainTargets: Unit[] = [target];
@@ -3851,10 +3849,124 @@ export function App() {
           hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
       );
     } else {
-      targetsToHit = [target];
+      if (skill?.createsObstacle && targetAoEPoint) {
+        const unitAtTarget = units.find((u) => !u.isDead && u.x === targetAoEPoint.x && u.y === targetAoEPoint.y);
+        targetsToHit = unitAtTarget ? [unitAtTarget] : [];
+      } else {
+        targetsToHit = [target];
+      }
     }
 
     let updatedUnits = [...units];
+
+    // Ice / Obstacle Creation (Mago de Gelo)
+    if (skill?.createsObstacle) {
+      const obsType = skill.createsObstacle;
+
+      // Se o pilar ficar no mesmo bloco que um inimigo, empurra o inimigo para fora do ladrilho!
+      const enemyOnPillar = updatedUnits.find(
+        (u) => !u.isDead && u.x === aoeCenter.x && u.y === aoeCenter.y && u.faction === 'enemy'
+      );
+
+      if (enemyOnPillar) {
+        // Direção preferencial: empurrar para longe do conjurador
+        const dx = aoeCenter.x - selectedUnit.x;
+        const dy = aoeCenter.y - selectedUnit.y;
+        let pX = 0;
+        let pY = 0;
+        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+          pX = Math.sign(dx);
+        } else if (dy !== 0) {
+          pY = Math.sign(dy);
+        } else {
+          pY = 1;
+        }
+
+        const candidateDirections: [number, number][] = [
+          [pX, pY],
+          pX !== 0 ? [0, 1] : [1, 0],
+          pX !== 0 ? [0, -1] : [-1, 0],
+          [-pX, -pY],
+        ];
+
+        let destX = -1;
+        let destY = -1;
+
+        for (const [cdX, cdY] of candidateDirections) {
+          const cX = aoeCenter.x + cdX;
+          const cY = aoeCenter.y + cdY;
+          const inBounds = cX >= 0 && cX < grid[0].length && cY >= 0 && cY < grid.length;
+          const isWalkable = inBounds && grid[cY][cX].isWalkable && !(cX === aoeCenter.x && cY === aoeCenter.y);
+          const isOccupied = inBounds && updatedUnits.some((u) => !u.isDead && u.id !== enemyOnPillar.id && u.x === cX && u.y === cY);
+          if (inBounds && isWalkable && !isOccupied) {
+            destX = cX;
+            destY = cY;
+            break;
+          }
+        }
+
+        // Se as 4 adjacências imediatas estiverem bloqueadas, busca o ladrilho livre mais próximo (raio 2 a 4)
+        if (destX === -1) {
+          for (let dist = 2; dist <= 4; dist++) {
+            for (let ox = -dist; ox <= dist; ox++) {
+              for (let oy = -dist; oy <= dist; oy++) {
+                if (Math.abs(ox) + Math.abs(oy) === dist) {
+                  const cX = aoeCenter.x + ox;
+                  const cY = aoeCenter.y + oy;
+                  const inBounds = cX >= 0 && cX < grid[0].length && cY >= 0 && cY < grid.length;
+                  const isWalkable = inBounds && grid[cY][cX].isWalkable && !(cX === aoeCenter.x && cY === aoeCenter.y);
+                  const isOccupied = inBounds && updatedUnits.some((u) => !u.isDead && u.id !== enemyOnPillar.id && u.x === cX && u.y === cY);
+                  if (inBounds && isWalkable && !isOccupied) {
+                    destX = cX;
+                    destY = cY;
+                    break;
+                  }
+                }
+              }
+              if (destX !== -1) break;
+            }
+            if (destX !== -1) break;
+          }
+        }
+
+        if (destX !== -1) {
+          const fromX = enemyOnPillar.x;
+          const fromY = enemyOnPillar.y;
+          enemyOnPillar.x = destX;
+          enemyOnPillar.y = destY;
+
+          updatedUnits = updatedUnits.map((u) => (u.id === enemyOnPillar.id ? { ...u, x: destX, y: destY } : u));
+          targetsToHit = targetsToHit.map((t) => (t.id === enemyOnPillar.id ? { ...t, x: destX, y: destY } : t));
+
+          if (boardRef.current) {
+            await boardRef.current.playMoveAnimation(enemyOnPillar.id, fromX, fromY, destX, destY);
+          }
+          addFloatingNumber(destX, destY, '💨 Empurrado pelo Pilar!', 'status', '#38BDF8');
+          soundManager.playPhysicalAttack();
+        }
+      }
+
+      setGrid((prevGrid) => {
+        const nextGrid = prevGrid.map((row, rY) =>
+          row.map((cell, cX) => {
+            if (cX === aoeCenter.x && rY === aoeCenter.y) {
+              return {
+                ...cell,
+                obstacle: obsType,
+                isWalkable: false,
+                blocksVision: obsType === 'wall' || obsType === 'ruins' || obsType === 'pillar' || obsType === 'ice_pillar',
+              };
+            }
+            return cell;
+          })
+        );
+        gridRef.current = nextGrid;
+        return nextGrid;
+      });
+
+      addFloatingNumber(aoeCenter.x, aoeCenter.y, obsType === 'ice_pillar' ? '🧊 Pilar de Gelo!' : 'Barreira Sólida!', 'status', '#38BDF8');
+      soundManager.playMagicSpell();
+    }
     let totalDmgDone = 0;
     let totalHealDone = 0;
     let totalKills = 0;
@@ -7563,11 +7675,7 @@ export function App() {
       {showClassMissionsModal && (
           <ClassMissionsModal
             progress={progress}
-            onUpdateProgress={(newProgress) => {
-              progressRef.current = newProgress;
-              setProgress(newProgress);
-              savePlayerProgress(newProgress);
-            }}
+            onUpdateProgress={handleUpdateProgressWithSkins}
             onClose={() => setShowClassMissionsModal(false)}
           />
         )}
@@ -7606,11 +7714,7 @@ export function App() {
         {showClassMissionsModal && (
           <ClassMissionsModal
             progress={progress}
-            onUpdateProgress={(newProgress) => {
-              progressRef.current = newProgress;
-              setProgress(newProgress);
-              savePlayerProgress(newProgress);
-            }}
+            onUpdateProgress={handleUpdateProgressWithSkins}
             onClose={() => setShowClassMissionsModal(false)}
           />
         )}
@@ -8010,11 +8114,7 @@ export function App() {
       {showClassMissionsModal && (
         <ClassMissionsModal
           progress={progress}
-          onUpdateProgress={(newProgress) => {
-            progressRef.current = newProgress;
-            setProgress(newProgress);
-            savePlayerProgress(newProgress);
-          }}
+          onUpdateProgress={handleUpdateProgressWithSkins}
           onClose={() => setShowClassMissionsModal(false)}
         />
       )}

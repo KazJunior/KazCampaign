@@ -4,7 +4,7 @@ export interface Point {
 }
 
 export type TerrainType = 'grass' | 'stone' | 'sand' | 'dirt' | 'water' | 'swamp' | 'void';
-export type ObstacleType = 'none' | 'tree' | 'rock' | 'ruins' | 'shrine' | 'wall' | 'pillar' | 'thorns' | 'tombstone' | 'note' | 'crystal_fire' | 'crystal_ice' | 'crystal_wind' | 'crystal_lightning';
+export type ObstacleType = 'none' | 'tree' | 'rock' | 'ruins' | 'shrine' | 'wall' | 'pillar' | 'ice_pillar' | 'thorns' | 'tombstone' | 'note' | 'crystal_fire' | 'crystal_ice' | 'crystal_wind' | 'crystal_lightning';
 
 export interface TileData {
   x: number;

@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import type { Unit } from '../types/game';
 import { getCachedUnitModel } from './ModelLoader3D';
 import { NORMAL_MONSTER_BUILDERS } from './NormalMonsterBuilders';
+import {
+  applySkinThemeToMiniature,
+  createSkinPedestalAccent,
+  createSkinVisualFeatures3D,
+} from './SkinVisuals3D';
 
 /**
  * Creates the organic 3D tabletop miniature model (Option 1)
@@ -19,15 +24,23 @@ export function createOrganicMiniatureModel(
   group.add(createMiniaturePedestal(unit));
 
   // 2. Character / Monster Miniature Mesh (3D GLB Model with procedural fallback)
-  const cachedModel = getCachedUnitModel(unit.avatarKey);
+  const hasCustomSkin = Boolean(unit.faction === 'player' && unit.skinId && !unit.skinId.endsWith('_default'));
+  const cachedModel = hasCustomSkin ? null : getCachedUnitModel(unit.avatarKey);
   const charMesh = cachedModel || buildCharacterMesh(unit);
   charMesh.name = 'miniatureChar';
   applyLineageBodyScale(charMesh, unit);
+  applySkinThemeToMiniature(charMesh, unit);
   group.add(charMesh);
 
   // 2b. 3D Lineage Visual Features (Wings, Horns, Halos, Ears, Tusks, Tails, Runes)
   if (unit.faction === 'player' && unit.lineageId) {
     group.add(createLineageVisualFeatures3D(unit));
+  }
+
+  // 2c. 3D Skin Visual Features (Capes, Wings, Halos, Spikes, Orbiting Orbs, Relics)
+  if (unit.faction === 'player' && unit.skinId) {
+    const skinVisuals = createSkinVisualFeatures3D(unit);
+    if (skinVisuals) group.add(skinVisuals);
   }
 
   // 3. Floating HP Bar & Status Auras
@@ -90,6 +103,12 @@ function createMiniaturePedestal(unit: Unit): THREE.Group {
     const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
     innerRing.position.y = height + 0.005;
     baseGroup.add(innerRing);
+  }
+
+  // Adorno luminoso no pedestal para skins customizadas
+  if (isPlayer && unit.skinId) {
+    const skinAccent = createSkinPedestalAccent(unit);
+    if (skinAccent) baseGroup.add(skinAccent);
   }
 
   return baseGroup;

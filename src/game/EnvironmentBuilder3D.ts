@@ -305,6 +305,88 @@ export function createRichObstacle(type: ObstacleType, x: number, y: number): TH
       break;
     }
 
+        case 'ice_pillar': {
+      // --- Monumental Glacial Ice Pillar with Crystal Spire, Frost Base & Luminous Core ---
+      const iceGroup = new THREE.Group();
+      iceGroup.name = `icePillar_${x}_${y}`;
+
+      const iceMat = new THREE.MeshStandardMaterial({
+        color: 0x67e8f9,
+        emissive: 0x0284c7,
+        emissiveIntensity: 0.65,
+        roughness: 0.12,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.88,
+        flatShading: true,
+      });
+
+      const coreGlowMat = new THREE.MeshStandardMaterial({
+        color: 0xbae6fd,
+        emissive: 0x0ea5e9,
+        emissiveIntensity: 1.6,
+        roughness: 0.1,
+      });
+
+      const frostBaseMat = new THREE.MeshStandardMaterial({
+        color: 0x0c4a6e,
+        roughness: 0.5,
+        metalness: 0.3,
+        flatShading: true,
+      });
+
+      // 1. Frost Crag Base (Rough frozen ground mound)
+      const baseGeo = new THREE.CylinderGeometry(0.38, 0.46, 0.16, 6);
+      const frostBase = new THREE.Mesh(baseGeo, frostBaseMat);
+      frostBase.position.y = 0.08;
+      frostBase.castShadow = true;
+      frostBase.receiveShadow = true;
+      iceGroup.add(frostBase);
+
+      // 2. Surrounding Angular Ice Shards jutting from base
+      const shardAngles = [0.4, 1.6, 2.8, 4.0, 5.2];
+      shardAngles.forEach((ang, idx) => {
+        const sH = 0.32 + (idx % 3) * 0.12;
+        const sRad = 0.06 + (idx % 2) * 0.02;
+        const shard = new THREE.Mesh(new THREE.ConeGeometry(sRad, sH, 5), iceMat);
+        const dist = 0.32;
+        shard.position.set(Math.cos(ang) * dist, 0.08 + sH * 0.45, Math.sin(ang) * dist);
+        shard.rotation.set((idx % 2 === 0 ? 0.25 : -0.2), 0, (idx % 2 === 1 ? 0.25 : -0.2));
+        shard.castShadow = true;
+        iceGroup.add(shard);
+      });
+
+      // 3. Main Monumental Hexagonal Ice Column (Main Pillar Shaft)
+      const shaftGeo = new THREE.CylinderGeometry(0.22, 0.28, 1.25, 6);
+      const shaft = new THREE.Mesh(shaftGeo, iceMat);
+      shaft.position.y = 0.72;
+      shaft.castShadow = true;
+      shaft.receiveShadow = true;
+      iceGroup.add(shaft);
+
+      // 4. Sharp Crystalline Crown / Glacier Spire Peak
+      const peakGeo = new THREE.ConeGeometry(0.24, 0.42, 6);
+      const peak = new THREE.Mesh(peakGeo, iceMat);
+      peak.position.y = 1.54;
+      peak.castShadow = true;
+      iceGroup.add(peak);
+
+      // 5. Internal Glowing Luminous Ice Core (spinning crystal heart)
+      const innerCore = new THREE.Mesh(new THREE.OctahedronGeometry(0.12, 0), coreGlowMat);
+      innerCore.position.y = 0.78;
+      innerCore.name = 'spinningOrb';
+      iceGroup.add(innerCore);
+
+      // 6. Frost Rune Crystal Ring wrapping the waist
+      const waistRing = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.022, 6, 6), coreGlowMat);
+      waistRing.position.y = 0.70;
+      waistRing.rotation.x = Math.PI / 2;
+      iceGroup.add(waistRing);
+
+      group.add(iceGroup);
+      break;
+    }
+
     case 'pillar': {
       // --- Grand Classical Temple Pillar with Capital & Pedestal ---
       const pillarGroup = new THREE.Group();

@@ -255,7 +255,11 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
         {preview.skill?.createsObstacle && (
           <div className="flex items-center justify-between text-xs bg-[#0C4A6E]/40 p-2.5 rounded-lg border border-[#38BDF8]/40">
             <span className="text-[#BAE6FD] font-semibold">Criação de Barreira:</span>
-            <span className="font-bold text-[#38BDF8]">🧊 Bloqueia o Ladrilho com Pilar Sólido</span>
+            <span className="font-bold text-[#38BDF8]">
+              {preview.skill.createsObstacle === 'ice_pillar'
+                ? '🧊 Ergue Pilar de Gelo (Empurra Inimigo)'
+                : '🧱 Bloqueia o Ladrilho com Barreira'}
+            </span>
           </div>
         )}
 
