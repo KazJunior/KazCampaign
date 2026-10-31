@@ -5676,12 +5676,12 @@ export function App() {
                 soundManager.playMagicSpell();
               }
 
-              // Névoa Asfixiante do Leviatã: área de 4 blocos para cada lado, dura 3 turnos
+              // Névoa Asfixiante do Leviatã: área de 2 blocos para cada lado, dura 3 turnos
               if (skill?.id === 'leviata_nevoa_asfixiante') {
                 setGrid((prevGrid) => {
                   const nextGrid = prevGrid.map((row, rY) =>
                     row.map((cell, cX) => {
-                      if (Math.abs(cX - finalMonsterX) <= 4 && Math.abs(rY - finalMonsterY) <= 4) {
+                      if (Math.abs(cX - finalMonsterX) <= 2 && Math.abs(rY - finalMonsterY) <= 2) {
                         return {
                           ...cell,
                           mistTurns: 3,
