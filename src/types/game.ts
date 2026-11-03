@@ -52,6 +52,24 @@ export type StatusEffectType =
   | 'bleed'
   | 'summon_lifetime';
 
+export const DEBUFF_STATUS_TYPES: ReadonlySet<StatusEffectType> = new Set([
+  'poison',
+  'burn',
+  'stun',
+  'slow',
+  'debuff_def',
+  'debuff_atk',
+  'silence',
+  'bleed',
+  'electrified',
+  'taunt',
+  'dark_cocoon',
+]);
+
+export function isDebuffStatus(type: StatusEffectType): boolean {
+  return DEBUFF_STATUS_TYPES.has(type);
+}
+
 export interface StatusEffect {
   type: StatusEffectType;
   duration: number;
@@ -376,6 +394,7 @@ export interface ActiveAdventure {
   battleState?: ActiveBattleState | null;
   combatActive?: boolean; // Se a batalha da fase já foi iniciada
   partyLineages?: Record<string, string>; // className -> lineageId
+  updatedAt?: string;
 }
 
 export interface PlayerProgress {
@@ -400,6 +419,7 @@ export interface PlayerProgress {
   }>;
   combatSpeed: 'normal' | 'fast';
   highScore: number;
+  updatedAt?: string;
 
   // Roguelike & Collection systems:
   activeAdventure: ActiveAdventure | null; // Null if no run is currently underway

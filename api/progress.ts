@@ -510,6 +510,7 @@ export async function GET(req: Request): Promise<Response> {
         monsterKills,
         unlockedLineages: safeLineages,
         lineageQuestStats,
+        updatedAt: (row as any).updated_at ? new Date((row as any).updated_at).toISOString() : null,
       },
     });
   } catch (err) {

@@ -20,6 +20,7 @@ import type {
   Unit,
   UnitProgression,
 } from './types/game';
+import { isDebuffStatus } from './types/game';
 import { LEVELS, createTrainingLevel } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
@@ -45,6 +46,7 @@ import {
   createInitialUnitsState,
   loadAudioSettings,
   loadPlayerProgress,
+  hasLocalSavedProgress,
   resetPlayerProgress,
   saveAudioSettings,
   savePlayerProgress,
@@ -255,6 +257,114 @@ export function App() {
 
         const missionAndLineage = mergeMissionAndLineageFields(cloudP, localP, true);
 
+        // Mescla histórico de aventuras de ambos os dispositivos sem perder registros
+        const mergedAdventureHistory: AdventureRecord[] = (() => {
+          const map = new Map<string, AdventureRecord>();
+          const list: AdventureRecord[] = [
+            ...(Array.isArray(cloudP.adventureHistory) ? cloudP.adventureHistory : []),
+            ...(Array.isArray(localP.adventureHistory) ? localP.adventureHistory : []),
+          ];
+          for (const item of list) {
+            if (item && item.id) {
+              map.set(item.id, item);
+            }
+          }
+          return Array.from(map.values())
+            .sort((a, b) => new Date(b.endedAt).getTime() - new Date(a.endedAt).getTime())
+            .slice(0, 10);
+        })();
+
+        // Resolução inteligente da expedição ativa entre múltiplos dispositivos
+        const resolvedActiveAdventure = (() => {
+          const localHasSave = hasLocalSavedProgress();
+          const rawLocalAdv = localHasSave ? localP.activeAdventure : null;
+          const rawCloudAdv =
+            cloudP.activeAdventure && typeof cloudP.activeAdventure === 'object' ? cloudP.activeAdventure : null;
+
+          // Verifica se uma aventura já foi concluída (consta no histórico com o mesmo startedAt)
+          const isConcluded = (adv: ActiveAdventure | null | undefined): boolean => {
+            if (!adv || !adv.startedAt) return false;
+            return mergedAdventureHistory.some((rec) => rec.startedAt === adv.startedAt);
+          };
+
+          const localAlive = rawLocalAdv && !isConcluded(rawLocalAdv) ? rawLocalAdv : null;
+          const cloudAlive = rawCloudAdv && !isConcluded(rawCloudAdv) ? rawCloudAdv : null;
+
+          // Nenhuma aventura viva
+          if (!localAlive && !cloudAlive) {
+            clearLiveBattleState();
+            return null;
+          }
+
+          // Apenas a nuvem tem aventura viva (máquina nova ou aventura iniciada em outro dispositivo)
+          if (!localAlive && cloudAlive) {
+            return {
+              ...cloudAlive,
+              partyClasses:
+                Array.isArray(cloudAlive.partyClasses) && cloudAlive.partyClasses.length === 4
+                  ? sanitizePartyClasses(cloudAlive.partyClasses, safeUnlocked)
+                  : (safeParty || INITIAL_CLASSES),
+              partyLineages: cloudAlive.partyLineages || missionAndLineage.selectedPartyLineages,
+              battleState: cloudAlive.battleState || null,
+            };
+          }
+
+          // Apenas a máquina local tem aventura viva (jogou offline ou iniciou nesta máquina)
+          if (localAlive && !cloudAlive) {
+            const localBState = loadLiveBattleState();
+            return {
+              ...localAlive,
+              partyClasses:
+                Array.isArray(localAlive.partyClasses) && localAlive.partyClasses.length === 4
+                  ? sanitizePartyClasses(localAlive.partyClasses, safeUnlocked)
+                  : (safeParty || INITIAL_CLASSES),
+              partyLineages: localAlive.partyLineages || missionAndLineage.selectedPartyLineages,
+              battleState: localAlive.battleState || localBState || null,
+            };
+          }
+
+          // Ambas as aventuras estão vivas:
+          // Se uma avançou mais nas fases do que a outra (ex: Fase 15 nesta máquina vs Fase 1 iniciada por engano na outra máquina),
+          // preserva a que tem maior progresso de fase!
+          const cloudLvl = Number(cloudAlive!.currentLevelId) || 1;
+          const localLvl = Number(localAlive!.currentLevelId) || 1;
+          if (cloudLvl !== localLvl) {
+            const chosen = cloudLvl > localLvl ? cloudAlive! : localAlive!;
+            const isCloudChosen = chosen === cloudAlive;
+            const bState = isCloudChosen ? chosen.battleState : (chosen.battleState || loadLiveBattleState());
+            return {
+              ...chosen,
+              partyClasses:
+                Array.isArray(chosen.partyClasses) && chosen.partyClasses.length === 4
+                  ? sanitizePartyClasses(chosen.partyClasses, safeUnlocked)
+                  : (safeParty || INITIAL_CLASSES),
+              partyLineages: chosen.partyLineages || missionAndLineage.selectedPartyLineages,
+              battleState: bState || null,
+            };
+          }
+
+          // Ambas na mesma fase: compara timestamp de atualização ou início
+          const cloudTime = cloudAlive!.updatedAt
+            ? new Date(cloudAlive!.updatedAt).getTime()
+            : new Date(cloudAlive!.startedAt || 0).getTime();
+          const localTime = localAlive!.updatedAt
+            ? new Date(localAlive!.updatedAt).getTime()
+            : new Date(localAlive!.startedAt || 0).getTime();
+          const chosen = cloudTime >= localTime ? cloudAlive! : localAlive!;
+          const isCloudChosen = chosen === cloudAlive;
+          const bState = isCloudChosen ? chosen.battleState : (chosen.battleState || loadLiveBattleState());
+
+          return {
+            ...chosen,
+            partyClasses:
+              Array.isArray(chosen.partyClasses) && chosen.partyClasses.length === 4
+                ? sanitizePartyClasses(chosen.partyClasses, safeUnlocked)
+                : (safeParty || INITIAL_CLASSES),
+            partyLineages: chosen.partyLineages || missionAndLineage.selectedPartyLineages,
+            battleState: bState || null,
+          };
+        })();
+
         const merged: PlayerProgress = {
           ...DEFAULT_PROGRESS,
           gold: Math.max(typeof cloudP.gold === 'number' ? cloudP.gold : 0, Number(localP.gold) || 0),
@@ -278,37 +388,11 @@ export function App() {
           ),
           discoveredItemIds: consolidateDiscoveredItems(
             Array.isArray(cloudP.discoveredItemIds) ? cloudP.discoveredItemIds : [],
-            cloudP.activeAdventure ?? localP.activeAdventure,
+            resolvedActiveAdventure ?? cloudP.activeAdventure ?? localP.activeAdventure,
             localP.discoveredItemIds || []
           ),
-          // Sincronização da expedição ativa:
-          // Se o progresso local não possui activeAdventure (expedição terminada/derrota/vitória),
-          // não ressuscite a expedição antiga vinda da nuvem.
-          activeAdventure: localP.activeAdventure === null
-            ? null
-            : cloudP.activeAdventure
-            ? {
-                ...cloudP.activeAdventure,
-                partyClasses: Array.isArray(cloudP.activeAdventure.partyClasses) && cloudP.activeAdventure.partyClasses.length === 4
-                  ? sanitizePartyClasses(cloudP.activeAdventure.partyClasses, safeUnlocked)
-                  : (localP.activeAdventure?.partyClasses || safeParty),
-                partyLineages: cloudP.activeAdventure.partyLineages || localP.activeAdventure?.partyLineages || missionAndLineage.selectedPartyLineages,
-                battleState: loadLiveBattleState() || cloudP.activeAdventure.battleState || localP.activeAdventure?.battleState || null,
-              }
-            : localP.activeAdventure?.battleState || loadLiveBattleState()
-              ? {
-                  currentLevelId: (loadLiveBattleState() || localP.activeAdventure?.battleState)!.levelId,
-                  partyClasses: localP.activeAdventure?.partyClasses || safeParty,
-                  partyLineages: localP.activeAdventure?.partyLineages || missionAndLineage.selectedPartyLineages,
-                  startedAt: new Date().toISOString(),
-                  goldEarnedInRun: 0,
-                  unitsState: cloudP.unitsState || localP.unitsState || createInitialUnitsState(),
-                  battleState: loadLiveBattleState() || localP.activeAdventure?.battleState || null,
-                }
-              : null,
-          adventureHistory: Array.isArray(cloudP.adventureHistory) && cloudP.adventureHistory.length > 0
-            ? cloudP.adventureHistory
-            : (Array.isArray(localP.adventureHistory) ? localP.adventureHistory : []),
+          activeAdventure: resolvedActiveAdventure,
+          adventureHistory: mergedAdventureHistory,
           combatSpeed: cloudP.combatSpeed || localP.combatSpeed || 'normal',
           classUpgrades: mergeLevelMaps(localP.classUpgrades, cloudP.classUpgrades),
           generalUpgrades: mergeLevelMaps(localP.generalUpgrades, cloudP.generalUpgrades),
@@ -333,7 +417,7 @@ export function App() {
           lineageQuestStats: missionAndLineage.lineageQuestStats,
         };
 
-        const incomingBattle = merged.activeAdventure?.battleState || loadLiveBattleState();
+        const incomingBattle = merged.activeAdventure?.battleState;
         if (
           incomingBattle &&
           merged.activeAdventure &&
@@ -351,7 +435,11 @@ export function App() {
           // reseta apenas as flags de combate em andamento, mantendo intacta a aventura salva na fase
           merged.activeAdventure.combatActive = false;
           merged.activeAdventure.battleState = null;
+          clearLiveBattleState();
+        } else {
+          clearLiveBattleState();
         }
+
 
         progressRef.current = merged;
         setProgress(merged);
@@ -2566,8 +2654,11 @@ export function App() {
           let newEffects = [...u.statusEffects];
 
           if (petSkill.cleansesDebuffs) {
-            newEffects = newEffects.filter((e) => e.type !== 'poison' && e.type !== 'burn' && e.type !== 'stun' && e.type !== 'slow' && e.type !== 'debuff_def');
-            addFloatingNumber(u.x, u.y, 'Purificado!', 'status', '#56E59A');
+            const beforeCount = newEffects.length;
+            newEffects = newEffects.filter((e) => !isDebuffStatus(e.type));
+            if (newEffects.length < beforeCount) {
+              addFloatingNumber(u.x, u.y, 'Purificado!', 'status', '#56E59A');
+            }
           }
 
           // Calculate heal scaling with highest party magic
@@ -3998,9 +4089,7 @@ export function App() {
       // Cleansing of debuffs (e.g. Purificação Sagrada)
       if (skill?.cleansesDebuffs) {
         const beforeCount = currentEffects.length;
-        currentEffects = currentEffects.filter(
-          (e) => e.type !== 'poison' && e.type !== 'burn' && e.type !== 'stun' && e.type !== 'slow' && e.type !== 'debuff_def'
-        );
+        currentEffects = currentEffects.filter((e) => !isDebuffStatus(e.type));
         if (currentEffects.length < beforeCount) {
           addFloatingNumber(t.x, t.y, 'Purificado!', 'status', '#38BDF8');
         }

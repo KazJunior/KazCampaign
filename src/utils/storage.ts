@@ -258,6 +258,21 @@ export function mergeMissionAndLineageFields(
   };
 }
 
+export function hasLocalSavedProgress(): boolean {
+  try {
+    const raw =
+      localStorage.getItem(PROGRESS_KEY) ||
+      localStorage.getItem('rpg_tactics_progress_v3') ||
+      localStorage.getItem('rpg_tactics_progress_v2') ||
+      localStorage.getItem('rpg_tactics_progress_v1');
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return Boolean(parsed && typeof parsed === 'object');
+  } catch {
+    return false;
+  }
+}
+
 export function loadPlayerProgress(): PlayerProgress {
   try {
     let raw = localStorage.getItem(PROGRESS_KEY);
@@ -422,10 +437,18 @@ export function savePlayerProgress(progress: PlayerProgress): void {
     }
 
     const mergedMissionAndLineage = mergeMissionAndLineageFields(existingLocal, progress, false);
+    const nowIso = new Date().toISOString();
     const safeProgress: PlayerProgress = {
       ...progress,
       ...mergedMissionAndLineage,
+      updatedAt: nowIso,
     };
+    if (safeProgress.activeAdventure) {
+      safeProgress.activeAdventure = {
+        ...safeProgress.activeAdventure,
+        updatedAt: safeProgress.activeAdventure.updatedAt || nowIso,
+      };
+    }
 
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(safeProgress));
     saveCloudProgress(safeProgress, true).then((res) => {
@@ -478,8 +501,11 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.activeAdventure) {
+        const nowIso = new Date().toISOString();
         parsed.activeAdventure.battleState = battleState;
         parsed.activeAdventure.combatActive = true;
+        parsed.activeAdventure.updatedAt = nowIso;
+        parsed.updatedAt = nowIso;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
 
         const syncReturnedGold = (res: any) => {
@@ -559,8 +585,11 @@ export function clearLiveBattleState(): void {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.activeAdventure) {
+        const nowIso = new Date().toISOString();
         parsed.activeAdventure.battleState = null;
         parsed.activeAdventure.combatActive = false;
+        parsed.activeAdventure.updatedAt = nowIso;
+        parsed.updatedAt = nowIso;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
       }
     }
