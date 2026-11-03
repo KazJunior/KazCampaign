@@ -482,9 +482,27 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
         parsed.activeAdventure.combatActive = true;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
 
+        const syncReturnedGold = (res: any) => {
+          if (res && typeof res.gold === 'number') {
+            try {
+              const rawNow = localStorage.getItem(PROGRESS_KEY);
+              if (rawNow) {
+                const currentNow = JSON.parse(rawNow);
+                if (currentNow.gold !== res.gold) {
+                  currentNow.gold = res.gold;
+                  localStorage.setItem(PROGRESS_KEY, JSON.stringify(currentNow));
+                  if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('kazcampaign_gold_sync', { detail: { gold: res.gold } }));
+                  }
+                }
+              }
+            } catch {}
+          }
+        };
+
         if (syncCloud || keepalive) {
           if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
-          saveCloudProgress(parsed, keepalive).catch(() => {});
+          saveCloudProgress(parsed, keepalive).then(syncReturnedGold).catch(() => {});
         } else {
           // Sincronização periódica suave na nuvem (debounced 800ms) lendo o estado mais recente
           if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
@@ -492,9 +510,9 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
             try {
               const latestRaw = localStorage.getItem(PROGRESS_KEY);
               const latestParsed = latestRaw ? JSON.parse(latestRaw) : parsed;
-              saveCloudProgress(latestParsed).catch(() => {});
+              saveCloudProgress(latestParsed).then(syncReturnedGold).catch(() => {});
             } catch {
-              saveCloudProgress(parsed).catch(() => {});
+              saveCloudProgress(parsed).then(syncReturnedGold).catch(() => {});
             }
           }, 800);
         }
