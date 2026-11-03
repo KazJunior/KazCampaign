@@ -467,6 +467,10 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
       clearLiveBattleState();
       return;
     }
+    // Fase diária (9000) e modo treino (9999) nunca devem sobrescrever a batalha ativa da expedição
+    if (battleState.levelId >= 9000) {
+      return;
+    }
     localStorage.setItem(BATTLE_STATE_KEY, JSON.stringify(battleState));
 
     // Espelha no activeAdventure dentro de PROGRESS_KEY
@@ -506,7 +510,7 @@ export function loadLiveBattleState(): ActiveBattleState | null {
     const raw = localStorage.getItem(BATTLE_STATE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as ActiveBattleState;
-      if (parsed && typeof parsed.levelId === 'number' && Array.isArray(parsed.units) && parsed.units.length > 0) {
+      if (parsed && typeof parsed.levelId === 'number' && parsed.levelId < 9000 && Array.isArray(parsed.units) && parsed.units.length > 0) {
         return parsed;
       }
     }
@@ -515,7 +519,7 @@ export function loadLiveBattleState(): ActiveBattleState | null {
     if (rawProgress) {
       const parsedProgress = JSON.parse(rawProgress);
       const bState = parsedProgress?.activeAdventure?.battleState as ActiveBattleState | undefined;
-      if (bState && typeof bState.levelId === 'number' && Array.isArray(bState.units) && bState.units.length > 0) {
+      if (bState && typeof bState.levelId === 'number' && bState.levelId < 9000 && Array.isArray(bState.units) && bState.units.length > 0) {
         return bState;
       }
     }
@@ -540,7 +544,6 @@ export function clearLiveBattleState(): void {
         parsed.activeAdventure.battleState = null;
         parsed.activeAdventure.combatActive = false;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
-        saveCloudProgress(parsed, true).catch(() => {});
       }
     }
   } catch (err) {

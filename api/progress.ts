@@ -534,7 +534,7 @@ export async function POST(req: Request): Promise<Response> {
     await ensureProgressSchema(sql);
 
     const existingRows = await sql`
-      SELECT unlocked_classes, COALESCE(pending_gold, 0) as pending_gold,
+      SELECT gold, unlocked_classes, COALESCE(pending_gold, 0) as pending_gold,
              class_upgrades, general_upgrades, item_upgrades,
              discovered_monster_ids, discovered_item_ids, unlocked_pet_ids,
              class_missions_progress, unlocked_class_skins, equipped_class_skins, unlocked_class_skill_ids,
@@ -545,6 +545,7 @@ export async function POST(req: Request): Promise<Response> {
       LIMIT 1
     `;
     const ex = existingRows[0] || {};
+    const existingDbGold = Number(ex.gold) || 0;
     const existingDbUnlocked = ex.unlocked_classes;
     const pendingGold = Number(ex.pending_gold) || 0;
 
@@ -553,7 +554,28 @@ export async function POST(req: Request): Promise<Response> {
     const lbParty = lbRows[0]?.party;
 
     const baseGold = typeof body.gold === 'number' ? body.gold : 0;
-    const finalGold = baseGold + pendingGold;
+    let finalGold = baseGold + pendingGold;
+
+    // Garantia da recompensa de 20.000 de ouro da fase diária
+    const incomingDailyDate = body.dailyDungeon?.lastCompletedDate;
+    const dbDailyDate = ex.daily_dungeon?.lastCompletedDate;
+    const isNewDailyWin = Boolean(incomingDailyDate && incomingDailyDate !== dbDailyDate);
+    if (isNewDailyWin) {
+      finalGold = Math.max(finalGold, existingDbGold + 20000);
+    }
+
+    // Proteção contra race condition e sincronização defasada (stale sync) reduzindo ouro sem compra:
+    const countLevels = (map: unknown) => {
+      if (!map || typeof map !== 'object') return 0;
+      return Object.values(map as Record<string, unknown>).reduce((sum: number, val) => sum + (Number(val) || 0), 0);
+    };
+    const prevUpgradeCount = countLevels(ex.class_upgrades) + countLevels(ex.general_upgrades) + countLevels(ex.item_upgrades);
+    const incomingUpgradeCount = countLevels(body.classUpgrades) + countLevels(body.generalUpgrades) + countLevels(body.itemUpgrades);
+    const boughtNewClasses = Array.isArray(body.unlockedClasses) && Array.isArray(ex.unlocked_classes) && body.unlockedClasses.length > ex.unlocked_classes.length;
+
+    if (incomingUpgradeCount <= prevUpgradeCount && !boughtNewClasses) {
+      finalGold = Math.max(finalGold, existingDbGold + (isNewDailyWin ? 20000 : 0));
+    }
     const activeAdventure = body.activeAdventure && typeof body.activeAdventure === 'object' ? body.activeAdventure : null;
     const adventureHistory = Array.isArray(body.adventureHistory) ? body.adventureHistory : [];
     const completedLevels = mergeNumberArrays(ex.completed_levels, body.completedLevels);

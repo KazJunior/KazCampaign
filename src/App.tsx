@@ -257,7 +257,7 @@ export function App() {
 
         const merged: PlayerProgress = {
           ...DEFAULT_PROGRESS,
-          gold: typeof cloudP.gold === 'number' ? cloudP.gold : (localP.gold || 0),
+          gold: Math.max(typeof cloudP.gold === 'number' ? cloudP.gold : 0, Number(localP.gold) || 0),
           unlockedLevel: Math.max(
             1,
             Number(cloudP.unlockedLevel) || 1,
@@ -334,17 +334,23 @@ export function App() {
         };
 
         const incomingBattle = merged.activeAdventure?.battleState || loadLiveBattleState();
-        if (incomingBattle && merged.activeAdventure) {
+        if (
+          incomingBattle &&
+          merged.activeAdventure &&
+          incomingBattle.levelId === merged.activeAdventure.currentLevelId &&
+          incomingBattle.levelId < 9000 &&
+          Array.isArray(incomingBattle.units) &&
+          incomingBattle.units.length > 0
+        ) {
           saveLiveBattleState(incomingBattle);
           setTimeout(() => {
             resumeBattleRef.current?.(incomingBattle);
           }, 0);
-        } else if (merged.activeAdventure?.combatActive) {
-          // Combate estava ativo na expedição mas o estado da batalha está ausente (aba fechada no meio do combate).
-          // Computa Derrota em vez de permitir reiniciar a fase.
-          setTimeout(() => {
-            handleDefeat();
-          }, 0);
+        } else if (merged.activeAdventure) {
+          // Se o combate não possui estado de batalha válido para a fase atual,
+          // reseta apenas as flags de combate em andamento, mantendo intacta a aventura salva na fase
+          merged.activeAdventure.combatActive = false;
+          merged.activeAdventure.battleState = null;
         }
 
         progressRef.current = merged;
@@ -391,8 +397,10 @@ export function App() {
           // Modo local sem login: se o combate estava ativo mas o estado da batalha se perdeu
           const localP = loadPlayerProgress();
           const liveB = loadLiveBattleState();
-          if (localP.activeAdventure?.combatActive && !liveB) {
-            handleDefeat();
+          if (localP.activeAdventure && (!liveB || liveB.levelId !== localP.activeAdventure.currentLevelId)) {
+            localP.activeAdventure.combatActive = false;
+            localP.activeAdventure.battleState = null;
+            savePlayerProgress(localP);
           }
         }
       }
@@ -885,19 +893,15 @@ export function App() {
     }
 
     const savedBattle = loadLiveBattleState() || progress.activeAdventure.battleState;
-    const isCombatActive = Boolean(progress.activeAdventure.combatActive);
 
     if (
       savedBattle &&
       savedBattle.levelId === progress.activeAdventure.currentLevelId &&
+      savedBattle.levelId < 9000 &&
       Array.isArray(savedBattle.units) &&
       savedBattle.units.length > 0
     ) {
       resumeBattle(savedBattle);
-    } else if (isCombatActive) {
-      // O combate já havia sido iniciado nesta fase, mas o estado não está disponível
-      // (ex: aba fechada ou tentativa de resetar). Computa Derrota em vez de reiniciar a fase do zero.
-      handleDefeat();
     } else {
       startLevel(progress.activeAdventure.currentLevelId, progress.activeAdventure.unitsState);
     }
@@ -1099,6 +1103,9 @@ export function App() {
     setShowDailyItemDraft(false);
     setDailyInventory([]);
     setDailyEquipment({});
+    setCurrentLevel(null);
+    setUnits([]);
+    setPhase('deployment');
     setCurrentView('level_select');
   };
 
@@ -1302,6 +1309,7 @@ export function App() {
       isDailyMode ||
       currentView !== 'battle' ||
       !currentLevel ||
+      currentLevel.id >= 9000 ||
       phase === 'victory' ||
       phase === 'defeat' ||
       units.length === 0 ||
@@ -1321,7 +1329,7 @@ export function App() {
     };
 
     saveLiveBattleState(bState);
-  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure, isTrainingMode, waterTornadoActive, waterTornadoCenter]);
+  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure, isTrainingMode, isDailyMode, waterTornadoActive, waterTornadoCenter]);
 
   // Garante persistência síncrona antes do recarregamento da página (F5) ou fechamento de aba
   useEffect(() => {
@@ -1331,6 +1339,7 @@ export function App() {
         !isDailyMode &&
         currentView === 'battle' &&
         currentLevel &&
+        currentLevel.id < 9000 &&
         phase !== 'victory' &&
         phase !== 'defeat' &&
         units.length > 0 &&
@@ -1357,7 +1366,7 @@ export function App() {
       window.removeEventListener('beforeunload', handleUnloadOrHide);
       window.removeEventListener('pagehide', handleUnloadOrHide);
     };
-  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure, isTrainingMode, waterTornadoActive, waterTornadoCenter]);
+  }, [currentView, currentLevel, turnNumber, phase, units, activeBossBanner, progress.activeAdventure, isTrainingMode, isDailyMode, waterTornadoActive, waterTornadoCenter]);
 
   const handleResetProgress = () => {
     clearLiveBattleState();
@@ -1986,11 +1995,9 @@ export function App() {
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
-    clearLiveBattleState();
-    setPhase('defeat');
-    soundManager.playDefeat();
-
     if (isDailyMode) {
+      setPhase('defeat');
+      soundManager.playDefeat();
       setProgress((prev) => {
         const prevStats = prev.lineageQuestStats || {};
         if ((prevStats.noHealerWins || 0) > 0 && (prevStats.noHealerWins || 0) < 15) {
@@ -2006,6 +2013,10 @@ export function App() {
       });
       return;
     }
+
+    clearLiveBattleState();
+    setPhase('defeat');
+    soundManager.playDefeat();
 
     const latestProg = progressRef.current;
     const stageReached = currentLevel ? currentLevel.id : 1;
@@ -6796,7 +6807,6 @@ export function App() {
     const latestProg = progressRef.current;
 
     if (isDailyMode) {
-      clearLiveBattleState();
       soundManager.playVictory();
       setPhase('victory');
 
