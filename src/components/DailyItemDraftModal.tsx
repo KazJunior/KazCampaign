@@ -31,7 +31,7 @@ export const DailyItemDraftModal: React.FC<DailyItemDraftModalProps> = ({
 }) => {
   const [currentRoundIndex, setCurrentRoundIndex] = useState<number>(0);
   const [chosenItems, setChosenItems] = useState<ItemDefinition[]>([]);
-  const totalRounds = Math.min(6, draftRounds.length || 6);
+  const totalRounds = Math.min(12, draftRounds.length || 12);
 
   const currentOptions = draftRounds[currentRoundIndex] || [];
   const isDraftCompleted = chosenItems.length >= totalRounds;
@@ -87,7 +87,7 @@ export const DailyItemDraftModal: React.FC<DailyItemDraftModalProps> = ({
             <Package size={14} className="text-[#FFD700]" />
             <span>Equipamentos da Fase Diária</span>
             <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
-            <span className="text-white">6 Escolhas Exclusivas</span>
+            <span className="text-white">12 Escolhas Exclusivas</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black text-white flex flex-wrap items-center gap-2 justify-center sm:justify-start">
@@ -98,7 +98,7 @@ export const DailyItemDraftModal: React.FC<DailyItemDraftModalProps> = ({
           </h2>
 
           <p className="text-xs sm:text-sm text-[#A7B0C4] leading-relaxed">
-            Faça <strong className="text-white">6 escolhas de itens</strong> para equipar seus 4 heróis exclusivamente no Desafio Diário. Estes itens pertencem <strong className="text-[#38BDF8]">apenas a esta expedição</strong> e não alteram o inventário da sua aventura!
+            Faça <strong className="text-white">12 escolhas de itens</strong> para equipar seus 4 heróis exclusivamente no Desafio Diário. Estes itens pertencem <strong className="text-[#38BDF8]">apenas a esta expedição</strong> e não alteram o inventário da sua aventura!
           </p>
         </div>
 
@@ -121,7 +121,10 @@ export const DailyItemDraftModal: React.FC<DailyItemDraftModalProps> = ({
                 {isDone ? (
                   <Check size={13} strokeWidth={3} className="text-[#34D399]" />
                 ) : (
-                  <span>Item {rIdx + 1}</span>
+                  <span>
+                    <span className="hidden sm:inline">Item </span>
+                    {rIdx + 1}
+                  </span>
                 )}
               </div>
             );
@@ -252,14 +255,14 @@ export const DailyItemDraftModal: React.FC<DailyItemDraftModalProps> = ({
             </div>
           </div>
         ) : (
-          /* Conclusão do Draft: Todos os 6 itens selecionados */
+          /* Conclusão do Draft: Todos os 12 itens selecionados */
           <div className="bg-emerald-950/20 border-2 border-emerald-500/60 rounded-2xl p-4 sm:p-5 text-center space-y-3 animate-in fade-in zoom-in-95">
             <div className="inline-flex items-center gap-2 text-emerald-400 text-sm font-black uppercase tracking-wider">
               <CheckCircle2 size={20} />
-              <span>Todos os 6 Itens Foram Escolhidos!</span>
+              <span>Todos os 12 Itens Foram Escolhidos!</span>
             </div>
             <p className="text-xs sm:text-sm text-[#CBD5E1] max-w-lg mx-auto">
-              Seus 6 itens temporários estão prontos para serem distribuídos e equipados nos seus 4 heróis antes de dar início ao combate.
+              Seus 12 itens temporários estão prontos para serem distribuídos e equipados nos seus 4 heróis antes de dar início ao combate.
             </p>
             <button
               onClick={handleFinalConfirm}
@@ -294,7 +297,7 @@ export const DailyItemDraftModal: React.FC<DailyItemDraftModalProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2">
             {Array.from({ length: totalRounds }).map((_, idx) => {
               const item = chosenItems[idx];
               if (!item) {

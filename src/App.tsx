@@ -1050,7 +1050,7 @@ export function App() {
         0, 0, 0, 0, 0, // bonus stats
         skillIds,
         {},
-        [], // Equipamentos inicialmente vazios; jogador equipa os 6 itens na implantação
+        [], // Equipamentos inicialmente vazios; jogador equipa os 12 itens na implantação
         progress.itemUpgrades,
         getClassCumulativeBonus(className, progress.classUpgrades?.[className] || 0),
         getGlobalHeroBonus(progress),
@@ -1089,7 +1089,7 @@ export function App() {
     setIsAnimatingAction(false);
     setActiveBossBanner(null);
     setCurrentView('battle');
-    setShowEquipment(true); // Abre o modal de equipamentos para o jogador distribuir os 6 itens nos heróis
+    setShowEquipment(true); // Abre o modal de equipamentos para o jogador distribuir os 12 itens nos heróis
     soundManager.playTurnStart(true);
   };
 

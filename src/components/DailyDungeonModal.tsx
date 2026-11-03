@@ -165,7 +165,7 @@ export const DailyDungeonModal: React.FC<DailyDungeonModalProps> = ({
             <div className="text-xs">
               <strong className="text-white block font-bold">Tudo Aleatório</strong>
               <span className="text-[#A7B0C4] text-[11px]">
-                Heróis, habilidades, seleção de 6 itens, monstros e chefe mudam a cada 24 horas.
+                Heróis, habilidades, seleção de 12 itens, monstros e chefe mudam a cada 24 horas.
               </span>
             </div>
           </div>
@@ -288,10 +288,10 @@ export const DailyDungeonModal: React.FC<DailyDungeonModalProps> = ({
                 Ameaças do Desafio
               </h3>
             </div>
-            <span className="text-xs text-[#A7B0C4]">Chefe e Comitiva Sorteados</span>
+            <span className="text-xs text-[#A7B0C4]">1 Chefe e 2 Monstros Sorteados</span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {config.levelConfig.enemySpawns.map((spawn, idx) => {
               const def = MONSTER_DEFINITIONS[spawn.monsterTypeId];
               if (!def) return null;
