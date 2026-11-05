@@ -3380,6 +3380,10 @@ export function App() {
       }
 
       const sType = skill.summonCreatureType;
+      // Helper para garantir que todos os status das invocações sejam sempre estritamente menores que os do invocador
+      const getSummonStat = (val: number, ratio: number) =>
+        Math.max(1, Math.min(Math.max(1, val - 1), Math.round(val * ratio)));
+
       let newCreature: Unit;
       if (sType === 'wolf') {
         addFloatingNumber(spawnX, spawnY, '🐺 Lobo Astral Conjurado!', 'status', '#10B981');
@@ -3395,13 +3399,13 @@ export function App() {
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
-          maxHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.45)),
-          currentHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.45)),
-          atk: Math.max(16, Math.round(selectedUnit.mag * 0.8)),
-          mag: Math.max(10, Math.round(selectedUnit.mag * 0.5)),
-          def: 4,
-          res: 4,
-          mov: 4,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.5),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.5),
+          atk: getSummonStat(selectedUnit.atk, 0.8),
+          mag: getSummonStat(selectedUnit.mag, 0.5),
+          def: getSummonStat(selectedUnit.def, 0.5),
+          res: getSummonStat(selectedUnit.res, 0.5),
+          mov: Math.max(1, Math.min(selectedUnit.mov, 4)),
           range: 1,
           x: spawnX,
           y: spawnY,
@@ -3430,13 +3434,13 @@ export function App() {
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
-          maxHp: Math.max(65, Math.round(selectedUnit.maxHp * 0.70)),
-          currentHp: Math.max(65, Math.round(selectedUnit.maxHp * 0.70)),
-          atk: Math.max(14, Math.round(selectedUnit.mag * 0.6)),
-          mag: 5,
-          def: 12,
-          res: 10,
-          mov: 2,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.8),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.8),
+          atk: getSummonStat(selectedUnit.atk, 0.5),
+          mag: getSummonStat(selectedUnit.mag, 0.5),
+          def: getSummonStat(selectedUnit.def, 0.8),
+          res: getSummonStat(selectedUnit.res, 0.8),
+          mov: Math.max(1, Math.min(selectedUnit.mov, 2)),
           range: 1,
           x: spawnX,
           y: spawnY,
@@ -3467,14 +3471,14 @@ export function App() {
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
-          maxHp: Math.max(30, Math.round(selectedUnit.maxHp * 0.35)),
-          currentHp: Math.max(30, Math.round(selectedUnit.maxHp * 0.35)),
-          atk: 8,
-          mag: Math.max(18, Math.round(selectedUnit.mag * 0.9)),
-          def: 3,
-          res: 8,
-          mov: 3,
-          range: 3,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.5),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.5),
+          atk: getSummonStat(selectedUnit.atk, 0.5),
+          mag: getSummonStat(selectedUnit.mag, 0.8),
+          def: getSummonStat(selectedUnit.def, 0.5),
+          res: getSummonStat(selectedUnit.res, 0.5),
+          mov: selectedUnit.mov,
+          range: selectedUnit.range,
           x: spawnX,
           y: spawnY,
           hasMoved: false,
@@ -3502,14 +3506,14 @@ export function App() {
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
-          maxHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.40)),
-          currentHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.40)),
-          atk: Math.max(20, Math.round(selectedUnit.atk * 0.85)),
-          mag: Math.max(16, Math.round(selectedUnit.mag * 0.85)),
-          def: 5,
-          res: 6,
-          mov: 4,
-          range: 4,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.5),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.5),
+          atk: getSummonStat(selectedUnit.atk, 0.8),
+          mag: getSummonStat(selectedUnit.mag, 0.8),
+          def: getSummonStat(selectedUnit.def, 0.5),
+          res: getSummonStat(selectedUnit.res, 0.5),
+          mov: selectedUnit.mov,
+          range: selectedUnit.range,
           x: spawnX,
           y: spawnY,
           hasMoved: false,
@@ -3524,7 +3528,7 @@ export function App() {
           kills: 0,
         };
       } else {
-        // Behemoth
+        // Behemoth (Colosso de Rocha e Fogo)
         addFloatingNumber(spawnX, spawnY, '🌋 Titã Behemoth Desperto!', 'status', '#F59E0B');
         newCreature = {
           id: `summon_behemoth_${Date.now()}`,
@@ -3538,13 +3542,13 @@ export function App() {
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
-          maxHp: Math.max(110, Math.round(selectedUnit.maxHp * 1.25)),
-          currentHp: Math.max(110, Math.round(selectedUnit.maxHp * 1.25)),
-          atk: Math.max(26, Math.round(selectedUnit.mag * 1.1)),
-          mag: 15,
-          def: 15,
-          res: 12,
-          mov: 3,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.8),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.8),
+          atk: getSummonStat(selectedUnit.atk, 0.8),
+          mag: getSummonStat(selectedUnit.mag, 0.8),
+          def: getSummonStat(selectedUnit.def, 0.8),
+          res: getSummonStat(selectedUnit.res, 0.8),
+          mov: selectedUnit.mov,
           range: 1,
           x: spawnX,
           y: spawnY,
@@ -3562,7 +3566,6 @@ export function App() {
           kills: 0,
         };
       }
-
       const updatedSkills = selectedUnit.skills.map((s) =>
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
@@ -3682,8 +3685,8 @@ export function App() {
         maxXp: 100,
         maxHp: 1,
         currentHp: 1,
-        atk: Math.max(10, Math.round(selectedUnit.mag * 0.75)),
-        mag: Math.max(5, Math.round(selectedUnit.mag * 0.5)),
+        atk: Math.max(1, Math.min(Math.max(1, selectedUnit.mag - 1), Math.round(selectedUnit.mag * 0.6))),
+        mag: Math.max(1, Math.min(Math.max(1, selectedUnit.mag - 1), Math.round(selectedUnit.mag * 0.5))),
         def: 0,
         res: 0,
         mov: 3,
@@ -3797,8 +3800,8 @@ export function App() {
         maxXp: 100,
         maxHp: 1,
         currentHp: 1,
-        atk: Math.max(10, Math.round(selectedUnit.mag * 0.70)),
-        mag: Math.max(5, Math.round(selectedUnit.mag * 0.5)),
+        atk: Math.max(1, Math.min(Math.max(1, selectedUnit.mag - 1), Math.round(selectedUnit.mag * 0.6))),
+        mag: Math.max(1, Math.min(Math.max(1, selectedUnit.mag - 1), Math.round(selectedUnit.mag * 0.5))),
         def: 0,
         res: 0,
         mov: 3,
