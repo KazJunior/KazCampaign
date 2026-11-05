@@ -101,6 +101,7 @@ export interface AlchemistMixture {
   lifestealPercent?: number;
   rangeBonus?: number;
   color?: string;
+  ignoresShield?: boolean;
 }
 
 export interface Skill {

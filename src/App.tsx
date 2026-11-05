@@ -2050,7 +2050,12 @@ export function App() {
     }
     if (selectedAction === 'attack' || activeSkill) {
       const rangeMin = activeSkill ? activeSkill.rangeMin : 1;
-      const rangeMax = activeSkill ? activeSkill.rangeMax : selectedUnit.range;
+      let rangeMax = activeSkill ? activeSkill.rangeMax : selectedUnit.range;
+      if (!activeSkill && selectedUnit.alchemistMixtures?.length) {
+        selectedUnit.alchemistMixtures.forEach((m) => {
+          if (m.rangeBonus) rangeMax += m.rangeBonus;
+        });
+      }
       return getAttackableTiles({ x: selectedUnit.x, y: selectedUnit.y }, rangeMin, rangeMax, grid[0].length, grid.length);
     }
     return [];
@@ -3208,7 +3213,12 @@ export function App() {
         // AUTO-ATTACK ASSIST: If player has a hero selected (none or move mode) and directly clicks an enemy in basic attack range:
         if (!isTargetTileValid && !activeSkill && clickedUnit.faction === 'enemy') {
           const defaultRangeMin = 1;
-          const defaultRangeMax = selectedUnit.range || 1;
+          let defaultRangeMax = selectedUnit.range || 1;
+          if (selectedUnit.alchemistMixtures?.length) {
+            selectedUnit.alchemistMixtures.forEach((m) => {
+              if (m.rangeBonus) defaultRangeMax += m.rangeBonus;
+            });
+          }
           const validAttackTiles = getAttackableTiles(
             { x: selectedUnit.x, y: selectedUnit.y },
             defaultRangeMin,
@@ -4265,6 +4275,7 @@ export function App() {
     let alchemistBonusDmgPercent = 0;
     let alchemistAoe = 0;
     let alchemistLifesteal = 0;
+    let alchemistIgnoresShield = false;
     const alchemistStatusEffects: StatusEffect[] = [];
 
     if (alchemistMixes.length > 0) {
@@ -4273,6 +4284,7 @@ export function App() {
         if (m.aoeRadius && m.aoeRadius > alchemistAoe) alchemistAoe = m.aoeRadius;
         if (m.lifestealPercent && m.lifestealPercent > alchemistLifesteal) alchemistLifesteal = m.lifestealPercent;
         if (m.statusEffect) alchemistStatusEffects.push(m.statusEffect);
+        if (m.ignoresShield) alchemistIgnoresShield = true;
       });
       addFloatingNumber(selectedUnit.x, selectedUnit.y, `🧪 REAÇÃO QUÍMICA (+${alchemistBonusDmgPercent}% Dano)!`, 'status', '#10B981');
     }
@@ -4486,6 +4498,7 @@ export function App() {
     const killedMonsterTypeIds: string[] = [];
 
     for (const t of targetsToHit) {
+      let currentEffects = [...(t.statusEffects || [])];
       const isMain = t.id === target.id;
       const dmgResult = isMain ? { finalDamage, isKill, damageType } : rollActualDamage(selectedUnit, t, skill);
       let actualDmg = dmgResult.finalDamage;
@@ -4504,9 +4517,6 @@ export function App() {
         addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${lifestealHeal} (Alquimia Vampírica)`, 'healing', '#10B981');
       }
 
-
-      let currentEffects = [...(t.statusEffects || [])];
-
       // Cleansing of debuffs (e.g. Purificação Sagrada)
       if (skill?.cleansesDebuffs) {
         const beforeCount = currentEffects.length;
@@ -4522,7 +4532,7 @@ export function App() {
       }
 
       if (dmgResult.damageType !== 'healing' && actualDmg > 0) {
-        if (skill?.ignoresShield) {
+        if (skill?.ignoresShield || alchemistIgnoresShield) {
           addFloatingNumber(t.x, t.y, 'Ignorou Escudo!', 'status', '#A855F7');
         } else {
           let absorbedDamage = 0;
