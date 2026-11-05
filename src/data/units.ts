@@ -441,19 +441,19 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
   },
   pistoleiro_tempo: {
     className: 'pistoleiro_tempo',
-    name: 'Pistoleiro do Tempo',
-    role: 'Manipulação Temporal & Pistolas Duplas',
+    name: 'Dançarina do Tempo',
+    role: 'Dança das Lâminas Temporais & Floretes Gêmeos',
     maxHp: 95,
     atk: 30,
     mag: 25,
     def: 7,
     res: 9,
     mov: 4,
-    range: 4,
+    range: 3,
     color: '#DC2626',
     avatarKey: 'pistoleiro_tempo',
-    baseSkillId: 'disparo_temporal_zaphkiel',
-    description: 'Entidade misteriosa inspirada na soberana do tempo Tokisaki Kurumi. Empunha pistola e mosquete canalizando o anjo Zaphkiel e suas doze balas para acelerar seu próprio tempo, paralisar inimigos no espaço, criar clones temporais e devorar a essência do tempo.',
+    baseSkillId: 'estocada_dupla_alfa',
+    description: 'Bailarina lendária que domina o fluxo do tempo brandindo dois floretes gêmeos: o vermelho, que corta o Futuro com aceleração incisiva, e o preto, que comanda o Passado através de reversão e ecos atemporais.',
     statGrowth: { hp: 12, atk: 4, mag: 4, def: 2, res: 2 },
     isSecret: true,
   }
@@ -533,11 +533,13 @@ Preso entre as runas roubadas, o traidor zomba da morte terrena. O aço vulgar d
 Para que ele morra de verdade e seus pecados sejam purificados, o traidor deve ser subjugado pela retribuição dos magos originais. Formem uma irmandade tecida apenas pelo arcano e restaurem a harmonia que ele violou.`,
   },
   pistoleiro_tempo: {
-    title: 'Pistoleiro do Tempo',
-    description: 'Uma anomalia temporal aguarda nas fendas do espaço-tempo... O Boss Secreto do Tempo despertará no futuro para quebrar o selo de Kurumi.',
-    riddle: `Quando os ponteiros do grande relógio astral apontarem para a eternidade, as sombras do passado e do futuro colidirão...
+    title: 'Dançarina do Tempo',
+    description: 'Na Fase 1, passe 5 turnos sem se mover, atacar ou realizar qualquer ação para abrir a Ruptura no Tempo. Entre no Portal Vermelho e vença as 10 Fases Secretas do Tempo, derrotando o Verme Cósmico Devorador do Tempo na 10ª fase.',
+    riddle: `No primeiro passo da jornada, onde os precipitados sacam suas armas, apenas aquele que permanece imóvel diante do fluxo do tempo ouvirá o bater do grande relógio...
 
-A Dama do Relógio aguarda o despertar de um adversário digno que desafie as correntes do próprio tempo. Derrote a anomalia secreta que surgirá no futuro para romper o selo de Kurumi.`,
+Deixe cinco voltas da ampulheta passarem em absoluto silêncio, sem dar um único passo ou erguer a lâmina. Uma ruptura carmesim se abrirá no coração da clareira.
+
+Atravesse o portal proibido, supere o Fantasma do Tempo e abata o Verme Cósmico que devora a eternidade para despertar a Dançarina do Tempo.`,
   }
 };
 
@@ -570,20 +572,23 @@ export function getMaxCompletedLevel(progress: {
   if (typeof progress.leaderboardHighestLevel === 'number') {
     max = Math.max(max, progress.leaderboardHighestLevel);
   }
-  if (progress.activeAdventure && progress.activeAdventure.currentLevelId > 1) {
+  if (progress.activeAdventure && progress.activeAdventure.currentLevelId > 1 && progress.activeAdventure.currentLevelId <= 50) {
     max = Math.max(max, progress.activeAdventure.currentLevelId - 1);
   }
   if (Array.isArray(progress.adventureHistory)) {
     for (const rec of progress.adventureHistory) {
       if (rec.result === 'victory') {
         max = Math.max(max, 50);
-      } else if (rec.farthestLevel && rec.farthestLevel > 1) {
+      } else if (rec.farthestLevel && rec.farthestLevel > 1 && rec.farthestLevel <= 50) {
         max = Math.max(max, rec.farthestLevel - 1);
       }
     }
   }
   if (Array.isArray(progress.completedLevels) && progress.completedLevels.length > 0) {
-    max = Math.max(max, ...progress.completedLevels);
+    const campaignCompleted = progress.completedLevels.filter((lvl) => lvl <= 50);
+    if (campaignCompleted.length > 0) {
+      max = Math.max(max, ...campaignCompleted);
+    }
   }
   return max;
 }

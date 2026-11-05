@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LEVELS } from '../data/levels';
+import { LEVELS, getLevelById } from '../data/levels';
 import type { PlayerProgress } from '../types/game';
 import {
   Lock,
@@ -91,7 +91,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   const todayDateKey = getTodayDateString();
   const isDailyCompletedToday = progress.dailyDungeon?.lastCompletedDate === todayDateKey;
 
-  const defaultAct = Math.min(5, Math.max(1, Math.ceil(currentStageNum / 10)));
+  const defaultAct = currentStageNum > 50 ? 1 : Math.min(5, Math.max(1, Math.ceil(currentStageNum / 10)));
   const [selectedAct, setSelectedAct] = useState<number | 'all'>(defaultAct);
 
   const adventureInventoryCount = activeAdv?.inventory?.length || 0;
@@ -106,7 +106,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
     { id: 'all', label: 'Todas as Fases (1-50)', boss: '', range: [1, 50] },
   ] as const;
 
-  const currentLevelInfo = LEVELS.find((l) => l.id === currentStageNum) || LEVELS[0];
+  const currentLevelInfo = getLevelById(currentStageNum) || LEVELS[0];
 
   const filteredLevels = LEVELS.filter((level) => {
     if (selectedAct === 'all') return true;

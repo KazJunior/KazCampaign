@@ -4,7 +4,7 @@ export interface Point {
 }
 
 export type TerrainType = 'grass' | 'stone' | 'sand' | 'dirt' | 'water' | 'swamp' | 'void';
-export type ObstacleType = 'none' | 'tree' | 'rock' | 'ruins' | 'shrine' | 'wall' | 'pillar' | 'ice_pillar' | 'thorns' | 'tombstone' | 'note' | 'crystal_fire' | 'crystal_ice' | 'crystal_wind' | 'crystal_lightning';
+export type ObstacleType = 'none' | 'tree' | 'rock' | 'ruins' | 'shrine' | 'wall' | 'pillar' | 'ice_pillar' | 'thorns' | 'tombstone' | 'note' | 'crystal_fire' | 'crystal_ice' | 'crystal_wind' | 'crystal_lightning' | 'time_portal';
 
 export interface TileData {
   x: number;
@@ -19,6 +19,7 @@ export interface TileData {
   isWaterTornadoCenter?: boolean; // Centro do tornado de água do Leviatã
   antiHealPermanent?: boolean; // Área deixada pelo Corte Cruz do Cavaleiro das Trevas que impede qualquer cura até o fim da batalha
   borderFire?: boolean; // Chamas da borda do mapa invocadas pelo Cavaleiro das Trevas
+  isClockHandZone?: boolean; // Zona segura dos ponteiros do relógio na batalha contra o Verme Cósmico (Fase 110)
 }
 
 export type UnitFaction = 'player' | 'enemy';
@@ -124,6 +125,7 @@ export interface Skill {
   defenseIgnoreRatio?: number;
   ignoresShield?: boolean; // Ignora barreiras e escudos do alvo, causando dano direto à vida
   stealsShield?: boolean; // Se o alvo possuir escudo ativo, rouba todo o escudo para si antes de aplicar o dano
+  stealsCooldowns?: number; // Aumenta o cooldown das habilidades do alvo em N turnos e reduz o do conjurador
   debuffsAllPlayersAtk?: number; // % de redução de dano aplicada a todos os heróis no mapa
   debuffDuration?: number; // Duração do debuff global aplicado aos heróis
   targetFurthestEnemy?: boolean; // IA prioriza o inimigo mais distante (respeitando provocação)
@@ -157,6 +159,7 @@ export interface Skill {
   chainCount?: number; // Number of targets lightning chains to (Mago Elétrico)
   chainRange?: number; // Max distance between chained links
   casterStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to the caster upon using this skill
+  secondaryCasterStatusEffect?: StatusEffect; // Secondary status effect applied to the caster upon using this skill
   alliesStatusEffect?: StatusEffect; // Applies a status effect (e.g. shield, buff) to allies in the skill AoE
   shieldPercentOfMaxHp?: number; // Concede escudo baseado em % da vida máxima do conjurador (ex: 0.20 para 20%)
   shieldPercentOfMag?: number; // Concede escudo baseado em % da magia do conjurador (ex: 0.80 para 80%)

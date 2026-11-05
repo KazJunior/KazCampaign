@@ -1264,6 +1264,167 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     description: 'BOSS SUPREMO FINAL (FASE 50): A divindade do caos definitivo. O teste final para a sua guilda.',
     isBoss: true,
   },
+  fantasma_do_tempo: {
+    typeId: 'fantasma_do_tempo',
+    name: 'Fantasma do Tempo',
+    role: 'attacker',
+    act: 1,
+    maxHp: 520,
+    atk: 26,
+    mag: 38,
+    def: 24,
+    res: 28,
+    mov: 3,
+    range: 3,
+    color: '#06B6D4',
+    avatarKey: 'time_phantom_boss',
+    skillId: 'fantasma_toque_atraso',
+    skillIds: [
+      'fantasma_toque_atraso',
+      'fantasma_badalada_espectral',
+      'fantasma_salto_cronologico',
+      'fantasma_manto_paradoxo',
+    ],
+    description: 'MINI BOSS SECRETO (FASE TEMPORAL 5): Aparição espectral aprisionada entre os segundos que atrasa o movimento dos heróis, silencia habilidades com badaladas da meia-noite e salta pelos ponteiros.',
+    isMiniBoss: true,
+  },
+  verme_cosmico_tempo: {
+    typeId: 'verme_cosmico_tempo',
+    name: 'Verme Cósmico Devorador do Tempo',
+    role: 'attacker',
+    act: 1,
+    maxHp: 880,
+    atk: 42,
+    mag: 44,
+    def: 38,
+    res: 40,
+    mov: 3,
+    range: 3,
+    color: '#DC2626',
+    avatarKey: 'cosmic_time_worm_boss',
+    skillId: 'verme_devorar_futuro',
+    skillIds: [
+      'verme_devorar_futuro',
+      'verme_onda_temporal',
+      'verme_tragar_vazio',
+      'verme_paradoxo_ouroboros',
+    ],
+    description: 'BOSS SECRETO DO TEMPO (FASE TEMPORAL 10): Entidade colossal abissal que devora o futuro dos heróis, arremessa-os para fora dos ponteiros do relógio e distorce a causalidade. Derrote-o para libertar a Dançarina do Tempo!',
+    isBoss: true,
+  },
+
+  // =========================================================================
+  // --- MONSTROS NORMAIS EXCLUSIVOS DA FENDA DO TEMPO (FASES 101 A 110) ---
+  // ~30% mais fortes que os monstros normais equivalentes das fases 1 a 10
+  // =========================================================================
+  guardiao_relogio: {
+    typeId: 'guardiao_relogio',
+    name: 'Guardião do Relógio',
+    role: 'tank',
+    act: 1,
+    maxHp: 186,
+    atk: 36,
+    mag: 12,
+    def: 17,
+    res: 14,
+    mov: 2,
+    range: 1,
+    color: '#D97706',
+    avatarKey: 'clockwork_guardian',
+    skillId: 'guardiao_golpe_pendulo',
+    skillIds: ['guardiao_golpe_pendulo', 'guardiao_escudo_engrenagem'],
+    description: 'Armadura autômata pesada movida a engrenagens de latão e lâminas de pêndulo. Cerca de 30% mais resistente e ofensivo que os guardas convencionais.',
+  },
+  tecelao_do_tempo: {
+    typeId: 'tecelao_do_tempo',
+    name: 'Tecelão do Tempo',
+    role: 'attacker',
+    act: 1,
+    maxHp: 100,
+    atk: 12,
+    mag: 34,
+    def: 4,
+    res: 14,
+    mov: 2,
+    range: 3,
+    color: '#9333EA',
+    avatarKey: 'time_weaver',
+    skillId: 'tecelao_rajada_cronica',
+    skillIds: ['tecelao_rajada_cronica', 'tecelao_anomalia_temporal'],
+    description: 'Conjurador que tece fios cronológicos para bombardear o campo de batalha com rajadas e anomalias em área. Cerca de 30% mais destrutivo que magos das trevas comuns.',
+  },
+  automato_engrenagens: {
+    typeId: 'automato_engrenagens',
+    name: 'Autômato de Engrenagens',
+    role: 'attacker',
+    act: 1,
+    maxHp: 157,
+    atk: 33,
+    mag: 4,
+    def: 13,
+    res: 5,
+    mov: 3,
+    range: 1,
+    color: '#EA580C',
+    avatarKey: 'gear_automaton',
+    skillId: 'automato_corte_segundos',
+    skillIds: ['automato_corte_segundos', 'automato_corda_rapida'],
+    description: 'Soldado de engrenagens de alta rotação que acelera seu maquinário com cordas mecânicas e desfecha cortes velozes de ponteiro. Cerca de 30% mais forte que guerreiros orcs.',
+  },
+  sabujo_temporal: {
+    typeId: 'sabujo_temporal',
+    name: 'Sabujo do Vácuo Temporal',
+    role: 'attacker',
+    act: 1,
+    maxHp: 115,
+    atk: 29,
+    mag: 14,
+    def: 8,
+    res: 12,
+    mov: 4,
+    range: 1,
+    color: '#DC2626',
+    avatarKey: 'temporal_hound',
+    skillId: 'sabujo_mordida_temporal',
+    skillIds: ['sabujo_mordida_temporal', 'sabujo_uivo_paradoxo'],
+    description: 'Predador etéreo forjado no vácuo de Zaphkiel com mordidas entrópicas e uivos que retardam o movimento. Cerca de 30% mais ágil e letal que lobos espectrais.',
+  },
+  cultista_zaphkiel: {
+    typeId: 'cultista_zaphkiel',
+    name: 'Cultista de Zaphkiel',
+    role: 'support',
+    act: 1,
+    maxHp: 122,
+    atk: 14,
+    mag: 38,
+    def: 8,
+    res: 20,
+    mov: 2,
+    range: 3,
+    color: '#B45309',
+    avatarKey: 'zaphkiel_cultist',
+    skillId: 'cultista_disparo_temporal',
+    skillIds: ['cultista_disparo_temporal', 'cultista_reversao_cronica', 'cultista_manto_areia'],
+    description: 'Sacerdote temporal das areias astrais capaz de reverter os segundos para curar aliados e criar barreiras de areia. Cerca de 30% mais resistente e potente que bruxas comuns.',
+  },
+  draco_cronologico: {
+    typeId: 'draco_cronologico',
+    name: 'Draco Cronológico',
+    role: 'attacker',
+    act: 1,
+    maxHp: 215,
+    atk: 42,
+    mag: 31,
+    def: 16,
+    res: 16,
+    mov: 3,
+    range: 2,
+    color: '#EF4444',
+    avatarKey: 'chronos_drake',
+    skillId: 'draco_sopro_entropia',
+    skillIds: ['draco_sopro_entropia', 'draco_impacto_pesado'],
+    description: 'Draco ancestral com asas de relógio astral e escamas de latão reluzente. Desfere sopros devastadores de entropia e batidas de cauda com recuo. Cerca de 30% mais poderoso que dracos vulcânicos.',
+  },
 
   // =========================================================================
   // --- BONECOS DE TREINO (MODO TREINAMENTO) ---
@@ -1492,6 +1653,21 @@ export function createMonsterUnit(
     mag = def.mag + Math.round(levelOffset * scaling);
     unitDef = def.def + Math.round(levelOffset * 3.4);
     res = def.res + Math.round(levelOffset * 3.2);
+  } else if (
+    typeId === 'guardiao_relogio' ||
+    typeId === 'tecelao_do_tempo' ||
+    typeId === 'automato_engrenagens' ||
+    typeId === 'sabujo_temporal' ||
+    typeId === 'cultista_zaphkiel' ||
+    typeId === 'draco_cronologico'
+  ) {
+    // Monstros normais exclusivos da Fenda Temporal (Fases 101 a 110):
+    // Cerca de 30% mais fortes que os monstros normais equivalentes das fases 1 a 10 (base +30% e crescimento +30%)
+    maxHp = def.maxHp + Math.round(levelOffset * 40);
+    atk = def.atk + Math.round(levelOffset * 6.5);
+    mag = def.mag + Math.round(levelOffset * 6.5);
+    unitDef = def.def + Math.round(levelOffset * 3.1);
+    res = def.res + Math.round(levelOffset * 2.9);
   } else {
     // Normal monster progressive scaling (+10% em todos os status)
     maxHp = def.maxHp + Math.round(levelOffset * 31);

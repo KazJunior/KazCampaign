@@ -73,6 +73,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isPlayerTurn = phase === 'player_turn';
   const isDeployment = phase === 'deployment';
+  const isSecretTimeStage = levelNumber >= 101 && levelNumber <= 110;
 
   return (
     <>
@@ -83,8 +84,14 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-3">
         {/* Level & Turn Info */}
         <div className="flex items-center gap-3">
-          <div className="bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 py-1 rounded-md font-bold text-sm tracking-wide">
-            FASE {levelNumber} / 50
+          <div
+            className={
+              isSecretTimeStage
+                ? 'bg-[#EF4444]/15 border border-[#EF4444]/50 text-[#F87171] px-3 py-1 rounded-md font-bold text-sm tracking-wide shadow-[0_0_12px_rgba(239,68,68,0.25)]'
+                : 'bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 py-1 rounded-md font-bold text-sm tracking-wide'
+            }
+          >
+            {isSecretTimeStage ? `FENDA DO TEMPO ${levelNumber - 100} / 10` : `FASE ${levelNumber} / 50`}
           </div>
           <div>
             <h1 className="font-bold text-base text-[#F3F4F8] leading-tight">{levelName}</h1>
@@ -291,8 +298,14 @@ export const TopBar: React.FC<TopBarProps> = ({
       {/* 1. Mobile Stage & Turn Floating Badge (Top-Left) */}
       <div className="md:hidden fixed top-2 left-2 z-30 pointer-events-none flex flex-col gap-1 max-w-[calc(100vw-110px)]">
         <div className="bg-[#1B2030]/95 backdrop-blur-md border border-[#343B50] px-2.5 py-1 rounded-xl shadow-lg flex items-center gap-2 pointer-events-auto">
-          <span className="bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/40 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0">
-            F{levelNumber}
+          <span
+            className={
+              isSecretTimeStage
+                ? 'bg-[#EF4444]/20 text-[#F87171] border border-[#EF4444]/50 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0'
+                : 'bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/40 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0'
+            }
+          >
+            {isSecretTimeStage ? `FT${levelNumber - 100}` : `F${levelNumber}`}
           </span>
           <span className="text-xs font-bold text-[#F3F4F8] truncate leading-tight">
             {levelName}

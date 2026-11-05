@@ -791,6 +791,88 @@ export function createRichObstacle(type: ObstacleType, x: number, y: number): TH
       break;
     }
 
+    case 'time_portal': {
+      // --- Portal Vermelho da Ruptura no Tempo (Fase 1 Secreta) ---
+      const portalGroup = new THREE.Group();
+      portalGroup.name = 'timePortalProp';
+
+      const crimsonGlowMat = new THREE.MeshStandardMaterial({
+        color: 0xdc2626,
+        emissive: 0xef4444,
+        emissiveIntensity: 1.4,
+        roughness: 0.15,
+        metalness: 0.3,
+      });
+      const darkRimMat = new THREE.MeshStandardMaterial({
+        color: 0x1f0909,
+        emissive: 0x7f1d1d,
+        emissiveIntensity: 0.5,
+        roughness: 0.4,
+        metalness: 0.8,
+      });
+      const goldClockMat = new THREE.MeshStandardMaterial({
+        color: 0xfbbf24,
+        emissive: 0xd97706,
+        emissiveIntensity: 0.8,
+        roughness: 0.2,
+        metalness: 0.9,
+      });
+      const coreVortexMat = new THREE.MeshBasicMaterial({
+        color: 0xff1744,
+        transparent: true,
+        opacity: 0.78,
+        side: THREE.DoubleSide,
+      });
+
+      // Base circular de relógio no solo
+      const groundRing = new THREE.Mesh(new THREE.RingGeometry(0.28, 0.42, 24), crimsonGlowMat);
+      groundRing.rotation.x = -Math.PI / 2;
+      groundRing.position.y = 0.03;
+      portalGroup.add(groundRing);
+
+      // Arco vertical do Portal Temporal
+      const outerArch = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.045, 10, 28), darkRimMat);
+      outerArch.position.y = 0.48;
+      portalGroup.add(outerArch);
+
+      const innerEnergyRing = new THREE.Mesh(new THREE.TorusGeometry(0.31, 0.025, 10, 28), crimsonGlowMat);
+      innerEnergyRing.position.y = 0.48;
+      innerEnergyRing.name = 'spinningOrb';
+      portalGroup.add(innerEnergyRing);
+
+      // Horizonte de eventos vermelho translúcido no centro do portal
+      const vortexDisc = new THREE.Mesh(new THREE.CircleGeometry(0.30, 24), coreVortexMat);
+      vortexDisc.position.y = 0.48;
+      portalGroup.add(vortexDisc);
+
+      // 12 marcações de horas de Zaphkiel ao redor do portal
+      for (let i = 0; i < 12; i++) {
+        const angle = (i / 12) * Math.PI * 2;
+        const tick = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 0.02), goldClockMat);
+        tick.position.set(Math.cos(angle) * 0.36, 0.48 + Math.sin(angle) * 0.36, 0);
+        tick.rotation.z = angle - Math.PI / 2;
+        portalGroup.add(tick);
+      }
+
+      // Ponteiros do relógio no centro do vórtice
+      const hourHand = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.16, 0.02), goldClockMat);
+      hourHand.position.set(0.04, 0.52, 0.02);
+      hourHand.rotation.z = -Math.PI / 4;
+      portalGroup.add(hourHand);
+
+      const minuteHand = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.24, 0.02), crimsonGlowMat);
+      minuteHand.position.set(-0.04, 0.56, 0.025);
+      minuteHand.rotation.z = Math.PI / 6;
+      portalGroup.add(minuteHand);
+
+      const portalLight = new THREE.PointLight(0xef4444, 1.8, 3.2);
+      portalLight.position.set(0, 0.55, 0);
+      portalGroup.add(portalLight);
+
+      group.add(portalGroup);
+      break;
+    }
+
     default:
       break;
   }

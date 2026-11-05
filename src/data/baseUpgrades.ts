@@ -177,11 +177,11 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 5, cost: 100000, bonus: { hp: 62, atk: 7, mag: 6, def: 3, res: 2 }, name: 'Grão-Mestre Alquimista', description: '+62 HP, +7 ATK, +6 MAG, +3 DEF e +2 RES permanente.' },
   ],
   pistoleiro_tempo: [
-    { level: 1, cost: 10000, bonus: { hp: 18, atk: 2, mag: 1 }, name: 'Chumbo Encantado', description: '+18 HP, +2 ATK e +1 MAG permanente.' },
-    { level: 2, cost: 30000, bonus: { hp: 26, atk: 3, mag: 2, res: 1 }, name: 'Gatilho de Precisão', description: '+26 HP, +3 ATK, +2 MAG e +1 RES permanente.' },
-    { level: 3, cost: 50000, bonus: { hp: 35, atk: 4, mag: 3, def: 1 }, name: 'Engrenagens Astrais', description: '+35 HP, +4 ATK, +3 MAG e +1 DEF permanente.' },
-    { level: 4, cost: 80000, bonus: { hp: 48, atk: 6, mag: 4, res: 2 }, name: 'Ponteiros do Destino', description: '+48 HP, +6 ATK, +4 MAG e +2 RES permanente.' },
-    { level: 5, cost: 100000, bonus: { hp: 68, atk: 8, mag: 6, def: 2, res: 3 }, name: 'Soberana do Relógio Zaphkiel', description: '+68 HP, +8 ATK, +6 MAG, +2 DEF e +3 RES permanente.' },
+    { level: 1, cost: 10000, bonus: { hp: 18, atk: 2, mag: 1 }, name: 'Estocada do Passado', description: '+18 HP, +2 ATK e +1 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 26, atk: 3, mag: 2, res: 1 }, name: 'Lâmina do Futuro', description: '+26 HP, +3 ATK, +2 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 35, atk: 4, mag: 3, def: 1 }, name: 'Harmonia Temporal', description: '+35 HP, +4 ATK, +3 MAG e +1 DEF permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 48, atk: 6, mag: 4, res: 2 }, name: 'Valsa dos Ponteiros', description: '+48 HP, +6 ATK, +4 MAG e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 68, atk: 8, mag: 6, def: 2, res: 3 }, name: 'Prima Ballerina do Tempo', description: '+68 HP, +8 ATK, +6 MAG, +2 DEF e +3 RES permanente.' },
   ],
 
 };

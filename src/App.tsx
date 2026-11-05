@@ -21,7 +21,7 @@ import type {
   UnitProgression,
 } from './types/game';
 import { isDebuffStatus } from './types/game';
-import { LEVELS, createTrainingLevel } from './data/levels';
+import { LEVELS, getLevelById, createTrainingLevel, isTileInClockHands } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
@@ -568,7 +568,7 @@ export function App() {
     const liveBattle = loadLiveBattleState();
     const loadedProg = loadPlayerProgress();
     if (liveBattle && loadedProg.activeAdventure) {
-      return LEVELS.find((l) => l.id === liveBattle.levelId) || LEVELS[0];
+      return getLevelById(liveBattle.levelId) || LEVELS[0];
     }
     return null;
   });
@@ -576,15 +576,16 @@ export function App() {
     const liveBattle = loadLiveBattleState();
     const loadedProg = loadPlayerProgress();
     if (liveBattle && loadedProg.activeAdventure) {
-      const lvlConfig = LEVELS.find((l) => l.id === liveBattle.levelId) || LEVELS[0];
+      const lvlConfig = getLevelById(liveBattle.levelId) || LEVELS[0];
       return lvlConfig.grid.map((row, y) =>
         row.map((cell, x) => ({
           x,
           y,
           terrain: cell.terrain,
           obstacle: cell.obstacle,
-          isWalkable: cell.obstacle === 'none',
+          isWalkable: cell.obstacle === 'none' || cell.obstacle === 'time_portal',
           blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins',
+          isClockHandZone: liveBattle.levelId === 110 ? isTileInClockHands(x, y, liveBattle.turnNumber || 1, row.length, lvlConfig.grid.length) : false,
         }))
       );
     }
@@ -664,6 +665,12 @@ export function App() {
   const [isVoidTextBannerActive, setIsVoidTextBannerActive] = useState(false);
   const voidColorDrainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const voidTextBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTimeRiftBannerActive, setIsTimeRiftBannerActive] = useState(false);
+  const hasPlayerActedInStage1Ref = useRef<boolean>(false);
+  const timePortalSpawnedRef = useRef<boolean>(false);
+  const timeRiftBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isClockHandBannerActive, setIsClockHandBannerActive] = useState(false);
+  const clockHandBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -717,7 +724,7 @@ export function App() {
 
   // Start or resume a specific level within an adventure run
   const startLevel = (levelId: number, customUnitsState?: Record<string, UnitProgression>) => {
-    const lvlConfig = LEVELS.find((l) => l.id === levelId) || LEVELS[0];
+    const lvlConfig = getLevelById(levelId) || LEVELS[0];
     setCurrentLevel(lvlConfig);
 
     // Auto-discover monsters for Bestiary
@@ -736,8 +743,9 @@ export function App() {
         y,
         terrain: cell.terrain,
         obstacle: cell.obstacle,
-        isWalkable: cell.obstacle === 'none',
+        isWalkable: cell.obstacle === 'none' || cell.obstacle === 'time_portal',
         blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins',
+        isClockHandZone: lvlConfig.id === 110 ? isTileInClockHands(x, y, 1, row.length, lvlConfig.grid.length) : false,
       }))
     );
     setGrid(tileGrid);
@@ -819,15 +827,28 @@ export function App() {
 
     setWaterTornadoActive(false);
     setWaterTornadoCenter(null);
+    hasPlayerActedInStage1Ref.current = false;
+    timePortalSpawnedRef.current = false;
+    setIsTimeRiftBannerActive(false);
+
+    if (lvlConfig.id === 110) {
+      setIsClockHandBannerActive(true);
+      if (clockHandBannerTimerRef.current) clearTimeout(clockHandBannerTimerRef.current);
+      clockHandBannerTimerRef.current = setTimeout(() => setIsClockHandBannerActive(false), 7000);
+    } else {
+      setIsClockHandBannerActive(false);
+    }
 
     const bossFound = enemyUnits.find((u) => u.isBoss || u.isMiniBoss);
     let bannerObj: { name: string; subtitle: string; phase?: number } | null = null;
     if (bossFound) {
+      const isSecretTimeStage = lvlConfig.id >= 101 && lvlConfig.id <= 110;
+      const stageLabel = isSecretTimeStage ? `FASE SECRETA ${lvlConfig.id - 100}` : `FASE ${lvlConfig.id}`;
       bannerObj = {
         name: bossFound.name,
         subtitle: bossFound.isBoss
-          ? `BOSS PODEROSO (FASE ${lvlConfig.id}) — ${lvlConfig.subtitle}`
-          : `MINI BOSS (FASE ${lvlConfig.id}) — ${lvlConfig.subtitle}`,
+          ? `BOSS ${isSecretTimeStage ? 'SECRETO ' : 'PODEROSO '}(${stageLabel}) — ${lvlConfig.subtitle}`
+          : `MINI BOSS ${isSecretTimeStage ? 'SECRETO ' : ''}(${stageLabel}) — ${lvlConfig.subtitle}`,
         phase: 1,
       };
       setActiveBossBanner(bannerObj);
@@ -865,7 +886,7 @@ export function App() {
 
   // Resume an active battle from where it was left off
   const resumeBattle = (savedBattle: ActiveBattleState) => {
-    const lvlConfig = LEVELS.find((l) => l.id === savedBattle.levelId) || LEVELS[0];
+    const lvlConfig = getLevelById(savedBattle.levelId) || LEVELS[0];
     setCurrentLevel(lvlConfig);
 
     const tileGrid: TileData[][] = lvlConfig.grid.map((row, y) =>
@@ -874,8 +895,9 @@ export function App() {
         y,
         terrain: cell.terrain,
         obstacle: cell.obstacle,
-        isWalkable: cell.obstacle === 'none',
+        isWalkable: cell.obstacle === 'none' || cell.obstacle === 'time_portal',
         blocksVision: cell.obstacle === 'wall' || cell.obstacle === 'ruins',
+        isClockHandZone: savedBattle.levelId === 110 ? isTileInClockHands(x, y, savedBattle.turnNumber || 1, row.length, lvlConfig.grid.length) : false,
       }))
     );
     setGrid(tileGrid);
@@ -1092,6 +1114,11 @@ export function App() {
     setPhase('player_turn');
     setSelectedUnitId(null);
     soundManager.playTurnStart(true);
+    if (currentLevel?.id === 110) {
+      setIsClockHandBannerActive(true);
+      if (clockHandBannerTimerRef.current) clearTimeout(clockHandBannerTimerRef.current);
+      clockHandBannerTimerRef.current = setTimeout(() => setIsClockHandBannerActive(false), 7000);
+    }
   };
 
   const handleStartDailyDungeon = () => {
@@ -2600,6 +2627,9 @@ export function App() {
       const isTargetable = attackableTiles.some((t) => t.x === x && t.y === y);
       if (!isTargetable) return;
 
+      if (!timePortalSpawnedRef.current) {
+        hasPlayerActedInStage1Ref.current = true;
+      }
       setIsAnimatingAction(true);
       const petSkill = activePetSkill;
       const aoeType = petSkill.aoeType || 'circle';
@@ -2867,6 +2897,9 @@ export function App() {
     if (selectedAction === 'move' && selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasMoved) {
       const isReachable = reachableTiles.some((t) => t.x === x && t.y === y);
       if (isReachable && !clickedUnit) {
+        if (!timePortalSpawnedRef.current) {
+          hasPlayerActedInStage1Ref.current = true;
+        }
         setIsAnimatingAction(true);
         const fromX = selectedUnit.x;
         const fromY = selectedUnit.y;
@@ -2978,6 +3011,15 @@ export function App() {
         setSelectedAction('none');
         soundManager.playStep();
         setIsAnimatingAction(false);
+
+        if (grid[y]?.[x]?.obstacle === 'time_portal' && !unitDead) {
+          soundManager.playUpgrade();
+          soundManager.playMagicSpell();
+          addFloatingNumber(x, y, '⏳ Entrando na Fenda do Tempo!', 'status', '#EF4444');
+          setTimeout(() => {
+            startLevel(101);
+          }, 500);
+        }
         return;
       }
     }
@@ -3317,6 +3359,37 @@ export function App() {
       return;
     }
 
+    // Entering or inspecting the Red Time Portal in Stage 1
+    if (currentObstacle === 'time_portal' && !clickedUnit) {
+      if (selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasMoved) {
+        const canReachPortal = getReachableTiles(selectedUnit, grid, units).some((pt) => pt.x === x && pt.y === y);
+        if (canReachPortal) {
+          setIsAnimatingAction(true);
+          if (boardRef.current) {
+            await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, x, y);
+          }
+          setUnits((prev) =>
+            prev.map((u) => (u.id === selectedUnit.id ? { ...u, x, y, hasMoved: true } : u))
+          );
+          soundManager.playUpgrade();
+          soundManager.playMagicSpell();
+          addFloatingNumber(x, y, '⏳ Entrando na Fenda do Tempo!', 'status', '#EF4444');
+          setIsAnimatingAction(false);
+          setTimeout(() => {
+            startLevel(101);
+          }, 500);
+          return;
+        } else {
+          soundManager.playSelect();
+          addFloatingNumber(x, y, '🌀 Aproxime-se para entrar no Portal Temporal!', 'status', '#EF4444');
+          return;
+        }
+      }
+      soundManager.playSelect();
+      addFloatingNumber(x, y, '🌀 Portal do Tempo: Mova qualquer herói até aqui!', 'status', '#EF4444');
+      return;
+    }
+
     // Select / Deselect unit
     if (clickedUnit && !(clickedUnit.faction === 'enemy' && clickedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0))) {
       setSelectedUnitId(clickedUnit.id);
@@ -3352,6 +3425,9 @@ export function App() {
       return;
     }
 
+    if (!timePortalSpawnedRef.current) {
+      hasPlayerActedInStage1Ref.current = true;
+    }
     setIsAnimatingAction(true);
     setDamagePreview(null);
 
@@ -3550,12 +3626,12 @@ export function App() {
           damageDealt: 0,
           kills: 0,
         };
-      } else if (sType === 'kurumi_clone') {
-        addFloatingNumber(spawnX, spawnY, '⏳ Clone Temporal Manifestado!', 'status', '#DC2626');
+      } else if (sType === 'kurumi_clone' || sType === 'dancarina_clone') {
+        addFloatingNumber(spawnX, spawnY, '⏳ Versão Paralela Manifestada!', 'status', '#DC2626');
         newCreature = {
-          id: `summon_kurumi_${Date.now()}`,
-          name: 'Clone de Kurumi',
-          className: 'Clone Temporal',
+          id: `summon_dancarina_${Date.now()}`,
+          name: 'Versão Paralela',
+          className: 'Versão Paralela',
           faction: 'player',
           isSummoned: true,
           summonTurnsLeft: 2,
@@ -3579,8 +3655,8 @@ export function App() {
           isDead: false,
           color: '#DC2626',
           avatarKey: 'pistoleiro_tempo',
-          skills: [JSON.parse(JSON.stringify(SKILLS.tiro_clone_kurumi))],
-          learnedSkillIds: ['tiro_clone_kurumi'],
+          skills: [JSON.parse(JSON.stringify(SKILLS.estocada_clone_eco || SKILLS.tiro_clone_kurumi))],
+          learnedSkillIds: ['estocada_clone_eco'],
           statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
           damageDealt: 0,
           kills: 0,
@@ -3657,13 +3733,26 @@ export function App() {
         await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', 0, skill, { x: destX, y: destY });
       }
 
-      addFloatingNumber(destX, destY, 'Teleporte Místico!', 'status', '#8B5CF6');
+      addFloatingNumber(destX, destY, skill.name || 'Teleporte!', 'status', '#8B5CF6');
 
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
-      if (skill.statusEffect) {
-        const eff = { ...skill.statusEffect, appliedTurn: turnNumberRef.current };
-        if (eff.type === 'buff_atk') {
-          addFloatingNumber(destX, destY, `+${eff.value}% Poder Mágico`, 'status', '#F97316');
+      const effToApply = skill.statusEffect || skill.casterStatusEffect;
+      if (effToApply) {
+        const eff = { ...effToApply, appliedTurn: turnNumberRef.current };
+        if (eff.type === 'shield') {
+          if (skill.shieldPercentOfAtk) {
+            eff.value = Math.max(1, Math.round(selectedUnit.atk * skill.shieldPercentOfAtk));
+          } else if (skill.shieldPercentOfMaxHp) {
+            eff.value = Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp));
+          } else if (skill.shieldPercentOfMag) {
+            eff.value = Math.max(1, Math.round(selectedUnit.mag * skill.shieldPercentOfMag));
+          }
+          soundManager.playShield();
+          addFloatingNumber(destX, destY, `+${eff.value} Escudo!`, 'shield', '#38BDF8');
+        } else if (eff.type === 'buff_atk') {
+          addFloatingNumber(destX, destY, `+${eff.value}% Dano`, 'status', '#F97316');
+        } else if (eff.type === 'invisible') {
+          addFloatingNumber(destX, destY, 'Invisível!', 'status', '#8B5CF6');
         }
         updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), eff];
       }
@@ -4145,18 +4234,29 @@ export function App() {
       }
 
       const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
+      const isLambdaReset = skill?.id === 'danca_magna_lambda' || skill?.id === 'relogio_astral_zaphkiel';
       const updatedSkills = selectedUnit.skills.map((s) => {
+        if (isLambdaReset) {
+          return s.id === skill.id
+            ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current }
+            : { ...s, currentCooldown: 0 };
+        }
         if (s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
           return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
         }
         return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
       });
 
-            // Extra action on self (e.g. Primeira Bala: Aleph do Pistoleiro do Tempo)
+      // Extra action on self (e.g. Dança Magna: Lambda da Dançarina do Tempo)
       const grantsSelfExtraTurn = skill?.grantsExtraTurn && skill.targetType === 'self';
       if (grantsSelfExtraTurn) {
         soundManager.playUpgrade();
-        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏱️ Aleph! Ação Extra Concedida!', 'status', '#DC2626');
+        if (isLambdaReset) {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏳ Cooldowns Restaurados!', 'status', '#38BDF8');
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏱️ +1 Turno / Ação!', 'status', '#F59E0B');
+        } else {
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏱️ Ação Extra Concedida!', 'status', '#DC2626');
+        }
       }
 
       // Random Tarot effect for O Louco
@@ -4204,6 +4304,28 @@ export function App() {
           }
           return u;
         });
+      }
+
+      // Espelhar habilidades em si mesma na Versão Paralela (Zeta)
+      const parallelClone = updatedUnits.find(
+        (u) =>
+          !u.isDead &&
+          u.isSummoned &&
+          u.summonedByUnitId === selectedUnit.id &&
+          (u.className === 'Versão Paralela' || u.className === 'Eco Temporal' || u.summonedBySkillId === 'valsa_reflexos_zeta' || u.summonedBySkillId === 'oitava_bala_het')
+      );
+      if (parallelClone) {
+        addFloatingNumber(parallelClone.x, parallelClone.y, '⏳ Ação Espelhada!', 'status', '#DC2626');
+        let cloneEffects = [...(parallelClone.statusEffects || [])];
+        if (skill?.statusEffect) {
+          const cloneEff = { ...skill.statusEffect, appliedTurn: turnNumberRef.current };
+          cloneEffects = [...cloneEffects.filter((e) => e.type !== cloneEff.type), cloneEff];
+        }
+        if (skill?.casterStatusEffect) {
+          const cloneEff = { ...skill.casterStatusEffect, appliedTurn: turnNumberRef.current };
+          cloneEffects = [...cloneEffects.filter((e) => e.type !== cloneEff.type), cloneEff];
+        }
+        updatedUnits = updatedUnits.map((u) => (u.id === parallelClone.id ? { ...u, statusEffects: cloneEffects } : u));
       }
 
       setUnits(updatedUnits);
@@ -4567,6 +4689,22 @@ export function App() {
       if (t.crystalsAlive) {
         addFloatingNumber(t.x, t.y, '🛡️ Imune pelos Cristais!', 'status', '#A855F7');
         actualDmg = 0;
+      }
+
+      // Shield Steal (e.g. Estocada do Porvir: Psi da Dançarina do Tempo)
+      if (skill?.stealsShield && dmgResult.damageType !== 'healing') {
+        const shIndex = currentEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+        if (shIndex >= 0) {
+          const stolenShieldVal = currentEffects[shIndex].value;
+          currentEffects.splice(shIndex, 1);
+          addFloatingNumber(t.x, t.y, `🛡️ Escudo Roubado (${stolenShieldVal})!`, 'status', '#38BDF8');
+          soundManager.playShield();
+          attackerEffects = [
+            ...attackerEffects.filter((e) => e.type !== 'shield'),
+            { type: 'shield', duration: 3, value: stolenShieldVal, appliedTurn: turnNumberRef.current },
+          ];
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${stolenShieldVal} Escudo Roubado!`, 'shield', '#38BDF8');
+        }
       }
 
       if (dmgResult.damageType !== 'healing' && actualDmg > 0) {
@@ -5055,6 +5193,49 @@ export function App() {
       );
     }
 
+    // Parallel Version Action Mirroring (Valsa dos Reflexos: Zeta)
+    const parallelClone = updatedUnits.find(
+      (u) =>
+        !u.isDead &&
+        u.isSummoned &&
+        u.summonedByUnitId === selectedUnit.id &&
+        (u.className === 'Versão Paralela' || u.className === 'Eco Temporal' || u.summonedBySkillId === 'valsa_reflexos_zeta' || u.summonedBySkillId === 'oitava_bala_het')
+    );
+    if (parallelClone && targetsToHit.length > 0) {
+      addFloatingNumber(parallelClone.x, parallelClone.y, '⏳ Ação Espelhada!', 'status', '#DC2626');
+      for (const t of targetsToHit) {
+        if (t.faction === 'enemy') {
+          const currentT = updatedUnits.find((u) => u.id === t.id);
+          if (currentT && !currentT.isDead && currentT.currentHp > 0) {
+            if (boardRef.current) {
+              boardRef.current.playAttackAnimation(parallelClone.id, currentT.id, skill?.damageType || 'physical', 0, skill);
+            }
+            const cloneDmgResult = rollActualDamage(parallelClone, currentT, skill);
+            const mirrorDmg = Math.max(1, cloneDmgResult.finalDamage);
+            const nextHp = Math.max(0, currentT.currentHp - mirrorDmg);
+            currentT.currentHp = nextHp;
+            parallelClone.damageDealt = (parallelClone.damageDealt || 0) + mirrorDmg;
+            addFloatingNumber(currentT.x, currentT.y, `-${mirrorDmg} (Eco Paralelo)`, cloneDmgResult.damageType, '#DC2626');
+            if (nextHp === 0) {
+              currentT.isDead = true;
+              totalKills++;
+              soundManager.playDeath();
+              if (boardRef.current) {
+                boardRef.current.playDeathAnimation(currentT.id);
+              }
+            }
+          }
+        } else if (t.faction === 'player' && t.id !== selectedUnit.id && t.id !== parallelClone.id) {
+          const currentT = updatedUnits.find((u) => u.id === t.id);
+          if (currentT && !currentT.isDead) {
+            if (skill?.statusEffect?.type === 'buff_mov') {
+              addFloatingNumber(currentT.x, currentT.y, '+2 Movimento (Espelho)!', 'status', '#38BDF8');
+            }
+          }
+        }
+      }
+    }
+
     if (skill?.id === 'transfusao_vital') {
       updatedUnits = updatedUnits.map((u) => {
         if (u.faction === selectedUnit.faction && !u.isDead && u.isSummoned) {
@@ -5206,15 +5387,16 @@ export function App() {
     }
 
     // Caster Status Effect (e.g. self-shield, stealth, or buff on attack)
-    if (skill?.casterStatusEffect) {
-      const cEff = { ...skill.casterStatusEffect, appliedTurn: turnNumberRef.current };
+    const applyCasterEffect = (cEffToApply?: StatusEffect) => {
+      if (!cEffToApply) return;
+      const cEff = { ...cEffToApply, appliedTurn: turnNumberRef.current };
       if (cEff.type === 'shield') {
         const scalingBonus = selectedUnit.lineageHealShieldFlatScalingBonus || 0;
-        if (skill.shieldPercentOfMaxHp) {
+        if (skill?.shieldPercentOfMaxHp) {
           cEff.value = Math.max(1, Math.round(selectedUnit.maxHp * (skill.shieldPercentOfMaxHp + scalingBonus)));
-        } else if (skill.shieldPercentOfMag) {
+        } else if (skill?.shieldPercentOfMag) {
           cEff.value = Math.max(1, Math.round(selectedUnit.mag * (skill.shieldPercentOfMag + scalingBonus)));
-        } else if (skill.shieldPercentOfAtk) {
+        } else if (skill?.shieldPercentOfAtk) {
           cEff.value = Math.max(1, Math.round(selectedUnit.atk * (skill.shieldPercentOfAtk + scalingBonus)));
         }
         if (selectedUnit.lineageShieldReflectRatio) {
@@ -5245,6 +5427,13 @@ export function App() {
         addFloatingNumber(finalAttackerX, finalAttackerY, 'Provocando Inimigos!', 'status', '#EF4444');
       }
       finalAttackerEffects = [...finalAttackerEffects.filter((e) => e.type !== cEff.type), cEff];
+    };
+
+    if (skill?.casterStatusEffect) {
+      applyCasterEffect(skill.casterStatusEffect);
+    }
+    if (skill?.secondaryCasterStatusEffect) {
+      applyCasterEffect(skill.secondaryCasterStatusEffect);
     }
 
     // ACTION RESET MECHANIC ON KILL: Carrasco do Vazio or any skill with resetsActionOnKill
@@ -5373,7 +5562,13 @@ export function App() {
           addFloatingNumber(finalAttackerX, finalAttackerY, '⚔️ Ataque Adicional (Nefalim)!', 'status', '#F59E0B');
         }
 
-        const grantsAttackerExtraTurn = isExecutionKill || isArcanoMundoSelfTurn;
+        const isBetaExtraTurn = skill?.id === 'passo_acelerado_beta' || skill?.id === 'primeira_bala_aleph';
+        if (isBetaExtraTurn) {
+          addFloatingNumber(finalAttackerX, finalAttackerY, '⏱️ Passo Acelerado: Ação Extra Concedida!', 'status', '#DC2626');
+          soundManager.playUpgrade();
+        }
+
+        const grantsAttackerExtraTurn = isExecutionKill || isArcanoMundoSelfTurn || isBetaExtraTurn;
         return {
           ...u,
           x: finalAttackerX,
@@ -5650,6 +5845,7 @@ export function App() {
            freshMonster.name.toLowerCase().includes('vulcanus') ? 'tita_forjador' :
            freshMonster.name.toLowerCase().includes('valgar') ? 'valgar_sanguinario' :
            freshMonster.name.toLowerCase().includes('leviat') ? 'leviata_vazio' :
+           freshMonster.name.toLowerCase().includes('verme') ? 'verme_cosmico_tempo' :
            freshMonster.name.toLowerCase().includes('malakor') ? 'cronos_abissal' : 'astaroth');
 
         let bossSkill: Skill;
@@ -5661,6 +5857,8 @@ export function App() {
           bossSkill = SKILLS.boss_valgar_banquete_sangue;
         } else if (bossType === 'leviata_vazio') {
           bossSkill = SKILLS.boss_leviata_singularidade;
+        } else if (bossType === 'verme_cosmico_tempo') {
+          bossSkill = SKILLS.boss_verme_colapso_fim_dos_tempos;
         } else {
           bossSkill = SKILLS.boss_malakor_colapso_temporal;
         }
@@ -5979,6 +6177,68 @@ export function App() {
             return nextGrid;
           });
           addFloatingNumber(centerX, centerY, '🌪️ VÓRTICE PRIMORDIAL ATIVO!', 'status', '#0284C7');
+        } else if (bossType === 'verme_cosmico_tempo') {
+          // Fase Secreta 110: Verme Cósmico Devorador do Tempo (<50% HP Ultimate)
+          // 210% de dano mágico em todos os heróis, -25% Defesa por 2 turnos e acelera os ponteiros do relógio cósmico!
+          addFloatingNumber(freshMonster.x, freshMonster.y, '⏳ COLAPSO DO FIM DOS TEMPOS (210%)!', 'status', '#F59E0B');
+          soundManager.playMagicSpell();
+
+          for (const target of livingPlayers) {
+            if (boardRef.current) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, target.id, 'magical', 0, bossSkill);
+            }
+            const res = rollActualDamage(freshMonster, target, bossSkill);
+            let actualDmg = res.finalDamage;
+            let currentEffects = [...(target.statusEffects || [])];
+
+            for (let i = 0; i < currentEffects.length; i++) {
+              if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                const sh = currentEffects[i];
+                const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                sh.value -= dmgAbsorbed;
+                actualDmg -= dmgAbsorbed;
+                addFloatingNumber(target.x, target.y, '-' + dmgAbsorbed + ' (Escudo)', 'shield', '#38BDF8');
+                if (actualDmg === 0) break;
+              }
+            }
+            currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+
+            // Aplica debuff de defesa (-25% por 2 turnos)
+            currentEffects = [
+              ...currentEffects.filter((e) => e.type !== 'debuff_def'),
+              { type: 'debuff_def' as const, duration: 2, value: 25, appliedTurn: turnNumberRef.current },
+            ];
+
+            const newHp = Math.max(0, target.currentHp - actualDmg);
+            if (actualDmg > 0) {
+              addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#F59E0B');
+            }
+            addFloatingNumber(target.x, target.y, '🛡️ Defesa -25%!', 'status', '#EF4444');
+
+            if (newHp === 0) {
+              soundManager.playDeath();
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(target.id);
+              }
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+            );
+          }
+
+          // Acelera bruscamente os ponteiros do relógio cósmico de Zaphkiel para o próximo padrão!
+          setGrid((prevGrid) => {
+            const nextTurnPattern = turnNumberRef.current + 1;
+            const nextGrid = prevGrid.map((row, ry) =>
+              row.map((cell, rx) => ({
+                ...cell,
+                isClockHandZone: isTileInClockHands(rx, ry, nextTurnPattern, row.length, prevGrid.length),
+              }))
+            );
+            gridRef.current = nextGrid;
+            return nextGrid;
+          });
+          addFloatingNumber(freshMonster.x, freshMonster.y, '⚡ Ponteiros do Relógio Entram em Sobrecarga!', 'status', '#FCD34D');
         } else {
           // Fase 50: Malakor (cronos_abissal) - 220% de dano mágico em todos ignorando escudos + Stun de 2 turnos no alvo de maior ataque
           addFloatingNumber(freshMonster.x, freshMonster.y, '⌛ COLAPSO TEMPORAL ETERNO (220% Direto)!', 'status', '#B91C1C');
@@ -6224,6 +6484,19 @@ export function App() {
               }
               if (skill.casterStatusEffect) {
                 applyMonsterSupportEffect(skill.casterStatusEffect);
+              }
+              if (skill.secondaryCasterStatusEffect) {
+                applyMonsterSupportEffect(skill.secondaryCasterStatusEffect);
+              }
+              if (skill.cleansesDebuffs) {
+                const prevCount = currentEffects.length;
+                currentEffects = currentEffects.filter(
+                  (e) => !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified'].includes(e.type)
+                );
+                if (currentEffects.length < prevCount) {
+                  addFloatingNumber(freshTarget.x, freshTarget.y, '⏳ Causalidade Rebobinada (Purificado)!', 'status', '#10B981');
+                  soundManager.playHeal();
+                }
               }
 
               if (skill.debuffsAllPlayersAtk) {
@@ -6580,6 +6853,17 @@ export function App() {
                 }
 
                 let newHp = Math.max(0, t.currentHp - actualDmg);
+                // Na Fase 1, se o jogador estiver passando os 5 turnos imóvel para abrir a Fenda do Tempo, impede que os Goblins matem um herói antes do portal abrir
+                if (
+                  currentLevel?.id === 1 &&
+                  !isDailyMode &&
+                  !isTrainingMode &&
+                  !hasPlayerActedInStage1Ref.current &&
+                  t.faction === 'player' &&
+                  newHp === 0
+                ) {
+                  newHp = 1;
+                }
                 if (actualDmg > 0) {
                   const color = damageType === 'magical' ? '#B58AFF' : '#FF5252';
                   addFloatingNumber(t.x, t.y, `-${actualDmg}`, damageType, color);
@@ -6695,6 +6979,54 @@ export function App() {
                       soundManager.playDeath();
                       if (boardRef.current) {
                         await boardRef.current.playDeathAnimation(t.id);
+                      }
+                    }
+                  }
+                }
+
+                // Monster Pull to Center (e.g. Tragar para a Fenda Atemporal)
+                if (skill?.pullToCenter && skill.pullToCenter > 0 && newHp > 0) {
+                  if (t.lineageCrowdControlImmunity) {
+                    addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imune a Puxão!', 'status', '#60A5FA');
+                  } else {
+                    const centerPt = { x: freshTarget.x, y: freshTarget.y };
+                    if (finalTargetX !== centerPt.x || finalTargetY !== centerPt.y) {
+                      const dx = centerPt.x - finalTargetX;
+                      const dy = centerPt.y - finalTargetY;
+                      let pX = 0;
+                      let pY = 0;
+                      if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
+                        pX = Math.sign(dx);
+                      } else if (dy !== 0) {
+                        pY = Math.sign(dy);
+                      }
+                      const maxPullSteps = skill.pullToCenter;
+                      let currX = finalTargetX;
+                      let currY = finalTargetY;
+                      let stepsPulled = 0;
+                      for (let s = 0; s < maxPullSteps; s++) {
+                        const nextX = currX + pX;
+                        const nextY = currY + pY;
+                        if (nextX === centerPt.x && nextY === centerPt.y && s > 0) break;
+                        const inBounds = nextX >= 0 && nextX < grid[0].length && nextY >= 0 && nextY < grid.length;
+                        const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+                        const isOccupied = inBounds && currentUnits.some((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
+                        if (inBounds && isWalkable && !isOccupied) {
+                          currX = nextX;
+                          currY = nextY;
+                          stepsPulled++;
+                        } else {
+                          break;
+                        }
+                      }
+                      if (stepsPulled > 0 && (currX !== finalTargetX || currY !== finalTargetY)) {
+                        if (boardRef.current) {
+                          await boardRef.current.playMoveAnimation(t.id, finalTargetX, finalTargetY, currX, currY);
+                        }
+                        finalTargetX = currX;
+                        finalTargetY = currY;
+                        addFloatingNumber(currX, currY, '🌀 Tragado pela Fenda!', 'status', '#C084FC');
+                        soundManager.playStep();
                       }
                     }
                   }
@@ -6897,6 +7229,17 @@ export function App() {
                   addFloatingNumber(finalTargetX, finalTargetY, '+15% Dano (Fúria Orc)', 'status', '#F97316');
                 }
 
+                let targetSkills = t.skills;
+                if (skill?.stealsCooldowns && skill.stealsCooldowns > 0 && newHp > 0) {
+                  const extraCd = skill.stealsCooldowns;
+                  targetSkills = t.skills.map((s) => ({
+                    ...s,
+                    currentCooldown: (s.currentCooldown ?? 0) + extraCd,
+                  }));
+                  addFloatingNumber(finalTargetX, finalTargetY, `⏳ Futuro Devorado (+${extraCd}T Cooldown)!`, 'status', '#F59E0B');
+                  soundManager.playMagicSpell();
+                }
+
                 currentUnits = currentUnits.map((u) =>
                   u.id === t.id
                     ? {
@@ -6905,6 +7248,7 @@ export function App() {
                         y: finalTargetY,
                         currentHp: newHp,
                         isDead: newHp === 0,
+                        skills: targetSkills,
                         statusEffects: currentEffects,
                         hasUsedPhoenixRevive: usedPhoenixNow ? true : u.hasUsedPhoenixRevive,
                         hasUsedOrcHalfHpTrigger: orcTriggered ? true : u.hasUsedOrcHalfHpTrigger,
@@ -6952,16 +7296,17 @@ export function App() {
                 ];
               }
 
-              if (choice.skillToUse?.casterStatusEffect) {
-                const cEff = { ...choice.skillToUse.casterStatusEffect, appliedTurn: turnNumberRef.current };
+              const applyMonsterCasterStatus = (cEffToApply?: StatusEffect) => {
+                if (!cEffToApply) return;
+                const cEff = { ...cEffToApply, appliedTurn: turnNumberRef.current };
                 if (cEff.type === 'shield') {
                   const hadExcessShield = finalMonsterEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
                   if (hadExcessShield) {
                     cEff.value = Math.max(1, Math.round(cEff.value * 0.5));
                     addFloatingNumber(finalMonsterX, finalMonsterY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
                   }
-                  if (choice.skillToUse.casterStatusEffect.reflectRatio) {
-                    cEff.reflectRatio = choice.skillToUse.casterStatusEffect.reflectRatio;
+                  if (cEffToApply.reflectRatio) {
+                    cEff.reflectRatio = cEffToApply.reflectRatio;
                     addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Escudo Espinhoso (${Math.round(cEff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
                   } else {
                     addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Escudo`, 'shield', '#38BDF8');
@@ -6983,8 +7328,19 @@ export function App() {
                   addFloatingNumber(finalMonsterX, finalMonsterY, `🛡️ Imune a Dano Físico (${cEff.duration}T)!`, 'status', '#60A5FA');
                 } else if (cEff.type === 'immune_magical') {
                   addFloatingNumber(finalMonsterX, finalMonsterY, `🔮 Imune a Dano Mágico (${cEff.duration}T)!`, 'status', '#A855F7');
+                } else if (cEff.type === 'buff_atk') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value}% Dano`, 'status', '#F97316');
+                } else if (cEff.type === 'buff_mov') {
+                  addFloatingNumber(finalMonsterX, finalMonsterY, `+${cEff.value} Movimento`, 'status', '#38BDF8');
                 }
                 finalMonsterEffects = [...finalMonsterEffects.filter((e) => e.type !== cEff.type), cEff];
+              };
+
+              if (choice.skillToUse?.casterStatusEffect) {
+                applyMonsterCasterStatus(choice.skillToUse.casterStatusEffect);
+              }
+              if (choice.skillToUse?.secondaryCasterStatusEffect) {
+                applyMonsterCasterStatus(choice.skillToUse.secondaryCasterStatusEffect);
               }
 
               // Se a habilidade conceder turno extra ao atingir alvos sangrando (Valgar Arremesso de Cutelo)
@@ -7017,13 +7373,22 @@ export function App() {
                 if (u.id === freshAttacker.id) {
                   return {
                     ...u,
-                    skills: u.skills.map((s) =>
-                      s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
-                    ),
+                    skills: u.skills.map((s) => {
+                      if (s.id === skill.id) {
+                        return { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current };
+                      }
+                      if (skill.stealsCooldowns && skill.stealsCooldowns > 0) {
+                        return { ...s, currentCooldown: Math.max(0, (s.currentCooldown ?? 0) - 1) };
+                      }
+                      return s;
+                    }),
                   };
                 }
                 return u;
               });
+              if (skill.stealsCooldowns && skill.stealsCooldowns > 0) {
+                addFloatingNumber(freshAttacker.x, freshAttacker.y, '⏳ Aceleração Cronológica (-1T Recarga)!', 'status', '#FCD34D');
+              }
             }
 
             const actionSplit = await checkAndTriggerChimeraSplit(currentUnits);
@@ -7088,12 +7453,17 @@ export function App() {
       return t + 1;
     });
 
-    // Decrement corruption puddles and mist on the grid at turn start
+    // Decrement corruption puddles and mist on the grid at turn start, and rotate clock hands in Stage 110
     setGrid((prevGrid) => {
       let changed = false;
-      const nextGrid = prevGrid.map((row) =>
-        row.map((cell) => {
+      const nextTurnNumber = turnNumberRef.current;
+      const nextGrid = prevGrid.map((row, ry) =>
+        row.map((cell, rx) => {
           let updatedCell = { ...cell };
+          if (currentLevel?.id === 110) {
+            changed = true;
+            updatedCell.isClockHandZone = isTileInClockHands(rx, ry, nextTurnNumber, row.length, prevGrid.length);
+          }
           if (cell.corruptionTurns && cell.corruptionTurns > 0) {
             changed = true;
             const newTurns = cell.corruptionTurns - 1;
@@ -7241,8 +7611,12 @@ export function App() {
           }
 
           const isCocooned = updatedEffects.some((e) => e.type === 'dark_cocoon' && e.duration > 0);
+          const isStunned = updatedEffects.some((e) => e.type === 'stun' && e.duration > 0);
           if (isCocooned && !isDead) {
             addFloatingNumber(unitX, unitY, '🕸️ Preso no Casulo de Escuridão!', 'status', '#581C87');
+          }
+          if (isStunned && !isDead) {
+            addFloatingNumber(unitX, unitY, '⏳ Congelado no Tempo (Atordoado)!', 'status', '#FACC15');
           }
 
           return {
@@ -7252,8 +7626,8 @@ export function App() {
             currentHp,
             isDead,
             statusEffects: updatedEffects,
-            hasMoved: isCocooned ? true : false,
-            hasAttacked: isCocooned ? true : false,
+            hasMoved: isCocooned || isStunned ? true : false,
+            hasAttacked: isCocooned || isStunned ? true : false,
             nefalimExtraAttackUsed: false,
           };
         } else {
@@ -7332,7 +7706,7 @@ export function App() {
 
     setPhase('player_turn');
     soundManager.playTurnStart(true);
-  }, [units, grid, progress.combatSpeed, handleDefeat]);
+  }, [units, grid, progress.combatSpeed, handleDefeat, currentLevel, isDailyMode, isTrainingMode]);
 
   const handleEndPlayerTurn = useCallback(() => {
     if (isAnimatingAction) return;
@@ -7343,6 +7717,59 @@ export function App() {
     soundManager.playTurnStart(false);
 
     const currentTurn = turnNumberRef.current;
+
+    // SEGREDO DO PISTOLEIRO DO TEMPO (FASE 1):
+    // Se o jogador passar 5 turnos seguidos na Fase 1 sem se mover, atacar ou realizar qualquer outra ação,
+    // após o 5º turno cria uma ruptura no tempo e invoca um Portal Vermelho no centro da fase!
+    if (
+      currentLevel?.id === 1 &&
+      !isDailyMode &&
+      !isTrainingMode &&
+      !hasPlayerActedInStage1Ref.current &&
+      !timePortalSpawnedRef.current &&
+      currentTurn >= 5
+    ) {
+      timePortalSpawnedRef.current = true;
+      const centerCandidates = [
+        { x: 4, y: 3 },
+        { x: 5, y: 3 },
+        { x: 4, y: 4 },
+        { x: 5, y: 4 },
+        { x: 3, y: 3 },
+        { x: 6, y: 3 },
+        { x: 4, y: 2 },
+        { x: 5, y: 2 },
+      ];
+      const portalPt =
+        centerCandidates.find((pt) => !units.some((u) => !u.isDead && u.x === pt.x && u.y === pt.y)) || { x: 4, y: 3 };
+
+      setGrid((prevGrid) => {
+        const nextGrid = prevGrid.map((row, ry) =>
+          row.map((cell, rx) =>
+            rx === portalPt.x && ry === portalPt.y
+              ? {
+                  ...cell,
+                  obstacle: 'time_portal' as const,
+                  isWalkable: true,
+                  blocksVision: false,
+                }
+              : cell
+          )
+        );
+        gridRef.current = nextGrid;
+        return nextGrid;
+      });
+
+      soundManager.playUpgrade();
+      soundManager.playMagicSpell();
+      addFloatingNumber(portalPt.x, portalPt.y, '🌀 Uma ruptura no tempo foi criada!', 'status', '#EF4444');
+
+      setIsTimeRiftBannerActive(true);
+      if (timeRiftBannerTimerRef.current) clearTimeout(timeRiftBannerTimerRef.current);
+      timeRiftBannerTimerRef.current = setTimeout(() => {
+        setIsTimeRiftBannerActive(false);
+      }, 6500);
+    }
 
     // 1. Decrement player units' status effect durations and skill cooldowns as player turn ends
     let nextUnitsState: Unit[] = [];
@@ -7391,6 +7818,8 @@ export function App() {
 
       nextUnitsState = processedSummons.map((u) => {
         if (u.faction === 'player' && !u.isDead) {
+          const wasStunnedThisTurn = (u.statusEffects || []).some((e) => e.type === 'stun' && e.duration > 0);
+
           // Taunt is active against the upcoming enemy phase, so it decrements after the enemy turn ends
           // Invisibility protects against the upcoming enemy phase AND persists until their next turn!
           // Therefore, if it was applied on the current turn, do NOT decrement it at the end of the current turn.
@@ -7398,6 +7827,10 @@ export function App() {
             .map((e) => {
               if (e.type === 'summon_lifetime') return e;
               if (e.type === 'taunt') return e;
+              if (e.type === 'stun') {
+                if (e.appliedTurn === currentTurn) return e;
+                return { ...e, duration: e.duration - 1 };
+              }
               if (e.type === 'invisible') {
                 if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
                   return { ...e, appliedTurn: currentTurn };
@@ -7429,6 +7862,26 @@ export function App() {
               appliedTurn: currentTurn,
             });
             addFloatingNumber(u.x, u.y, `+${u.lineageStandStillDamageBonusPercent}% Dano (Foco Élfico)`, 'status', '#10B981');
+          }
+
+          // Mecânica Fase Secreta 110 (Verme Cósmico): Ponteiros de Zaphkiel
+          // Todos os heróis que NÃO estiverem dentro da área dos ponteiros são atordoados por 1 turno!
+          // Heróis que já cumpriram estase temporal durante este turno não sofrem stun cumulativo contínuo.
+          if (currentLevel?.id === 110 && !isDailyMode && !isTrainingMode && !u.isSummoned) {
+            const isSafe = Boolean(gridRef.current?.[u.y]?.[u.x]?.isClockHandZone);
+            if (!isSafe && !wasStunnedThisTurn) {
+              addFloatingNumber(u.x, u.y, '⏳ Fora dos Ponteiros! Congelado!', 'status', '#FACC15');
+              soundManager.playMagicSpell();
+              const stunEffect: StatusEffect = {
+                type: 'stun',
+                duration: 1,
+                value: 1,
+                appliedTurn: currentTurn,
+              };
+              updatedEffects.push(stunEffect);
+            } else if (isSafe) {
+              addFloatingNumber(u.x, u.y, '🛡️ Seguro nos Ponteiros!', 'status', '#10B981');
+            }
           }
 
           return {
@@ -7463,7 +7916,7 @@ export function App() {
 
     setPhase('ai_turn');
     setTimeout(() => runAiTurn(nextUnitsState), 500);
-  }, [runAiTurn, isAnimatingAction]);
+  }, [runAiTurn, isAnimatingAction, currentLevel, isDailyMode, isTrainingMode, units]);
 
   // Handle Victory in current stage
   const handleVictory = (finalUnitsState: Unit[]) => {
@@ -7646,6 +8099,12 @@ export function App() {
       }
     }
 
+    // SECRET CLASS UNLOCK: Pistoleiro do Tempo (Zaphkiel)
+    // Condição: Derrotar o Verme Cósmico Devorador do Tempo na 10ª Fase Secreta do Tempo (ID 110)
+    if (currentLevel.id === 110 && !currentUnlocked.includes('pistoleiro_tempo')) {
+      newlyUnlocked.push('pistoleiro_tempo');
+    }
+
     // RARE DROP CLASS UNLOCK: Sniper
     // Condição: 2% de chance de drop raro ao vencer qualquer fase
     if (!currentUnlocked.includes('sniper') && Math.random() < 0.02) {
@@ -7666,7 +8125,10 @@ export function App() {
 
     const finalUnlockedClasses = Array.from(new Set([...currentUnlocked, ...newlyUnlocked]));
 
-    const nextUnlocked = Math.max(latestProg.unlockedLevel, currentLevel.id + 1);
+    const nextUnlocked =
+      currentLevel.id <= 50
+        ? Math.max(latestProg.unlockedLevel, currentLevel.id + 1)
+        : latestProg.unlockedLevel;
     const completedList = Array.from(new Set([...latestProg.completedLevels, currentLevel.id]));
     const totalGold = latestProg.gold + goldReward;
     const totalRunGold = (latestProg.activeAdventure?.goldEarnedInRun || 0) + goldReward;
@@ -7684,7 +8146,7 @@ export function App() {
       droppedItems.map((it) => it.id)
     );
 
-    const isFinalCampaignLevel = currentLevel.id >= LEVELS.length;
+    const isFinalCampaignLevel = currentLevel.id === LEVELS.length;
 
     let updatedHistory = latestProg.adventureHistory || [];
     let updatedActiveAdventure: ActiveAdventure | null = null;
@@ -7708,9 +8170,10 @@ export function App() {
       updatedActiveAdventure = null;
       nextUnitsState = createInitialUnitsState();
     } else {
-      // Advance active adventure to next stage
+      // Advance active adventure to next stage (if finishing secret stage 110, return to Stage 2 of main campaign)
+      const nextStageId = currentLevel.id === 110 ? 2 : currentLevel.id + 1;
       updatedActiveAdventure = {
-        currentLevelId: currentLevel.id + 1,
+        currentLevelId: nextStageId,
         startedAt: latestProg.activeAdventure?.startedAt || new Date().toISOString(),
         unitsState: updatedUnitsState,
         partyClasses: activeParty,
@@ -7812,7 +8275,7 @@ export function App() {
     setProgress(newProgress);
     savePlayerProgress(newProgress);
 
-    if (authUserRef.current) {
+    if (authUserRef.current && currentLevel.id <= 50) {
       submitScore(currentLevel.id, activeParty).catch((err) =>
         console.error('Falha ao registrar no ranking:', err)
       );
@@ -8519,6 +8982,27 @@ export function App() {
 
         {/* CENTER: 3D Tactical Battlefield */}
         <main className="flex-1 flex items-center justify-center p-0 md:p-2 overflow-hidden relative w-full h-full">
+          {currentLevel?.id === 110 && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-950/90 border border-amber-500/80 backdrop-blur-md shadow-lg shadow-amber-900/60 text-amber-200 text-xs font-bold animate-pulse">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+              ⏳ Ponteiros de Zaphkiel: Fique dentro da área dos ponteiros! Heróis fora serão atordoados.
+            </div>
+          )}
+          {hoveredTile && currentLevel?.id === 110 && !grid[hoveredTile.y]?.[hoveredTile.x]?.corruptionTurns && !grid[hoveredTile.y]?.[hoveredTile.x]?.borderFire ? (
+            <div className="absolute top-12 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-md border shadow-md transition-all">
+              {grid[hoveredTile.y]?.[hoveredTile.x]?.isClockHandZone ? (
+                <div className="flex items-center gap-1.5 text-emerald-300 bg-emerald-950/90 border border-emerald-500/70 px-3 py-1 rounded-full">
+                  <span>🛡️</span>
+                  <span>Área dos Ponteiros (SEGURO contra Estase Temporal)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-amber-300 bg-amber-950/90 border border-amber-500/70 px-3 py-1 rounded-full">
+                  <span>⚠️</span>
+                  <span>Fora dos Ponteiros (PERIGO: Heróis serão ATORDOADOS ao fim do turno!)</span>
+                </div>
+              )}
+            </div>
+          ) : null}
           {hoveredTile && grid[hoveredTile.y]?.[hoveredTile.x]?.corruptionTurns ? (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-950/90 border border-purple-500/60 backdrop-blur-md shadow-lg shadow-purple-900/50 text-purple-200 text-xs font-semibold animate-pulse">
               <span className="w-2.5 h-2.5 rounded-full bg-purple-400"></span>
@@ -8535,6 +9019,12 @@ export function App() {
             <div className="absolute top-12 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-950/95 border border-orange-500/80 backdrop-blur-md shadow-lg shadow-orange-950/80 text-orange-200 text-xs font-semibold animate-pulse">
               <span className="w-2.5 h-2.5 rounded-full bg-orange-400"></span>
               🔥 Chamas da Borda: 10% da Vida Máxima ao iniciar o turno aqui!
+            </div>
+          ) : null}
+          {hoveredTile && grid[hoveredTile.y]?.[hoveredTile.x]?.obstacle === 'time_portal' ? (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-950/95 border border-red-500/80 backdrop-blur-md shadow-lg shadow-red-900/60 text-red-200 text-xs font-bold animate-pulse">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+              🌀 Ruptura no Tempo: Mova qualquer personagem até este Portal Vermelho para adentrar as 10 Fases Secretas do Tempo!
             </div>
           ) : null}
           <BoardRenderer3D
@@ -8725,10 +9215,10 @@ export function App() {
                 levelUps: [],
               }
             }
-            hasNextLevel={!isDailyMode && currentLevel.id < LEVELS.length}
+            hasNextLevel={!isDailyMode && (currentLevel.id < LEVELS.length || (currentLevel.id >= 101 && currentLevel.id <= 110))}
             playerGold={progress.gold}
             unlockedClassesCount={progress.unlockedClasses?.length || 4}
-            onNextLevel={() => startLevel(currentLevel.id + 1)}
+            onNextLevel={() => startLevel(currentLevel.id === 110 ? 2 : currentLevel.id + 1)}
             onRetry={isDailyMode ? handleStartDailyDungeon : handleStartNewAdventure}
             onGoToMenu={() => { if (isDailyMode) { handleExitDailyDungeon(); } else { setCurrentView('level_select'); } }}
           />
@@ -8841,6 +9331,52 @@ export function App() {
               O MUNDO PERDE AS CORES...
             </span>
             <div className="h-1 w-64 sm:w-96 rounded-full bg-gradient-to-r from-transparent via-[#A855F7] to-transparent shadow-[0_0_20px_#A855F7]" />
+          </div>
+        </div>
+      )}
+
+      {isTimeRiftBannerActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center animate-fade-in transition-opacity bg-red-950/25 backdrop-blur-[2px]">
+          <div className="relative flex flex-col items-center gap-3 animate-pulse bg-[#10131C]/90 border-2 border-[#EF4444] px-8 py-6 rounded-2xl shadow-[0_0_60px_rgba(239,68,68,0.65)]">
+            <span className="text-xs sm:text-sm font-extrabold uppercase tracking-[0.25em] text-[#FBBF24]">
+              ⏳ ANOMALIA CRONOLÓGICA DETECTADA ⏳
+            </span>
+            <span
+              className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-[0.12em] text-[#EF4444] select-none"
+              style={{
+                textShadow:
+                  '0 0 20px rgba(239, 68, 68, 0.95), 0 0 45px rgba(220, 38, 38, 0.85), 0 0 80px rgba(153, 27, 27, 0.9), 0 4px 12px rgba(0, 0, 0, 0.95)',
+              }}
+            >
+              Uma ruptura no tempo foi criada
+            </span>
+            <p className="text-xs sm:text-sm text-[#FCA5A5] font-semibold max-w-md">
+              Um portal vermelho surgiu no centro do campo de batalha! Entre nele com qualquer personagem para acessar as 10 Fases Secretas do Tempo.
+            </p>
+            <div className="h-1 w-64 sm:w-96 rounded-full bg-gradient-to-r from-transparent via-[#EF4444] to-transparent shadow-[0_0_20px_#EF4444]" />
+          </div>
+        </div>
+      )}
+
+      {isClockHandBannerActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center animate-fade-in transition-opacity bg-amber-950/30 backdrop-blur-[2px]">
+          <div className="relative flex flex-col items-center gap-3 animate-pulse bg-[#10131C]/95 border-2 border-[#F59E0B] px-8 py-6 rounded-2xl shadow-[0_0_60px_rgba(245,158,11,0.65)]">
+            <span className="text-xs sm:text-sm font-extrabold uppercase tracking-[0.25em] text-[#FCD34D]">
+              ⏳ REGRA DO RELÓGIO ASTRAL ⏳
+            </span>
+            <span
+              className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-[0.12em] text-[#F59E0B] select-none"
+              style={{
+                textShadow:
+                  '0 0 20px rgba(245, 158, 11, 0.95), 0 0 45px rgba(217, 119, 6, 0.85), 0 0 80px rgba(180, 83, 9, 0.9), 0 4px 12px rgba(0, 0, 0, 0.95)',
+              }}
+            >
+              Fique dentro da área dos ponteiros
+            </span>
+            <p className="text-xs sm:text-sm text-[#FDE68A] font-semibold max-w-md">
+              O fluxo temporal fora dos ponteiros está colapsando! Qualquer herói fora das casas iluminadas pelos ponteiros ao fim do seu turno será <span className="text-[#F59E0B] font-black underline">CONGELADO NO TEMPO (Atordoado por 1 turno)</span>!
+            </p>
+            <div className="h-1 w-64 sm:w-96 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_20px_#F59E0B]" />
           </div>
         </div>
       )}

@@ -70,7 +70,7 @@ export function getReachableTiles(
       if (visited.has(key)) continue;
 
       const tile = grid[ny][nx];
-      if (tile.obstacle !== 'none') continue;
+      if (tile.obstacle !== 'none' && !(tile.obstacle === 'time_portal' && unit.faction === 'player')) continue;
 
       const otherUnit = unitPositions.get(key);
       if (otherUnit && otherUnit.faction !== unit.faction) {
@@ -182,7 +182,7 @@ export function getPathTo(
       if (visited.has(key)) continue;
 
       const tile = grid[ny][nx];
-      if (tile.obstacle !== 'none') continue;
+      if (tile.obstacle !== 'none' && !(tile.obstacle === 'time_portal' && unitFaction === 'player')) continue;
 
       const occUnit = unitPositions.get(key);
       if (occUnit && occUnit.faction !== unitFaction && !(nx === target.x && ny === target.y)) {
@@ -468,6 +468,8 @@ export function getAoELabel(skill?: Skill | null): string {
       return 'Varredura (3 casas)';
     case 't_shape':
       return 'Formato em T';
+    case 'x_shape':
+      return skill.aoeRadius > 1 ? `Formato em X Grande (Raio ${skill.aoeRadius})` : 'Formato em X (Diagonais)';
     case 'circle':
     default: {
       const dim = skill.aoeRadius * 2 + 1;

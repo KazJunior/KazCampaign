@@ -1438,3 +1438,292 @@ export function createTrainingLevel(dummySetup: 'single' | 'trio' | 'aoe' = 'sin
   };
 }
 
+// ==========================================
+// FASES SECRETAS DO TEMPO (RUPTURA TEMPORAL 101 - 110)
+// Acessadas pelo Portal Vermelho na Fase 1 após 5 turnos sem agir
+// ==========================================
+export const SECRET_TIME_LEVELS: LevelConfig[] = [
+  {
+    id: 101,
+    name: 'Fenda Temporal 1 — Corredor dos Ponteiros Partidos',
+    subtitle: 'Além da Ruptura do Tempo',
+    environment: 'shrine',
+    width: 10,
+    height: 8,
+    description: 'Você atravessou o portal vermelho! Os ponteiros de relógios colossais flutuam congelados no ar enquanto anomalias guardam a passagem.',
+    objectives: ['Elimine os guardiões da primeira fenda temporal.', 'Avance rumo ao núcleo do Relógio Astral.'],
+    grid: createGrid(10, 8, 'void', {
+      '2,2': { obstacle: 'pillar' },
+      '7,2': { obstacle: 'pillar' },
+      '4,4': { obstacle: 'shrine' },
+      '5,4': { obstacle: 'shrine' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'sabujo_temporal', x: 2, y: 1, levelOffset: 0 },
+      { monsterTypeId: 'tecelao_do_tempo', x: 5, y: 1, levelOffset: 0 },
+      { monsterTypeId: 'sabujo_temporal', x: 8, y: 1, levelOffset: 0 },
+    ],
+    rewards: { gold: 1500, xpPerUnit: 150 },
+  },
+  {
+    id: 102,
+    name: 'Fenda Temporal 2 — Salão dos Segundos Congelados',
+    subtitle: 'Ecos da Ampulheta',
+    environment: 'citadel',
+    width: 10,
+    height: 8,
+    description: 'O ar pulsa em tons carmesins. Guardiões e sabujos temporais aprisionados em loops atacam ferozmente.',
+    objectives: ['Derrote os monstros temporais do Salão dos Segundos Congelados.'],
+    grid: createGrid(10, 8, 'stone', {
+      '3,2': { obstacle: 'shrine' },
+      '6,2': { obstacle: 'shrine' },
+      '1,4': { obstacle: 'pillar' },
+      '8,4': { obstacle: 'pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'guardiao_relogio', x: 2, y: 1, levelOffset: 1 },
+      { monsterTypeId: 'tecelao_do_tempo', x: 5, y: 0, levelOffset: 1 },
+      { monsterTypeId: 'sabujo_temporal', x: 7, y: 1, levelOffset: 1 },
+      { monsterTypeId: 'automato_engrenagens', x: 9, y: 2, levelOffset: 1 },
+    ],
+    rewards: { gold: 1800, xpPerUnit: 220 },
+  },
+  {
+    id: 103,
+    name: 'Fenda Temporal 3 — Pêndulo Carmesim',
+    subtitle: 'Oscilação do Destino',
+    environment: 'ruins',
+    width: 10,
+    height: 8,
+    description: 'Um pêndulo invisível corta o espaço-tempo enquanto autômatos velozes e cultistas protegem as engrenagens.',
+    objectives: ['Elimine todas as forças da terceira fenda temporal.'],
+    grid: createGrid(10, 8, 'void', {
+      '2,2': { obstacle: 'ruins' },
+      '7,2': { obstacle: 'ruins' },
+      '4,3': { obstacle: 'pillar' },
+      '5,3': { obstacle: 'pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'automato_engrenagens', x: 3, y: 1, levelOffset: 2 },
+      { monsterTypeId: 'tecelao_do_tempo', x: 5, y: 0, levelOffset: 2 },
+      { monsterTypeId: 'cultista_zaphkiel', x: 6, y: 1, levelOffset: 2 },
+      { monsterTypeId: 'sabujo_temporal', x: 1, y: 2, levelOffset: 2 },
+    ],
+    rewards: { gold: 2200, xpPerUnit: 300 },
+  },
+  {
+    id: 104,
+    name: 'Fenda Temporal 4 — Ecos do Passado Distorcido',
+    subtitle: 'Antecâmara do Relógio Fantasma',
+    environment: 'tomb',
+    width: 10,
+    height: 8,
+    description: 'Guardiões de latão e cultistas montam guarda. O badalar fúnebre de um relógio espectral ecoa logo adiante.',
+    objectives: ['Destrua os guardiões temporais.', 'Prepare-se para enfrentar o Fantasma do Tempo na próxima fase!'],
+    grid: createGrid(10, 8, 'stone', {
+      '2,3': { obstacle: 'tombstone' },
+      '3,3': { obstacle: 'pillar' },
+      '6,3': { obstacle: 'pillar' },
+      '7,3': { obstacle: 'tombstone' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'guardiao_relogio', x: 1, y: 1, levelOffset: 3 },
+      { monsterTypeId: 'automato_engrenagens', x: 4, y: 1, levelOffset: 3 },
+      { monsterTypeId: 'cultista_zaphkiel', x: 5, y: 0, levelOffset: 3 },
+      { monsterTypeId: 'guardiao_relogio', x: 8, y: 1, levelOffset: 3 },
+    ],
+    rewards: { gold: 2600, xpPerUnit: 400 },
+  },
+  {
+    id: 105,
+    name: 'Fenda Temporal 5 — Câmara do Relógio Fantasma',
+    subtitle: 'CONFRONTO COM MINI BOSS SECRETO',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'O Fantasma do Tempo emerge das engrenagens astrais, ladeado por guardas temporais! Uma entidade que manipula os segundos e silencia os vivos.',
+    objectives: [
+      'Derrote o MINI BOSS Fantasma do Tempo e sua guarda!',
+      'Cuidado com o Toque do Atraso e a Badalada da Meia-Noite.',
+    ],
+    grid: createGrid(10, 8, 'void', {
+      '1,2': { obstacle: 'shrine' },
+      '8,2': { obstacle: 'shrine' },
+      '3,4': { obstacle: 'pillar' },
+      '6,4': { obstacle: 'pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'guardiao_relogio', x: 1, y: 2, levelOffset: 4 },
+      { monsterTypeId: 'fantasma_do_tempo', x: 4, y: 1, levelOffset: 4, isMiniBoss: true },
+      { monsterTypeId: 'sabujo_temporal', x: 7, y: 2, levelOffset: 4 },
+    ],
+    rewards: { gold: 4500, xpPerUnit: 650 },
+    hasMiniBoss: true,
+  },
+  {
+    id: 106,
+    name: 'Fenda Temporal 6 — Labirinto do Paradoxo',
+    subtitle: 'Caminhos Entrelaçados',
+    environment: 'citadel',
+    width: 10,
+    height: 8,
+    description: 'Com o Fantasma derrotado, a fenda se aprofunda. Autômatos velozes e o temível Draco Cronológico patrulham o paradoxo.',
+    objectives: ['Elimine as criaturas temporais do Labirinto do Paradoxo.'],
+    grid: createGrid(10, 8, 'stone', {
+      '2,2': { obstacle: 'pillar' },
+      '7,2': { obstacle: 'pillar' },
+      '4,4': { obstacle: 'shrine' },
+      '5,4': { obstacle: 'shrine' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'automato_engrenagens', x: 1, y: 1, levelOffset: 5 },
+      { monsterTypeId: 'draco_cronologico', x: 4, y: 1, levelOffset: 5 },
+      { monsterTypeId: 'tecelao_do_tempo', x: 6, y: 0, levelOffset: 5 },
+      { monsterTypeId: 'automato_engrenagens', x: 8, y: 1, levelOffset: 5 },
+    ],
+    rewards: { gold: 3200, xpPerUnit: 750 },
+  },
+  {
+    id: 107,
+    name: 'Fenda Temporal 7 — Engrenagens do Crepúsculo',
+    subtitle: 'A Máquina do Destino',
+    environment: 'fortress',
+    width: 10,
+    height: 8,
+    description: 'Engrenagens titânicas giram sob o piso translúcido. Dracos e Guardiões do Relógio protegem o eixo central.',
+    objectives: ['Destrua os defensores das Engrenagens do Crepúsculo.'],
+    grid: createGrid(10, 8, 'void', {
+      '2,2': { obstacle: 'wall' },
+      '7,2': { obstacle: 'wall' },
+      '4,3': { obstacle: 'pillar' },
+      '5,3': { obstacle: 'pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'draco_cronologico', x: 2, y: 1, levelOffset: 6 },
+      { monsterTypeId: 'guardiao_relogio', x: 4, y: 2, levelOffset: 6 },
+      { monsterTypeId: 'guardiao_relogio', x: 5, y: 2, levelOffset: 6 },
+      { monsterTypeId: 'cultista_zaphkiel', x: 7, y: 0, levelOffset: 6 },
+      { monsterTypeId: 'sabujo_temporal', x: 9, y: 1, levelOffset: 6 },
+    ],
+    rewards: { gold: 3800, xpPerUnit: 900 },
+  },
+  {
+    id: 108,
+    name: 'Fenda Temporal 8 — Ruínas da Décima Segunda Hora',
+    subtitle: 'O Limiar de Zaphkiel',
+    environment: 'ruins',
+    width: 10,
+    height: 8,
+    description: 'Restos de eras devoradas flutuam no vácuo carmesim. Uma matilha de aberrações cronológicas guarda a antecâmara.',
+    objectives: ['Elimine os guardiões da Décima Segunda Hora.'],
+    grid: createGrid(10, 8, 'stone', {
+      '1,2': { obstacle: 'ruins' },
+      '8,2': { obstacle: 'ruins' },
+      '3,4': { obstacle: 'shrine' },
+      '6,4': { obstacle: 'shrine' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'tecelao_do_tempo', x: 0, y: 0, levelOffset: 7 },
+      { monsterTypeId: 'draco_cronologico', x: 3, y: 1, levelOffset: 7 },
+      { monsterTypeId: 'guardiao_relogio', x: 5, y: 2, levelOffset: 7 },
+      { monsterTypeId: 'draco_cronologico', x: 7, y: 1, levelOffset: 7 },
+      { monsterTypeId: 'cultista_zaphkiel', x: 9, y: 0, levelOffset: 7 },
+    ],
+    rewards: { gold: 4500, xpPerUnit: 1100 },
+  },
+  {
+    id: 109,
+    name: 'Fenda Temporal 9 — Horizonte de Eventos de Zaphkiel',
+    subtitle: 'A Guarda do Devorador de Eras',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'A última barreira antes do vórtice central. A guarda de elite de Zaphkiel tenta a todo custo impedir que o selo do Verme Cósmico seja aberto.',
+    objectives: [
+      'Elimine toda a guarda do Horizonte de Eventos.',
+      'Prepare sua equipe para o Boss Secreto na 10ª Fase Temporal!',
+    ],
+    grid: createGrid(10, 8, 'void', {
+      '1,2': { obstacle: 'shrine' },
+      '8,2': { obstacle: 'shrine' },
+      '4,3': { obstacle: 'pillar' },
+      '5,3': { obstacle: 'pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'draco_cronologico', x: 1, y: 0, levelOffset: 8 },
+      { monsterTypeId: 'guardiao_relogio', x: 3, y: 2, levelOffset: 8 },
+      { monsterTypeId: 'cultista_zaphkiel', x: 5, y: 1, levelOffset: 8 },
+      { monsterTypeId: 'guardiao_relogio', x: 6, y: 2, levelOffset: 8 },
+      { monsterTypeId: 'draco_cronologico', x: 8, y: 0, levelOffset: 8 },
+    ],
+    rewards: { gold: 5500, xpPerUnit: 13500 },
+  },
+  {
+    id: 110,
+    name: 'Fenda Temporal 10 — Trono da Eternidade Devorada',
+    subtitle: 'CONFRONTO COM BOSS SECRETO DO TEMPO',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'O Verme Cósmico Devorador do Tempo emerge do centro do relógio astral! O tempo fora dos ponteiros está colapsando: FIQUE DENTRO DA ÁREA DOS PONTEIROS ao fim do seu turno para não ser congelado no tempo! Abata a besta cósmica para desbloquear a classe oculta Dançarina do Tempo!',
+    objectives: [
+      'FIQUE DENTRO DA ÁREA DOS PONTEIROS (fora deles = Congelamento / Atordoado)!',
+      'Derrote o BOSS SECRETO Verme Cósmico Devorador do Tempo!',
+      'Desbloqueie a classe secreta Dançarina do Tempo!',
+    ],
+    grid: createGrid(10, 8, 'void', {
+      '1,2': { obstacle: 'shrine' },
+      '8,2': { obstacle: 'shrine' },
+      '4,4': { obstacle: 'pillar' },
+      '5,4': { obstacle: 'pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'verme_cosmico_tempo', x: 4, y: 1, levelOffset: 9, isBoss: true },
+    ],
+    rewards: { gold: 15000, xpPerUnit: 2500 },
+    hasFinalBoss: true,
+  },
+];
+
+/**
+ * Retorna se a casa (x, y) está dentro da área dos ponteiros do relógio no turno indicado.
+ * Utilizado na batalha contra o Verme Cósmico Devorador do Tempo (Fase Secreta 110).
+ * Qualquer herói fora desta área iluminada é congelado no tempo (Atordoado por 1 turno).
+ */
+export function isTileInClockHands(x: number, y: number, turn: number, _width: number = 10, _height: number = 8): boolean {
+  const pattern = (Math.max(1, turn) - 1) % 5;
+  switch (pattern) {
+    case 0:
+      // Turno 1, 6, 11...: Ponteiros cardinais centrais (12h/6h e 9h/3h - cruz central ampla)
+      return x === 4 || x === 5 || y === 3 || y === 4;
+    case 1:
+      // Turno 2, 7, 12...: Ponteiro diagonal principal (1h30/7h30) + faixas horizontais de suporte
+      return Math.abs((x - y) - 1) <= 1 || y === 2 || y === 5;
+    case 2:
+      // Turno 3, 8, 13...: Ponteiro diagonal inverso (10h30/4h30) + colunas verticais de suporte
+      return Math.abs((x + y) - 8) <= 1 || x === 3 || x === 6;
+    case 3:
+      // Turno 4, 9, 14...: Ponteiros perimetrais das horas (alas externas)
+      return x === 2 || x === 7 || y === 1 || y === 6;
+    case 4:
+    default:
+      // Turno 5, 10, 15...: X Cósmico Total (dupla diagonal cruzando o relógio astral)
+      return Math.abs((x - y) - 1) <= 1 || Math.abs((x + y) - 8) <= 1;
+  }
+}
+
+export function getLevelById(levelId: number): LevelConfig | undefined {
+  return LEVELS.find((l) => l.id === levelId) || SECRET_TIME_LEVELS.find((l) => l.id === levelId);
+}
+
+

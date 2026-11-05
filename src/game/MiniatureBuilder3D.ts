@@ -1242,6 +1242,30 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'astral_rabbit':
       buildAstralRabbitMini(char);
       break;
+    case 'time_phantom_boss':
+      buildTimePhantomBossMini(char);
+      break;
+    case 'cosmic_time_worm_boss':
+      buildCosmicTimeWormBossMini(char);
+      break;
+    case 'clockwork_guardian':
+      buildClockworkGuardianMini(char);
+      break;
+    case 'time_weaver':
+      buildTimeWeaverMini(char);
+      break;
+    case 'gear_automaton':
+      buildGearAutomatonMini(char);
+      break;
+    case 'temporal_hound':
+      buildTemporalHoundMini(char);
+      break;
+    case 'zaphkiel_cultist':
+      buildZaphkielCultistMini(char);
+      break;
+    case 'chronos_drake':
+      buildChronosDrakeMini(char);
+      break;
     default:
       buildFallbackMini(char, unit);
       break;
@@ -4592,20 +4616,19 @@ function buildAlquimistaMini(group: THREE.Group) {
 }
 
 // ============================================================================
-// PISTOLEIRO DO TEMPO MINIATURE (Tokisaki Kurumi / Zaphkiel)
+// DANÇARINA DO TEMPO MINIATURE (Floretes Gêmeos: Vermelho e Preto)
 // ============================================================================
 function buildPistoleiroTempoMini(group: THREE.Group) {
-  const dressRed = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 }); // Gothic crimson
-  const dressBlack = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.6 }); // Ebony lace
-  const goldEye = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 1.4 }); // Clock Eye
-  const redEye = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 0.8 });
-  const gunMetal = new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.85, roughness: 0.25 });
-  const gunGold = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 });
+  const dressRed = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 }); // Crimson
+  const dressBlack = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.6 }); // Ebony
+  const goldAccents = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
+  const rapierRedMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c, emissiveIntensity: 0.8, metalness: 0.9, roughness: 0.2 }); // Florete Vermelho (O Futuro)
+  const rapierBlackMat = new THREE.MeshStandardMaterial({ color: 0x18181b, emissive: 0x27272a, emissiveIntensity: 0.4, metalness: 0.95, roughness: 0.15 }); // Florete Preto (O Passado)
   const skinMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.6 });
   const hairBlack = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.8 });
 
-  // Ruffled Gothic Skirt (Layered Red & Black)
-  const skirtBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.35, 0.42, 12), dressRed);
+  // Ruffled Ballroom Skirt (Layered Red & Black)
+  const skirtBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.36, 0.42, 12), dressRed);
   skirtBottom.position.y = 0.21;
   skirtBottom.castShadow = true;
   group.add(skirtBottom);
@@ -4631,45 +4654,49 @@ function buildPistoleiroTempoMini(group: THREE.Group) {
   head.castShadow = true;
   group.add(head);
 
-  // Kurumi's Distinctive Eyes: Left eye is Golden Clock, Right eye is Crimson
-  const eyeLeftClock = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), goldEye);
-  eyeLeftClock.position.set(-0.042, 0.78, 0.10);
-  group.add(eyeLeftClock);
+  // Twin temporal eyes (Ruby & Gold)
+  const eyeLeft = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), goldAccents);
+  eyeLeft.position.set(-0.042, 0.78, 0.10);
+  group.add(eyeLeft);
 
-  const eyeRightRed = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), redEye);
-  eyeRightRed.position.set(0.042, 0.78, 0.10);
-  group.add(eyeRightRed);
+  const eyeRight = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), rapierRedMat);
+  eyeRight.position.set(0.042, 0.78, 0.10);
+  group.add(eyeRight);
 
-  // Asymmetric Gothic Twintails
+  // Dancing Hair Twintails
   const tailL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.45, 8), hairBlack);
   tailL.position.set(-0.16, 0.65, -0.05);
   tailL.rotation.z = 0.25;
   group.add(tailL);
 
-  const tailR = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 0.60, 8), hairBlack);
-  tailR.position.set(0.18, 0.55, -0.05);
+  const tailR = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 0.50, 8), hairBlack);
+  tailR.position.set(0.18, 0.60, -0.05);
   tailR.rotation.z = -0.20;
   group.add(tailR);
 
-  // Right Hand: Flintlock Pistol
-  const pistolBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8), gunGold);
-  pistolBarrel.rotation.x = Math.PI / 2;
-  pistolBarrel.position.set(0.24, 0.56, 0.24);
-  group.add(pistolBarrel);
+  // RIGHT HAND: Florete Vermelho (O Futuro)
+  const guardRight = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), goldAccents);
+  guardRight.position.set(0.22, 0.52, 0.16);
+  group.add(guardRight);
 
-  const pistolHandle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.04), gunMetal);
-  pistolHandle.position.set(0.24, 0.51, 0.15);
-  group.add(pistolHandle);
+  const bladeRight = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.012, 0.55, 8), rapierRedMat);
+  bladeRight.position.set(0.24, 0.68, 0.28);
+  bladeRight.rotation.x = Math.PI / 3.4;
+  bladeRight.rotation.z = -0.2;
+  bladeRight.castShadow = true;
+  group.add(bladeRight);
 
-  // Left Hand: Long Musket Rifle
-  const musketBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.65, 8), gunMetal);
-  musketBarrel.position.set(-0.25, 0.42, 0.16);
-  musketBarrel.rotation.x = 0.35;
-  group.add(musketBarrel);
+  // LEFT HAND: Florete Preto (O Passado)
+  const guardLeft = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), goldAccents);
+  guardLeft.position.set(-0.22, 0.48, 0.16);
+  group.add(guardLeft);
 
-  const musketStock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.05), dressRed);
-  musketStock.position.set(-0.25, 0.20, 0.08);
-  group.add(musketStock);
+  const bladeLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.012, 0.55, 8), rapierBlackMat);
+  bladeLeft.position.set(-0.24, 0.62, 0.30);
+  bladeLeft.rotation.x = Math.PI / 3.2;
+  bladeLeft.rotation.z = 0.25;
+  bladeLeft.castShadow = true;
+  group.add(bladeLeft);
 }
 
 // -------------------------------------------------------------
@@ -4764,4 +4791,595 @@ function buildAstralRabbitMini(group: THREE.Group) {
   healGem.position.set(0, 0.78, 0.04);
   group.add(healGem);
 }
+
+// -------------------------------------------------------------
+// Secret Mini-Boss: Fantasma do Tempo (Fase Temporal 5)
+// -------------------------------------------------------------
+function buildTimePhantomBossMini(group: THREE.Group) {
+  const ghostMat = new THREE.MeshStandardMaterial({
+    color: 0x06b6d4,
+    emissive: 0x0891b2,
+    emissiveIntensity: 0.7,
+    transparent: true,
+    opacity: 0.85,
+    roughness: 0.2,
+  });
+  const cloakMat = new THREE.MeshStandardMaterial({
+    color: 0x0f172a,
+    emissive: 0x1e293b,
+    emissiveIntensity: 0.3,
+    roughness: 0.6,
+  });
+  const clockGoldMat = new THREE.MeshStandardMaterial({
+    color: 0xfbbf24,
+    emissive: 0xd97706,
+    emissiveIntensity: 0.85,
+    metalness: 0.9,
+    roughness: 0.15,
+  });
+  const crimsonMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    emissive: 0xdc2626,
+    emissiveIntensity: 1.0,
+    roughness: 0.2,
+  });
+
+  // Ethereal Swirling Tail / Lower Shroud
+  const shroud = new THREE.Mesh(new THREE.ConeGeometry(0.26, 0.55, 10), cloakMat);
+  shroud.position.set(0, 0.32, 0);
+  shroud.rotation.z = Math.PI;
+  group.add(shroud);
+
+  // Spectral Torso
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.12, 0.36, 10), ghostMat);
+  torso.position.set(0, 0.52, 0);
+  group.add(torso);
+
+  // Hooded Head
+  const hood = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 12), cloakMat);
+  hood.position.set(0, 0.78, 0);
+  group.add(hood);
+
+  // Glowing Clockwork Eyes
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), crimsonMat);
+    eye.position.set(side * 0.05, 0.78, 0.13);
+    group.add(eye);
+  }
+
+  // Giant Astral Clock Halo Behind Back
+  const clockRing = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.022, 8, 24), clockGoldMat);
+  clockRing.position.set(0, 0.64, -0.14);
+  group.add(clockRing);
+
+  const hand1 = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.28, 0.02), clockGoldMat);
+  hand1.position.set(0.05, 0.72, -0.13);
+  hand1.rotation.z = -Math.PI / 5;
+  group.add(hand1);
+
+  const hand2 = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.2, 0.02), crimsonMat);
+  hand2.position.set(-0.06, 0.68, -0.13);
+  hand2.rotation.z = Math.PI / 3;
+  group.add(hand2);
+
+  // Pendulum Scythe in Right Hand
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.75, 8), clockGoldMat);
+  staff.position.set(0.24, 0.52, 0.08);
+  group.add(staff);
+
+  const scytheBlade = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 6, 16, Math.PI), ghostMat);
+  scytheBlade.position.set(0.24, 0.88, 0.12);
+  scytheBlade.rotation.z = -Math.PI / 3;
+  group.add(scytheBlade);
+}
+
+// -------------------------------------------------------------
+// Secret Final Boss: Verme Cósmico Devorador do Tempo (Fase Temporal 10)
+// -------------------------------------------------------------
+function buildCosmicTimeWormBossMini(group: THREE.Group) {
+  const cosmicBodyMat = new THREE.MeshStandardMaterial({
+    color: 0x311042,
+    emissive: 0x581c87,
+    emissiveIntensity: 0.45,
+    roughness: 0.35,
+    metalness: 0.5,
+  });
+  const crimsonRingMat = new THREE.MeshStandardMaterial({
+    color: 0xdc2626,
+    emissive: 0xef4444,
+    emissiveIntensity: 1.1,
+    roughness: 0.2,
+    metalness: 0.4,
+  });
+  const goldClockMat = new THREE.MeshStandardMaterial({
+    color: 0xfbbf24,
+    emissive: 0xd97706,
+    emissiveIntensity: 0.9,
+    metalness: 0.9,
+    roughness: 0.15,
+  });
+  const toothMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    emissive: 0xfecdd3,
+    emissiveIntensity: 0.4,
+    roughness: 0.2,
+  });
+
+  // Temporal Rift Base
+  const riftBase = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.035, 10, 28), crimsonRingMat);
+  riftBase.rotation.x = Math.PI / 2;
+  riftBase.position.y = 0.05;
+  group.add(riftBase);
+
+  // Coiling Segmented Cosmic Worm Body
+  const segments = [
+    { x: -0.14, y: 0.16, z: -0.12, r: 0.22 },
+    { x: 0.12, y: 0.30, z: -0.10, r: 0.21 },
+    { x: 0.14, y: 0.46, z: 0.02, r: 0.20 },
+    { x: -0.06, y: 0.62, z: 0.05, r: 0.19 },
+    { x: 0.0, y: 0.78, z: 0.10, r: 0.21 },
+  ];
+
+  segments.forEach((seg, idx) => {
+    const sphere = new THREE.Mesh(new THREE.SphereGeometry(seg.r, 14, 14), cosmicBodyMat);
+    sphere.position.set(seg.x, seg.y, seg.z);
+    group.add(sphere);
+
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(seg.r * 1.02, 0.018, 8, 20),
+      idx % 2 === 0 ? crimsonRingMat : goldClockMat
+    );
+    ring.position.set(seg.x, seg.y, seg.z);
+    ring.rotation.x = Math.PI / 3;
+    group.add(ring);
+  });
+
+  // Devouring Maw at the top segment
+  const mawRim = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.03, 10, 20), crimsonRingMat);
+  mawRim.position.set(0, 0.80, 0.26);
+  group.add(mawRim);
+
+  // Ring of Crystalline Fang Teeth
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2;
+    const fang = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.09, 6), toothMat);
+    fang.position.set(Math.cos(a) * 0.13, 0.80 + Math.sin(a) * 0.13, 0.28);
+    fang.rotation.x = Math.PI / 2;
+    group.add(fang);
+  }
+
+  // Giant Zaphkiel Clock Halo Crown behind the Worm
+  const crownClock = new THREE.Mesh(new THREE.TorusGeometry(0.40, 0.024, 8, 28), goldClockMat);
+  crownClock.position.set(0, 0.72, -0.18);
+  group.add(crownClock);
+
+  const glow = new THREE.PointLight(0xef4444, 1.5, 3.0);
+  glow.position.set(0, 0.8, 0.3);
+  group.add(glow);
+}
+
+// -------------------------------------------------------------
+// Exclusive Normal Monster 1: Guardião do Relógio (Clockwork Guardian)
+// -------------------------------------------------------------
+function buildClockworkGuardianMini(group: THREE.Group) {
+  const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+  const darkIronMat = new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.8, roughness: 0.35 });
+  const clockGoldMat = new THREE.MeshStandardMaterial({
+    color: 0xfbbf24,
+    emissive: 0xd97706,
+    emissiveIntensity: 0.4,
+    metalness: 0.9,
+    roughness: 0.2,
+  });
+  const crimsonEyeMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    emissive: 0xdc2626,
+    emissiveIntensity: 1.5,
+    roughness: 0.2,
+  });
+
+  // Heavy Brass Legs
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.32, 0.15), brassMat);
+    leg.position.set(side * 0.14, 0.16, 0);
+    leg.castShadow = true;
+    group.add(leg);
+
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.19), darkIronMat);
+    boot.position.set(side * 0.14, 0.04, 0.02);
+    group.add(boot);
+  }
+
+  // Heavy Torso with Central Clock Face
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.42, 10), darkIronMat);
+  torso.position.y = 0.48;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Clock Face on Chest
+  const clockFace = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.03, 16), clockGoldMat);
+  clockFace.position.set(0, 0.52, 0.18);
+  clockFace.rotation.x = Math.PI / 2;
+  group.add(clockFace);
+
+  // Clock Hands on Chest
+  const hand = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.09, 0.01), darkIronMat);
+  hand.position.set(0.02, 0.54, 0.20);
+  hand.rotation.z = Math.PI / 4;
+  group.add(hand);
+
+  // Heavy Cog Pauldrons
+  for (const side of [-1, 1]) {
+    const cogPauldron = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 8), brassMat);
+    cogPauldron.position.set(side * 0.30, 0.62, 0);
+    cogPauldron.rotation.z = Math.PI / 2;
+    group.add(cogPauldron);
+  }
+
+  // Visored Automaton Helm
+  const helm = new THREE.Mesh(new THREE.BoxGeometry(0.19, 0.20, 0.19), brassMat);
+  helm.position.set(0, 0.78, 0);
+  group.add(helm);
+
+  // Glowing Red Slit Eye
+  const eyeSlit = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.025, 0.02), crimsonEyeMat);
+  eyeSlit.position.set(0, 0.78, 0.10);
+  group.add(eyeSlit);
+
+  // Pendulum Halberd Weapon (Right Hand)
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.05, 6), darkIronMat);
+  shaft.position.set(0.34, 0.52, 0.12);
+  group.add(shaft);
+
+  const pendulumBlade = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.04, 0.22, 6), clockGoldMat);
+  pendulumBlade.position.set(0.34, 0.98, 0.12);
+  pendulumBlade.rotation.z = Math.PI / 6;
+  group.add(pendulumBlade);
+}
+
+// -------------------------------------------------------------
+// Exclusive Normal Monster 2: Tecelão do Tempo (Time Weaver)
+// -------------------------------------------------------------
+function buildTimeWeaverMini(group: THREE.Group) {
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0x581c87, roughness: 0.6 });
+  const crimsonTrim = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.4, roughness: 0.3 });
+  const goldMat = new THREE.MeshStandardMaterial({
+    color: 0xfbbf24,
+    emissive: 0xd97706,
+    emissiveIntensity: 0.5,
+    metalness: 0.9,
+  });
+  const glowEyeMat = new THREE.MeshStandardMaterial({
+    color: 0xfbbf24,
+    emissive: 0xf59e0b,
+    emissiveIntensity: 1.8,
+  });
+
+  // Flowing Lower Robe (Cone)
+  const robe = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.60, 10), robeMat);
+  robe.position.y = 0.30;
+  group.add(robe);
+
+  // Torso with Crimson Stole
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.35, 8), robeMat);
+  torso.position.y = 0.55;
+  group.add(torso);
+
+  const stole = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.36, 0.04), crimsonTrim);
+  stole.position.set(0, 0.55, 0.12);
+  group.add(stole);
+
+  // Deep Hood
+  const hood = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), robeMat);
+  hood.position.set(0, 0.80, 0);
+  group.add(hood);
+
+  // Glowing Golden Eyes inside Hood
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), glowEyeMat);
+    eye.position.set(side * 0.045, 0.80, 0.11);
+    group.add(eye);
+  }
+
+  // Floating Ticking Clock Hands Orbiting Shoulders
+  const clockOrb = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.015, 6, 16), goldMat);
+  clockOrb.position.set(0, 0.65, 0);
+  clockOrb.rotation.x = Math.PI / 3;
+  group.add(clockOrb);
+
+  // Hourglass Staff (Right Hand)
+  const staffShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.95, 6), goldMat);
+  staffShaft.position.set(0.26, 0.48, 0.12);
+  group.add(staffShaft);
+
+  // Hourglass on Top of Staff
+  const hgTop = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.07, 6), goldMat);
+  hgTop.position.set(0.26, 0.96, 0.12);
+  const hgBottom = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.07, 6), goldMat);
+  hgBottom.position.set(0.26, 0.90, 0.12);
+  hgBottom.rotation.x = Math.PI;
+  group.add(hgTop, hgBottom);
+}
+
+// -------------------------------------------------------------
+// Exclusive Normal Monster 3: Autômato de Engrenagens (Gear Automaton)
+// -------------------------------------------------------------
+function buildGearAutomatonMini(group: THREE.Group) {
+  const copperMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.9, roughness: 0.2 });
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0x71717a, metalness: 0.8, roughness: 0.3 });
+  const amberEye = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    emissive: 0xd97706,
+    emissiveIntensity: 1.4,
+  });
+
+  // Copper Strut Legs
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.30, 6), steelMat);
+    leg.position.set(side * 0.11, 0.15, 0);
+    group.add(leg);
+
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.05, 0.14), copperMat);
+    foot.position.set(side * 0.11, 0.025, 0.02);
+    group.add(foot);
+  }
+
+  // Mechanical Gearbox Torso
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.30, 0.18), steelMat);
+  torso.position.y = 0.42;
+  group.add(torso);
+
+  // Visible Cogwheels on Torso
+  const cog1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 8), copperMat);
+  cog1.position.set(-0.06, 0.44, 0.10);
+  cog1.rotation.x = Math.PI / 2;
+  const cog2 = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 8), copperMat);
+  cog2.position.set(0.06, 0.38, 0.10);
+  cog2.rotation.x = Math.PI / 2;
+  group.add(cog1, cog2);
+
+  // Head with Monocular Lens Sensor
+  const head = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.16, 8), copperMat);
+  head.position.set(0, 0.65, 0);
+  group.add(head);
+
+  const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.04, 8), amberEye);
+  lens.position.set(0, 0.65, 0.09);
+  lens.rotation.x = Math.PI / 2;
+  group.add(lens);
+
+  // Dual Clock-Hand Sword Arms
+  for (const side of [-1, 1]) {
+    const shoulder = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), copperMat);
+    shoulder.position.set(side * 0.18, 0.50, 0);
+    group.add(shoulder);
+
+    // Tapered clock-hand blade as forearm
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.34, 0.06), steelMat);
+    blade.position.set(side * 0.22, 0.36, 0.12);
+    blade.rotation.x = Math.PI / 4;
+    group.add(blade);
+  }
+}
+
+// -------------------------------------------------------------
+// Exclusive Normal Monster 4: Sabujo do Vácuo Temporal (Temporal Hound)
+// -------------------------------------------------------------
+function buildTemporalHoundMini(group: THREE.Group) {
+  const voidMat = new THREE.MeshStandardMaterial({
+    color: 0x450a0a,
+    emissive: 0x991b1b,
+    emissiveIntensity: 0.3,
+    roughness: 0.5,
+  });
+  const crimsonMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    emissive: 0xdc2626,
+    emissiveIntensity: 1.5,
+    roughness: 0.2,
+  });
+  const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.8, roughness: 0.3 });
+
+  // Quadruped Legs
+  const legPositions = [
+    { x: -0.12, z: 0.18 },
+    { x: 0.12, z: 0.18 },
+    { x: -0.12, z: -0.18 },
+    { x: 0.12, z: -0.18 },
+  ];
+  legPositions.forEach((pos) => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.025, 0.24, 6), voidMat);
+    leg.position.set(pos.x, 0.12, pos.z);
+    group.add(leg);
+  });
+
+  // Muscular Beast Body
+  const body = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.44), voidMat);
+  body.position.set(0, 0.26, 0);
+  group.add(body);
+
+  // Temporal Spines on Back
+  for (let i = -1; i <= 1; i++) {
+    const spine = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.12, 4), crimsonMat);
+    spine.position.set(0, 0.38, i * 0.12);
+    spine.rotation.x = -Math.PI / 8;
+    group.add(spine);
+  }
+
+  // Gear Collar around Neck
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.02, 6, 12), brassMat);
+  collar.position.set(0, 0.34, 0.22);
+  collar.rotation.x = Math.PI / 4;
+  group.add(collar);
+
+  // Predatory Head & Snout
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.12, 0.20), voidMat);
+  head.position.set(0, 0.38, 0.30);
+  group.add(head);
+
+  // Pointed Ears
+  for (const side of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.08, 4), voidMat);
+    ear.position.set(side * 0.06, 0.48, 0.26);
+    group.add(ear);
+  }
+
+  // Burning Crimson Eyes
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), crimsonMat);
+    eye.position.set(side * 0.05, 0.40, 0.38);
+    group.add(eye);
+  }
+
+  // Tail
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.025, 0.26, 6), voidMat);
+  tail.position.set(0, 0.32, -0.28);
+  tail.rotation.x = Math.PI / 3;
+  group.add(tail);
+}
+
+// -------------------------------------------------------------
+// Exclusive Normal Monster 5: Cultista de Zaphkiel (Zaphkiel Cultist)
+// -------------------------------------------------------------
+function buildZaphkielCultistMini(group: THREE.Group) {
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
+  const goldTrim = new THREE.MeshStandardMaterial({
+    color: 0xfbbf24,
+    metalness: 0.85,
+    roughness: 0.25,
+  });
+  const glowMat = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    emissive: 0xd97706,
+    emissiveIntensity: 1.2,
+  });
+
+  // Robe Skirt
+  const skirt = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.58, 8), robeMat);
+  skirt.position.y = 0.29;
+  group.add(skirt);
+
+  // Torso with Golden Sun/Clock Emblem
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.34, 8), robeMat);
+  torso.position.y = 0.52;
+  group.add(torso);
+
+  const emblem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.02, 8), goldTrim);
+  emblem.position.set(0, 0.54, 0.12);
+  emblem.rotation.x = Math.PI / 2;
+  group.add(emblem);
+
+  // Ceremonial Hood & Mask
+  const hood = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), robeMat);
+  hood.position.set(0, 0.74, 0);
+  group.add(hood);
+
+  const mask = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.12, 0.03), goldTrim);
+  mask.position.set(0, 0.73, 0.11);
+  group.add(mask);
+
+  // Floating Chrono Orb (Left Hand)
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), glowMat);
+  orb.position.set(-0.24, 0.52, 0.14);
+  group.add(orb);
+
+  // Scepter of Zaphkiel (Right Hand)
+  const scepter = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.80, 6), goldTrim);
+  scepter.position.set(0.24, 0.44, 0.12);
+  group.add(scepter);
+
+  const scepterHead = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.012, 6, 12), goldTrim);
+  scepterHead.position.set(0.24, 0.84, 0.12);
+  group.add(scepterHead);
+}
+
+// -------------------------------------------------------------
+// Exclusive Normal Monster 6: Draco Cronológico (Chronos Drake)
+// -------------------------------------------------------------
+function buildChronosDrakeMini(group: THREE.Group) {
+  const scaleMat = new THREE.MeshStandardMaterial({
+    color: 0x991b1b,
+    metalness: 0.6,
+    roughness: 0.35,
+  });
+  const wingMat = new THREE.MeshStandardMaterial({
+    color: 0xd97706,
+    emissive: 0xb45309,
+    emissiveIntensity: 0.3,
+    metalness: 0.8,
+    roughness: 0.3,
+    transparent: true,
+    opacity: 0.9,
+  });
+  const eyeMat = new THREE.MeshStandardMaterial({
+    color: 0xfbbf24,
+    emissive: 0xf59e0b,
+    emissiveIntensity: 1.6,
+  });
+  const goldPendulumMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.2 });
+
+  // Quadruped Heavy Legs
+  const legs = [
+    { x: -0.15, z: 0.16 },
+    { x: 0.15, z: 0.16 },
+    { x: -0.15, z: -0.16 },
+    { x: 0.15, z: -0.16 },
+  ];
+  legs.forEach((p) => {
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.22, 0.10), scaleMat);
+    leg.position.set(p.x, 0.11, p.z);
+    group.add(leg);
+  });
+
+  // Dragon Torso
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.22, 0.48), scaleMat);
+  torso.position.set(0, 0.28, 0);
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Drake Neck & Horned Head
+  const neck = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.20, 0.16), scaleMat);
+  neck.position.set(0, 0.42, 0.26);
+  neck.rotation.x = -Math.PI / 6;
+  group.add(neck);
+
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.24), scaleMat);
+  head.position.set(0, 0.52, 0.38);
+  group.add(head);
+
+  // Glowing Amber Dragon Eyes
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), eyeMat);
+    eye.position.set(side * 0.08, 0.54, 0.44);
+    group.add(eye);
+  }
+
+  // Horns
+  for (const side of [-1, 1]) {
+    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.14, 4), goldPendulumMat);
+    horn.position.set(side * 0.07, 0.62, 0.32);
+    horn.rotation.set(-Math.PI / 4, 0, side * Math.PI / 8);
+    group.add(horn);
+  }
+
+  // Clock-Wheel Mechanical Dragon Wings
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.32, 0.03), wingMat);
+    wing.position.set(side * 0.36, 0.50, -0.06);
+    wing.rotation.set(Math.PI / 6, side * Math.PI / 4, side * Math.PI / 8);
+    group.add(wing);
+  }
+
+  // Tail with Pendulum Blade Barb
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.045, 0.38, 6), scaleMat);
+  tail.position.set(0, 0.26, -0.36);
+  tail.rotation.x = Math.PI / 3;
+  group.add(tail);
+
+  const pendulumBarb = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.02), goldPendulumMat);
+  pendulumBarb.position.set(0, 0.34, -0.52);
+  pendulumBarb.rotation.x = Math.PI / 3;
+  group.add(pendulumBarb);
+}
+
 

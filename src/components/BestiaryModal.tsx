@@ -578,6 +578,14 @@ function getAvatarIcon(key: string, size = 20) {
       return <Target size={size} />;
     case 'eclipse_herald':
     case 'madness_eye':
+    case 'time_phantom_boss':
+    case 'cosmic_time_worm_boss':
+    case 'clockwork_guardian':
+    case 'time_weaver':
+    case 'gear_automaton':
+    case 'temporal_hound':
+    case 'zaphkiel_cultist':
+    case 'chronos_drake':
       return <Sun size={size} />;
     case 'dark_valkyrie':
     case 'fallen_seraph':

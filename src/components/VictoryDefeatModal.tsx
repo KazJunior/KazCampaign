@@ -48,11 +48,15 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
     }
   }, [isVictory, isDailyDungeon]);
 
+  const isSecretTimeStage = levelNumber >= 101 && levelNumber <= 110;
+  const stageLabel = isSecretTimeStage ? `Fase Secreta ${levelNumber - 100} (Fenda do Tempo)` : `Fase ${levelNumber}`;
+
   const getTitle = () => {
     if (isDailyDungeon) {
       return isVictory ? 'Desafio Diário Conquistado!' : 'Derrota no Desafio Diário';
     }
     if (isVictory) {
+      if (levelNumber === 110) return 'Fenda do Tempo Conquistada!';
       return !hasNextLevel ? 'Vitória Suprema da Campanha!' : 'Fase Concluída!';
     }
     return 'Aventura Encerrada!';
@@ -65,25 +69,26 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
         : 'Sua equipe caiu em batalha! Não desanime: você pode tentar quantas vezes quiser hoje até passar!';
     }
     if (isVictory) {
+      if (levelNumber === 110) {
+        return 'Incrível! Você derrotou o Verme Cósmico Devorador do Tempo, superou as 10 fases secretas e desbloqueou a Dançarina do Tempo!';
+      }
       return !hasNextLevel
         ? 'Incrível! Você derrotou o Dragão Malakor e superou todas as 50 fases!'
-        : `Você eliminou todos os inimigos da Fase ${levelNumber}!`;
+        : `Você eliminou todos os inimigos da ${stageLabel}!`;
     }
-    return `Sua equipe foi derrotada na Fase ${levelNumber}. A jornada chegou ao fim.`;
+    return `Sua equipe foi derrotada na ${stageLabel}. A jornada chegou ao fim.`;
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 select-none font-sans">
       <div
-        className={`bg-[#1B2030] border-2 rounded-2xl p-4 sm:p-6 max-w-md w-full max-h-[92vh] overflow-y-auto shadow-2xl text-[#F3F4F8] text-center ${
-          isVictory ? 'border-[#D4AD65]' : 'border-[#E65353]'
-        }`}
+        className={`bg-[#1B2030] border-2 rounded-2xl p-4 sm:p-6 max-w-md w-full max-h-[92vh] overflow-y-auto shadow-2xl text-[#F3F4F8] text-center ${isVictory ? 'border-[#D4AD65]' : 'border-[#E65353]'
+          }`}
       >
         <div className="flex justify-center mb-3">
           <div
-            className={`w-20 h-20 rounded-full flex items-center justify-center border-4 shadow-xl ${
-              isVictory ? 'bg-[#D4AD65]/20 border-[#D4AD65] text-[#D4AD65]' : 'bg-[#E65353]/20 border-[#E65353] text-[#E65353]'
-            }`}
+            className={`w-20 h-20 rounded-full flex items-center justify-center border-4 shadow-xl ${isVictory ? 'bg-[#D4AD65]/20 border-[#D4AD65] text-[#D4AD65]' : 'bg-[#E65353]/20 border-[#E65353] text-[#E65353]'
+              }`}
           >
             {isVictory ? <Award size={44} /> : <Skull size={44} />}
           </div>

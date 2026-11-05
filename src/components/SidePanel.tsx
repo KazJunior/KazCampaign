@@ -603,6 +603,14 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'alquimista':
       return <FlaskConical size={size} />;
     case 'pistoleiro_tempo':
+    case 'time_phantom_boss':
+    case 'cosmic_time_worm_boss':
+    case 'clockwork_guardian':
+    case 'time_weaver':
+    case 'gear_automaton':
+    case 'temporal_hound':
+    case 'zaphkiel_cultist':
+    case 'chronos_drake':
       return <Clock size={size} />;
     case 'goblin':
     case 'abyssal_tentacle':

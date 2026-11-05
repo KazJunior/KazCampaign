@@ -45,6 +45,11 @@ const ALL_VALID_CLASSES = new Set<string>([
   'mago_eletrico',
   'mago_vento',
   'omnimago',
+  'cartomante',
+  'ceifador',
+  'invocador',
+  'alquimista',
+  'pistoleiro_tempo',
 ]);
 
 const LINEAGE_QUEST_THRESHOLDS: Array<{
@@ -250,10 +255,10 @@ function calculateMaxCompleted(
   let max = leaderboardHighest || 0;
   if (Array.isArray(completedLevels)) {
     for (const lvl of completedLevels) {
-      if (typeof lvl === 'number' && lvl > max) max = lvl;
+      if (typeof lvl === 'number' && lvl <= 50 && lvl > max) max = lvl;
     }
   }
-  if (activeAdv && typeof activeAdv.currentLevelId === 'number' && activeAdv.currentLevelId > 1) {
+  if (activeAdv && typeof activeAdv.currentLevelId === 'number' && activeAdv.currentLevelId > 1 && activeAdv.currentLevelId <= 50) {
     max = Math.max(max, activeAdv.currentLevelId - 1);
   }
   if (Array.isArray(advHistory)) {
