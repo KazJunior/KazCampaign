@@ -5281,6 +5281,12 @@ export function App() {
       ];
     }
 
+    const isArcanoMundoSelfTurn = skill?.id === 'arcano_o_mundo';
+    if (isArcanoMundoSelfTurn) {
+      soundManager.playUpgrade();
+      addFloatingNumber(finalAttackerX, finalAttackerY, '🃏 O Mundo! +1 Turno!', 'status', '#A855F7');
+    }
+
     updatedUnits = updatedUnits.map((u) => {
       if (u.id === selectedUnit.id) {
         const isKitsuneEligible =
@@ -5329,13 +5335,14 @@ export function App() {
           addFloatingNumber(finalAttackerX, finalAttackerY, '⚔️ Ataque Adicional (Nefalim)!', 'status', '#F59E0B');
         }
 
+        const grantsAttackerExtraTurn = isExecutionKill || isArcanoMundoSelfTurn;
         return {
           ...u,
           x: finalAttackerX,
           y: finalAttackerY,
           currentHp: finalAttackerHp,
-          hasMoved: isExecutionKill ? false : (canMoveAgain ? false : u.hasMoved),
-          hasAttacked: isExecutionKill ? false : (isNefalimExtra ? false : true),
+          hasMoved: grantsAttackerExtraTurn ? false : (canMoveAgain ? false : u.hasMoved),
+          hasAttacked: grantsAttackerExtraTurn ? false : (isNefalimExtra ? false : true),
           nefalimExtraAttackUsed: isNefalimExtra ? true : u.nefalimExtraAttackUsed,
           centaurMovedTilesThisTurn: 0,
           hasUsedKitsuneReset: isKitsuneEligible ? true : u.hasUsedKitsuneReset,
@@ -5440,7 +5447,7 @@ export function App() {
     setActiveSkill(null);
     setIsAnimatingAction(false);
 
-    if (isExecutionKill) {
+    if (isExecutionKill || isArcanoMundoSelfTurn) {
       setSelectedUnitId(selectedUnit.id);
     } else if (canMoveAgain) {
       setSelectedUnitId(selectedUnit.id);
