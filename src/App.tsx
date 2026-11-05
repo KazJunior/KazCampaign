@@ -3390,6 +3390,8 @@ export function App() {
           faction: 'player',
           isSummoned: true,
           summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
@@ -3423,6 +3425,8 @@ export function App() {
           faction: 'player',
           isSummoned: true,
           summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
@@ -3445,7 +3449,6 @@ export function App() {
           learnedSkillIds: ['golpe_golem_rocha'],
           statusEffects: [
             { type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current },
-            { type: 'taunt', duration: 2, value: 1, appliedTurn: turnNumberRef.current },
           ],
           damageDealt: 0,
           kills: 0,
@@ -3459,6 +3462,8 @@ export function App() {
           faction: 'player',
           isSummoned: true,
           summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
@@ -3492,6 +3497,8 @@ export function App() {
           faction: 'player',
           isSummoned: true,
           summonTurnsLeft: 2,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
@@ -3526,6 +3533,8 @@ export function App() {
           faction: 'player',
           isSummoned: true,
           summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
@@ -3548,7 +3557,6 @@ export function App() {
           learnedSkillIds: ['golpe_golem_rocha'],
           statusEffects: [
             { type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current },
-            { type: 'taunt', duration: 2, value: 1, appliedTurn: turnNumberRef.current },
           ],
           damageDealt: 0,
           kills: 0,
@@ -3667,6 +3675,8 @@ export function App() {
         faction: 'player',
         isSummoned: true,
         summonTurnsLeft: 2,
+        summonedByUnitId: selectedUnit.id,
+        summonedBySkillId: skill.id,
         level: selectedUnit.level,
         xp: 0,
         maxXp: 100,
@@ -3780,6 +3790,8 @@ export function App() {
         faction: 'player',
         isSummoned: true,
         summonTurnsLeft: 2,
+        summonedByUnitId: selectedUnit.id,
+        summonedBySkillId: skill.id,
         level: selectedUnit.level,
         xp: 0,
         maxXp: 100,
@@ -7083,6 +7095,16 @@ export function App() {
             skills: u.skills.map((s) => {
               if (s.requiredSkillUses && s.requiredSkillUses > 0) return s;
               if (s.lastUsedTurn === aiTurnNumber) return s;
+              const hasLivingSummon = prev.some(
+                (sum) => sum.faction === 'player' && !sum.isDead && sum.isSummoned && sum.summonedByUnitId === u.id && sum.summonedBySkillId === s.id
+              );
+              if (hasLivingSummon) {
+                return {
+                  ...s,
+                  currentCooldown: s.cooldownMax,
+                  lastUsedTurn: aiTurnNumber,
+                };
+              }
               return {
                 ...s,
                 currentCooldown: Math.max(0, s.currentCooldown - 1),
@@ -7138,37 +7160,56 @@ export function App() {
     // 1. Decrement player units' status effect durations and skill cooldowns as player turn ends
     let nextUnitsState: Unit[] = [];
     setUnits((prev) => {
-      nextUnitsState = prev.map((u) => {
-        if (u.faction === 'player' && !u.isDead) {
-          if (u.isSummoned) {
-            const lifeEffect = u.statusEffects?.find((e) => e.type === 'summon_lifetime');
-            if (lifeEffect) {
-              if (lifeEffect.appliedTurn === currentTurn) {
-                return {
-                  ...u,
-                  statusEffects: u.statusEffects.map((e) =>
-                    e.type === 'summon_lifetime' ? { ...e, appliedTurn: undefined } : e
-                  ),
-                };
-              } else {
-                addFloatingNumber(u.x, u.y, '💀 Esqueleto desfez-se!', 'status', '#94A3B8');
-                if (boardRef.current) {
-                  boardRef.current.playDeathAnimation(u.id);
-                }
-                return {
-                  ...u,
-                  currentHp: 0,
-                  isDead: true,
-                  statusEffects: [],
-                };
+      const aliveSummonsKeySet = new Set<string>();
+
+      // Pre-pass: decrement summon lifetimes and track living summons
+      const processedSummons = prev.map((u) => {
+        if (u.faction === 'player' && !u.isDead && u.isSummoned) {
+          const lifeEffect = u.statusEffects?.find((e) => e.type === 'summon_lifetime');
+          if (lifeEffect) {
+            const nextDuration = (lifeEffect.duration || 1) - 1;
+            if (nextDuration <= 0) {
+              const dissolveMsg = u.avatarKey === 'skeleton' ? '💀 Esqueleto desfez-se!' : `💨 ${u.name} desfez-se!`;
+              addFloatingNumber(u.x, u.y, dissolveMsg, 'status', '#94A3B8');
+              if (boardRef.current) {
+                boardRef.current.playDeathAnimation(u.id);
               }
+              return {
+                ...u,
+                currentHp: 0,
+                isDead: true,
+                summonTurnsLeft: 0,
+                statusEffects: [],
+              };
+            } else {
+              if (u.summonedByUnitId && u.summonedBySkillId) {
+                aliveSummonsKeySet.add(`${u.summonedByUnitId}_${u.summonedBySkillId}`);
+              }
+              return {
+                ...u,
+                summonTurnsLeft: nextDuration,
+                statusEffects: u.statusEffects.map((e) =>
+                  e.type === 'summon_lifetime' ? { ...e, duration: nextDuration, appliedTurn: undefined } : e
+                ),
+              };
+            }
+          } else {
+            if (u.summonedByUnitId && u.summonedBySkillId) {
+              aliveSummonsKeySet.add(`${u.summonedByUnitId}_${u.summonedBySkillId}`);
             }
           }
+        }
+        return u;
+      });
+
+      nextUnitsState = processedSummons.map((u) => {
+        if (u.faction === 'player' && !u.isDead) {
           // Taunt is active against the upcoming enemy phase, so it decrements after the enemy turn ends
           // Invisibility protects against the upcoming enemy phase AND persists until their next turn!
           // Therefore, if it was applied on the current turn, do NOT decrement it at the end of the current turn.
           const updatedEffects = (u.statusEffects || [])
             .map((e) => {
+              if (e.type === 'summon_lifetime') return e;
               if (e.type === 'taunt') return e;
               if (e.type === 'invisible') {
                 if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
@@ -7210,6 +7251,17 @@ export function App() {
             skills: u.skills.map((s) => {
               if (s.requiredSkillUses && s.requiredSkillUses > 0) return s;
               if (s.lastUsedTurn === currentTurn) return s;
+
+              // O cooldown de invocações só começa a contar após a criatura morrer
+              const hasLivingSummon = aliveSummonsKeySet.has(`${u.id}_${s.id}`);
+              if (hasLivingSummon) {
+                return {
+                  ...s,
+                  currentCooldown: s.cooldownMax,
+                  lastUsedTurn: currentTurn,
+                };
+              }
+
               return {
                 ...s,
                 currentCooldown: Math.max(0, s.currentCooldown - 1),

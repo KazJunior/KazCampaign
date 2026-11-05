@@ -227,6 +227,8 @@ export interface Unit {
 
   isSummoned?: boolean;
   summonTurnsLeft?: number;
+  summonedByUnitId?: string;
+  summonedBySkillId?: string;
   corpseConsumed?: boolean;
   damageDealt: number;
   kills: number;

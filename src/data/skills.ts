@@ -7060,7 +7060,7 @@ export const SKILLS: Record<string, Skill> = {
   invocar_lobo_astral: {
     id: 'invocar_lobo_astral',
     name: 'Invocar Lobo Astral',
-    description: 'Invoca um Lobo Astral em um ladrilho vazio alvo em até 3 casas de distância. O lobo possui agilidade, ataca corpo a corpo e combate ao lado da equipe por 3 turnos!',
+    description: 'Invoca um Lobo Astral em um ladrilho vazio em até 3 casas por 3 turnos. O lobo ataca corpo a corpo ao lado da equipe. O recarregamento só inicia após o lobo morrer.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7076,7 +7076,7 @@ export const SKILLS: Record<string, Skill> = {
   invocar_golem_rocha: {
     id: 'invocar_golem_rocha',
     name: 'Invocar Guardião de Pedra',
-    description: 'Ergue um Guardião de Pedra das profundezas da terra em um ladrilho livre. O Guardião possui enorme resistência, armadura maciça e atrai ataques inimigos com Provocação!',
+    description: 'Ergue um Guardião de Pedra das profundezas da terra em um ladrilho livre por 3 turnos. Possui enorme resistência e armadura maciça para absorver e bloquear dano. O recarregamento só inicia após o guardião morrer.',
     damageType: 'healing',
     category: 'defense',
     power: 0,
@@ -7092,7 +7092,7 @@ export const SKILLS: Record<string, Skill> = {
   invocar_fenix_elemental: {
     id: 'invocar_fenix_elemental',
     name: 'Invocar Espírito de Chamas',
-    description: 'Convoca um elemental ígneo alado em um ladrilho vazio. O elemental cospe esferas flamejantes à distância, causando dano mágico contínuo aos inimigos.',
+    description: 'Convoca um elemental ígneo alado em um ladrilho vazio por 3 turnos. Cospe esferas flamejantes à distância causando dano contínuo. O recarregamento só inicia após o elemental morrer.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7237,7 +7237,7 @@ export const SKILLS: Record<string, Skill> = {
   exercito_ancestral: {
     id: 'exercito_ancestral',
     name: 'Exército das Feras Ancestrais',
-    description: 'Racha o solo invocando instantaneamente duas feras espirituais no campo de batalha e concedendo 90 de escudo a todas as invocações.',
+    description: 'Racha o solo invocando instantaneamente feras espirituais no campo de batalha por 3 turnos e concedendo 90 de escudo a todas as invocações. O recarregamento só inicia após as feras morrerem.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7253,7 +7253,7 @@ export const SKILLS: Record<string, Skill> = {
   tita_behemoth: {
     id: 'tita_behemoth',
     name: 'Despertar do Titã Astral',
-    description: 'Invoca o lendário Titã Behemoth em um ladrilho livre: uma criatura com enorme poder de choque em área que esmaga qualquer inimigo com força sísmica!',
+    description: 'Invoca o lendário Titã Behemoth em um ladrilho livre por 3 turnos: uma criatura colossal com enorme poder de choque em área. O recarregamento só inicia após o titã morrer.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7795,7 +7795,7 @@ export const SKILLS: Record<string, Skill> = {
   golpe_golem_rocha: {
     id: 'golpe_golem_rocha',
     name: 'Esmagamento Sísmico',
-    description: 'Pancada telúrica do Guardião de Pedra causando 140% de dano físico e atraindo inimigos com Provocação.',
+    description: 'Pancada telúrica do Guardião de Pedra causando 140% de dano físico e reduzindo a defesa do alvo em 15 por 2 turnos.',
     damageType: 'physical',
     category: 'attack',
     power: 1.4,
@@ -7805,7 +7805,7 @@ export const SKILLS: Record<string, Skill> = {
     cooldownMax: 0,
     currentCooldown: 0,
     targetType: 'enemy',
-    statusEffect: { type: 'taunt', duration: 1, value: 1 },
+    statusEffect: { type: 'debuff_def', duration: 2, value: 15 },
     iconName: 'Shield',
   },
   tiro_espirito_chamas: {
