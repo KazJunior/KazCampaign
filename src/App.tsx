@@ -3188,9 +3188,19 @@ export function App() {
       // Single-target Unit targeting (Enemy, Ally or Any)
       if (clickedUnit) {
         const isEnemyInvisible = clickedUnit.faction === 'enemy' && clickedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0);
+        const isInvocadorSummonOnlySkill =
+          selectedUnit.className === 'invocador' &&
+          (activeSkill?.id === 'sacrificio_explosivo' || activeSkill?.id === 'transfusao_vital');
+
+        if (isInvocadorSummonOnlySkill && clickedUnit.faction === 'player' && !clickedUnit.isSummoned) {
+          addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Afeta apenas invocações!', 'status', '#EF4444');
+          soundManager.playSelect();
+          return;
+        }
+
         const isFactionValid =
           (targetType === 'enemy' && clickedUnit.faction === 'enemy') ||
-          (targetType === 'ally' && clickedUnit.faction === 'player') ||
+          (targetType === 'ally' && clickedUnit.faction === 'player' && (!isInvocadorSummonOnlySkill || clickedUnit.isSummoned)) ||
           targetType === 'any';
 
         let isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
@@ -3542,12 +3552,12 @@ export function App() {
           level: selectedUnit.level,
           xp: 0,
           maxXp: 100,
-          maxHp: getSummonStat(selectedUnit.maxHp, 0.8),
-          currentHp: getSummonStat(selectedUnit.maxHp, 0.8),
-          atk: getSummonStat(selectedUnit.atk, 0.8),
-          mag: getSummonStat(selectedUnit.mag, 0.8),
-          def: getSummonStat(selectedUnit.def, 0.8),
-          res: getSummonStat(selectedUnit.res, 0.8),
+          maxHp: selectedUnit.maxHp,
+          currentHp: selectedUnit.maxHp,
+          atk: selectedUnit.atk,
+          mag: selectedUnit.mag,
+          def: selectedUnit.def,
+          res: selectedUnit.res,
           mov: selectedUnit.mov,
           range: 1,
           x: spawnX,
@@ -3873,6 +3883,81 @@ export function App() {
       return;
     }
 
+    // 0.96. Sacrifício Explosivo (sacrifica uma invocação aliada em área 2 sem stun)
+    if (skill?.id === 'sacrificio_explosivo') {
+      const sacrificedSummon = units.find((u) => u.id === targetUnitId);
+      if (!sacrificedSummon || !sacrificedSummon.isSummoned) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Apenas invocações podem ser sacrificadas!', 'status', '#EF4444');
+        setIsAnimatingAction(false);
+        return;
+      }
+
+      soundManager.playMagicSpell();
+      const originX = sacrificedSummon.x;
+      const originY = sacrificedSummon.y;
+
+      if (boardRef.current) {
+        await boardRef.current.playDeathAnimation(sacrificedSummon.id);
+      }
+      addFloatingNumber(originX, originY, '💥 Detonação da Criatura!', 'status', '#EF4444');
+
+      const boomRadius = 2;
+      const boomTiles = getAoETiles({ x: originX, y: originY }, boomRadius, grid[0].length, grid.length, 'circle', { x: originX, y: originY });
+      const baseMagDmg = Math.max(1, Math.round(selectedUnit.mag * (skill.power || 2.2)));
+
+      let updatedUnitsAfterSacrifice = units.map((u) => {
+        if (u.id === sacrificedSummon.id) {
+          return {
+            ...u,
+            currentHp: 0,
+            isDead: true,
+            statusEffects: [],
+          };
+        }
+        return u;
+      });
+
+      const enemiesHit = updatedUnitsAfterSacrifice.filter(
+        (u) => u.faction === 'enemy' && !u.isDead && boomTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+      );
+
+      for (const enemy of enemiesHit) {
+        const enemyRes = enemy.res || 0;
+        const actualDmg = Math.max(1, Math.round(baseMagDmg * (100 / (100 + enemyRes))));
+        const nextHp = Math.max(0, enemy.currentHp - actualDmg);
+        const enemyDead = nextHp === 0;
+
+        addFloatingNumber(enemy.x, enemy.y, `-${actualDmg}`, 'magical', '#EF4444');
+        if (enemyDead && boardRef.current) {
+          boardRef.current.playDeathAnimation(enemy.id);
+        }
+
+        updatedUnitsAfterSacrifice = updatedUnitsAfterSacrifice.map((u) =>
+          u.id === enemy.id ? { ...u, currentHp: nextHp, isDead: enemyDead } : u
+        );
+      }
+
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
+      );
+
+      setUnits(
+        updatedUnitsAfterSacrifice.map((u) =>
+          u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
+        )
+      );
+
+      setSelectedUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setTargetUnitId(null);
+      setTargetAoEPoint(null);
+      setTargetTeleportPoint(null);
+      setDamagePreview(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
     // 2. Self-targeting skill (e.g. Buffs, Escudos, Pacto de Sangue, Resistência Suprema)
     if (skill && skill.targetType === 'self' && skill.damageType === 'healing') {
       soundManager.playHeal();
@@ -4042,11 +4127,36 @@ export function App() {
       }
 
 
-      const updatedUnits = units.map((u) =>
+      let updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
           ? { ...u, currentHp: currentUnitHp, hasAttacked: grantsSelfExtraTurn ? false : true, hasMoved: grantsSelfExtraTurn ? false : u.hasMoved, skills: updatedSkills, statusEffects: updatedEffects, skillUsesCount: nextSkillUsesCount }
           : u
       );
+
+      // Suporte do Invocador afeta APENAS invocações aliadas
+      if (skill.id === 'furia_da_matilha') {
+        updatedUnits = updatedUnits.map((u) => {
+          if (u.faction === selectedUnit.faction && !u.isDead && u.isSummoned) {
+            addFloatingNumber(u.x, u.y, '+25% Dano (Uivo)', 'status', '#F97316');
+            addFloatingNumber(u.x, u.y, '+2 Movimento', 'status', '#38BDF8');
+            const effAtk: StatusEffect = { type: 'buff_atk', duration: 2, value: 25, appliedTurn: turnNumberRef.current };
+            const effMov: StatusEffect = { type: 'buff_mov', duration: 2, value: 2, appliedTurn: turnNumberRef.current };
+            const currentEffs = (u.statusEffects || []).filter((e) => e.type !== 'buff_atk' && e.type !== 'buff_mov');
+            return { ...u, statusEffects: [...currentEffs, effAtk, effMov] };
+          }
+          return u;
+        });
+      } else if (skill.id === 'armadura_da_fera') {
+        updatedUnits = updatedUnits.map((u) => {
+          if (u.faction === selectedUnit.faction && !u.isDead && u.isSummoned) {
+            addFloatingNumber(u.x, u.y, '+80 Escudo', 'shield', '#38BDF8');
+            const shieldEff: StatusEffect = { type: 'shield', duration: 2, value: 80, appliedTurn: turnNumberRef.current };
+            const currentEffs = (u.statusEffects || []).filter((e) => e.type !== 'shield');
+            return { ...u, statusEffects: [...currentEffs, shieldEff] };
+          }
+          return u;
+        });
+      }
 
       setUnits(updatedUnits);
 
@@ -4897,6 +5007,20 @@ export function App() {
       );
     }
 
+    if (skill?.id === 'transfusao_vital') {
+      updatedUnits = updatedUnits.map((u) => {
+        if (u.faction === selectedUnit.faction && !u.isDead && u.isSummoned) {
+          const shieldEff: StatusEffect = { type: 'shield', duration: 2, value: 40, appliedTurn: turnNumberRef.current };
+          const currentEffs = (u.statusEffects || []).filter((e) => e.type !== 'shield');
+          if (u.id !== target.id) {
+            addFloatingNumber(u.x, u.y, '+40 Escudo', 'shield', '#38BDF8');
+          }
+          return { ...u, statusEffects: [...currentEffs, shieldEff] };
+        }
+        return u;
+      });
+    }
+
     // Ally status effects in AoE (e.g. Solo Consagrado / Consagração)
     if (skill?.alliesStatusEffect) {
       const origin = { x: selectedUnit.x, y: selectedUnit.y };
@@ -4905,10 +5029,12 @@ export function App() {
         : [{ x: target.x, y: target.y }];
 
       const allyFaction = selectedUnit.faction;
+      const isSummonerSupport = selectedUnit.className === 'invocador' || skill?.id === 'furia_da_matilha' || skill?.id === 'armadura_da_fera';
       const alliesInArea = updatedUnits.filter(
         (u) =>
           u.faction === allyFaction &&
           !u.isDead &&
+          (!isSummonerSupport || u.isSummoned) &&
           hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
       );
 
