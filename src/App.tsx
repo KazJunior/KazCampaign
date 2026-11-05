@@ -7296,6 +7296,14 @@ export function App() {
         setPendingUnlockLineages((prev) => Array.from(new Set([...prev, ...dailyUnlockedLineages])));
       }
 
+      // CARTOMANTE UNLOCK: 10% de chance ao finalizar a missão diária
+      if (!updatedProgress.unlockedClasses?.includes('cartomante') && Math.random() < 0.10) {
+        updatedProgress = {
+          ...updatedProgress,
+          unlockedClasses: Array.from(new Set([...(updatedProgress.unlockedClasses || []), 'cartomante'])),
+        };
+        setPendingUnlockClasses((prev) => Array.from(new Set([...prev, 'cartomante'])));
+      }
       progressRef.current = updatedProgress;
       setProgress(updatedProgress);
       savePlayerProgress(updatedProgress);
@@ -7400,8 +7408,8 @@ export function App() {
     }
 
     // RARE DROP CLASS UNLOCK: Sniper
-    // Condição: 1% de chance de drop raro ao vencer qualquer fase
-    if (!currentUnlocked.includes('sniper') && Math.random() < 0.01) {
+    // Condição: 2% de chance de drop raro ao vencer qualquer fase
+    if (!currentUnlocked.includes('sniper') && Math.random() < 0.02) {
       newlyUnlocked.push('sniper');
     }
 

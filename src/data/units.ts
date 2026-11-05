@@ -31,6 +31,7 @@ export interface ClassDefinition {
   isSecret?: boolean;
   goldCost?: number;
   isDropOnly?: boolean;
+  isDailyReward?: boolean;
 }
 
 export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
@@ -382,7 +383,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     baseSkillId: 'arcano_o_louco',
     description: "Mística que canaliza o poder transcendental das cartas de Tarot. Suas habilidades conjuram Arcanos Maiores com múltiplos efeitos distintos: da destruição catastrófica d'A Torre e ceifa d'A Morte, às bênçãos d'A Estrela e giros do destino com A Roda da Fortuna.",
     statGrowth: { hp: 10, atk: 2, mag: 5, def: 2, res: 3 },
-    goldCost: 100000,
+    isDailyReward: true,
   },
   ceifador: {
     className: 'ceifador',
@@ -617,11 +618,6 @@ export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: strin
     goldCost: 100000,
     name: 'Mago de Vento',
     description: 'Compre o Mago de Vento por 100.000 moedas de ouro.',
-  },
-  cartomante: {
-    goldCost: 100000,
-    name: 'Cartomante',
-    description: 'Compre a Cartomante por 100.000 moedas de ouro.',
   },
   ceifador: {
     goldCost: 100000,
