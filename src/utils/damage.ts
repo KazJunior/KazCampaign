@@ -116,6 +116,10 @@ export function calculateBaseDamage(
       const lostHpRatio = Math.max(0, 1 - attacker.currentHp / attacker.maxHp);
       attackStat = Math.round(attackStat * (1 + lostHpRatio * 1.0));
     }
+    // Sentença de Morte: causa 210% de dano contra inimigos com menos de 40% de vida (base: 180%)
+    if (skill.id === 'sentenca_final' && target.maxHp > 0 && target.currentHp / target.maxHp < 0.4) {
+      attackStat = Math.round(attackStat * (2.1 / 1.8));
+    }
     if (attacker.lineageMissingHpDamageScaling && attacker.maxHp > 0) {
       const lostHpRatio = Math.max(0, 1 - attacker.currentHp / attacker.maxHp);
       attackStat = Math.round(attackStat * (1 + lostHpRatio * 0.35));

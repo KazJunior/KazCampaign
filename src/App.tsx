@@ -5213,6 +5213,14 @@ export function App() {
       addFloatingNumber(finalAttackerX, finalAttackerY, 'EXECUÇÃO! +1 AÇÃO!', 'status', '#C77DFF');
     }
 
+      // Dança da Morte: regenera vida ao abater alvos (sem ação extra)
+      if (skill?.id === 'danca_da_morte' && totalKills > 0) {
+        soundManager.playHeal();
+        const healAmt = Math.max(20, Math.round(selectedUnit.maxHp * 0.25 * totalKills));
+        currentAttackerHp = Math.min(selectedUnit.maxHp, currentAttackerHp + healAmt);
+        addFloatingNumber(finalAttackerX, finalAttackerY, `+${healAmt} HP (Dança da Morte)`, 'healing', '#56E59A');
+      }
+
     // CEIFADOR ON-KILL REWARDS (Mais Ouro, Escudo de Almas, Invisibilidade & Pets):
     const isCeifador = selectedUnit.className === 'ceifador';
     if (totalKills > 0 && isCeifador) {
@@ -5235,11 +5243,6 @@ export function App() {
       ];
       addFloatingNumber(finalAttackerX, finalAttackerY, `+${soulShieldVal} Escudo de Almas!`, 'shield', '#38BDF8');
 
-      finalAttackerEffects = [
-        ...finalAttackerEffects.filter((e) => e.type !== 'invisible'),
-        { type: 'invisible', duration: 1, value: 1, appliedTurn: turnNumberRef.current },
-      ];
-      addFloatingNumber(finalAttackerX, finalAttackerY, 'Manto Espectral (Invisível)!', 'status', '#8B5CF6');
 
       const eggDropBonusChance = 0.15 * totalKills;
       if (Math.random() < eggDropBonusChance) {
