@@ -15,6 +15,8 @@ import {
   Footprints,
   Sun,
   Award,
+  Rabbit,
+  PawPrint,
 } from 'lucide-react';
 import { CLASS_DEFINITIONS } from '../data/units';
 import {
@@ -62,6 +64,10 @@ function getSkillIcon(iconName?: string, size = 18) {
       return <RotateCcw size={size} />;
     case 'Footprints':
       return <Footprints size={size} />;
+    case 'Rabbit':
+      return <Rabbit size={size} />;
+    case 'PawPrint':
+      return <PawPrint size={size} />;
     default:
       return <Sun size={size} />;
   }

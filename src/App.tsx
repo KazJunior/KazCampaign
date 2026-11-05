@@ -3512,6 +3512,44 @@ export function App() {
           damageDealt: 0,
           kills: 0,
         };
+      } else if (sType === 'rabbit') {
+        addFloatingNumber(spawnX, spawnY, '🐇 Coelho Lunar Conjurado!', 'status', '#F472B6');
+        newCreature = {
+          id: `summon_rabbit_${Date.now()}`,
+          name: 'Coelho Lunar',
+          className: 'Coelho Lunar',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.55),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.55),
+          atk: getSummonStat(selectedUnit.atk, 0.4),
+          mag: getSummonStat(selectedUnit.mag, 0.8),
+          def: getSummonStat(selectedUnit.def, 0.55),
+          res: getSummonStat(selectedUnit.res, 0.75),
+          mov: Math.max(1, Math.min(selectedUnit.mov, 4)),
+          range: 2,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: false,
+          hasAttacked: false,
+          isDead: false,
+          color: '#F472B6',
+          avatarKey: 'astral_rabbit',
+          skills: [
+            JSON.parse(JSON.stringify(SKILLS.cura_coelho_astral)),
+            JSON.parse(JSON.stringify(SKILLS.escudo_coelho_astral)),
+          ],
+          learnedSkillIds: ['cura_coelho_astral', 'escudo_coelho_astral'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
       } else if (sType === 'kurumi_clone') {
         addFloatingNumber(spawnX, spawnY, '⏳ Clone Temporal Manifestado!', 'status', '#DC2626');
         newCreature = {

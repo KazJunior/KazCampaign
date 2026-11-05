@@ -17,6 +17,8 @@ import {
   ShieldCheck,
   Sun,
   TrendingUp,
+  Rabbit,
+  PawPrint,
 } from 'lucide-react';
 
 interface SkillChoiceModalProps {
@@ -327,6 +329,10 @@ function getSkillIcon(iconName: string, size = 20) {
       return <RotateCcw size={size} />;
     case 'Footprints':
       return <Footprints size={size} />;
+    case 'Rabbit':
+      return <Rabbit size={size} />;
+    case 'PawPrint':
+      return <PawPrint size={size} />;
     default:
       return <Sun size={size} />;
   }

@@ -1239,6 +1239,9 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'skeleton':
       buildSkeletonMini(char);
       break;
+    case 'astral_rabbit':
+      buildAstralRabbitMini(char);
+      break;
     default:
       buildFallbackMini(char, unit);
       break;
@@ -4668,3 +4671,97 @@ function buildPistoleiroTempoMini(group: THREE.Group) {
   musketStock.position.set(-0.25, 0.20, 0.08);
   group.add(musketStock);
 }
+
+// -------------------------------------------------------------
+// Summoned Astral Rabbit (Coelho Lunar do Invocador)
+// -------------------------------------------------------------
+function buildAstralRabbitMini(group: THREE.Group) {
+  const furMat = new THREE.MeshStandardMaterial({
+    color: 0xf8fafc,
+    emissive: 0xe2e8f0,
+    emissiveIntensity: 0.2,
+    roughness: 0.35,
+  });
+  const pinkMat = new THREE.MeshStandardMaterial({
+    color: 0xf472b6,
+    emissive: 0xdb2777,
+    emissiveIntensity: 0.45,
+    roughness: 0.25,
+  });
+  const healCrystalMat = new THREE.MeshStandardMaterial({
+    color: 0x34d399,
+    emissive: 0x10b981,
+    emissiveIntensity: 0.85,
+    roughness: 0.15,
+  });
+  const shieldRingMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.75,
+    roughness: 0.2,
+  });
+
+  // Hind Paws
+  for (const side of [-1, 1]) {
+    const paw = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.06, 0.16), furMat);
+    paw.position.set(side * 0.1, 0.05, 0.02);
+    group.add(paw);
+  }
+
+  // Plump Rabbit Body
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), furMat);
+  body.scale.set(0.95, 1.05, 1.15);
+  body.position.set(0, 0.22, -0.02);
+  group.add(body);
+
+  // Fluffy Cotton Tail
+  const tail = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), furMat);
+  tail.position.set(0, 0.2, -0.22);
+  group.add(tail);
+
+  // Rabbit Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), furMat);
+  head.scale.set(1.0, 0.95, 1.05);
+  head.position.set(0, 0.42, 0.06);
+  group.add(head);
+
+  // Cute Pink Nose & Glowing Eyes
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), pinkMat);
+  nose.position.set(0, 0.41, 0.2);
+  group.add(nose);
+
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), pinkMat);
+    eye.position.set(side * 0.055, 0.45, 0.17);
+    group.add(eye);
+  }
+
+  // Long Lunar Rabbit Ears
+  for (const side of [-1, 1]) {
+    const earGroup = new THREE.Group();
+    earGroup.position.set(side * 0.065, 0.56, 0.04);
+    earGroup.rotation.set(-0.12, 0, -side * 0.18);
+
+    const outerEar = new THREE.Mesh(new THREE.CapsuleGeometry(0.036, 0.22, 6, 10), furMat);
+    outerEar.scale.set(1.0, 1.0, 0.55);
+    earGroup.add(outerEar);
+
+    const innerEar = new THREE.Mesh(new THREE.CapsuleGeometry(0.022, 0.16, 6, 8), pinkMat);
+    innerEar.scale.set(1.0, 1.0, 0.4);
+    innerEar.position.z = 0.015;
+    earGroup.add(innerEar);
+
+    group.add(earGroup);
+  }
+
+  // Floating Healing Gem & Shield Halo
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.014, 8, 24), shieldRingMat);
+  halo.rotation.x = Math.PI / 2;
+  halo.position.set(0, 0.3, 0);
+  group.add(halo);
+
+  const healGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), healCrystalMat);
+  healGem.position.set(0, 0.78, 0.04);
+  group.add(healGem);
+}
+

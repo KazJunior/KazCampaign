@@ -28,6 +28,8 @@ import {
   X,
   CheckCircle2,
   Music,
+  Rabbit,
+  PawPrint,
 } from 'lucide-react';
 import type { PetDefinition, PetActiveSkill } from '../types/game';
 import { PET_RARITY_CONFIG } from '../data/pets';
@@ -556,6 +558,10 @@ function getSkillIcon(iconName: string, size = 16) {
       return <Eye size={size} />;
     case 'Music':
       return <Music size={size} />;
+    case 'Rabbit':
+      return <Rabbit size={size} />;
+    case 'PawPrint':
+      return <PawPrint size={size} />;
     default:
       return <Sparkles size={size} />;
   }

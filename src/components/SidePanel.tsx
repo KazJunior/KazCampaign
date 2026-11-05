@@ -598,6 +598,7 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'ceifador':
       return <Skull size={size} />;
     case 'invocador':
+    case 'astral_rabbit':
       return <PawPrint size={size} />;
     case 'alquimista':
       return <FlaskConical size={size} />;
