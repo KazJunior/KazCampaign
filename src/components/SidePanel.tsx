@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Unit, SelectedAction } from '../types/game';
-import { ClassLineageAvatar } from './ClassLineageAvatar';
+import {ClassLineageAvatar } from './ClassLineageAvatar';
 import {
   Footprints,
   Swords,
@@ -22,8 +22,7 @@ import {
   Snowflake,
   Wrench,
   BookOpen,
-  TreePine,
-} from 'lucide-react';
+  TreePine, PawPrint, FlaskConical, Clock } from 'lucide-react';
 
 interface SidePanelProps {
   selectedUnit: Unit | null;
@@ -594,6 +593,16 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'omnimage':
     case 'omnimago':
       return <Sparkles size={size} />;
+        case 'cartomante':
+      return <Sparkles size={size} />;
+    case 'ceifador':
+      return <Skull size={size} />;
+    case 'invocador':
+      return <PawPrint size={size} />;
+    case 'alquimista':
+      return <FlaskConical size={size} />;
+    case 'pistoleiro_tempo':
+      return <Clock size={size} />;
     case 'goblin':
     case 'abyssal_tentacle':
       return <Zap size={size} />;

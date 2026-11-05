@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { PlayerProgress } from '../types/game';
-import {
-  CLASS_MISSIONS,
+import {CLASS_MISSIONS,
   CLASS_SKINS,
   getEquippedSkin,
   isSkinUnlocked,
@@ -33,8 +32,7 @@ import {
   Coins,
   Palette,
   X,
-  Check,
-} from 'lucide-react';
+  Check, PawPrint, FlaskConical, Clock } from 'lucide-react';
 
 interface ClassMissionsModalProps {
   progress: PlayerProgress;
@@ -611,8 +609,18 @@ function getClassGlyph(avatarKey?: string): React.ReactNode {
       return <Crosshair size={20} />;
     case 'electric_mage':
       return <Zap size={20} />;
-    case 'wind_mage':
+        case 'wind_mage':
       return <RotateCw size={20} />;
+    case 'cartomante':
+      return <Sparkles size={20} />;
+    case 'ceifador':
+      return <Skull size={20} />;
+    case 'invocador':
+      return <PawPrint size={20} />;
+    case 'alquimista':
+      return <FlaskConical size={20} />;
+    case 'pistoleiro_tempo':
+      return <Clock size={20} />;
     default:
       return <Shield size={20} />;
   }

@@ -384,5 +384,10 @@ export const DEFAULT_CLASS_LINEAGES: Record<string, string> = {
   sniper: 'elfo',
   mago_eletrico: 'humano',
   mago_vento: 'elfo',
-  omnimago: 'humano',
+    omnimago: 'humano',
+  cartomante: 'humano',
+  ceifador: 'humano',
+  invocador: 'elfo',
+  alquimista: 'anao',
+  pistoleiro_tempo: 'humano',
 };

@@ -116,7 +116,11 @@ const CANDIDATE_CLASSES = [
   'mago_gelo',
   'sniper',
   'mago_eletrico',
-  'mago_vento',
+    'mago_vento',
+  'cartomante',
+  'ceifador',
+  'invocador',
+  'alquimista',
 ];
 
 const CANDIDATE_BOSSES = [

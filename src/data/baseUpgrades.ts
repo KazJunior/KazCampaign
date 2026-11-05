@@ -148,6 +148,42 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 4, cost: 80000, bonus: { hp: 38, mag: 5, res: 2 }, name: 'Olho do Vendaval', description: '+38 HP, +5 MAG e +2 RES permanente.' },
     { level: 5, cost: 100000, bonus: { hp: 52, mag: 8, res: 3, def: 3 }, name: 'Lorde dos Tempestuosos', description: '+52 HP, +8 MAG, +3 RES e +3 DEF permanente.' },
   ],
+  cartomante: [
+    { level: 1, cost: 10000, bonus: { hp: 15, mag: 2 }, name: 'Baralho Cigano', description: '+15 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 22, mag: 3, res: 1 }, name: 'Visão dos Astros', description: '+22 HP, +3 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 28, mag: 4, res: 2 }, name: 'Pêndulo Místico', description: '+28 HP, +4 MAG e +2 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 38, mag: 5, def: 2, res: 2 }, name: 'Arcanos Transcendentes', description: '+38 HP, +5 MAG, +2 DEF e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 52, mag: 8, res: 4, def: 2 }, name: 'Oráculo do Destino', description: '+52 HP, +8 MAG, +4 RES e +2 DEF permanente.' },
+  ],
+  ceifador: [
+    { level: 1, cost: 10000, bonus: { hp: 20, atk: 2 }, name: 'Fio da Foice', description: '+20 HP e +2 ATK permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 28, atk: 3, def: 1 }, name: 'Manto da Noite', description: '+28 HP, +3 ATK e +1 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 38, atk: 4, res: 2 }, name: 'Vaso de Almas', description: '+38 HP, +4 ATK e +2 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 50, atk: 6, def: 2, res: 1 }, name: 'Presença Sombria', description: '+50 HP, +6 ATK, +2 DEF e +1 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 70, atk: 9, def: 3, res: 2 }, name: 'Avatar da Foice Eterna', description: '+70 HP, +9 ATK, +3 DEF e +2 RES permanente.' },
+  ],
+  invocador: [
+    { level: 1, cost: 10000, bonus: { hp: 16, mag: 2 }, name: 'Grimório Espiritual', description: '+16 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 24, mag: 3, def: 1 }, name: 'Vínculo da Fera', description: '+24 HP, +3 MAG e +1 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 32, mag: 4, res: 2 }, name: 'Círculo Telúrico', description: '+32 HP, +4 MAG e +2 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 44, mag: 6, def: 2, res: 2 }, name: 'Comando Supremo', description: '+44 HP, +6 MAG, +2 DEF e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 60, mag: 8, def: 3, res: 3 }, name: 'Mestre da Criação Astral', description: '+60 HP, +8 MAG, +3 DEF e +3 RES permanente.' },
+  ],
+  alquimista: [
+    { level: 1, cost: 10000, bonus: { hp: 16, atk: 2, mag: 1 }, name: 'Frasco Reforçado', description: '+16 HP, +2 ATK e +1 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 24, atk: 3, mag: 2 }, name: 'Tubo de Destilação', description: '+24 HP, +3 ATK e +2 MAG permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 32, atk: 4, def: 2, res: 1 }, name: 'Fórmula Termoativa', description: '+32 HP, +4 ATK, +2 DEF e +1 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 45, atk: 5, mag: 4, def: 2 }, name: 'Reagentes Voláteis', description: '+45 HP, +5 ATK, +4 MAG e +2 DEF permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 62, atk: 7, mag: 6, def: 3, res: 2 }, name: 'Grão-Mestre Alquimista', description: '+62 HP, +7 ATK, +6 MAG, +3 DEF e +2 RES permanente.' },
+  ],
+  pistoleiro_tempo: [
+    { level: 1, cost: 10000, bonus: { hp: 18, atk: 2, mag: 1 }, name: 'Chumbo Encantado', description: '+18 HP, +2 ATK e +1 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 26, atk: 3, mag: 2, res: 1 }, name: 'Gatilho de Precisão', description: '+26 HP, +3 ATK, +2 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 35, atk: 4, mag: 3, def: 1 }, name: 'Engrenagens Astrais', description: '+35 HP, +4 ATK, +3 MAG e +1 DEF permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 48, atk: 6, mag: 4, res: 2 }, name: 'Ponteiros do Destino', description: '+48 HP, +6 ATK, +4 MAG e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 68, atk: 8, mag: 6, def: 2, res: 3 }, name: 'Soberana do Relógio Zaphkiel', description: '+68 HP, +8 ATK, +6 MAG, +2 DEF e +3 RES permanente.' },
+  ],
+
 };
 
 export function getClassCumulativeBonus(className: string, level = 0): { hp: number; atk: number; mag: number; def: number; res: number } {

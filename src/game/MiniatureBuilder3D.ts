@@ -1130,6 +1130,22 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'omnimago':
       buildOmnimageMini(char);
       break;
+    case 'cartomante':
+      buildCartomanteMini(char);
+      break;
+    case 'ceifador':
+      buildCeifadorMini(char);
+      break;
+    case 'invocador':
+      buildInvocadorMini(char);
+      break;
+    case 'alquimista':
+      buildAlquimistaMini(char);
+      break;
+    case 'pistoleiro_tempo':
+      buildPistoleiroTempoMini(char);
+      break;
+
     case 'goblin':
       buildGoblinMini(char);
       break;
@@ -4321,3 +4337,334 @@ function buildOmnimageMini(group: THREE.Group) {
 
 // ============================================================================
 // DRAGONOID MINIATURE (Combatente Dracônico Híbrido & Chamas Ancestrais)
+
+
+// ============================================================================
+// CARTOMANTE MINIATURE (Mística do Tarot & Arcanos Maiores)
+// ============================================================================
+function buildCartomanteMini(group: THREE.Group) {
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.6 }); // Deep mystic violet
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0xc084fc, emissive: 0x9333ea, emissiveIntensity: 0.4, roughness: 0.3 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.7 });
+  const cardMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xc084fc, emissiveIntensity: 0.5, roughness: 0.2 });
+
+  // Floating Robe Bottom
+  const skirtGeo = new THREE.CylinderGeometry(0.22, 0.34, 0.46, 12);
+  const skirt = new THREE.Mesh(skirtGeo, robeMat);
+  skirt.position.y = 0.23;
+  skirt.castShadow = true;
+  group.add(skirt);
+
+  // Torso
+  const torsoGeo = new THREE.CylinderGeometry(0.16, 0.22, 0.34, 10);
+  const torso = new THREE.Mesh(torsoGeo, robeMat);
+  torso.position.y = 0.54;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Mystic Sash & Amulet
+  const sashGeo = new THREE.TorusGeometry(0.20, 0.02, 6, 14);
+  const sash = new THREE.Mesh(sashGeo, trimMat);
+  sash.rotation.x = Math.PI / 2;
+  sash.position.y = 0.42;
+  group.add(sash);
+
+  // Head
+  const headGeo = new THREE.SphereGeometry(0.12, 12, 10);
+  const head = new THREE.Mesh(headGeo, skinMat);
+  head.position.y = 0.80;
+  head.castShadow = true;
+  group.add(head);
+
+  // Star Veil / Cowl
+  const cowlGeo = new THREE.ConeGeometry(0.22, 0.30, 10);
+  const cowl = new THREE.Mesh(cowlGeo, robeMat);
+  cowl.position.set(0, 0.96, -0.04);
+  cowl.rotation.x = -0.2;
+  group.add(cowl);
+
+  // 4 Floating Tarot Cards orbiting the Cartomante
+  for (let i = 0; i < 4; i++) {
+    const cardGeo = new THREE.BoxGeometry(0.08, 0.13, 0.01);
+    const card = new THREE.Mesh(cardGeo, cardMat);
+    const angle = (i * Math.PI) / 2;
+    card.position.set(Math.cos(angle) * 0.36, 0.65 + (i % 2 === 0 ? 0.08 : -0.05), Math.sin(angle) * 0.36);
+    card.rotation.y = -angle + Math.PI / 4;
+    card.castShadow = true;
+    group.add(card);
+  }
+}
+
+// ============================================================================
+// CEIFADOR MINIATURE (Ceifador de Almas com Foice Espectral)
+// ============================================================================
+function buildCeifadorMini(group: THREE.Group) {
+  const cloakMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 }); // Abyssal black
+  const innerMat = new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.9 });
+  const soulEyeMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 1.5 });
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.5 });
+  const bladeMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+  const bladeGlowMat = new THREE.MeshStandardMaterial({ color: 0x34d399, emissive: 0x059669, emissiveIntensity: 0.8 });
+
+  // Tattered Shroud / Cloak
+  const shroudGeo = new THREE.CylinderGeometry(0.20, 0.36, 0.52, 10);
+  const shroud = new THREE.Mesh(shroudGeo, cloakMat);
+  shroud.position.y = 0.26;
+  shroud.castShadow = true;
+  group.add(shroud);
+
+  // Torso
+  const torsoGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.36, 8);
+  const torso = new THREE.Mesh(torsoGeo, cloakMat);
+  torso.position.y = 0.58;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Deep Hood
+  const hoodGeo = new THREE.SphereGeometry(0.16, 10, 10);
+  const hood = new THREE.Mesh(hoodGeo, cloakMat);
+  hood.position.y = 0.82;
+  group.add(hood);
+
+  // Shadow Face Opening
+  const faceVoidGeo = new THREE.SphereGeometry(0.12, 8, 8);
+  const faceVoid = new THREE.Mesh(faceVoidGeo, innerMat);
+  faceVoid.position.set(0, 0.81, 0.07);
+  group.add(faceVoid);
+
+  // Twin Glowing Soul Eyes
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), soulEyeMat);
+  eyeL.position.set(-0.04, 0.82, 0.17);
+  group.add(eyeL);
+
+  const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.02, 6, 6), soulEyeMat);
+  eyeR.position.set(0.04, 0.82, 0.17);
+  group.add(eyeR);
+
+  // Colossal Curved Scythe
+  const poleGeo = new THREE.CylinderGeometry(0.022, 0.022, 1.25, 8);
+  const pole = new THREE.Mesh(poleGeo, poleMat);
+  pole.position.set(0.35, 0.62, 0.1);
+  pole.rotation.z = -0.15;
+  pole.castShadow = true;
+  group.add(pole);
+
+  // Scythe Blade Arc
+  const bladeGeo = new THREE.TorusGeometry(0.32, 0.035, 6, 12, Math.PI * 0.7);
+  const blade = new THREE.Mesh(bladeGeo, bladeMat);
+  blade.position.set(0.48, 1.18, 0.1);
+  blade.rotation.z = -Math.PI * 0.65;
+  blade.castShadow = true;
+  group.add(blade);
+
+  // Glowing Soul Edge
+  const edgeGeo = new THREE.TorusGeometry(0.34, 0.015, 4, 12, Math.PI * 0.65);
+  const edge = new THREE.Mesh(edgeGeo, bladeGlowMat);
+  edge.position.set(0.48, 1.18, 0.1);
+  edge.rotation.z = -Math.PI * 0.65;
+  group.add(edge);
+}
+
+// ============================================================================
+// INVOCADOR MINIATURE (Comandante de Feras & Espírito Místico)
+// ============================================================================
+function buildInvocadorMini(group: THREE.Group) {
+  const coatMat = new THREE.MeshStandardMaterial({ color: 0x064e3b, roughness: 0.6 }); // Deep forest green
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x34d399, emissive: 0x059669, emissiveIntensity: 0.5, roughness: 0.3 });
+  const staffWood = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
+  const orbMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x34d399, emissiveIntensity: 1.2 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfcd34d, roughness: 0.7 });
+
+  // Robe Base
+  const skirtGeo = new THREE.CylinderGeometry(0.22, 0.32, 0.45, 10);
+  const skirt = new THREE.Mesh(skirtGeo, coatMat);
+  skirt.position.y = 0.225;
+  skirt.castShadow = true;
+  group.add(skirt);
+
+  // Torso
+  const torsoGeo = new THREE.CylinderGeometry(0.17, 0.22, 0.35, 8);
+  const torso = new THREE.Mesh(torsoGeo, coatMat);
+  torso.position.y = 0.54;
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Head
+  const headGeo = new THREE.SphereGeometry(0.12, 10, 10);
+  const head = new THREE.Mesh(headGeo, skinMat);
+  head.position.y = 0.80;
+  head.castShadow = true;
+  group.add(head);
+
+  // Shamanic Antler / Horned Circlet
+  const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.22, 6), trimMat);
+  hornL.position.set(-0.12, 0.94, -0.02);
+  hornL.rotation.z = 0.4;
+  group.add(hornL);
+
+  const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.22, 6), trimMat);
+  hornR.position.set(0.12, 0.94, -0.02);
+  hornR.rotation.z = -0.4;
+  group.add(hornR);
+
+  // Summoner Staff
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.025, 1.1, 8), staffWood);
+  staff.position.set(0.32, 0.55, 0.15);
+  staff.castShadow = true;
+  group.add(staff);
+
+  // Floating Astral Orb on staff top
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 10), orbMat);
+  orb.position.set(0.32, 1.15, 0.15);
+  group.add(orb);
+}
+
+// ============================================================================
+// ALQUIMISTA MINIATURE (Cientista de Reagentes & Frascos Químicos)
+// ============================================================================
+function buildAlquimistaMini(group: THREE.Group) {
+  const coatMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 }); // Leather brown
+  const apronMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 }); // Amber apron
+  const goggleBrass = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.3 });
+  const goggleLens = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x06b6d4, emissiveIntensity: 0.9 });
+  const potionGlass = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, transparent: true, opacity: 0.6 });
+  const potionFluid = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x10b981, emissiveIntensity: 1.0 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.7 });
+
+  // Legs / Boots
+  const bootL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.3, 8), coatMat);
+  bootL.position.set(-0.11, 0.15, 0);
+  group.add(bootL);
+
+  const bootR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.3, 8), coatMat);
+  bootR.position.set(0.11, 0.15, 0);
+  group.add(bootR);
+
+  // Torso & Chemical Apron
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.36, 8), coatMat);
+  torso.position.y = 0.52;
+  torso.castShadow = true;
+  group.add(torso);
+
+  const apron = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.30, 0.03), apronMat);
+  apron.position.set(0, 0.48, 0.16);
+  group.add(apron);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), skinMat);
+  head.position.y = 0.78;
+  group.add(head);
+
+  // Steampunk Goggles on forehead
+  const goggleL = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.04, 8), goggleBrass);
+  goggleL.rotation.x = Math.PI / 2;
+  goggleL.position.set(-0.06, 0.84, 0.11);
+  group.add(goggleL);
+
+  const lensL = new THREE.Mesh(new THREE.CircleGeometry(0.032, 8), goggleLens);
+  lensL.position.set(-0.06, 0.84, 0.135);
+  group.add(lensL);
+
+  const goggleR = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.04, 8), goggleBrass);
+  goggleR.rotation.x = Math.PI / 2;
+  goggleR.position.set(0.06, 0.84, 0.11);
+  group.add(goggleR);
+
+  const lensR = new THREE.Mesh(new THREE.CircleGeometry(0.032, 8), goggleLens);
+  lensR.position.set(0.06, 0.84, 0.135);
+  group.add(lensR);
+
+  // Chemical Flask in Right Hand
+  const flaskNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.08, 8), potionGlass);
+  flaskNeck.position.set(0.30, 0.58, 0.18);
+  group.add(flaskNeck);
+
+  const flaskBody = new THREE.Mesh(new THREE.SphereGeometry(0.075, 10, 10), potionGlass);
+  flaskBody.position.set(0.30, 0.49, 0.18);
+  group.add(flaskBody);
+
+  const flaskLiquid = new THREE.Mesh(new THREE.SphereGeometry(0.065, 8, 8), potionFluid);
+  flaskLiquid.position.set(0.30, 0.48, 0.18);
+  group.add(flaskLiquid);
+}
+
+// ============================================================================
+// PISTOLEIRO DO TEMPO MINIATURE (Tokisaki Kurumi / Zaphkiel)
+// ============================================================================
+function buildPistoleiroTempoMini(group: THREE.Group) {
+  const dressRed = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 }); // Gothic crimson
+  const dressBlack = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.6 }); // Ebony lace
+  const goldEye = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xeab308, emissiveIntensity: 1.4 }); // Clock Eye
+  const redEye = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 0.8 });
+  const gunMetal = new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.85, roughness: 0.25 });
+  const gunGold = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.2 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.6 });
+  const hairBlack = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.8 });
+
+  // Ruffled Gothic Skirt (Layered Red & Black)
+  const skirtBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.35, 0.42, 12), dressRed);
+  skirtBottom.position.y = 0.21;
+  skirtBottom.castShadow = true;
+  group.add(skirtBottom);
+
+  const skirtFrill = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.03, 6, 14), dressBlack);
+  skirtFrill.rotation.x = Math.PI / 2;
+  skirtFrill.position.y = 0.12;
+  group.add(skirtFrill);
+
+  // Corset Torso
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.32, 10), dressBlack);
+  torso.position.y = 0.52;
+  torso.castShadow = true;
+  group.add(torso);
+
+  const corsetCenter = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.22, 0.04), dressRed);
+  corsetCenter.position.set(0, 0.52, 0.14);
+  group.add(corsetCenter);
+
+  // Head
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), skinMat);
+  head.position.y = 0.77;
+  head.castShadow = true;
+  group.add(head);
+
+  // Kurumi's Distinctive Eyes: Left eye is Golden Clock, Right eye is Crimson
+  const eyeLeftClock = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), goldEye);
+  eyeLeftClock.position.set(-0.042, 0.78, 0.10);
+  group.add(eyeLeftClock);
+
+  const eyeRightRed = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), redEye);
+  eyeRightRed.position.set(0.042, 0.78, 0.10);
+  group.add(eyeRightRed);
+
+  // Asymmetric Gothic Twintails
+  const tailL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.45, 8), hairBlack);
+  tailL.position.set(-0.16, 0.65, -0.05);
+  tailL.rotation.z = 0.25;
+  group.add(tailL);
+
+  const tailR = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 0.60, 8), hairBlack);
+  tailR.position.set(0.18, 0.55, -0.05);
+  tailR.rotation.z = -0.20;
+  group.add(tailR);
+
+  // Right Hand: Flintlock Pistol
+  const pistolBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.25, 8), gunGold);
+  pistolBarrel.rotation.x = Math.PI / 2;
+  pistolBarrel.position.set(0.24, 0.56, 0.24);
+  group.add(pistolBarrel);
+
+  const pistolHandle = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.08, 0.04), gunMetal);
+  pistolHandle.position.set(0.24, 0.51, 0.15);
+  group.add(pistolHandle);
+
+  // Left Hand: Long Musket Rifle
+  const musketBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.65, 8), gunMetal);
+  musketBarrel.position.set(-0.25, 0.42, 0.16);
+  musketBarrel.rotation.x = 0.35;
+  group.add(musketBarrel);
+
+  const musketStock = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.05), dressRed);
+  musketStock.position.set(-0.25, 0.20, 0.08);
+  group.add(musketStock);
+}

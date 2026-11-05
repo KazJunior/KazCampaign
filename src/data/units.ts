@@ -365,6 +365,96 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     description: 'Conjurador lendário que transcendeu a especialização elemental para comandar Fogo, Gelo, Vento e Raio simultaneamente. Funde as quatro forças da natureza para aniquilar qualquer adversário com cataclismos prismáticos.',
     statGrowth: { hp: 10, atk: 1, mag: 6, def: 1, res: 3 },
     isSecret: true,
+  },
+  cartomante: {
+    className: 'cartomante',
+    name: 'Cartomante',
+    role: 'Manipulação do Destino & Arcanos Maiores',
+    maxHp: 80,
+    atk: 12,
+    mag: 30,
+    def: 6,
+    res: 12,
+    mov: 3,
+    range: 3,
+    color: '#8B5CF6',
+    avatarKey: 'cartomante',
+    baseSkillId: 'arcano_o_louco',
+    description: "Mística que canaliza o poder transcendental das cartas de Tarot. Suas habilidades conjuram Arcanos Maiores com múltiplos efeitos distintos: da destruição catastrófica d'A Torre e ceifa d'A Morte, às bênçãos d'A Estrela e giros do destino com A Roda da Fortuna.",
+    statGrowth: { hp: 10, atk: 2, mag: 5, def: 2, res: 3 },
+    goldCost: 100000,
+  },
+  ceifador: {
+    className: 'ceifador',
+    name: 'Ceifador',
+    role: 'Ceifador de Almas & Caçador de Recompensas',
+    maxHp: 110,
+    atk: 30,
+    mag: 15,
+    def: 9,
+    res: 8,
+    mov: 4,
+    range: 1,
+    color: '#475569',
+    avatarKey: 'ceifador',
+    baseSkillId: 'corte_ceifador',
+    description: 'Combatente sombrio empunhando uma foice espectral que colhe as almas dos inimigos tombados. Cada abate concede recompensas únicas: ouro maciço imediato, escudos de névoa escura, invisibilidade e maior chance de capturar ovos raros de companheiros.',
+    statGrowth: { hp: 13, atk: 5, mag: 2, def: 2, res: 2 },
+    goldCost: 100000,
+  },
+  invocador: {
+    className: 'invocador',
+    name: 'Invocador',
+    role: 'Comandante de Feras & Invocador Místico',
+    maxHp: 85,
+    atk: 14,
+    mag: 28,
+    def: 7,
+    res: 11,
+    mov: 3,
+    range: 3,
+    color: '#10B981',
+    avatarKey: 'invocador',
+    baseSkillId: 'invocar_lobo_astral',
+    description: 'Mestre das artes de invocação que traz feras astrais, golias de rocha e espíritos de chamas para lutar no tabuleiro. Coordena investidas da matilha, funde energias vitais e detona invocações em explosões de choque espiritual.',
+    statGrowth: { hp: 11, atk: 2, mag: 5, def: 2, res: 3 },
+    goldCost: 100000,
+  },
+  alquimista: {
+    className: 'alquimista',
+    name: 'Alquimista',
+    role: 'Misturas Químicas & Ataque Potencializado',
+    maxHp: 85,
+    atk: 24,
+    mag: 20,
+    def: 8,
+    res: 8,
+    mov: 3,
+    range: 3,
+    color: '#D97706',
+    avatarKey: 'alquimista',
+    baseSkillId: 'reagente_explosivo',
+    description: 'Cientista engenhoso que prepara reagentes cumulativos em seu frasco (+dano, lentidão, dano em área, veneno, corrosão, roubo de vida). Suas misturas se acumulam e são detonadas juntas quando o Alquimista dispara seu ataque normal!',
+    statGrowth: { hp: 11, atk: 4, mag: 3, def: 2, res: 2 },
+    goldCost: 100000,
+  },
+  pistoleiro_tempo: {
+    className: 'pistoleiro_tempo',
+    name: 'Pistoleiro do Tempo',
+    role: 'Manipulação Temporal & Pistolas Duplas',
+    maxHp: 95,
+    atk: 30,
+    mag: 25,
+    def: 7,
+    res: 9,
+    mov: 4,
+    range: 4,
+    color: '#DC2626',
+    avatarKey: 'pistoleiro_tempo',
+    baseSkillId: 'disparo_temporal_zaphkiel',
+    description: 'Entidade misteriosa inspirada na soberana do tempo Tokisaki Kurumi. Empunha pistola e mosquete canalizando o anjo Zaphkiel e suas doze balas para acelerar seu próprio tempo, paralisar inimigos no espaço, criar clones temporais e devorar a essência do tempo.',
+    statGrowth: { hp: 12, atk: 4, mag: 4, def: 2, res: 2 },
+    isSecret: true,
   }
 };
 
@@ -441,6 +531,13 @@ Preso entre as runas roubadas, o traidor zomba da morte terrena. O aço vulgar d
 
 Para que ele morra de verdade e seus pecados sejam purificados, o traidor deve ser subjugado pela retribuição dos magos originais. Formem uma irmandade tecida apenas pelo arcano e restaurem a harmonia que ele violou.`,
   },
+  pistoleiro_tempo: {
+    title: 'Pistoleiro do Tempo',
+    description: 'Uma anomalia temporal aguarda nas fendas do espaço-tempo... O Boss Secreto do Tempo despertará no futuro para quebrar o selo de Kurumi.',
+    riddle: `Quando os ponteiros do grande relógio astral apontarem para a eternidade, as sombras do passado e do futuro colidirão...
+
+A Dama do Relógio aguarda o despertar de um adversário digno que desafie as correntes do próprio tempo. Derrote a anomalia secreta que surgirá no futuro para romper o selo de Kurumi.`,
+  }
 };
 
 export function isMeleeClassForSecretUnlock(className: string): boolean {
@@ -521,6 +618,27 @@ export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: strin
     name: 'Mago de Vento',
     description: 'Compre o Mago de Vento por 100.000 moedas de ouro.',
   },
+  cartomante: {
+    goldCost: 100000,
+    name: 'Cartomante',
+    description: 'Compre a Cartomante por 100.000 moedas de ouro.',
+  },
+  ceifador: {
+    goldCost: 100000,
+    name: 'Ceifador',
+    description: 'Compre o Ceifador por 100.000 moedas de ouro.',
+  },
+  invocador: {
+    goldCost: 100000,
+    name: 'Invocador',
+    description: 'Compre o Invocador por 100.000 moedas de ouro.',
+  },
+  alquimista: {
+    goldCost: 100000,
+    name: 'Alquimista',
+    description: 'Compre o Alquimista por 100.000 moedas de ouro.',
+  },
+
 };
 
 export function sanitizeUnlockedClasses(

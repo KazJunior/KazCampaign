@@ -92,6 +92,17 @@ export type AoEType =
   | 'rect_3x2'
   | 'square_5x5';
 
+export interface AlchemistMixture {
+  id: string;
+  name: string;
+  damageBonusPercent: number;
+  aoeRadius?: number;
+  statusEffect?: StatusEffect;
+  lifestealPercent?: number;
+  rangeBonus?: number;
+  color?: string;
+}
+
 export interface Skill {
   id: string;
   name: string;
@@ -155,6 +166,12 @@ export interface Skill {
   scalesWithDefRes?: boolean; // Causa dano com base em 0.75 da armadura (defesa) + 0.75 da resistência
   iconName: string;
   isPassive?: boolean;
+  isAlchemistMixture?: boolean;
+  alchemistMixture?: AlchemistMixture;
+  summonCreatureType?: string;
+  goldBonusOnKill?: number;
+  grantsExtraEggOnKill?: boolean;
+
   level?: number; // Skill evolution level (1, 2, 3...)
 }
 
@@ -189,6 +206,8 @@ export interface Unit {
   avatarKey: string;
   
   skills: Skill[];
+  alchemistMixtures?: AlchemistMixture[];
+
   learnedSkillIds: string[]; // List of IDs learned via level up choices
   skillLevels?: Record<string, number>; // Evolution levels per skill ID (1, 2, 3...)
   

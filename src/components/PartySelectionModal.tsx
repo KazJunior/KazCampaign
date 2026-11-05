@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
+import {CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import type { PlayerProgress } from '../types/game';
 import { ClassUnlockQuestsModal } from './ClassUnlockQuestsModal';
 import { getEquippedSkin } from '../data/classQuests';
@@ -30,8 +30,7 @@ import {
   Zap,
   X,
   Palette,
-  Lock,
-} from 'lucide-react';
+  Lock, PawPrint, FlaskConical, Clock } from 'lucide-react';
 
 interface PartySelectionModalProps {
   progress?: PlayerProgress;
@@ -615,8 +614,18 @@ function getClassIcon(avatarKey: string, size = 20) {
       return <Crosshair size={size} />;
     case 'electric_mage':
       return <Zap size={size} />;
-    case 'wind_mage':
+        case 'wind_mage':
       return <Wind size={size} />;
+    case 'cartomante':
+      return <Sparkles size={size} />;
+    case 'ceifador':
+      return <Skull size={size} />;
+    case 'invocador':
+      return <PawPrint size={size} />;
+    case 'alquimista':
+      return <FlaskConical size={size} />;
+    case 'pistoleiro_tempo':
+      return <Clock size={size} />;
     default:
       return <Shield size={size} />;
   }

@@ -3337,8 +3337,248 @@ export function App() {
 
     const skill = activeSkill || undefined;
 
+    // 0.9. Alchemist Mixture Skill (Preparation: does NOT consume attack, accumulates mixture)
+    if (skill?.isAlchemistMixture && skill.alchemistMixture) {
+      soundManager.playUpgrade();
+      const mix = skill.alchemistMixture;
+      const currentMixtures = selectedUnit.alchemistMixtures || [];
+      const updatedMixtures = [...currentMixtures, mix];
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, `⚗️ Mistura: ${mix.name}!`, 'status', mix.color || '#F59E0B');
+
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
+      );
+
+      setUnits((prev) =>
+        prev.map((u) =>
+          u.id === selectedUnit.id
+            ? { ...u, skills: updatedSkills, alchemistMixtures: updatedMixtures }
+            : u
+        )
+      );
+
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1));
+      }
+
+      setTargetTeleportPoint(null);
+      setTargetUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
+    // 0.95. Invocador Creature Summon & Temporal Clone (Empty tile creature summon)
+    if (skill?.summonCreatureType && targetTeleportPoint) {
+      soundManager.playMagicSpell();
+      const spawnX = targetTeleportPoint.x;
+      const spawnY = targetTeleportPoint.y;
+
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'magical', 0, skill, { x: spawnX, y: spawnY });
+      }
+
+      const sType = skill.summonCreatureType;
+      let newCreature: Unit;
+      if (sType === 'wolf') {
+        addFloatingNumber(spawnX, spawnY, '🐺 Lobo Astral Conjurado!', 'status', '#10B981');
+        newCreature = {
+          id: `summon_wolf_${Date.now()}`,
+          name: 'Lobo Astral',
+          className: 'Lobo Astral',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.45)),
+          currentHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.45)),
+          atk: Math.max(16, Math.round(selectedUnit.mag * 0.8)),
+          mag: Math.max(10, Math.round(selectedUnit.mag * 0.5)),
+          def: 4,
+          res: 4,
+          mov: 4,
+          range: 1,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: false,
+          hasAttacked: false,
+          isDead: false,
+          color: '#10B981',
+          avatarKey: 'spectral_wolf',
+          skills: [JSON.parse(JSON.stringify(SKILLS.golpe_lobo_astral))],
+          learnedSkillIds: ['golpe_lobo_astral'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'golem') {
+        addFloatingNumber(spawnX, spawnY, '🪨 Guardião de Pedra Erguido!', 'status', '#64748B');
+        newCreature = {
+          id: `summon_golem_${Date.now()}`,
+          name: 'Guardião de Rocha',
+          className: 'Guardião de Rocha',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: Math.max(65, Math.round(selectedUnit.maxHp * 0.70)),
+          currentHp: Math.max(65, Math.round(selectedUnit.maxHp * 0.70)),
+          atk: Math.max(14, Math.round(selectedUnit.mag * 0.6)),
+          mag: 5,
+          def: 12,
+          res: 10,
+          mov: 2,
+          range: 1,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: false,
+          hasAttacked: false,
+          isDead: false,
+          color: '#64748B',
+          avatarKey: 'basalt_golem',
+          skills: [JSON.parse(JSON.stringify(SKILLS.golpe_golem_rocha))],
+          learnedSkillIds: ['golpe_golem_rocha'],
+          statusEffects: [
+            { type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current },
+            { type: 'taunt', duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+          ],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'flame_spirit') {
+        addFloatingNumber(spawnX, spawnY, '🔥 Espírito de Chamas Conjurado!', 'status', '#F97316');
+        newCreature = {
+          id: `summon_flame_${Date.now()}`,
+          name: 'Espírito de Chamas',
+          className: 'Espírito de Chamas',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: Math.max(30, Math.round(selectedUnit.maxHp * 0.35)),
+          currentHp: Math.max(30, Math.round(selectedUnit.maxHp * 0.35)),
+          atk: 8,
+          mag: Math.max(18, Math.round(selectedUnit.mag * 0.9)),
+          def: 3,
+          res: 8,
+          mov: 3,
+          range: 3,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: false,
+          hasAttacked: false,
+          isDead: false,
+          color: '#F97316',
+          avatarKey: 'ember_elemental',
+          skills: [JSON.parse(JSON.stringify(SKILLS.tiro_espirito_chamas))],
+          learnedSkillIds: ['tiro_espirito_chamas'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'kurumi_clone') {
+        addFloatingNumber(spawnX, spawnY, '⏳ Clone Temporal Manifestado!', 'status', '#DC2626');
+        newCreature = {
+          id: `summon_kurumi_${Date.now()}`,
+          name: 'Clone de Kurumi',
+          className: 'Clone Temporal',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 2,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.40)),
+          currentHp: Math.max(35, Math.round(selectedUnit.maxHp * 0.40)),
+          atk: Math.max(20, Math.round(selectedUnit.atk * 0.85)),
+          mag: Math.max(16, Math.round(selectedUnit.mag * 0.85)),
+          def: 5,
+          res: 6,
+          mov: 4,
+          range: 4,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: false,
+          hasAttacked: false,
+          isDead: false,
+          color: '#DC2626',
+          avatarKey: 'pistoleiro_tempo',
+          skills: [JSON.parse(JSON.stringify(SKILLS.tiro_clone_kurumi))],
+          learnedSkillIds: ['tiro_clone_kurumi'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else {
+        // Behemoth
+        addFloatingNumber(spawnX, spawnY, '🌋 Titã Behemoth Desperto!', 'status', '#F59E0B');
+        newCreature = {
+          id: `summon_behemoth_${Date.now()}`,
+          name: 'Titã Behemoth',
+          className: 'Titã Behemoth',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: Math.max(110, Math.round(selectedUnit.maxHp * 1.25)),
+          currentHp: Math.max(110, Math.round(selectedUnit.maxHp * 1.25)),
+          atk: Math.max(26, Math.round(selectedUnit.mag * 1.1)),
+          mag: 15,
+          def: 15,
+          res: 12,
+          mov: 3,
+          range: 1,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: false,
+          hasAttacked: false,
+          isDead: false,
+          color: '#F59E0B',
+          avatarKey: 'war_bear',
+          skills: [JSON.parse(JSON.stringify(SKILLS.golpe_golem_rocha))],
+          learnedSkillIds: ['golpe_golem_rocha'],
+          statusEffects: [
+            { type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current },
+            { type: 'taunt', duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+          ],
+          damageDealt: 0,
+          kills: 0,
+        };
+      }
+
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
+      );
+
+      const updatedUnits = units.map((u) =>
+        u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
+      );
+      updatedUnits.push(newCreature);
+      setUnits(updatedUnits);
+
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1));
+      }
+
+      setTargetTeleportPoint(null);
+      setTargetUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
     // 1. Teleport skill to empty tile (e.g. Teleporte Místico)
-    if (skill && (skill.isTeleport || skill.targetType === 'empty_tile') && targetTeleportPoint) {
+    if (skill && skill.isTeleport && targetTeleportPoint) {
       soundManager.playMagicSpell();
       const destX = targetTeleportPoint.x;
       const destY = targetTeleportPoint.y;
@@ -3358,6 +3598,7 @@ export function App() {
         }
         updatedEffects = [...updatedEffects.filter((e) => e.type !== eff.type), eff];
       }
+
 
       const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
       const updatedSkills = selectedUnit.skills.map((s) => {
@@ -3573,7 +3814,7 @@ export function App() {
       );
 
       const updatedUnits = units.map((u) =>
-        u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
+        u.id === selectedUnit.id ? { ...u, hasAttacked: true, alchemistMixtures: [], skills: updatedSkills } : u
       );
 
       setUnits([...updatedUnits, ...spawnedSkeletons]);
@@ -3763,9 +4004,32 @@ export function App() {
         return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
       });
 
+            // Extra action on self (e.g. Primeira Bala: Aleph do Pistoleiro do Tempo)
+      const grantsSelfExtraTurn = skill?.grantsExtraTurn && skill.targetType === 'self';
+      if (grantsSelfExtraTurn) {
+        soundManager.playUpgrade();
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏱️ Aleph! Ação Extra Concedida!', 'status', '#DC2626');
+      }
+
+      // Random Tarot effect for O Louco
+      if (skill?.id === 'arcano_o_louco') {
+        const roll = Math.random();
+        if (roll < 0.34) {
+          updatedEffects = [...updatedEffects.filter((e) => e.type !== 'buff_atk'), { type: 'buff_atk', duration: 2, value: 25, appliedTurn: turnNumberRef.current }];
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🃏 O Louco (+25% Dano)!', 'status', '#F97316');
+        } else if (roll < 0.67) {
+          updatedEffects = [...updatedEffects.filter((e) => e.type !== 'buff_mov'), { type: 'buff_mov', duration: 2, value: 1, appliedTurn: turnNumberRef.current }];
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🃏 O Louco (+1 Movimento)!', 'status', '#38BDF8');
+        } else {
+          updatedEffects = [...updatedEffects.filter((e) => e.type !== 'shield'), { type: 'shield', duration: 2, value: 45, appliedTurn: turnNumberRef.current }];
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🃏 O Louco (+45 Escudo)!', 'shield', '#FACC15');
+        }
+      }
+
+
       const updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
-          ? { ...u, currentHp: currentUnitHp, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects, skillUsesCount: nextSkillUsesCount }
+          ? { ...u, currentHp: currentUnitHp, hasAttacked: grantsSelfExtraTurn ? false : true, hasMoved: grantsSelfExtraTurn ? false : u.hasMoved, skills: updatedSkills, statusEffects: updatedEffects, skillUsesCount: nextSkillUsesCount }
           : u
       );
 
@@ -3871,6 +4135,23 @@ export function App() {
       }
     }
 
+    // ALCHEMIST MIXTURES CHECK ON NORMAL ATTACK:
+    const alchemistMixes = !skill ? (selectedUnit.alchemistMixtures || []) : [];
+    let alchemistBonusDmgPercent = 0;
+    let alchemistAoe = 0;
+    let alchemistLifesteal = 0;
+    const alchemistStatusEffects: StatusEffect[] = [];
+
+    if (alchemistMixes.length > 0) {
+      alchemistMixes.forEach((m) => {
+        alchemistBonusDmgPercent += m.damageBonusPercent || 0;
+        if (m.aoeRadius && m.aoeRadius > alchemistAoe) alchemistAoe = m.aoeRadius;
+        if (m.lifestealPercent && m.lifestealPercent > alchemistLifesteal) alchemistLifesteal = m.lifestealPercent;
+        if (m.statusEffect) alchemistStatusEffects.push(m.statusEffect);
+      });
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, `🧪 REAÇÃO QUÍMICA (+${alchemistBonusDmgPercent}% Dano)!`, 'status', '#10B981');
+    }
+
     const { finalDamage, isKill, damageType } = rollActualDamage(selectedUnit, target, skill);
 
     if (damageType === 'healing') soundManager.playHeal();
@@ -3905,7 +4186,7 @@ export function App() {
       }, 13000);
     }
 
-        const aoeRadius = skill?.aoeRadius || 0;
+        const aoeRadius = (skill?.aoeRadius || 0) || alchemistAoe;
     let targetsToHit: Unit[] = [];
     if (skill?.chainCount && skill.chainCount > 1) {
       const chainTargets: Unit[] = [target];
@@ -4083,6 +4364,21 @@ export function App() {
       const isMain = t.id === target.id;
       const dmgResult = isMain ? { finalDamage, isKill, damageType } : rollActualDamage(selectedUnit, t, skill);
       let actualDmg = dmgResult.finalDamage;
+      if (alchemistBonusDmgPercent > 0) {
+        actualDmg = Math.round(actualDmg * (1 + alchemistBonusDmgPercent / 100));
+      }
+      if (alchemistStatusEffects.length > 0) {
+        alchemistStatusEffects.forEach((eff) => {
+          currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff, appliedTurn: turnNumberRef.current }];
+          statusInflictedCount++;
+        });
+      }
+      if (alchemistLifesteal > 0 && actualDmg > 0) {
+        const lifestealHeal = Math.round(actualDmg * (alchemistLifesteal / 100));
+        currentAttackerHp = Math.min(selectedUnit.maxHp, currentAttackerHp + lifestealHeal);
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${lifestealHeal} (Alquimia Vampírica)`, 'healing', '#10B981');
+      }
+
 
       let currentEffects = [...(t.statusEffects || [])];
 
@@ -4774,6 +5070,47 @@ export function App() {
     if (isExecutionKill) {
       soundManager.playUpgrade();
       addFloatingNumber(finalAttackerX, finalAttackerY, 'EXECUÇÃO! +1 AÇÃO!', 'status', '#C77DFF');
+    }
+
+    // CEIFADOR ON-KILL REWARDS (Mais Ouro, Escudo de Almas, Invisibilidade & Pets):
+    const isCeifador = selectedUnit.className === 'ceifador';
+    if (totalKills > 0 && isCeifador) {
+      soundManager.playUpgrade();
+      const killGold = 75 * totalKills;
+      setProgress((prev) => {
+        const updatedGold = (prev.gold || 0) + killGold;
+        const currentAdv = prev.activeAdventure;
+        const updatedAdv = currentAdv
+          ? { ...currentAdv, goldEarnedInRun: (currentAdv.goldEarnedInRun || 0) + killGold }
+          : currentAdv;
+        return { ...prev, gold: updatedGold, activeAdventure: updatedAdv };
+      });
+      addFloatingNumber(finalAttackerX, finalAttackerY, `+${killGold} 🪙 Ouro Ceifado!`, 'status', '#F59E0B');
+
+      const soulShieldVal = Math.max(30, Math.round(selectedUnit.maxHp * 0.25));
+      finalAttackerEffects = [
+        ...finalAttackerEffects.filter((e) => e.type !== 'shield'),
+        { type: 'shield', duration: 2, value: soulShieldVal, appliedTurn: turnNumberRef.current },
+      ];
+      addFloatingNumber(finalAttackerX, finalAttackerY, `+${soulShieldVal} Escudo de Almas!`, 'shield', '#38BDF8');
+
+      finalAttackerEffects = [
+        ...finalAttackerEffects.filter((e) => e.type !== 'invisible'),
+        { type: 'invisible', duration: 1, value: 1, appliedTurn: turnNumberRef.current },
+      ];
+      addFloatingNumber(finalAttackerX, finalAttackerY, 'Manto Espectral (Invisível)!', 'status', '#8B5CF6');
+
+      const eggDropBonusChance = 0.15 * totalKills;
+      if (Math.random() < eggDropBonusChance) {
+        setProgress((prev) => {
+          if ((prev.eggs || []).length < MAX_EGGS_LIMIT) {
+            const egg = createNewEgg();
+            addFloatingNumber(finalAttackerX, finalAttackerY, '🥚 Alma Cristalizada (Ovo)!', 'status', '#10B981');
+            return { ...prev, eggs: [...(prev.eggs || []), egg] };
+          }
+          return prev;
+        });
+      }
     }
 
     // STEALTH ON KILL MECHANIC: e.g. Golpe de Execução do Assassino
@@ -7143,7 +7480,8 @@ export function App() {
 
     // Linhagem Lagomorfo: 2x mais chance de encontrar ovos (limite de 1 por equipe; colocar mais de um não acumula adicional)
     const hasLagomorfo = partyUnits.some((u) => u.lineageEggDropRateMultiplier || u.lineageId === 'lagomorfo');
-    const eggChanceMultiplier = hasLagomorfo ? 2 : 1;
+    const hasCeifador = partyUnits.some((u) => u.className === 'ceifador');
+    const eggChanceMultiplier = (hasLagomorfo ? 2 : 1) * (hasCeifador ? 2 : 1);
 
     currentLevel.enemySpawns.forEach((spawn) => {
       const isBoss = Boolean(spawn.isBoss && !spawn.isMiniBoss);

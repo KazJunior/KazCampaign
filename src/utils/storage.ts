@@ -29,7 +29,12 @@ export function createInitialUnitsState(): PlayerProgress['unitsState'] {
     sniper: { className: 'sniper', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     mago_eletrico: { className: 'mago_eletrico', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     mago_vento: { className: 'mago_vento', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
-    omnimago: { className: 'omnimago', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+        omnimago: { className: 'omnimago', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    cartomante: { className: 'cartomante', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    ceifador: { className: 'ceifador', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    invocador: { className: 'invocador', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    alquimista: { className: 'alquimista', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    pistoleiro_tempo: { className: 'pistoleiro_tempo', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
   };
 }
 
