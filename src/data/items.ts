@@ -1752,6 +1752,225 @@ export const ITEMS: Record<string, ItemDefinition> = {
     stats: { mag: 18, def: 10, res: 12, range: 1, hp: 110 },
     droppedByMonsterTypeIds: ['avatar_cataclismo'],
   },
+
+  // =========================================================================
+  // --- MONSTROS DA FENDA DO TEMPO / FENDA DIMENSIONAL (FASES 101 A 110) ---
+  // Status calibrados estritamente na faixa de poder do Ato 1 (Fases 1 a 10)
+  // =========================================================================
+
+  // 1. Guardião do Relógio
+  escudo_pendulo_bronze: {
+    id: 'escudo_pendulo_bronze',
+    name: 'Peitoral de Bronze do Guardião',
+    category: 'chestplate',
+    rarity: 'common',
+    description: 'Placa peitoral com engrenagens de bronze e pêndulo central que amortece impactos.',
+    iconName: 'ShieldCheck',
+    color: '#D97706',
+    stats: { hp: 25, def: 3 },
+    droppedByMonsterTypeIds: ['guardiao_relogio'],
+  },
+  martelo_pendulo_pesado: {
+    id: 'martelo_pendulo_pesado',
+    name: 'Martelo Pêndulo Pesado',
+    category: 'weapon',
+    rarity: 'rare',
+    description: 'Pêndulo de bronze maciço transformado em martelo contundente que oscila no ritmo dos segundos.',
+    iconName: 'Hammer',
+    color: '#B45309',
+    stats: { atk: 6, def: 2, hp: 15 },
+    droppedByMonsterTypeIds: ['guardiao_relogio'],
+  },
+
+  // 2. Tecelão do Tempo
+  manto_linhas_temporais: {
+    id: 'manto_linhas_temporais',
+    name: 'Túnica dos Fios Temporais',
+    category: 'chestplate',
+    rarity: 'rare',
+    description: 'Túnica tecida com fios de éter cronológico que desviam rajadas arcanas.',
+    iconName: 'Shirt',
+    color: '#8B5CF6',
+    stats: { hp: 20, mag: 4, res: 3 },
+    droppedByMonsterTypeIds: ['tecelao_do_tempo'],
+  },
+  agulha_tecelao_astral: {
+    id: 'agulha_tecelao_astral',
+    name: 'Varinha do Fio Astral',
+    category: 'weapon',
+    rarity: 'common',
+    description: 'Fina varinha metálica utilizada para costurar e romper fios de causa e efeito.',
+    iconName: 'Wand',
+    color: '#A78BFA',
+    stats: { mag: 5, atk: 2, hp: 10 },
+    droppedByMonsterTypeIds: ['tecelao_do_tempo'],
+  },
+
+  // 3. Autômato de Engrenagens
+  botas_engrenagem_rapida: {
+    id: 'botas_engrenagem_rapida',
+    name: 'Botas de Corda Mecânica',
+    category: 'boots',
+    rarity: 'rare',
+    description: 'Calçados mecânicos movidos a molas de precisão que aceleram o deslocamento pelo tabuleiro.',
+    iconName: 'Footprints',
+    color: '#F59E0B',
+    stats: { hp: 20, mov: 1, def: 1 },
+    droppedByMonsterTypeIds: ['automato_engrenagens'],
+  },
+  capacete_visor_mecanico: {
+    id: 'capacete_visor_mecanico',
+    name: 'Visor de Cobre do Autômato',
+    category: 'helmet',
+    rarity: 'common',
+    description: 'Elmo cilíndrico de cobre com lentes de foco ajustáveis para antecipar perigos.',
+    iconName: 'HardHat',
+    color: '#D97706',
+    stats: { hp: 20, def: 2, res: 1 },
+    droppedByMonsterTypeIds: ['automato_engrenagens'],
+  },
+
+  // 4. Sabujo Temporal
+  colar_dente_cronico: {
+    id: 'colar_dente_cronico',
+    name: 'Amuleto Presa do Sabujo',
+    category: 'accessory',
+    rarity: 'common',
+    description: 'Colar talhado com as presas afiadas do sabujo temporal que aceleram o ataque.',
+    iconName: 'Bone',
+    color: '#EC4899',
+    stats: { atk: 3, hp: 15 },
+    droppedByMonsterTypeIds: ['sabujo_temporal'],
+  },
+  perneiras_couro_sabujo: {
+    id: 'perneiras_couro_sabujo',
+    name: 'Perneiras de Couro Cronológico',
+    category: 'leggings',
+    rarity: 'rare',
+    description: 'Calças de couro fosco impermeável às rajadas temporais da fenda.',
+    iconName: 'Layers',
+    color: '#BE185D',
+    stats: { hp: 25, def: 2, res: 2 },
+    droppedByMonsterTypeIds: ['sabujo_temporal'],
+  },
+
+  // 5. Cultista de Zaphkiel
+  tomo_canticos_zaphkiel: {
+    id: 'tomo_canticos_zaphkiel',
+    name: 'Pequeno Saltério de Zaphkiel',
+    category: 'accessory',
+    rarity: 'rare',
+    description: 'Pequeno grimório de litanias que veneram a rotação inexorável do grande relógio.',
+    iconName: 'BookOpen',
+    color: '#6366F1',
+    stats: { hp: 20, mag: 5, res: 2 },
+    droppedByMonsterTypeIds: ['cultista_zaphkiel'],
+  },
+  capuz_culto_temporal: {
+    id: 'capuz_culto_temporal',
+    name: 'Capuz do Devoto do Relógio',
+    category: 'helmet',
+    rarity: 'common',
+    description: 'Capuz bordado com o símbolo de Zaphkiel, canalizando concentração mística.',
+    iconName: 'VenetianMask',
+    color: '#4F46E5',
+    stats: { hp: 15, mag: 3, res: 2 },
+    droppedByMonsterTypeIds: ['cultista_zaphkiel'],
+  },
+
+  // 6. Draco Cronológico
+  escamas_draco_temporal: {
+    id: 'escamas_draco_temporal',
+    name: 'Peitoral de Escamas do Tempo',
+    category: 'chestplate',
+    rarity: 'epic',
+    description: 'Escamas nacaradas que refratam o fluxo temporal ao redor do peito do aventureiro.',
+    iconName: 'Shield',
+    color: '#14B8A6',
+    stats: { hp: 45, def: 4, res: 4 },
+    droppedByMonsterTypeIds: ['draco_cronologico'],
+  },
+  lamina_garra_temporal: {
+    id: 'lamina_garra_temporal',
+    name: 'Espada Garra Cronológica',
+    category: 'weapon',
+    rarity: 'rare',
+    description: 'Garra draconiana translúcida capaz de desferir cortes físicos banhados em energia arcana.',
+    iconName: 'Sword',
+    color: '#0D9488',
+    stats: { atk: 7, mag: 3, hp: 15 },
+    droppedByMonsterTypeIds: ['draco_cronologico'],
+  },
+
+  // 7. Fantasma do Tempo (Mini Boss Fase 105)
+  relogio_de_bolso_espectral: {
+    id: 'relogio_de_bolso_espectral',
+    name: 'Relógio de Bolso do Fantasma',
+    category: 'accessory',
+    rarity: 'epic',
+    description: 'Relógio de bolso de prata fosca cujos ponteiros giram para trás, aliviando o cansaço do portador.',
+    iconName: 'Hourglass',
+    color: '#06B6D4',
+    stats: { hp: 35, mag: 6, res: 3 },
+    droppedByMonsterTypeIds: ['fantasma_do_tempo'],
+  },
+  manto_veu_do_paradoxo: {
+    id: 'manto_veu_do_paradoxo',
+    name: 'Véu do Paradoxo Espectral',
+    category: 'chestplate',
+    rarity: 'epic',
+    description: 'Manto espectral cerúleo que tremula entre os segundos, concedendo proteção mística e física equilibrada.',
+    iconName: 'Shirt',
+    color: '#0891B2',
+    stats: { hp: 50, def: 4, res: 5 },
+    droppedByMonsterTypeIds: ['fantasma_do_tempo'],
+  },
+  passo_espectral_do_tempo: {
+    id: 'passo_espectral_do_tempo',
+    name: 'Passos da Badalada Espectral',
+    category: 'boots',
+    rarity: 'rare',
+    description: 'Botas etéreas que permitem deslizar sobre as engrenagens sem ser afetado pelo atrito.',
+    iconName: 'Footprints',
+    color: '#22D3EE',
+    stats: { hp: 25, res: 3, mov: 1 },
+    droppedByMonsterTypeIds: ['fantasma_do_tempo'],
+  },
+
+  // 8. Verme Cósmico Devorador do Tempo (Boss Secreto Fase 110)
+  florete_espelho_do_tempo: {
+    id: 'florete_espelho_do_tempo',
+    name: 'Florete Espelho da Eternidade',
+    category: 'weapon',
+    rarity: 'legendary',
+    description: 'Arma cerimonial atemporal forjada na fenda do relógio cósmico. Equilíbrio perfeito entre aceleração incisiva e reversão temporal.',
+    iconName: 'Swords',
+    color: '#B91C1C',
+    stats: { atk: 8, mag: 7, hp: 40, range: 1 },
+    droppedByMonsterTypeIds: ['verme_cosmico_tempo'],
+  },
+  coroa_astral_ouroboros: {
+    id: 'coroa_astral_ouroboros',
+    name: 'Coroa de Anéis de Ouroboros',
+    category: 'helmet',
+    rarity: 'epic',
+    description: 'Diadema forjado com os anéis astrais do Verme Cósmico, protegendo a mente contra distorções do tempo.',
+    iconName: 'Crown',
+    color: '#EF4444',
+    stats: { hp: 45, def: 5, res: 5, mag: 5 },
+    droppedByMonsterTypeIds: ['verme_cosmico_tempo'],
+  },
+  anel_ouroboros_eterno: {
+    id: 'anel_ouroboros_eterno',
+    name: 'Anel do Verme Ouroboros',
+    category: 'accessory',
+    rarity: 'legendary',
+    description: 'Anel lendário esculpido na forma do verme cósmico mordendo a própria cauda. Rege a harmonia entre o fluxo físico e mágico.',
+    iconName: 'CircleDot',
+    color: '#DC2626',
+    stats: { hp: 50, atk: 5, mag: 6, res: 4 },
+    droppedByMonsterTypeIds: ['verme_cosmico_tempo'],
+  },
 };
 
 /**
@@ -1775,9 +1994,22 @@ export function rollStageItemDrops(
 ): ItemDefinition[] {
   let pool = getItemsDroppedByMonsters(monsterTypeIds);
 
-  // Fallback para todos os itens caso a lista esteja vazia
+  // Fallback para todos os itens caso a lista esteja vazia (respeitando Ato 1 e Fenda Temporal)
   if (pool.length === 0) {
-    pool = Object.values(ITEMS);
+    const ACT1_AND_TIME_RIFT_MONSTERS = [
+      'goblin', 'orc', 'aranha', 'mago_trevas', 'lobo_espectral', 'golem_basalto',
+      'bruxa_espinhos', 'cavaleiro_caido', 'mimico', 'draco_volcanico', 'devorador', 'astaroth',
+      'guardiao_relogio', 'tecelao_do_tempo', 'automato_engrenagens', 'sabujo_temporal',
+      'cultista_zaphkiel', 'draco_cronologico', 'fantasma_do_tempo', 'verme_cosmico_tempo'
+    ];
+    const isEarlyOrTimeRift = monsterTypeIds.some((id) => ACT1_AND_TIME_RIFT_MONSTERS.includes(id));
+    if (isEarlyOrTimeRift) {
+      pool = Object.values(ITEMS).filter((it) =>
+        it.droppedByMonsterTypeIds.some((m) => ACT1_AND_TIME_RIFT_MONSTERS.includes(m))
+      );
+    } else {
+      pool = Object.values(ITEMS);
+    }
   }
 
   // Pesos de raridade (bosses têm mais chance de raros/épicos/lendários)

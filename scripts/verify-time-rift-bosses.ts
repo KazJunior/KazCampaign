@@ -97,7 +97,56 @@ assert(isTileInClockHands(5, 4, 5), 'Turno 5: diagonal central deve ser segura')
 console.log('✅ Lógica de rotação dos ponteiros (5 padrões) validada com sucesso');
 
 // -------------------------------------------------------------
-// 4. Recompensa e Desbloqueio da Classe Secreta
+// 4. Itens da Fenda Temporal / Dimensional (Calibrados para Fase 1 a 10)
+// -------------------------------------------------------------
+console.log('\n-------------------------------------------------------------');
+console.log('✅ Testando tabelas de itens e drops da Fenda Dimensional:');
+import { getMonsterDropTable, rollStageItemDrops, getItemsDroppedByMonsters } from '../src/data/items';
+
+const timeRiftMonsters = [
+  'guardiao_relogio',
+  'tecelao_do_tempo',
+  'automato_engrenagens',
+  'sabujo_temporal',
+  'cultista_zaphkiel',
+  'draco_cronologico',
+  'fantasma_do_tempo',
+  'verme_cosmico_tempo',
+];
+
+timeRiftMonsters.forEach((mId) => {
+  const drops = getMonsterDropTable(mId);
+  assert(drops.length >= 2, `Monstro ${mId} deve possuir ao menos 2 itens dropáveis`);
+  drops.forEach(({ item }) => {
+    // Validar limites equivalentes ao Ato 1 (Fases 1 a 10)
+    const hp = item.stats.hp || 0;
+    const atk = item.stats.atk || 0;
+    const mag = item.stats.mag || 0;
+    const def = item.stats.def || 0;
+    const res = item.stats.res || 0;
+
+    assert(hp <= 65, `Item ${item.name} HP (${hp}) excede o limite de Fase 1 a 10 (65)`);
+    assert(atk <= 11, `Item ${item.name} ATK (${atk}) excede o limite de Fase 1 a 10 (11)`);
+    assert(mag <= 11, `Item ${item.name} MAG (${mag}) excede o limite de Fase 1 a 10 (11)`);
+    assert(def <= 7, `Item ${item.name} DEF (${def}) excede o limite de Fase 1 a 10 (7)`);
+    assert(res <= 7, `Item ${item.name} RES (${res}) excede o limite de Fase 1 a 10 (7)`);
+  });
+  console.log(`   - Monstro ${mId}: ${drops.length} itens configurados e validados na faixa de Fase 1 a 10`);
+});
+
+// Testar drop das fases 101 a 110
+SECRET_TIME_LEVELS.forEach((lvl) => {
+  const mIds = lvl.enemySpawns.map((s) => s.monsterTypeId);
+  const isBoss = Boolean(lvl.hasFinalBoss || lvl.hasMiniBoss);
+  const pool = getItemsDroppedByMonsters(mIds);
+  assert(pool.length > 0, `Pool de itens da fase ${lvl.id} não pode ser vazia`);
+  const drops = rollStageItemDrops(mIds, 3, isBoss);
+  assert(drops.length > 0, `Fase ${lvl.id} deve rolar itens com sucesso`);
+});
+console.log('✅ Drops de todas as Fases 101 a 110 validados com sucesso');
+
+// -------------------------------------------------------------
+// 5. Recompensa e Desbloqueio da Classe Secreta
 // -------------------------------------------------------------
 console.log('\n-------------------------------------------------------------');
 const dancerUnlock = SECRET_CLASS_UNLOCK_CONDITIONS['pistoleiro_tempo'];
