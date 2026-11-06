@@ -1269,7 +1269,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Fantasma do Tempo',
     role: 'attacker',
     act: 1,
-    maxHp: 520,
+    maxHp: 1500,
     atk: 26,
     mag: 38,
     def: 24,
@@ -1293,7 +1293,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     name: 'Verme Cósmico Devorador do Tempo',
     role: 'attacker',
     act: 1,
-    maxHp: 880,
+    maxHp: 3000,
     atk: 42,
     mag: 44,
     def: 38,
@@ -1491,6 +1491,8 @@ export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
   leviata_vazio: 15000,
   cavaleiro_apocalipse: 17500,
   cronos_abissal: 15500,
+  fantasma_do_tempo: 1500,
+  verme_cosmico_tempo: 3000,
 };
 
 export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, number>> = {
@@ -1632,12 +1634,20 @@ export function createMonsterUnit(
     unitDef = 15;
     res = 15;
   } else if (STAGE_20_PLUS_BOSS_HP[typeId]) {
-    // Bosses a partir da Fase 20: Vida progressiva (5000 na Fase 20, crescendo progressivamente)
+    // Bosses a partir da Fase 20 e Chefes do Tempo: Vida progressiva / predefinida
     maxHp = STAGE_20_PLUS_BOSS_HP[typeId];
-    atk = def.atk + Math.round(levelOffset * 5.1);
-    mag = def.mag + Math.round(levelOffset * 5.1);
-    unitDef = def.def + Math.round(levelOffset * 4.2);
-    res = def.res + Math.round(levelOffset * 4.2);
+    if (def.isMiniBoss && typeId !== 'arauto_espectral') {
+      const scaling = typeId === 'devorador' ? 6.3 : 4.2;
+      atk = def.atk + Math.round(levelOffset * scaling);
+      mag = def.mag + Math.round(levelOffset * scaling);
+      unitDef = def.def + Math.round(levelOffset * 3.4);
+      res = def.res + Math.round(levelOffset * 3.2);
+    } else {
+      atk = def.atk + Math.round(levelOffset * 5.1);
+      mag = def.mag + Math.round(levelOffset * 5.1);
+      unitDef = def.def + Math.round(levelOffset * 4.2);
+      res = def.res + Math.round(levelOffset * 4.2);
+    }
   } else if (def.isBoss) {
     // Boss scaling (+5% em todos os status)
     maxHp = def.maxHp + Math.round(levelOffset * 118);
