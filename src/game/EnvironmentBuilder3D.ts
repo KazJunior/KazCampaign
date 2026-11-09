@@ -845,7 +845,7 @@ export function createRichObstacle(type: ObstacleType, x: number, y: number): TH
       vortexDisc.position.y = 0.48;
       portalGroup.add(vortexDisc);
 
-      // 12 marcações de horas de Zaphkiel ao redor do portal
+      // 12 marcações de horas de Cronos ao redor do portal
       for (let i = 0; i < 12; i++) {
         const angle = (i / 12) * Math.PI * 2;
         const tick = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.06, 0.02), goldClockMat);

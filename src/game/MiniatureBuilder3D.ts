@@ -1260,8 +1260,8 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'temporal_hound':
       buildTemporalHoundMini(char);
       break;
-    case 'zaphkiel_cultist':
-      buildZaphkielCultistMini(char);
+    case 'cronos_cultist':
+      buildCronosCultistMini(char);
       break;
     case 'chronos_drake':
       buildChronosDrakeMini(char);
@@ -4948,7 +4948,7 @@ function buildCosmicTimeWormBossMini(group: THREE.Group) {
     group.add(fang);
   }
 
-  // Giant Zaphkiel Clock Halo Crown behind the Worm
+  // Giant Cronos Clock Halo Crown behind the Worm
   const crownClock = new THREE.Mesh(new THREE.TorusGeometry(0.40, 0.024, 8, 28), goldClockMat);
   crownClock.position.set(0, 0.72, -0.18);
   group.add(crownClock);
@@ -5239,9 +5239,9 @@ function buildTemporalHoundMini(group: THREE.Group) {
 }
 
 // -------------------------------------------------------------
-// Exclusive Normal Monster 5: Cultista de Zaphkiel (Zaphkiel Cultist)
+// Exclusive Normal Monster 5: Cultista de Cronos (Cronos Cultist)
 // -------------------------------------------------------------
-function buildZaphkielCultistMini(group: THREE.Group) {
+function buildCronosCultistMini(group: THREE.Group) {
   const robeMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
   const goldTrim = new THREE.MeshStandardMaterial({
     color: 0xfbbf24,
@@ -5283,7 +5283,7 @@ function buildZaphkielCultistMini(group: THREE.Group) {
   orb.position.set(-0.24, 0.52, 0.14);
   group.add(orb);
 
-  // Scepter of Zaphkiel (Right Hand)
+  // Scepter of Cronos (Right Hand)
   const scepter = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.80, 6), goldTrim);
   scepter.position.set(0.24, 0.44, 0.12);
   group.add(scepter);

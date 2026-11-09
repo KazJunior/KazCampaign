@@ -1854,28 +1854,28 @@ export const ITEMS: Record<string, ItemDefinition> = {
     droppedByMonsterTypeIds: ['sabujo_temporal'],
   },
 
-  // 5. Cultista de Zaphkiel
-  tomo_canticos_zaphkiel: {
-    id: 'tomo_canticos_zaphkiel',
-    name: 'Pequeno Saltério de Zaphkiel',
+  // 5. Cultista de Cronos
+  tomo_canticos_cronos: {
+    id: 'tomo_canticos_cronos',
+    name: 'Pequeno Saltério de Cronos',
     category: 'accessory',
     rarity: 'rare',
     description: 'Pequeno grimório de litanias que veneram a rotação inexorável do grande relógio.',
     iconName: 'BookOpen',
     color: '#6366F1',
     stats: { hp: 20, mag: 5, res: 2 },
-    droppedByMonsterTypeIds: ['cultista_zaphkiel'],
+    droppedByMonsterTypeIds: ['cultista_cronos'],
   },
   capuz_culto_temporal: {
     id: 'capuz_culto_temporal',
     name: 'Capuz do Devoto do Relógio',
     category: 'helmet',
     rarity: 'common',
-    description: 'Capuz bordado com o símbolo de Zaphkiel, canalizando concentração mística.',
+    description: 'Capuz bordado com o símbolo de Cronos, canalizando concentração mística.',
     iconName: 'VenetianMask',
     color: '#4F46E5',
     stats: { hp: 15, mag: 3, res: 2 },
-    droppedByMonsterTypeIds: ['cultista_zaphkiel'],
+    droppedByMonsterTypeIds: ['cultista_cronos'],
   },
 
   // 6. Draco Cronológico
@@ -2000,7 +2000,7 @@ export function rollStageItemDrops(
       'goblin', 'orc', 'aranha', 'mago_trevas', 'lobo_espectral', 'golem_basalto',
       'bruxa_espinhos', 'cavaleiro_caido', 'mimico', 'draco_volcanico', 'devorador', 'astaroth',
       'guardiao_relogio', 'tecelao_do_tempo', 'automato_engrenagens', 'sabujo_temporal',
-      'cultista_zaphkiel', 'draco_cronologico', 'fantasma_do_tempo', 'verme_cosmico_tempo'
+      'cultista_cronos', 'draco_cronologico', 'fantasma_do_tempo', 'verme_cosmico_tempo'
     ];
     const isEarlyOrTimeRift = monsterTypeIds.some((id) => ACT1_AND_TIME_RIFT_MONSTERS.includes(id));
     if (isEarlyOrTimeRift) {

@@ -108,7 +108,7 @@ const timeRiftMonsters = [
   'tecelao_do_tempo',
   'automato_engrenagens',
   'sabujo_temporal',
-  'cultista_zaphkiel',
+  'cultista_cronos',
   'draco_cronologico',
   'fantasma_do_tempo',
   'verme_cosmico_tempo',

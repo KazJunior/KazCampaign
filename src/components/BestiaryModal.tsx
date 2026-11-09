@@ -584,7 +584,7 @@ function getAvatarIcon(key: string, size = 20) {
     case 'time_weaver':
     case 'gear_automaton':
     case 'temporal_hound':
-    case 'zaphkiel_cultist':
+    case 'cronos_cultist':
     case 'chronos_drake':
       return <Sun size={size} />;
     case 'dark_valkyrie':

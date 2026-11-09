@@ -519,7 +519,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         if (tile.obstacle === 'time_portal') {
           addTileHighlight(x, y, 0xdc2626, 0.75, 0xfbbf24, true, 0.056);
         }
-        // Área dos Ponteiros do Relógio de Zaphkiel (Fase Secreta 110 - Verme Cósmico)
+        // Área dos Ponteiros do Relógio de Cronos (Fase Secreta 110 - Verme Cósmico)
         if (tile.isClockHandZone) {
           addTileHighlight(x, y, 0xd97706, 0.48, 0xfbbf24, true, 0.052);
           const clockRingGeo = new THREE.RingGeometry(0.18, 0.44, 20);

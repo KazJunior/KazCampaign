@@ -3626,7 +3626,7 @@ export function App() {
           damageDealt: 0,
           kills: 0,
         };
-      } else if (sType === 'kurumi_clone' || sType === 'dancarina_clone') {
+      } else if (sType === 'dancarina_clone') {
         addFloatingNumber(spawnX, spawnY, '⏳ Versão Paralela Manifestada!', 'status', '#DC2626');
         newCreature = {
           id: `summon_dancarina_${Date.now()}`,
@@ -3655,7 +3655,7 @@ export function App() {
           isDead: false,
           color: '#DC2626',
           avatarKey: 'pistoleiro_tempo',
-          skills: [JSON.parse(JSON.stringify(SKILLS.estocada_clone_eco || SKILLS.tiro_clone_kurumi))],
+          skills: [JSON.parse(JSON.stringify(SKILLS.estocada_clone_eco))],
           learnedSkillIds: ['estocada_clone_eco'],
           statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
           damageDealt: 0,
@@ -4234,7 +4234,7 @@ export function App() {
       }
 
       const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
-      const isLambdaReset = skill?.id === 'danca_magna_lambda' || skill?.id === 'relogio_astral_zaphkiel';
+      const isLambdaReset = skill?.id === 'danca_magna_lambda' || skill?.id === 'relogio_astral_cronos';
       const updatedSkills = selectedUnit.skills.map((s) => {
         if (isLambdaReset) {
           return s.id === skill.id
@@ -6226,7 +6226,7 @@ export function App() {
             );
           }
 
-          // Acelera bruscamente os ponteiros do relógio cósmico de Zaphkiel para o próximo padrão!
+          // Acelera bruscamente os ponteiros do relógio cósmico de Cronos para o próximo padrão!
           setGrid((prevGrid) => {
             const nextTurnPattern = turnNumberRef.current + 1;
             const nextGrid = prevGrid.map((row, ry) =>
@@ -7864,7 +7864,7 @@ export function App() {
             addFloatingNumber(u.x, u.y, `+${u.lineageStandStillDamageBonusPercent}% Dano (Foco Élfico)`, 'status', '#10B981');
           }
 
-          // Mecânica Fase Secreta 110 (Verme Cósmico): Ponteiros de Zaphkiel
+          // Mecânica Fase Secreta 110 (Verme Cósmico): Ponteiros de Cronos
           // Todos os heróis que NÃO estiverem dentro da área dos ponteiros são atordoados por 1 turno!
           // Heróis que já cumpriram estase temporal durante este turno não sofrem stun cumulativo contínuo.
           if (currentLevel?.id === 110 && !isDailyMode && !isTrainingMode && !u.isSummoned) {
@@ -8099,7 +8099,7 @@ export function App() {
       }
     }
 
-    // SECRET CLASS UNLOCK: Pistoleiro do Tempo (Zaphkiel)
+    // SECRET CLASS UNLOCK: Dançarina do Tempo (Cronos)
     // Condição: Derrotar o Verme Cósmico Devorador do Tempo na 10ª Fase Secreta do Tempo (ID 110)
     if (currentLevel.id === 110 && !currentUnlocked.includes('pistoleiro_tempo')) {
       newlyUnlocked.push('pistoleiro_tempo');
@@ -8985,7 +8985,7 @@ export function App() {
           {currentLevel?.id === 110 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-950/90 border border-amber-500/80 backdrop-blur-md shadow-lg shadow-amber-900/60 text-amber-200 text-xs font-bold animate-pulse">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-              ⏳ Ponteiros de Zaphkiel: Fique dentro da área dos ponteiros! Heróis fora serão atordoados.
+              ⏳ Ponteiros de Cronos: Fique dentro da área dos ponteiros! Heróis fora serão atordoados.
             </div>
           )}
           {hoveredTile && currentLevel?.id === 110 && !grid[hoveredTile.y]?.[hoveredTile.x]?.corruptionTurns && !grid[hoveredTile.y]?.[hoveredTile.x]?.borderFire ? (

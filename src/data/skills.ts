@@ -7812,8 +7812,8 @@ export const SKILLS: Record<string, Skill> = {
   },
 
   // Aliases de compatibilidade retroativa
-  disparo_temporal_zaphkiel: {
-    id: 'disparo_temporal_zaphkiel',
+  disparo_temporal_cronos: {
+    id: 'disparo_temporal_cronos',
     name: 'Estocada Dupla: Alfa',
     description: 'O florete vermelho do Futuro e o florete preto do Passado desferem estocadas gêmeas em sincronia graciosa (alcance 1-3). Causa 160% de dano híbrido e desacelera o alvo (-1 de Movimento por 2 turnos).',
     damageType: 'physical',
@@ -7980,8 +7980,8 @@ export const SKILLS: Record<string, Skill> = {
     targetType: 'enemy',
     iconName: 'Crosshair',
   },
-  relogio_astral_zaphkiel: {
-    id: 'relogio_astral_zaphkiel',
+  relogio_astral_cronos: {
+    id: 'relogio_astral_cronos',
     name: 'Dança Magna: Lambda',
     description: 'Entra no ritmo supremo do tempo onde passado e futuro se fundem: restaura todos os cooldowns de suas outras habilidades, recebe 1 turno adicional imediatamente e aumenta o dano em 20% por 2 turnos.',
     damageType: 'healing',
@@ -8032,24 +8032,8 @@ export const SKILLS: Record<string, Skill> = {
     statusEffect: { type: 'stun', duration: 1, value: 1 },
     iconName: 'Zap',
   },
-  // Aliases de invocações
-  tiro_clone_kurumi: {
-    id: 'tiro_clone_kurumi',
-    name: 'Estocada do Eco Temporal',
-    description: 'Golpe com floretes gêmeos do eco temporal causando 140% de dano físico a até 2 casas.',
-    damageType: 'physical',
-    category: 'attack',
-    power: 1.4,
-    rangeMin: 1,
-    rangeMax: 2,
-    aoeRadius: 0,
-    cooldownMax: 0,
-    currentCooldown: 0,
-    targetType: 'enemy',
-    iconName: 'Target',
-  },
 
-  // Invocações do Invocador & Kurumi
+  // Invocações do Invocador & Dançarina do Tempo
   golpe_lobo_astral: {
     id: 'golpe_lobo_astral',
     name: 'Mordida Astral',
@@ -8278,7 +8262,7 @@ export const SKILLS: Record<string, Skill> = {
   boss_verme_colapso_fim_dos_tempos: {
     id: 'boss_verme_colapso_fim_dos_tempos',
     name: 'Colapso do Fim dos Tempos',
-    description: '[ULTIMATE DO BOSS - LIMIAR <50% HP]: O Verme estilhaça o relógio de Zaphkiel! Causa 210% de dano mágico em TODOS os heróis do mapa, reduz suas defesas em 25% por 2 turnos e acelera os ponteiros do relógio cósmico!',
+    description: '[ULTIMATE DO BOSS - LIMIAR <50% HP]: O Verme estilhaça o relógio de Cronos! Causa 210% de dano mágico em TODOS os heróis do mapa, reduz suas defesas em 25% por 2 turnos e acelera os ponteiros do relógio cósmico!',
     damageType: 'magical',
     category: 'attack',
     power: 2.1,

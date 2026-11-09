@@ -609,7 +609,7 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'time_weaver':
     case 'gear_automaton':
     case 'temporal_hound':
-    case 'zaphkiel_cultist':
+    case 'cronos_cultist':
     case 'chronos_drake':
       return <Clock size={size} />;
     case 'goblin':

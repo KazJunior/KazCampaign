@@ -1387,11 +1387,11 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     avatarKey: 'temporal_hound',
     skillId: 'sabujo_mordida_temporal',
     skillIds: ['sabujo_mordida_temporal', 'sabujo_uivo_paradoxo'],
-    description: 'Predador etéreo forjado no vácuo de Zaphkiel com mordidas entrópicas e uivos que retardam o movimento. Cerca de 30% mais ágil e letal que lobos espectrais.',
+    description: 'Predador etéreo forjado no vácuo de Cronos com mordidas entrópicas e uivos que retardam o movimento. Cerca de 30% mais ágil e letal que lobos espectrais.',
   },
-  cultista_zaphkiel: {
-    typeId: 'cultista_zaphkiel',
-    name: 'Cultista de Zaphkiel',
+  cultista_cronos: {
+    typeId: 'cultista_cronos',
+    name: 'Cultista de Cronos',
     role: 'support',
     act: 1,
     maxHp: 122,
@@ -1402,7 +1402,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
     mov: 2,
     range: 3,
     color: '#B45309',
-    avatarKey: 'zaphkiel_cultist',
+    avatarKey: 'cronos_cultist',
     skillId: 'cultista_disparo_temporal',
     skillIds: ['cultista_disparo_temporal', 'cultista_reversao_cronica', 'cultista_manto_areia'],
     description: 'Sacerdote temporal das areias astrais capaz de reverter os segundos para curar aliados e criar barreiras de areia. Cerca de 30% mais resistente e potente que bruxas comuns.',
@@ -1668,7 +1668,7 @@ export function createMonsterUnit(
     typeId === 'tecelao_do_tempo' ||
     typeId === 'automato_engrenagens' ||
     typeId === 'sabujo_temporal' ||
-    typeId === 'cultista_zaphkiel' ||
+    typeId === 'cultista_cronos' ||
     typeId === 'draco_cronologico'
   ) {
     // Monstros normais exclusivos da Fenda Temporal (Fases 101 a 110):
