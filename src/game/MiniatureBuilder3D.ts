@@ -4617,86 +4617,339 @@ function buildAlquimistaMini(group: THREE.Group) {
 
 // ============================================================================
 // DANÇARINA DO TEMPO MINIATURE (Floretes Gêmeos: Vermelho e Preto)
+// Prima Ballerina das Lâminas Temporais & Dança dos Dois Tempos
 // ============================================================================
 function buildPistoleiroTempoMini(group: THREE.Group) {
-  const dressRed = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.5 }); // Crimson
-  const dressBlack = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.6 }); // Ebony
-  const goldAccents = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
-  const rapierRedMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c, emissiveIntensity: 0.8, metalness: 0.9, roughness: 0.2 }); // Florete Vermelho (O Futuro)
-  const rapierBlackMat = new THREE.MeshStandardMaterial({ color: 0x18181b, emissive: 0x27272a, emissiveIntensity: 0.4, metalness: 0.95, roughness: 0.15 }); // Florete Preto (O Passado)
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.6 });
-  const hairBlack = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.8 });
+  // Materiais refinados de alta fidelidade
+  const dressRed = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.45 }); // Carmesim nobre
+  const dressBrightRed = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.4 }); // Carmesim vivo
+  const dressBlack = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.55 }); // Ébano suave
+  const goldAccents = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.9, roughness: 0.2 }); // Ouro polido
+  const rapierRedMat = new THREE.MeshStandardMaterial({
+    color: 0xef4444,
+    emissive: 0xb91c1c,
+    emissiveIntensity: 0.9,
+    metalness: 0.95,
+    roughness: 0.15,
+  }); // Florete Vermelho (O Futuro)
+  const rapierBlackMat = new THREE.MeshStandardMaterial({
+    color: 0x09090b,
+    emissive: 0x312e81,
+    emissiveIntensity: 0.5,
+    metalness: 0.95,
+    roughness: 0.15,
+  }); // Florete Preto (O Passado)
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xffedd5, roughness: 0.65 }); // Pele suave
+  const hairBlack = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.7 }); // Cabelo ébano sedoso
+  const balletTightsMat = new THREE.MeshStandardMaterial({ color: 0xfff1f2, roughness: 0.7 }); // Meia-calça de bailarina
+  const pointeShoeMat = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.35, metalness: 0.2 }); // Sapatilhas de ponta carmesim
+  const ribbonCrimson = new THREE.MeshStandardMaterial({ color: 0xe11d48, roughness: 0.4 }); // Fitas de cetim
+  const temporalGlowMat = new THREE.MeshStandardMaterial({
+    color: 0xfde047,
+    emissive: 0xf59e0b,
+    emissiveIntensity: 0.7,
+    metalness: 0.8,
+    roughness: 0.2,
+  }); // Aro temporal e mostradores
 
-  // Ruffled Ballroom Skirt (Layered Red & Black)
-  const skirtBottom = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.36, 0.42, 12), dressRed);
-  skirtBottom.position.y = 0.21;
-  skirtBottom.castShadow = true;
-  group.add(skirtBottom);
+  // 1. AURA TEMPORAL DE BASE (Aro do Relógio com Marcadores Cardeais)
+  const chronoRing = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.015, 6, 24), temporalGlowMat);
+  chronoRing.rotation.x = Math.PI / 2;
+  chronoRing.position.y = 0.02;
+  group.add(chronoRing);
 
-  const skirtFrill = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.03, 6, 14), dressBlack);
-  skirtFrill.rotation.x = Math.PI / 2;
-  skirtFrill.position.y = 0.12;
-  group.add(skirtFrill);
+  for (let i = 0; i < 4; i++) {
+    const angle = (i * Math.PI) / 2;
+    const tick = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, 0.02), goldAccents);
+    tick.position.set(Math.cos(angle) * 0.32, 0.02, Math.sin(angle) * 0.32);
+    tick.rotation.y = -angle;
+    group.add(tick);
+  }
 
-  // Corset Torso
-  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.32, 10), dressBlack);
-  torso.position.y = 0.52;
-  torso.castShadow = true;
-  group.add(torso);
+  // 2. PERNAS E SAPATILHAS DE PONTA (Postura Elegante de Balé)
+  // Perna Esquerda (Perna de sustentação em Relevé / Ponta)
+  const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.042, 0.20, 6, 8), balletTightsMat);
+  legL.position.set(-0.06, 0.17, 0);
+  legL.castShadow = true;
+  group.add(legL);
 
-  const corsetCenter = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.22, 0.04), dressRed);
-  corsetCenter.position.set(0, 0.52, 0.14);
-  group.add(corsetCenter);
+  const shoeL = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.07, 0.08), pointeShoeMat);
+  shoeL.position.set(-0.06, 0.04, 0.01);
+  shoeL.castShadow = true;
+  group.add(shoeL);
 
-  // Head
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), skinMat);
-  head.position.y = 0.77;
+  const ribbonL1 = new THREE.Mesh(new THREE.TorusGeometry(0.046, 0.007, 4, 12), ribbonCrimson);
+  ribbonL1.rotation.x = Math.PI / 2.2;
+  ribbonL1.position.set(-0.06, 0.08, 0);
+  group.add(ribbonL1);
+
+  const ribbonL2 = new THREE.Mesh(new THREE.TorusGeometry(0.046, 0.007, 4, 12), ribbonCrimson);
+  ribbonL2.rotation.x = Math.PI / 1.8;
+  ribbonL2.position.set(-0.06, 0.12, 0);
+  group.add(ribbonL2);
+
+  // Perna Direita (Levantada em Retiré / Cou-de-pied gracioso)
+  const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.04, 0.18, 6, 8), balletTightsMat);
+  legR.position.set(0.075, 0.19, -0.01);
+  legR.rotation.z = -0.32;
+  legR.rotation.x = -0.15;
+  legR.castShadow = true;
+  group.add(legR);
+
+  const shoeR = new THREE.Mesh(new THREE.BoxGeometry(0.042, 0.065, 0.075), pointeShoeMat);
+  shoeR.position.set(0.035, 0.09, 0.02);
+  shoeR.rotation.z = 0.2;
+  shoeR.rotation.x = 0.25;
+  shoeR.castShadow = true;
+  group.add(shoeR);
+
+  const ribbonR1 = new THREE.Mesh(new THREE.TorusGeometry(0.044, 0.007, 4, 12), ribbonCrimson);
+  ribbonR1.rotation.x = Math.PI / 2;
+  ribbonR1.rotation.z = -0.32;
+  ribbonR1.position.set(0.075, 0.16, -0.01);
+  group.add(ribbonR1);
+
+  // 3. TUTÚ DE BAILARINA RODADO EM CAMADAS
+  // Babado interior de renda negra
+  const tutuUnder = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.27, 0.06, 16), dressBlack);
+  tutuUnder.position.y = 0.30;
+  tutuUnder.castShadow = true;
+  group.add(tutuUnder);
+
+  // Tutu principal carmesim com babados volumosos
+  const tutuMain = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.33, 0.08, 16), dressRed);
+  tutuMain.position.y = 0.34;
+  tutuMain.rotation.z = 0.04;
+  tutuMain.castShadow = true;
+  group.add(tutuMain);
+
+  // Borda carmesim vivo com franzido
+  const tutuRim = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.022, 6, 20), dressBrightRed);
+  tutuRim.rotation.x = Math.PI / 2;
+  tutuRim.rotation.y = 0.04;
+  tutuRim.position.y = 0.33;
+  group.add(tutuRim);
+
+  // Filigrana dourada bordada no tutu
+  const tutuGoldTrim = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.012, 4, 16), goldAccents);
+  tutuGoldTrim.rotation.x = Math.PI / 2;
+  tutuGoldTrim.position.y = 0.36;
+  group.add(tutuGoldTrim);
+
+  // Cintura ajustada e cinto com fivela dourada
+  const belt = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.016, 6, 14), dressBlack);
+  belt.rotation.x = Math.PI / 2;
+  belt.position.y = 0.39;
+  group.add(belt);
+
+  const buckle = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.02, 8), goldAccents);
+  buckle.rotation.x = Math.PI / 2;
+  buckle.position.set(0, 0.39, 0.13);
+  group.add(buckle);
+
+  // 4. CORPETE / COLÃ DE BALÉ & DECOTE CORAÇÃO
+  const bodice = new THREE.Mesh(new THREE.CylinderGeometry(0.125, 0.11, 0.21, 10), dressBlack);
+  bodice.position.y = 0.49;
+  bodice.castShadow = true;
+  group.add(bodice);
+
+  const corsetFront = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.17, 0.035), dressRed);
+  corsetFront.position.set(0, 0.49, 0.10);
+  group.add(corsetFront);
+
+  const corsetLaceL = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.15, 0.038), goldAccents);
+  corsetLaceL.position.set(-0.038, 0.49, 0.10);
+  group.add(corsetLaceL);
+
+  const corsetLaceR = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.15, 0.038), goldAccents);
+  corsetLaceR.position.set(0.038, 0.49, 0.10);
+  group.add(corsetLaceR);
+
+  // Colo e pescoço de bailarina
+  const chestUpper = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), skinMat);
+  chestUpper.scale.set(1.15, 0.6, 0.8);
+  chestUpper.position.set(0, 0.58, 0.02);
+  group.add(chestUpper);
+
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.046, 0.085, 8), skinMat);
+  neck.position.y = 0.645;
+  group.add(neck);
+
+  const choker = new THREE.Mesh(new THREE.TorusGeometry(0.047, 0.007, 4, 12), dressBlack);
+  choker.rotation.x = Math.PI / 2;
+  choker.position.y = 0.645;
+  group.add(choker);
+
+  const chokerGem = new THREE.Mesh(new THREE.SphereGeometry(0.013, 6, 6), goldAccents);
+  chokerGem.position.set(0, 0.645, 0.048);
+  group.add(chokerGem);
+
+  // 5. BRAÇOS EM PORT DE BRAS & FLORETES GÊMEOS
+  // Braço Direito (Futuro - Estendido gracioso à frente com Florete Vermelho)
+  const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), dressRed);
+  shoulderR.position.set(0.145, 0.575, 0.02);
+  group.add(shoulderR);
+
+  const armR = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.22, 6), dressBlack);
+  armR.position.set(0.22, 0.53, 0.08);
+  armR.rotation.z = -Math.PI / 4.5;
+  armR.rotation.x = Math.PI / 5;
+  group.add(armR);
+
+  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.024, 6, 6), skinMat);
+  handR.position.set(0.29, 0.465, 0.17);
+  group.add(handR);
+
+  // Guarda em taça dourada do Florete Vermelho
+  const cupR = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), goldAccents);
+  cupR.scale.set(0.9, 0.9, 0.7);
+  cupR.position.set(0.31, 0.48, 0.21);
+  group.add(cupR);
+
+  // Lâmina incisiva do Florete Vermelho do Futuro
+  const bladeR = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.011, 0.56, 8), rapierRedMat);
+  bladeR.position.set(0.35, 0.64, 0.36);
+  bladeR.rotation.x = Math.PI / 3.3;
+  bladeR.rotation.z = -0.22;
+  bladeR.castShadow = true;
+  group.add(bladeR);
+
+  const pommelR = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 6), goldAccents);
+  pommelR.position.set(0.27, 0.42, 0.13);
+  group.add(pommelR);
+
+  // Braço Esquerdo (Passado - Erguido no alto em 5ª posição de balé com Florete Preto)
+  const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), dressRed);
+  shoulderL.position.set(-0.145, 0.575, 0.02);
+  group.add(shoulderL);
+
+  const armL = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.22, 6), dressBlack);
+  armL.position.set(-0.20, 0.655, 0.04);
+  armL.rotation.z = Math.PI / 3.2;
+  armL.rotation.x = -Math.PI / 10;
+  group.add(armL);
+
+  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.024, 6, 6), skinMat);
+  handL.position.set(-0.25, 0.74, 0.06);
+  group.add(handL);
+
+  // Guarda em taça dourada do Florete Preto
+  const cupL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), goldAccents);
+  cupL.scale.set(0.9, 0.9, 0.7);
+  cupL.position.set(-0.27, 0.76, 0.08);
+  group.add(cupL);
+
+  // Lâmina do Florete Preto do Passado
+  const bladeL = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.011, 0.56, 8), rapierBlackMat);
+  bladeL.position.set(-0.34, 0.93, 0.16);
+  bladeL.rotation.x = -Math.PI / 4;
+  bladeL.rotation.z = Math.PI / 3.6;
+  bladeL.castShadow = true;
+  group.add(bladeL);
+
+  const pommelL = new THREE.Mesh(new THREE.SphereGeometry(0.016, 6, 6), goldAccents);
+  pommelL.position.set(-0.22, 0.69, 0.03);
+  group.add(pommelL);
+
+  // 6. CABEÇA, PENTEADO COMPLETO DE BAILARINA E DIADEMA TEMPORAL
+  // Cabeça
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 14, 12), skinMat);
+  head.position.set(0, 0.74, 0.01);
   head.castShadow = true;
   group.add(head);
 
-  // Twin temporal eyes (Ruby & Gold)
-  const eyeLeft = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), goldAccents);
-  eyeLeft.position.set(-0.042, 0.78, 0.10);
-  group.add(eyeLeft);
+  // Calota Capilar Completa (Cobre topo, laterais e nuca para nunca ficar careca)
+  const hairBase = new THREE.Mesh(new THREE.SphereGeometry(0.114, 16, 14), hairBlack);
+  hairBase.position.set(0, 0.755, -0.01);
+  hairBase.scale.set(1.02, 1.04, 1.08);
+  group.add(hairBase);
 
-  const eyeRight = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), rapierRedMat);
-  eyeRight.position.set(0.042, 0.78, 0.10);
-  group.add(eyeRight);
+  // Franja elegante repartida de lado emoldurando o rosto
+  const bangs = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09, 0.108, 0.05, 12, 1, false, 0, Math.PI),
+    hairBlack
+  );
+  bangs.rotation.x = -Math.PI / 2.7;
+  bangs.position.set(0, 0.79, 0.06);
+  group.add(bangs);
 
-  // Dancing Hair Twintails
-  const tailL = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.45, 8), hairBlack);
-  tailL.position.set(-0.16, 0.65, -0.05);
-  tailL.rotation.z = 0.25;
-  group.add(tailL);
+  // Coque alto clássico de bailarina esculpido na coroa
+  const bun = new THREE.Mesh(new THREE.SphereGeometry(0.066, 14, 12), hairBlack);
+  bun.position.set(0, 0.855, -0.06);
+  bun.scale.set(1.1, 0.9, 1.0);
+  group.add(bun);
 
-  const tailR = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.06, 0.50, 8), hairBlack);
-  tailR.position.set(0.18, 0.60, -0.05);
-  tailR.rotation.z = -0.20;
-  group.add(tailR);
+  // Rede/filigrana dourada envolvendo o coque
+  const bunFiligree = new THREE.Mesh(new THREE.TorusGeometry(0.068, 0.010, 6, 16), goldAccents);
+  bunFiligree.rotation.x = Math.PI / 3;
+  bunFiligree.position.set(0, 0.845, -0.05);
+  group.add(bunFiligree);
 
-  // RIGHT HAND: Florete Vermelho (O Futuro)
-  const guardRight = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), goldAccents);
-  guardRight.position.set(0.22, 0.52, 0.16);
-  group.add(guardRight);
+  // Fita carmesim amarrando o coque de bailarina
+  const bunRibbon = new THREE.Mesh(new THREE.TorusGeometry(0.053, 0.012, 6, 12), ribbonCrimson);
+  bunRibbon.rotation.x = Math.PI / 2.5;
+  bunRibbon.position.set(0, 0.825, -0.04);
+  group.add(bunRibbon);
 
-  const bladeRight = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.012, 0.55, 8), rapierRedMat);
-  bladeRight.position.set(0.24, 0.68, 0.28);
-  bladeRight.rotation.x = Math.PI / 3.4;
-  bladeRight.rotation.z = -0.2;
-  bladeRight.castShadow = true;
-  group.add(bladeRight);
+  // Mechas longas onduladas esvoaçantes nas laterais (movimento do rodopio)
+  const lockL = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.035, 0.34, 8), hairBlack);
+  lockL.position.set(-0.11, 0.64, -0.05);
+  lockL.rotation.z = 0.36;
+  lockL.rotation.x = -0.22;
+  group.add(lockL);
 
-  // LEFT HAND: Florete Preto (O Passado)
-  const guardLeft = new THREE.Mesh(new THREE.SphereGeometry(0.038, 8, 8), goldAccents);
-  guardLeft.position.set(-0.22, 0.48, 0.16);
-  group.add(guardLeft);
+  const lockL2 = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.024, 0.24, 6), hairBlack);
+  lockL2.position.set(-0.15, 0.51, -0.07);
+  lockL2.rotation.z = 0.52;
+  group.add(lockL2);
 
-  const bladeLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.012, 0.55, 8), rapierBlackMat);
-  bladeLeft.position.set(-0.24, 0.62, 0.30);
-  bladeLeft.rotation.x = Math.PI / 3.2;
-  bladeLeft.rotation.z = 0.25;
-  bladeLeft.castShadow = true;
-  group.add(bladeLeft);
+  const lockR = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.038, 0.36, 8), hairBlack);
+  lockR.position.set(0.11, 0.63, -0.04);
+  lockR.rotation.z = -0.30;
+  lockR.rotation.x = -0.18;
+  group.add(lockR);
+
+  const lockR2 = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.025, 0.25, 6), hairBlack);
+  lockR2.position.set(0.16, 0.49, -0.05);
+  lockR2.rotation.z = -0.46;
+  group.add(lockR2);
+
+  // Diadema / Tiara Dourada de Bailarina
+  const tiara = new THREE.Mesh(new THREE.TorusGeometry(0.084, 0.011, 4, 14), goldAccents);
+  tiara.rotation.x = Math.PI / 3.2;
+  tiara.position.set(0, 0.805, 0.04);
+  group.add(tiara);
+
+  const tiaraPeak = new THREE.Mesh(new THREE.ConeGeometry(0.020, 0.055, 4), goldAccents);
+  tiaraPeak.position.set(0, 0.845, 0.058);
+  tiaraPeak.rotation.x = -0.15;
+  group.add(tiaraPeak);
+
+  const tiaraRuby = new THREE.Mesh(new THREE.OctahedronGeometry(0.020, 0), rapierRedMat);
+  tiaraRuby.position.set(0, 0.835, 0.072);
+  group.add(tiaraRuby);
+
+  // Olhos Heterocromáticos Temporais
+  const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.019, 8, 8), temporalGlowMat);
+  eyeL.position.set(-0.036, 0.75, 0.096);
+  group.add(eyeL);
+
+  const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.019, 8, 8), rapierRedMat);
+  eyeR.position.set(0.036, 0.75, 0.096);
+  group.add(eyeR);
+
+  // 7. FITAS TEMPORAIS EM ESPIRAL (Dinâmica de Pirueta da Dança)
+  const ribbonSpiral1 = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.015, 6, 20), ribbonCrimson);
+  ribbonSpiral1.rotation.x = Math.PI / 2.6;
+  ribbonSpiral1.rotation.y = 0.35;
+  ribbonSpiral1.position.set(0.04, 0.46, 0);
+  group.add(ribbonSpiral1);
+
+  const ribbonSpiral2 = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.013, 6, 20), dressBrightRed);
+  ribbonSpiral2.rotation.x = Math.PI / 1.7;
+  ribbonSpiral2.rotation.z = -0.38;
+  ribbonSpiral2.position.set(-0.02, 0.27, 0);
+  group.add(ribbonSpiral2);
 }
 
 // -------------------------------------------------------------

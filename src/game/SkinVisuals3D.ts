@@ -35,6 +35,7 @@ export function applySkinThemeToMiniature(charMesh: THREE.Group, unit: Unit): vo
           hex === 0xd4a373 ||
           hex === 0xfbb6ce ||
           hex === 0xfecdd3 ||
+          hex === 0xffedd5 ||
           (hex === 0x000000 && child.geometry instanceof THREE.SphereGeometry && child.scale.x < 0.1) ||
           (hex === 0xffffff && child.geometry instanceof THREE.SphereGeometry && child.scale.x < 0.1);
 
@@ -71,6 +72,14 @@ export function applySkinThemeToMiniature(charMesh: THREE.Group, unit: Unit): vo
             cloned.color.copy(skinColor);
             cloned.transparent = true;
             cloned.opacity = 0.88;
+          } else if (skin.id === 'pistoleiro_tempo_noiva') {
+            if (isMetal) {
+              cloned.color.setHex(0xfbbf24); // Ouro astral reluzente
+              cloned.metalness = 0.95;
+              cloned.roughness = 0.15;
+            } else if (isClothOrArmor) {
+              cloned.color.copy(skinColor); // Vermelho rubi e carmesim astral
+            }
           } else {
             // Theming padrão para as demais skins épicas e lendárias
             if (isClothOrArmor) {
