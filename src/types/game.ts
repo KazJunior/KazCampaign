@@ -190,7 +190,7 @@ export interface Unit {
   level: number;
   xp: number;
   maxXp: number;
-  
+
   maxHp: number;
   currentHp: number;
   atk: number;
@@ -199,22 +199,22 @@ export interface Unit {
   res: number;
   mov: number;
   range: number;
-  
+
   x: number;
   y: number;
   hasMoved: boolean;
   hasAttacked: boolean;
   isDead: boolean;
-  
+
   color: string;
   avatarKey: string;
-  
+
   skills: Skill[];
   alchemistMixtures?: AlchemistMixture[];
 
   learnedSkillIds: string[]; // List of IDs learned via level up choices
   skillLevels?: Record<string, number>; // Evolution levels per skill ID (1, 2, 3...)
-  
+
   statusEffects: StatusEffect[];
 
   // Boss specific
@@ -225,6 +225,7 @@ export interface Unit {
   crystalsAlive?: boolean; // Fase 45: Imune enquanto os cristais estiverem ativos
   lightDoubleActionPending?: boolean; // Fase 45 (Luz): Se o escudo de 800 não for destruído, ganha dupla ação
   lastStunTurn?: number; // Turno da batalha em que a unidade foi atordoada por último (impede stun em turnos consecutivos em chefes)
+  lastClockHandStunTurn?: number; // Turno da batalha em que o herói foi atordoado pelos ponteiros do relógio (impede stun consecutivo do ponteiro)
   monsterTypeId?: string;
   halfHpTriggerTurn?: number; // Turno em que a vida do boss caiu para <= 50%
   hasUsedHalfHpSkill?: boolean; // Se a habilidade única de 50% HP já foi utilizada (ativa apenas 1 vez por combate)

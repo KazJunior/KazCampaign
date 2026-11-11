@@ -7448,6 +7448,9 @@ export function App() {
     }
 
     const aiTurnNumber = turnNumberRef.current;
+    // Captura o mapa dos ponteiros ativo durante os golpes e empurrões do boss
+    const bossTurnGrid = gridRef.current;
+
     setTurnNumber((t) => {
       turnNumberRef.current = t + 1;
       return t + 1;
@@ -7493,6 +7496,7 @@ export function App() {
         let unitY = u.y;
 
         if (u.faction === 'player') {
+          let nextLastClockHandStunTurn = u.lastClockHandStunTurn;
           const updatedEffects = (u.statusEffects || [])
             .map((e) => (e.type === 'taunt' ? { ...e, duration: e.duration - 1 } : e))
             .filter((e) => e.duration > 0);
@@ -7608,6 +7612,40 @@ export function App() {
                 }
               }
             }
+            // Mecânica Fase Secreta 110 (Verme Cósmico): Ponteiros de Cronos
+            // Avaliada no FINAL DO TURNO DO BOSS:
+            // Se o boss empurrou os heróis para fora dos ponteiros (ou se eles terminaram fora deles),
+            // os heróis fora da zona segura são atordoados e congelados no tempo no mesmo turno, perdendo a ação no turno do jogador!
+            // REGRA: O stun do ponteiro NÃO pode ocorrer 2 turnos seguidos no mesmo herói.
+            if (currentLevel?.id === 110 && !isDailyMode && !isTrainingMode && !u.isSummoned && !isDead) {
+              const isSafe = Boolean(
+                bossTurnGrid?.[unitY]?.[unitX]?.isClockHandZone ??
+                  isTileInClockHands(unitX, unitY, aiTurnNumber, gridRef.current?.[0]?.length || 10, gridRef.current?.length || 8)
+              );
+              const alreadyStunned = updatedEffects.some((e) => e.type === 'stun' && e.duration > 0);
+              const wasStunnedByClockHandLastTurn =
+                u.lastClockHandStunTurn !== undefined && (aiTurnNumber - u.lastClockHandStunTurn <= 1);
+
+              if (!isSafe && !alreadyStunned) {
+                if (wasStunnedByClockHandLastTurn) {
+                  // Imunidade de turno consecutivo exclusiva para o stun dos ponteiros
+                  addFloatingNumber(unitX, unitY, '🛡️ Resistência Temporal (Imune ao Ponteiro)!', 'status', '#38BDF8');
+                } else {
+                  addFloatingNumber(unitX, unitY, '⏳ Fora dos Ponteiros! Congelado!', 'status', '#FACC15');
+                  soundManager.playMagicSpell();
+                  const stunEffect: StatusEffect = {
+                    type: 'stun',
+                    duration: 1,
+                    value: 1,
+                    appliedTurn: aiTurnNumber,
+                  };
+                  updatedEffects.push(stunEffect);
+                  nextLastClockHandStunTurn = aiTurnNumber;
+                }
+              } else if (isSafe && !alreadyStunned) {
+                addFloatingNumber(unitX, unitY, '🛡️ Seguro nos Ponteiros!', 'status', '#10B981');
+              }
+            }
           }
 
           const isCocooned = updatedEffects.some((e) => e.type === 'dark_cocoon' && e.duration > 0);
@@ -7615,7 +7653,7 @@ export function App() {
           if (isCocooned && !isDead) {
             addFloatingNumber(unitX, unitY, '🕸️ Preso no Casulo de Escuridão!', 'status', '#581C87');
           }
-          if (isStunned && !isDead) {
+          if (isStunned && !isDead && currentLevel?.id !== 110) {
             addFloatingNumber(unitX, unitY, '⏳ Congelado no Tempo (Atordoado)!', 'status', '#FACC15');
           }
 
@@ -7626,6 +7664,7 @@ export function App() {
             currentHp,
             isDead,
             statusEffects: updatedEffects,
+            lastClockHandStunTurn: nextLastClockHandStunTurn,
             hasMoved: isCocooned || isStunned ? true : false,
             hasAttacked: isCocooned || isStunned ? true : false,
             nefalimExtraAttackUsed: false,
@@ -7818,8 +7857,6 @@ export function App() {
 
       nextUnitsState = processedSummons.map((u) => {
         if (u.faction === 'player' && !u.isDead) {
-          const wasStunnedThisTurn = (u.statusEffects || []).some((e) => e.type === 'stun' && e.duration > 0);
-
           // Taunt is active against the upcoming enemy phase, so it decrements after the enemy turn ends
           // Invisibility protects against the upcoming enemy phase AND persists until their next turn!
           // Therefore, if it was applied on the current turn, do NOT decrement it at the end of the current turn.
@@ -7862,26 +7899,6 @@ export function App() {
               appliedTurn: currentTurn,
             });
             addFloatingNumber(u.x, u.y, `+${u.lineageStandStillDamageBonusPercent}% Dano (Foco Élfico)`, 'status', '#10B981');
-          }
-
-          // Mecânica Fase Secreta 110 (Verme Cósmico): Ponteiros de Cronos
-          // Todos os heróis que NÃO estiverem dentro da área dos ponteiros são atordoados por 1 turno!
-          // Heróis que já cumpriram estase temporal durante este turno não sofrem stun cumulativo contínuo.
-          if (currentLevel?.id === 110 && !isDailyMode && !isTrainingMode && !u.isSummoned) {
-            const isSafe = Boolean(gridRef.current?.[u.y]?.[u.x]?.isClockHandZone);
-            if (!isSafe && !wasStunnedThisTurn) {
-              addFloatingNumber(u.x, u.y, '⏳ Fora dos Ponteiros! Congelado!', 'status', '#FACC15');
-              soundManager.playMagicSpell();
-              const stunEffect: StatusEffect = {
-                type: 'stun',
-                duration: 1,
-                value: 1,
-                appliedTurn: currentTurn,
-              };
-              updatedEffects.push(stunEffect);
-            } else if (isSafe) {
-              addFloatingNumber(u.x, u.y, '🛡️ Seguro nos Ponteiros!', 'status', '#10B981');
-            }
           }
 
           return {
@@ -8985,7 +9002,7 @@ export function App() {
           {currentLevel?.id === 110 && (
             <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20 flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-950/90 border border-amber-500/80 backdrop-blur-md shadow-lg shadow-amber-900/60 text-amber-200 text-xs font-bold animate-pulse">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-              ⏳ Ponteiros de Cronos: Fique dentro da área dos ponteiros! Heróis fora serão atordoados.
+              ⏳ Ponteiros de Cronos: Fique dentro da área dos ponteiros! Heróis fora ao fim do turno do boss serão atordoados.
             </div>
           )}
           {hoveredTile && currentLevel?.id === 110 && !grid[hoveredTile.y]?.[hoveredTile.x]?.corruptionTurns && !grid[hoveredTile.y]?.[hoveredTile.x]?.borderFire ? (
@@ -8998,7 +9015,7 @@ export function App() {
               ) : (
                 <div className="flex items-center gap-1.5 text-amber-300 bg-amber-950/90 border border-amber-500/70 px-3 py-1 rounded-full">
                   <span>⚠️</span>
-                  <span>Fora dos Ponteiros (PERIGO: Heróis serão ATORDOADOS ao fim do turno!)</span>
+                  <span>Fora dos Ponteiros (PERIGO: Heróis fora dos ponteiros ao fim do turno do boss serão ATORDOADOS!)</span>
                 </div>
               )}
             </div>
@@ -9374,7 +9391,7 @@ export function App() {
               Fique dentro da área dos ponteiros
             </span>
             <p className="text-xs sm:text-sm text-[#FDE68A] font-semibold max-w-md">
-              O fluxo temporal fora dos ponteiros está colapsando! Qualquer herói fora das casas iluminadas pelos ponteiros ao fim do seu turno será <span className="text-[#F59E0B] font-black underline">CONGELADO NO TEMPO (Atordoado por 1 turno)</span>!
+              O fluxo temporal fora dos ponteiros está colapsando! Qualquer herói fora das casas iluminadas pelos ponteiros ao fim do turno do Verme Cósmico será <span className="text-[#F59E0B] font-black underline">CONGELADO NO TEMPO (Atordoado por 1 turno)</span>!
             </p>
             <div className="h-1 w-64 sm:w-96 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_20px_#F59E0B]" />
           </div>

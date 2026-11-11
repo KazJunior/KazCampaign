@@ -1674,9 +1674,9 @@ export const SECRET_TIME_LEVELS: LevelConfig[] = [
     environment: 'abyss',
     width: 10,
     height: 8,
-    description: 'O Verme Cósmico Devorador do Tempo emerge do centro do relógio astral! O tempo fora dos ponteiros está colapsando: FIQUE DENTRO DA ÁREA DOS PONTEIROS ao fim do seu turno para não ser congelado no tempo! Abata a besta cósmica para desbloquear a classe oculta Dançarina do Tempo!',
+    description: 'O Verme Cósmico Devorador do Tempo emerge do centro do relógio astral! O tempo fora dos ponteiros está colapsando: FIQUE DENTRO DA ÁREA DOS PONTEIROS ao fim do turno do boss para não ser congelado no tempo! Abata a besta cósmica para desbloquear a classe oculta Dançarina do Tempo!',
     objectives: [
-      'FIQUE DENTRO DA ÁREA DOS PONTEIROS (fora deles = Congelamento / Atordoado)!',
+      'FIQUE DENTRO DA ÁREA DOS PONTEIROS (fora deles ao fim do turno do boss = Congelamento / Atordoado)!',
       'Derrote o BOSS SECRETO Verme Cósmico Devorador do Tempo!',
       'Desbloqueie a classe secreta Dançarina do Tempo!',
     ],
