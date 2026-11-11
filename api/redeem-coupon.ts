@@ -33,7 +33,21 @@ const GOLD_CLASSES = [
   { id: 'mago_gelo', name: 'Mago de Gelo', role: 'Criomancia & Controle de Tabuleiro' },
   { id: 'mago_eletrico', name: 'Mago Elétrico', role: 'Eletromancia, Dano em Cadeia & Paralisia' },
   { id: 'mago_vento', name: 'Mago de Vento', role: 'Aeromancia, Repulsão & Rajadas de Vento' },
+  { id: 'ceifador', name: 'Ceifador', role: 'Ceifa de Almas & Dano Necrótico' },
+  { id: 'invocador', name: 'Invocador', role: 'Invocações de Espíritos & Controle de Campo' },
+  { id: 'alquimista', name: 'Alquimista', role: 'Poções, Transmutação & Efeitos de Status' },
 ];
+
+function parseDbClasses(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((c): c is string => typeof c === 'string');
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter((c): c is string => typeof c === 'string');
+    } catch {}
+  }
+  return [];
+}
 
 let couponsSchemaEnsured = false;
 async function ensureCouponsSchema(sql: ReturnType<typeof getSql>): Promise<void> {
@@ -171,8 +185,9 @@ export async function POST(req: Request): Promise<Response> {
       if (Array.isArray(progressRows[0].pet_eggs)) {
         existingEggs = progressRows[0].pet_eggs;
       }
-      if (Array.isArray(progressRows[0].unlocked_classes) && progressRows[0].unlocked_classes.length > 0) {
-        currentUnlocked = progressRows[0].unlocked_classes;
+      const parsedDbUnlocked = parseDbClasses(progressRows[0].unlocked_classes);
+      if (parsedDbUnlocked.length > 0) {
+        currentUnlocked = Array.from(new Set([...currentUnlocked, ...parsedDbUnlocked]));
       }
     }
 

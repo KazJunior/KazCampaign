@@ -520,9 +520,16 @@ export function App() {
           setProgress((prev) => {
             const missionAndLineage = mergeMissionAndLineageFields(prev, cloudP, true);
             const nextGold = typeof cloudP.gold === 'number' ? cloudP.gold : prev.gold;
+            const mergedClasses = Array.from(
+              new Set([
+                ...(prev.unlockedClasses || []),
+                ...(Array.isArray(cloudP.unlockedClasses) ? cloudP.unlockedClasses : []),
+              ])
+            );
             const updated: PlayerProgress = {
               ...prev,
               gold: nextGold,
+              unlockedClasses: mergedClasses,
               ...missionAndLineage,
             };
             progressRef.current = updated;
@@ -1057,21 +1064,24 @@ export function App() {
   };
 
   const handleBuyClass = (className: string, cost: number) => {
-    if (progress.gold < cost) return;
-    const currentUnlocked = progress.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
-    if (currentUnlocked.includes(className)) return;
+    setProgress((prev) => {
+      if (prev.gold < cost) return prev;
+      const currentUnlocked = prev.unlockedClasses || ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
+      if (currentUnlocked.includes(className)) return prev;
 
-    soundManager.playUpgrade();
-    const updatedUnlocked = [...currentUnlocked, className];
-    const newGold = progress.gold - cost;
-    const updatedProgress: PlayerProgress = {
-      ...progress,
-      gold: newGold,
-      unlockedClasses: updatedUnlocked,
-    };
-    setProgress(updatedProgress);
-    savePlayerProgress(updatedProgress);
-    setPendingUnlockClasses([className]);
+      soundManager.playUpgrade();
+      const updatedUnlocked = Array.from(new Set([...currentUnlocked, className]));
+      const newGold = prev.gold - cost;
+      const updatedProgress: PlayerProgress = {
+        ...prev,
+        gold: newGold,
+        unlockedClasses: updatedUnlocked,
+      };
+      progressRef.current = updatedProgress;
+      savePlayerProgress(updatedProgress);
+      setPendingUnlockClasses([className]);
+      return updatedProgress;
+    });
   };
 
   const handleUpdateProgressWithSkins = (newProgress: PlayerProgress) => {
@@ -1094,19 +1104,22 @@ export function App() {
   };
 
   const handleConfirmParty = (selectedPartyClasses: string[], partyLineages?: Record<string, string>) => {
-    if (progress.activeAdventure) {
+    if (progressRef.current.activeAdventure) {
       // Bloqueia qualquer alteração de linhagens e classes no meio de uma aventura ativa
       setCurrentView('level_select');
       return;
     }
-    const lineages = partyLineages || progress.selectedPartyLineages || {};
-    const updatedProgress = {
-      ...progress,
-      selectedPartyClasses,
-      selectedPartyLineages: lineages,
-    };
-    setProgress(updatedProgress);
-    savePlayerProgress(updatedProgress);
+    setProgress((prev) => {
+      const lineages = partyLineages || prev.selectedPartyLineages || {};
+      const updatedProgress = {
+        ...prev,
+        selectedPartyClasses,
+        selectedPartyLineages: lineages,
+      };
+      progressRef.current = updatedProgress;
+      savePlayerProgress(updatedProgress);
+      return updatedProgress;
+    });
     setCurrentView('level_select');
   };
 
@@ -8822,7 +8835,9 @@ export function App() {
                 const next = { ...prev };
                 if (typeof newGold === 'number') next.gold = newGold;
                 if (Array.isArray(newEggs)) next.eggs = newEggs;
-                if (Array.isArray(newClasses)) next.unlockedClasses = newClasses;
+                if (Array.isArray(newClasses)) {
+                  next.unlockedClasses = Array.from(new Set([...(prev.unlockedClasses || []), ...newClasses]));
+                }
                 progressRef.current = next;
                 savePlayerProgress(next);
                 return next;

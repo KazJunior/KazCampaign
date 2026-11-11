@@ -29,7 +29,7 @@ export function createInitialUnitsState(): PlayerProgress['unitsState'] {
     sniper: { className: 'sniper', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     mago_eletrico: { className: 'mago_eletrico', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     mago_vento: { className: 'mago_vento', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
-        omnimago: { className: 'omnimago', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    omnimago: { className: 'omnimago', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     cartomante: { className: 'cartomante', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     ceifador: { className: 'ceifador', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     invocador: { className: 'invocador', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
@@ -284,8 +284,8 @@ export function loadPlayerProgress(): PlayerProgress {
     if (!raw) {
       // Check for v3, v2 or v1 migration
       raw = localStorage.getItem('rpg_tactics_progress_v3') ||
-            localStorage.getItem('rpg_tactics_progress_v2') ||
-            localStorage.getItem('rpg_tactics_progress_v1');
+        localStorage.getItem('rpg_tactics_progress_v2') ||
+        localStorage.getItem('rpg_tactics_progress_v1');
     }
 
     if (!raw) {
@@ -294,7 +294,7 @@ export function loadPlayerProgress(): PlayerProgress {
 
     const parsed = JSON.parse(raw);
     const completedLevels: number[] = Array.isArray(parsed.completedLevels) ? parsed.completedLevels : [];
-    
+
     // Ensure adventureHistory is an array of max 10
     const adventureHistory = Array.isArray(parsed.adventureHistory)
       ? parsed.adventureHistory.slice(0, 10)
@@ -411,9 +411,9 @@ export function loadPlayerProgress(): PlayerProgress {
       equippedPetId: typeof parsed.equippedPetId === 'string' ? parsed.equippedPetId : null,
       eggs: Array.isArray(parsed.eggs)
         ? parsed.eggs.map((e: any) => ({
-            ...e,
-            hatchDurationMs: getHatchDuration(e.rarity),
-          }))
+          ...e,
+          hatchDurationMs: getHatchDuration(e.rarity),
+        }))
         : [],
       classMissionsProgress: missionAndLineage.classMissionsProgress,
       unlockedClassSkins: missionAndLineage.unlockedClassSkins,
@@ -442,10 +442,18 @@ export function savePlayerProgress(progress: PlayerProgress): void {
     }
 
     const mergedMissionAndLineage = mergeMissionAndLineageFields(existingLocal, progress, false);
+    const mergedUnlockedClasses = Array.from(
+      new Set([
+        ...(Array.isArray(existingLocal?.unlockedClasses) ? existingLocal!.unlockedClasses! : []),
+        ...(Array.isArray(progress.unlockedClasses) ? progress.unlockedClasses : []),
+        ...INITIAL_CLASSES,
+      ])
+    ).map((c) => (c === 'engenheiro' ? 'druida' : c));
     const nowIso = new Date().toISOString();
     const safeProgress: PlayerProgress = {
       ...progress,
       ...mergedMissionAndLineage,
+      unlockedClasses: mergedUnlockedClasses,
       updatedAt: nowIso,
     };
     if (safeProgress.activeAdventure) {
@@ -470,7 +478,7 @@ export function savePlayerProgress(progress: PlayerProgress): void {
           // ignore
         }
       }
-    }).catch(() => {});
+    }).catch(() => { });
   } catch (err) {
     console.error('Failed to save progress to localStorage:', err);
   }
@@ -527,13 +535,13 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
                   }
                 }
               }
-            } catch {}
+            } catch { }
           }
         };
 
         if (syncCloud || keepalive) {
           if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
-          saveCloudProgress(parsed, keepalive).then(syncReturnedGold).catch(() => {});
+          saveCloudProgress(parsed, keepalive).then(syncReturnedGold).catch(() => { });
         } else {
           // Sincronização periódica suave na nuvem (debounced 800ms) lendo o estado mais recente
           if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
@@ -541,9 +549,9 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
             try {
               const latestRaw = localStorage.getItem(PROGRESS_KEY);
               const latestParsed = latestRaw ? JSON.parse(latestRaw) : parsed;
-              saveCloudProgress(latestParsed).then(syncReturnedGold).catch(() => {});
+              saveCloudProgress(latestParsed).then(syncReturnedGold).catch(() => { });
             } catch {
-              saveCloudProgress(parsed).then(syncReturnedGold).catch(() => {});
+              saveCloudProgress(parsed).then(syncReturnedGold).catch(() => { });
             }
           }, 800);
         }

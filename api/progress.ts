@@ -273,6 +273,17 @@ function calculateMaxCompleted(
   return max;
 }
 
+function parseClassesArray(raw: unknown): string[] {
+  if (Array.isArray(raw)) return raw.filter((x): x is string => typeof x === 'string');
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.filter((x): x is string => typeof x === 'string');
+    } catch {}
+  }
+  return [];
+}
+
 function resolveUnlockedClasses(
   existingDbClasses: unknown,
   incomingClasses: unknown,
@@ -296,17 +307,15 @@ function resolveUnlockedClasses(
   };
 
   // 1. Check classes in database
-  if (Array.isArray(existingDbClasses)) {
-    for (const raw of existingDbClasses) {
-      checkAndAdd(raw);
-    }
+  const parsedDb = parseClassesArray(existingDbClasses);
+  for (const raw of parsedDb) {
+    checkAndAdd(raw);
   }
 
   // 2. Check classes sent by client (purchases, secret unlocks)
-  if (Array.isArray(incomingClasses)) {
-    for (const raw of incomingClasses) {
-      checkAndAdd(raw);
-    }
+  const parsedIncoming = parseClassesArray(incomingClasses);
+  for (const raw of parsedIncoming) {
+    checkAndAdd(raw);
   }
 
   // 3. Automatically grant any boss unlocks earned by ranking or max level completed
@@ -465,7 +474,7 @@ export async function GET(req: Request): Promise<Response> {
     const unlockedLevel = Math.max(1, Number(row.unlocked_level) || 1, maxCompleted + 1);
 
     // If unlocked classes or lineages changed, persist to DB
-    const prevClasses = Array.isArray(row.unlocked_classes) ? row.unlocked_classes : [];
+    const prevClasses = parseClassesArray(row.unlocked_classes);
     const prevLineages = Array.isArray(row.unlocked_lineages) ? row.unlocked_lineages : [];
     const classesDifferent =
       safeUnlocked.length !== prevClasses.length || safeUnlocked.some((c, i) => c !== prevClasses[i]);
@@ -577,7 +586,10 @@ export async function POST(req: Request): Promise<Response> {
     };
     const prevUpgradeCount = countLevels(ex.class_upgrades) + countLevels(ex.general_upgrades) + countLevels(ex.item_upgrades);
     const incomingUpgradeCount = countLevels(body.classUpgrades) + countLevels(body.generalUpgrades) + countLevels(body.itemUpgrades);
-    const boughtNewClasses = Array.isArray(body.unlockedClasses) && Array.isArray(ex.unlocked_classes) && body.unlockedClasses.length > ex.unlocked_classes.length;
+    const exClasses = parseClassesArray(ex.unlocked_classes);
+    const exClassSet = new Set(exClasses);
+    const incomingClasses = parseClassesArray(body.unlockedClasses);
+    const boughtNewClasses = incomingClasses.some((c) => !exClassSet.has(c));
 
     if (incomingUpgradeCount <= prevUpgradeCount && !boughtNewClasses) {
       finalGold = Math.max(finalGold, existingDbGold + (isNewDailyWin ? 20000 : 0));
