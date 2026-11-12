@@ -116,7 +116,7 @@ const CANDIDATE_CLASSES = [
   'mago_gelo',
   'sniper',
   'mago_eletrico',
-    'mago_vento',
+  'mago_vento',
   'cartomante',
   'ceifador',
   'invocador',
@@ -240,21 +240,21 @@ export function generateDailyDungeonConfig(targetDateKey?: string): DailyDungeon
     environment === 'forest'
       ? 'grass'
       : environment === 'swamp'
-      ? 'swamp'
-      : environment === 'cave' || environment === 'abyss'
-      ? 'dirt'
-      : 'stone';
+        ? 'swamp'
+        : environment === 'cave' || environment === 'abyss'
+          ? 'dirt'
+          : 'stone';
 
   const possibleObstacles: ObstacleType[] =
     environment === 'forest'
       ? ['tree', 'rock', 'thorns']
       : environment === 'ruins' || environment === 'citadel'
-      ? ['ruins', 'pillar', 'wall']
-      : environment === 'shrine'
-      ? ['shrine', 'pillar', 'crystal_fire']
-      : environment === 'swamp'
-      ? ['thorns', 'rock']
-      : ['rock', 'pillar'];
+        ? ['ruins', 'pillar', 'wall']
+        : environment === 'shrine'
+          ? ['shrine', 'pillar', 'crystal_fire']
+          : environment === 'swamp'
+            ? ['thorns', 'rock']
+            : ['rock', 'pillar'];
 
   // Criar grid com obstáculos esparsos
   const grid: { terrain: TerrainType; obstacle: ObstacleType }[][] = [];
@@ -301,12 +301,12 @@ export function generateDailyDungeonConfig(targetDateKey?: string): DailyDungeon
 
   const formattedDate = getFormattedDailyDate(dateKey);
 
-  // 5. Sortear 12 rodadas de 3 opções de itens para a escolha antes da batalha da Fase Diária
+  // 5. Sortear 18 rodadas de 3 opções de itens para a escolha antes da batalha da Fase Diária
   const allItems = Object.values(ITEMS);
   const itemDraftRounds: ItemDefinition[][] = [];
   const usedItemIds = new Set<string>();
 
-  for (let r = 0; r < 12; r++) {
+  for (let r = 0; r < 18; r++) {
     const roundOptions: ItemDefinition[] = [];
     const available = allItems.filter((it) => !usedItemIds.has(it.id));
     for (let c = 0; c < 3; c++) {
@@ -326,7 +326,7 @@ export function generateDailyDungeonConfig(targetDateKey?: string): DailyDungeon
     environment,
     width,
     height,
-    description: `Fase Diária de ${formattedDate}. Enfrente ${bossName} e sua comitiva com uma equipe, habilidades e 12 itens sorteados exclusivamente para o dia de hoje!`,
+    description: `Fase Diária de ${formattedDate}. Enfrente ${bossName} e sua comitiva com uma equipe, habilidades e 18 itens sorteados exclusivamente para o dia de hoje!`,
     objectives: [
       `Derrotar ${bossName}`,
       'Eliminar todos os inimigos da comitiva',

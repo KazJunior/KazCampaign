@@ -92,20 +92,18 @@ export const DailyDungeonModal: React.FC<DailyDungeonModalProps> = ({
 
         {/* Card de Recompensa & Status */}
         <div
-          className={`rounded-2xl p-4 sm:p-5 border-2 transition-all ${
-            isCompletedToday
+          className={`rounded-2xl p-4 sm:p-5 border-2 transition-all ${isCompletedToday
               ? 'bg-emerald-950/30 border-emerald-500/60'
               : 'bg-gradient-to-r from-[#D4AD65]/15 via-[#F0B44D]/10 to-amber-500/15 border-[#D4AD65]'
-          }`}
+            }`}
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4 text-center md:text-left">
               <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 shadow-lg shrink-0 ${
-                  isCompletedToday
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center border-2 shadow-lg shrink-0 ${isCompletedToday
                     ? 'bg-emerald-500/20 border-emerald-400 text-emerald-400'
                     : 'bg-[#D4AD65]/20 border-[#D4AD65] text-[#FFD700]'
-                }`}
+                  }`}
               >
                 {isCompletedToday ? <CheckCircle2 size={32} /> : <Coins size={32} />}
               </div>
@@ -165,7 +163,7 @@ export const DailyDungeonModal: React.FC<DailyDungeonModalProps> = ({
             <div className="text-xs">
               <strong className="text-white block font-bold">Tudo Aleatório</strong>
               <span className="text-[#A7B0C4] text-[11px]">
-                Heróis, habilidades, seleção de 12 itens, monstros e chefe mudam a cada 24 horas.
+                Heróis, habilidades, seleção de 18 itens, monstros e chefe mudam a cada 24 horas.
               </span>
             </div>
           </div>
@@ -242,9 +240,8 @@ export const DailyDungeonModal: React.FC<DailyDungeonModalProps> = ({
                           >
                             <div className="flex items-center gap-1.5 min-w-0">
                               <span
-                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${
-                                  isBase ? 'bg-[#FFD700]' : 'bg-[#4C8DFF]'
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${isBase ? 'bg-[#FFD700]' : 'bg-[#4C8DFF]'
+                                  }`}
                               />
                               <span className="text-[11px] font-bold text-white truncate max-w-[120px]">
                                 {sk.name}
@@ -300,18 +297,16 @@ export const DailyDungeonModal: React.FC<DailyDungeonModalProps> = ({
               return (
                 <div
                   key={idx}
-                  className={`rounded-xl p-3 border flex flex-col justify-between transition-all ${
-                    isBoss
+                  className={`rounded-xl p-3 border flex flex-col justify-between transition-all ${isBoss
                       ? 'bg-red-950/30 border-red-500/60 shadow-md shadow-red-950/40 md:col-span-1'
                       : 'bg-[#10131C] border-[#343B50]'
-                  }`}
+                    }`}
                 >
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <span
-                        className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${
-                          isBoss ? 'bg-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-400'
-                        }`}
+                        className={`text-[9px] font-black uppercase px-1.5 py-0.2 rounded ${isBoss ? 'bg-red-500/20 text-red-400' : 'bg-zinc-800 text-zinc-400'
+                          }`}
                       >
                         {isBoss ? 'Líder / Chefe' : 'Inimigo'}
                       </span>

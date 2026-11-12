@@ -1215,7 +1215,7 @@ export function App() {
         0, 0, 0, 0, 0, // bonus stats
         skillIds,
         {},
-        [], // Equipamentos inicialmente vazios; jogador equipa os 12 itens na implantação
+        [], // Equipamentos inicialmente vazios; jogador equipa os 18 itens na implantação
         progress.itemUpgrades,
         getClassCumulativeBonus(className, progress.classUpgrades?.[className] || 0),
         getGlobalHeroBonus(progress),
@@ -1253,8 +1253,16 @@ export function App() {
     setFloatingNumbers([]);
     setIsAnimatingAction(false);
     setActiveBossBanner(null);
+    setVictorySummary(null);
+    setWaterTornadoActive(false);
+    setWaterTornadoCenter(null);
+    setIsTimeStopVisualActive(false);
+    setIsTimeStopBannerActive(false);
+    setIsVoidColorDrainActive(false);
+    setIsVoidTextBannerActive(false);
+    setIsClockHandBannerActive(false);
     setCurrentView('battle');
-    setShowEquipment(true); // Abre o modal de equipamentos para o jogador distribuir os 12 itens nos heróis
+    setShowEquipment(true); // Abre o modal de equipamentos para o jogador distribuir os 18 itens nos heróis
     soundManager.playTurnStart(true);
   };
 
@@ -9676,6 +9684,7 @@ export function App() {
 
       {(phase === 'victory' || phase === 'defeat') &&
         currentLevel &&
+        !showDailyItemDraft &&
         pendingStatChoices.length === 0 &&
         pendingSkillChoices.length === 0 &&
         pendingUnlockClasses.length === 0 &&
@@ -9791,6 +9800,13 @@ export function App() {
           allTeamClasses={units.filter((u) => u.faction === 'player').map((u) => u.className)}
           onSaveSkills={handleSaveLiveTrainingSkills}
           onClose={() => setShowLiveTrainingSkillPicker(false)}
+        />
+      )}
+      {showDailyItemDraft && dailyDungeonConfig && (
+        <DailyItemDraftModal
+          draftRounds={dailyDungeonConfig.itemDraftRounds || []}
+          onConfirmDraft={handleConfirmDailyItemDraft}
+          onClose={() => setShowDailyItemDraft(false)}
         />
       )}
       </div>
