@@ -431,6 +431,16 @@ export function getAoETiles(
       break;
     }
 
+    case 'clock_hand_3x3': {
+      // Zona Relógio 3x3 em formato de ponteiro centrada no alvo
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          addTile(targetTile.x + dx, targetTile.y + dy);
+        }
+      }
+      break;
+    }
+
     case 'circle':
     default: {
       for (let dy = -aoeRadius; dy <= aoeRadius; dy++) {
@@ -460,6 +470,8 @@ export function getAoELabel(skill?: Skill | null): string {
       return 'Corte Amplo (3 Linhas x 2 Colunas)';
     case 'square_5x5':
       return 'Área Massiva 5x5';
+    case 'clock_hand_3x3':
+      return 'Zona Relógio 3x3 (Ponteiros)';
     case 'cross':
       return skill.aoeRadius > 1 ? `Cruz Grande (+${skill.aoeRadius * 2 + 1})` : 'Cruz (+)';
     case 'long_cross':

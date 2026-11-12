@@ -20,6 +20,7 @@ export interface TileData {
   antiHealPermanent?: boolean; // Área deixada pelo Corte Cruz do Cavaleiro das Trevas que impede qualquer cura até o fim da batalha
   borderFire?: boolean; // Chamas da borda do mapa invocadas pelo Cavaleiro das Trevas
   isClockHandZone?: boolean; // Zona segura dos ponteiros do relógio na batalha contra o Verme Cósmico (Fase 110)
+  clockZoneTurns?: number; // Duração restante da Zona do Relógio (Iota - Dançarina do Tempo)
 }
 
 export type UnitFaction = 'player' | 'enemy';
@@ -91,7 +92,8 @@ export type AoEType =
   | 't_shape'
   | 'x_shape'
   | 'rect_3x2'
-  | 'square_5x5';
+  | 'square_5x5'
+  | 'clock_hand_3x3';
 
 export interface AlchemistMixture {
   id: string;
@@ -175,6 +177,14 @@ export interface Skill {
   summonCreatureType?: string;
   goldBonusOnKill?: number;
   grantsExtraEggOnKill?: boolean;
+  healsWithAtk?: boolean; // Cura baseada no Ataque Físico (atk) em vez de Magia (mag)
+  reducesAllCooldownsOnKill?: number; // Reduz o cooldown de todas as habilidades em N ao abater inimigo
+  reducesAllCooldownsOnCast?: number; // Reduz o cooldown de todas as outras habilidades em N ao conjurar
+  resetsAllCooldownsOnCast?: boolean; // Reseta o cooldown de todas as outras habilidades ao conjurar
+  createsClockZoneTurns?: number; // Cria uma zona do relógio 3x3 por N turnos
+  isTimeAnchor?: boolean; // Marca posição/HP e rebobina no 2º uso ou ao expirar
+  allAlliesShieldPercentOfAtk?: number; // Concede escudo a todos os aliados baseado em % do ATK do conjurador
+  summonCloneCount?: number; // Quantidade de clones invocados em ladrilhos adjacentes
 
   level?: number; // Skill evolution level (1, 2, 3...)
 }
@@ -237,7 +247,14 @@ export interface Unit {
   corpseConsumed?: boolean;
   damageDealt: number;
   kills: number;
-  skillUsesCount?: number; // Acúmulo de habilidades usadas para liberar ultimate (Samurai do Vazio)
+  skillUsesCount?: number; // Acúmulo de habilidades usadas para liberar ultimate (Samurai do Vazio / Dançarina do Tempo)
+  timeAnchor?: {
+    x: number;
+    y: number;
+    hp: number;
+    turnsLeft: number;
+    appliedTurn: number;
+  };
   equippedItemIds?: string[];
   skinId?: string;
   skinName?: string;

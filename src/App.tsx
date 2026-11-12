@@ -118,6 +118,35 @@ function getGlobalHeroBonus(prog: PlayerProgress) {
   };
 }
 
+function findNearestFreeWalkableTile(
+  gridData: TileData[][],
+  allUnits: Unit[],
+  selfId: string,
+  targetX: number,
+  targetY: number,
+): Point {
+  const gH = gridData.length || 8;
+  const gW = gridData[0]?.length || 10;
+  const occupied = new Set(
+    allUnits.filter((u) => !u.isDead && u.id !== selfId).map((u) => `${u.x},${u.y}`)
+  );
+  if (gridData[targetY]?.[targetX]?.isWalkable && !occupied.has(`${targetX},${targetY}`)) {
+    return { x: targetX, y: targetY };
+  }
+  for (let r = 1; r <= 4; r++) {
+    for (let dy = -r; dy <= r; dy++) {
+      for (let dx = -r; dx <= r; dx++) {
+        const nx = targetX + dx;
+        const ny = targetY + dy;
+        if (nx >= 0 && nx < gW && ny >= 0 && ny < gH && gridData[ny]?.[nx]?.isWalkable && !occupied.has(`${nx},${ny}`)) {
+          return { x: nx, y: ny };
+        }
+      }
+    }
+  }
+  return { x: targetX, y: targetY };
+}
+
 function consolidateDiscoveredItems(
   existingDiscovered: string[] = [],
   activeAdventure?: ActiveAdventure | null,
@@ -678,6 +707,10 @@ export function App() {
   const timeRiftBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isClockHandBannerActive, setIsClockHandBannerActive] = useState(false);
   const clockHandBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isTimeStopVisualActive, setIsTimeStopVisualActive] = useState(false);
+  const [isTimeStopBannerActive, setIsTimeStopBannerActive] = useState(false);
+  const timeStopVisualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeStopBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -3006,6 +3039,15 @@ export function App() {
           });
         }
 
+        let updatedMoveEffects = selectedUnit.statusEffects || [];
+        if (targetTile?.clockZoneTurns && targetTile.clockZoneTurns > 0 && !unitDead) {
+          updatedMoveEffects = [
+            ...updatedMoveEffects.filter((e) => e.type !== 'buff_mov'),
+            { type: 'buff_mov', duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+          ];
+          addFloatingNumber(x, y, '⏳ Zona Relógio (+2 Mov)!', 'status', '#FBBF24');
+        }
+
         setUnits((prev) =>
           prev.map((u) =>
             u.id === selectedUnit.id
@@ -3016,6 +3058,7 @@ export function App() {
                   hasMoved: true,
                   currentHp: updatedHp,
                   isDead: unitDead,
+                  statusEffects: updatedMoveEffects,
                   centaurMovedTilesThisTurn: selectedUnit.lineageCentaurCharge ? centaurBonus : u.centaurMovedTilesThisTurn,
                 }
               : u
@@ -3214,7 +3257,7 @@ export function App() {
               hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
           );
 
-          if (affectedTargets.length > 0 || activeSkill.createsObstacle) {
+          if (affectedTargets.length > 0 || activeSkill.createsObstacle || activeSkill.createsClockZoneTurns) {
             setTargetTeleportPoint(null);
             setTargetAoEPoint({ x, y });
 
@@ -4108,14 +4151,39 @@ export function App() {
       return;
     }
 
-    // 2. Self-targeting skill (e.g. Buffs, Escudos, Pacto de Sangue, Resistência Suprema)
+    // 2. Self-targeting skill (e.g. Buffs, Escudos, Pacto de Sangue, Resistência Suprema, Âncora Delta, Dança Magna Lambda, Ultimate Zeta)
     if (skill && skill.targetType === 'self' && skill.damageType === 'healing') {
-      soundManager.playHeal();
+      const isTimeUltimate = Boolean(
+        skill.resetsAllCooldownsOnCast ||
+        skill.id === 'valsa_reflexos_zeta' ||
+        skill.id === 'oitava_bala_het'
+      );
+
+      if (isTimeUltimate) {
+        soundManager.playVictory();
+        if (timeStopVisualTimerRef.current) clearTimeout(timeStopVisualTimerRef.current);
+        if (timeStopBannerTimerRef.current) clearTimeout(timeStopBannerTimerRef.current);
+        setIsTimeStopVisualActive(true);
+        setIsTimeStopBannerActive(true);
+
+        timeStopBannerTimerRef.current = setTimeout(() => {
+          setIsTimeStopBannerActive(false);
+        }, 3800);
+        timeStopVisualTimerRef.current = setTimeout(() => {
+          setIsTimeStopVisualActive(false);
+        }, 10000);
+      } else {
+        soundManager.playHeal();
+      }
+
       if (boardRef.current) {
         await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'healing', skill.aoeRadius || 0, skill);
       }
 
       let currentUnitHp = selectedUnit.currentHp;
+      let nextCasterX = selectedUnit.x;
+      let nextCasterY = selectedUnit.y;
+      let nextTimeAnchor = selectedUnit.timeAnchor;
 
       // Special: Pacto de Sangue / hpCostPercent sacrifices HP (down to at least 1 HP)
       const hpCostPct = skill.hpCostPercent ?? (skill.id === 'pacto_de_sangue' ? 20 : 0);
@@ -4157,7 +4225,8 @@ export function App() {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, '🚫 Cura Bloqueada (Solo Amaldiçoado)!', 'status', '#A855F7');
         } else {
           isHealSkill = true;
-          let healAmt = Math.max(1, Math.round(selectedUnit.mag * skill.power));
+          const healStat = skill.healsWithAtk ? selectedUnit.atk : selectedUnit.mag;
+          let healAmt = Math.max(1, Math.round(healStat * skill.power));
           const isCurandeiro =
             (selectedUnit.className || '').toLowerCase().includes('curandeiro') ||
             (selectedUnit.avatarKey || '').toLowerCase().includes('cleric');
@@ -4178,6 +4247,57 @@ export function App() {
 
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
       let givesShield = false;
+      let isAnchorRewind = false;
+
+      // Special: Âncora do Passado: Delta (2-step mark & rewind)
+      if (skill.isTimeAnchor) {
+        if (!selectedUnit.timeAnchor) {
+          nextTimeAnchor = {
+            x: selectedUnit.x,
+            y: selectedUnit.y,
+            hp: selectedUnit.currentHp,
+            turnsLeft: 2,
+            appliedTurn: turnNumberRef.current,
+          };
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚓ Âncora do Passado Fixada!', 'status', '#F59E0B');
+          const shieldAmt = Math.max(1, Math.round(selectedUnit.atk * (skill.shieldPercentOfAtk || 0.50)));
+          const finalShield = hadExcessShield ? Math.max(1, Math.round(shieldAmt * 0.5)) : shieldAmt;
+          givesShield = true;
+          updatedEffects = [
+            ...updatedEffects.filter((e) => e.type !== 'shield'),
+            { type: 'shield', duration: 2, value: finalShield, appliedTurn: turnNumberRef.current },
+          ];
+          soundManager.playShield();
+          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${finalShield} Escudo`, 'shield', '#38BDF8');
+        } else {
+          isAnchorRewind = true;
+          const anchor = selectedUnit.timeAnchor;
+          const { x: destX, y: destY } = findNearestFreeWalkableTile(grid, units, selectedUnit.id, anchor.x, anchor.y);
+
+          if (boardRef.current && (destX !== selectedUnit.x || destY !== selectedUnit.y)) {
+            await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, destX, destY);
+          }
+          nextCasterX = destX;
+          nextCasterY = destY;
+
+          const restoredHp = Math.min(selectedUnit.maxHp, Math.max(currentUnitHp, anchor.hp));
+          const healedByAnchor = restoredHp - currentUnitHp;
+          currentUnitHp = restoredHp;
+
+          const prevEffectCount = updatedEffects.length;
+          updatedEffects = updatedEffects.filter((e) => !isDebuffStatus(e.type));
+          if (updatedEffects.length < prevEffectCount) {
+            addFloatingNumber(destX, destY, '✨ Debuffs Purificados!', 'status', '#38BDF8');
+          }
+          if (healedByAnchor > 0) {
+            isHealSkill = true;
+            addFloatingNumber(destX, destY, `+${healedByAnchor} HP (Passado)`, 'healing', '#56E59A');
+          }
+          addFloatingNumber(destX, destY, '⏪ Rebobinado!', 'status', '#FBBF24');
+          soundManager.playMagicSpell();
+          nextTimeAnchor = undefined;
+        }
+      }
 
       const handleSelfStatusEffect = (effToProcess?: StatusEffect) => {
         if (!effToProcess) return;
@@ -4197,27 +4317,27 @@ export function App() {
           }
           if (hadExcessShield) {
             eff.value = Math.max(1, Math.round(eff.value * 0.5));
-            addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
+            addFloatingNumber(nextCasterX, nextCasterY, 'Escudo excessivo (-50%)!', 'status', '#FACC15');
           }
           if (eff.reflectRatio) {
-            addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
+            addFloatingNumber(nextCasterX, nextCasterY, `+${eff.value} Escudo Espinhoso (${Math.round(eff.reflectRatio * 100)}% Reflexão)`, 'shield', '#F97316');
           } else {
-            addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Escudo`, 'shield', '#38BDF8');
+            addFloatingNumber(nextCasterX, nextCasterY, `+${eff.value} Escudo`, 'shield', '#38BDF8');
           }
         } else if (eff.type === 'buff_atk') {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value}% Dano`, 'status', '#F97316');
+          addFloatingNumber(nextCasterX, nextCasterY, `+${eff.value}% Dano`, 'status', '#F97316');
         } else if (eff.type === 'buff_mov') {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${eff.value} Movimento!`, 'status', '#38BDF8');
+          addFloatingNumber(nextCasterX, nextCasterY, `+${eff.value} Movimento!`, 'status', '#38BDF8');
         } else if (eff.type === 'invisible') {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Invisível!', 'status', '#8B5CF6');
+          addFloatingNumber(nextCasterX, nextCasterY, 'Invisível!', 'status', '#8B5CF6');
         } else if (eff.type === 'taunt') {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Provocando Inimigos!', 'status', '#EF4444');
+          addFloatingNumber(nextCasterX, nextCasterY, 'Provocando Inimigos!', 'status', '#EF4444');
           // Mostra feedback visual nos inimigos dentro do alcance de até 3 casas
           const affectedMonsters = units.filter(
             (u) =>
               u.faction === 'enemy' &&
               !u.isDead &&
-              Math.max(Math.abs(u.x - selectedUnit.x), Math.abs(u.y - selectedUnit.y)) <= 3
+              Math.max(Math.abs(u.x - nextCasterX), Math.abs(u.y - nextCasterY)) <= 3
           );
           affectedMonsters.forEach((m) => {
             addFloatingNumber(m.x, m.y, 'Provocado!', 'status', '#EF4444');
@@ -4246,29 +4366,44 @@ export function App() {
         ];
       }
 
-      const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
-      const isLambdaReset = skill?.id === 'danca_magna_lambda' || skill?.id === 'relogio_astral_cronos';
+      const nextSkillUsesCount = isTimeUltimate ? 0 : (selectedUnit.skillUsesCount || 0) + 1;
+      const reduceAmt = skill.reducesAllCooldownsOnCast || 0;
       const updatedSkills = selectedUnit.skills.map((s) => {
-        if (isLambdaReset) {
-          return s.id === skill.id
-            ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current }
-            : { ...s, currentCooldown: 0 };
+        if (s.requiredSkillUses && s.requiredSkillUses > 0) {
+          return {
+            ...s,
+            currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount),
+            lastUsedTurn: s.id === skill.id ? turnNumberRef.current : s.lastUsedTurn,
+          };
         }
-        if (s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
-          return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+        if (isTimeUltimate) {
+          return { ...s, currentCooldown: 0 };
+        }
+        if (reduceAmt > 0) {
+          if (s.id === skill.id) {
+            return { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current };
+          }
+          return { ...s, currentCooldown: Math.max(0, s.currentCooldown - reduceAmt) };
+        }
+        if (skill.isTimeAnchor && s.id === skill.id && !isAnchorRewind) {
+          // 1st cast of Âncora do Passado keeps it ready for the 2nd cast (rewind)
+          return { ...s, currentCooldown: 0 };
         }
         return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
       });
 
-      // Extra action on self (e.g. Dança Magna: Lambda da Dançarina do Tempo)
-      const grantsSelfExtraTurn = skill?.grantsExtraTurn && skill.targetType === 'self';
+      // Extra action on self (Dança Magna: Lambda / Ultimate Zeta)
+      const grantsSelfExtraTurn = Boolean(skill?.grantsExtraTurn && skill.targetType === 'self');
       if (grantsSelfExtraTurn) {
         soundManager.playUpgrade();
-        if (isLambdaReset) {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏳ Cooldowns Restaurados!', 'status', '#38BDF8');
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏱️ +1 Turno / Ação!', 'status', '#F59E0B');
+        if (isTimeUltimate) {
+          addFloatingNumber(nextCasterX, nextCasterY, '⏳ Cooldowns Resetados!', 'status', '#38BDF8');
+          addFloatingNumber(nextCasterX, nextCasterY, '⏱️ +1 Turno Extra!', 'status', '#FBBF24');
+        } else if (reduceAmt > 0) {
+          addFloatingNumber(nextCasterX, nextCasterY, `⏳ -${reduceAmt} Cooldown em Todas!`, 'status', '#38BDF8');
+          addFloatingNumber(nextCasterX, nextCasterY, '⏱️ +1 Ação Concedida!', 'status', '#F59E0B');
         } else {
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, '⏱️ Ação Extra Concedida!', 'status', '#DC2626');
+          addFloatingNumber(nextCasterX, nextCasterY, '⏱️ Ação Extra Concedida!', 'status', '#DC2626');
         }
       }
 
@@ -4277,22 +4412,107 @@ export function App() {
         const roll = Math.random();
         if (roll < 0.34) {
           updatedEffects = [...updatedEffects.filter((e) => e.type !== 'buff_atk'), { type: 'buff_atk', duration: 2, value: 25, appliedTurn: turnNumberRef.current }];
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🃏 O Louco (+25% Dano)!', 'status', '#F97316');
+          addFloatingNumber(nextCasterX, nextCasterY, '🃏 O Louco (+25% Dano)!', 'status', '#F97316');
         } else if (roll < 0.67) {
           updatedEffects = [...updatedEffects.filter((e) => e.type !== 'buff_mov'), { type: 'buff_mov', duration: 2, value: 1, appliedTurn: turnNumberRef.current }];
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🃏 O Louco (+1 Movimento)!', 'status', '#38BDF8');
+          addFloatingNumber(nextCasterX, nextCasterY, '🃏 O Louco (+1 Movimento)!', 'status', '#38BDF8');
         } else {
           updatedEffects = [...updatedEffects.filter((e) => e.type !== 'shield'), { type: 'shield', duration: 2, value: 45, appliedTurn: turnNumberRef.current }];
-          addFloatingNumber(selectedUnit.x, selectedUnit.y, '🃏 O Louco (+45 Escudo)!', 'shield', '#FACC15');
+          addFloatingNumber(nextCasterX, nextCasterY, '🃏 O Louco (+45 Escudo)!', 'shield', '#FACC15');
         }
       }
 
-
       let updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
-          ? { ...u, currentHp: currentUnitHp, hasAttacked: grantsSelfExtraTurn ? false : true, hasMoved: grantsSelfExtraTurn ? false : u.hasMoved, skills: updatedSkills, statusEffects: updatedEffects, skillUsesCount: nextSkillUsesCount }
+          ? {
+              ...u,
+              x: nextCasterX,
+              y: nextCasterY,
+              currentHp: currentUnitHp,
+              hasAttacked: grantsSelfExtraTurn ? false : true,
+              hasMoved: grantsSelfExtraTurn ? false : u.hasMoved,
+              skills: updatedSkills,
+              statusEffects: updatedEffects,
+              skillUsesCount: nextSkillUsesCount,
+              timeAnchor: nextTimeAnchor,
+            }
           : u
       );
+
+      // Ultimate Zeta: Invoca 2 clones em ladrilhos adjacentes por 2 turnos + Escudo de 70% ATK em todos aliados
+      if (isTimeUltimate) {
+        const cloneCount = skill.summonCloneCount || 2;
+        const gW = grid[0]?.length || 10;
+        const gH = grid.length || 8;
+        const occupied = new Set(updatedUnits.filter((u) => !u.isDead).map((u) => `${u.x},${u.y}`));
+        const freeTiles: Point[] = [];
+
+        for (let r = 1; r <= 3 && freeTiles.length < cloneCount; r++) {
+          for (let dy = -r; dy <= r && freeTiles.length < cloneCount; dy++) {
+            for (let dx = -r; dx <= r && freeTiles.length < cloneCount; dx++) {
+              if (dx === 0 && dy === 0) continue;
+              if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue;
+              const nx = nextCasterX + dx;
+              const ny = nextCasterY + dy;
+              if (nx >= 0 && nx < gW && ny >= 0 && ny < gH && grid[ny]?.[nx]?.isWalkable && !occupied.has(`${nx},${ny}`)) {
+                freeTiles.push({ x: nx, y: ny });
+                occupied.add(`${nx},${ny}`);
+              }
+            }
+          }
+        }
+
+        const getCloneStat = (val: number, ratio: number) => Math.max(1, Math.min(Math.max(1, val - 1), Math.round(val * ratio)));
+        const nowTs = Date.now();
+        freeTiles.forEach((pt, idx) => {
+          addFloatingNumber(pt.x, pt.y, '⏳ Versão Paralela Manifestada!', 'status', '#DC2626');
+          updatedUnits.push({
+            id: `summon_dancarina_${nowTs}_${idx}`,
+            name: `Versão Paralela ${idx + 1}`,
+            className: 'Versão Paralela',
+            faction: 'player',
+            isSummoned: true,
+            summonTurnsLeft: 2,
+            summonedByUnitId: selectedUnit.id,
+            summonedBySkillId: skill.id,
+            level: selectedUnit.level,
+            xp: 0,
+            maxXp: 100,
+            maxHp: getCloneStat(selectedUnit.maxHp, 0.5),
+            currentHp: getCloneStat(selectedUnit.maxHp, 0.5),
+            atk: getCloneStat(selectedUnit.atk, 0.8),
+            mag: getCloneStat(selectedUnit.mag, 0.8),
+            def: getCloneStat(selectedUnit.def, 0.5),
+            res: getCloneStat(selectedUnit.res, 0.5),
+            mov: selectedUnit.mov,
+            range: selectedUnit.range,
+            x: pt.x,
+            y: pt.y,
+            hasMoved: false,
+            hasAttacked: false,
+            isDead: false,
+            color: '#DC2626',
+            avatarKey: 'pistoleiro_tempo',
+            skills: [JSON.parse(JSON.stringify(SKILLS.estocada_clone_eco))],
+            learnedSkillIds: ['estocada_clone_eco'],
+            statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
+            damageDealt: 0,
+            kills: 0,
+          });
+        });
+
+        const globalShieldVal = Math.max(1, Math.round(selectedUnit.atk * (skill.allAlliesShieldPercentOfAtk || 0.70)));
+        soundManager.playShield();
+        updatedUnits = updatedUnits.map((u) => {
+          if (u.faction === selectedUnit.faction && !u.isDead) {
+            addFloatingNumber(u.x, u.y, `+${globalShieldVal} Escudo Temporal`, 'shield', '#38BDF8');
+            const shEff: StatusEffect = { type: 'shield', duration: 2, value: globalShieldVal, appliedTurn: turnNumberRef.current };
+            const curEffs = (u.statusEffects || []).filter((e) => e.type !== 'shield');
+            return { ...u, statusEffects: [...curEffs, shEff] };
+          }
+          return u;
+        });
+      }
 
       // Suporte do Invocador afeta APENAS invocações aliadas
       if (skill.id === 'furia_da_matilha') {
@@ -4319,26 +4539,28 @@ export function App() {
         });
       }
 
-      // Espelhar habilidades em si mesma na Versão Paralela (Zeta)
-      const parallelClone = updatedUnits.find(
-        (u) =>
-          !u.isDead &&
-          u.isSummoned &&
-          u.summonedByUnitId === selectedUnit.id &&
-          (u.className === 'Versão Paralela' || u.className === 'Eco Temporal' || u.summonedBySkillId === 'valsa_reflexos_zeta' || u.summonedBySkillId === 'oitava_bala_het')
-      );
-      if (parallelClone) {
-        addFloatingNumber(parallelClone.x, parallelClone.y, '⏳ Ação Espelhada!', 'status', '#DC2626');
-        let cloneEffects = [...(parallelClone.statusEffects || [])];
-        if (skill?.statusEffect) {
-          const cloneEff = { ...skill.statusEffect, appliedTurn: turnNumberRef.current };
-          cloneEffects = [...cloneEffects.filter((e) => e.type !== cloneEff.type), cloneEff];
+      // Espelhar habilidades em si mesma nas Versões Paralelas (Zeta)
+      if (!isTimeUltimate) {
+        const parallelClones = updatedUnits.filter(
+          (u) =>
+            !u.isDead &&
+            u.isSummoned &&
+            u.summonedByUnitId === selectedUnit.id &&
+            (u.className === 'Versão Paralela' || u.className === 'Eco Temporal' || u.summonedBySkillId === 'valsa_reflexos_zeta' || u.summonedBySkillId === 'oitava_bala_het')
+        );
+        for (const parallelClone of parallelClones) {
+          addFloatingNumber(parallelClone.x, parallelClone.y, '⏳ Ação Espelhada!', 'status', '#DC2626');
+          let cloneEffects = [...(parallelClone.statusEffects || [])];
+          if (skill?.statusEffect) {
+            const cloneEff = { ...skill.statusEffect, appliedTurn: turnNumberRef.current };
+            cloneEffects = [...cloneEffects.filter((e) => e.type !== cloneEff.type), cloneEff];
+          }
+          if (skill?.casterStatusEffect) {
+            const cloneEff = { ...skill.casterStatusEffect, appliedTurn: turnNumberRef.current };
+            cloneEffects = [...cloneEffects.filter((e) => e.type !== cloneEff.type), cloneEff];
+          }
+          updatedUnits = updatedUnits.map((u) => (u.id === parallelClone.id ? { ...u, statusEffects: cloneEffects } : u));
         }
-        if (skill?.casterStatusEffect) {
-          const cloneEff = { ...skill.casterStatusEffect, appliedTurn: turnNumberRef.current };
-          cloneEffects = [...cloneEffects.filter((e) => e.type !== cloneEff.type), cloneEff];
-        }
-        updatedUnits = updatedUnits.map((u) => (u.id === parallelClone.id ? { ...u, statusEffects: cloneEffects } : u));
       }
 
       setUnits(updatedUnits);
@@ -4370,6 +4592,108 @@ export function App() {
         });
       }
 
+      setTargetUnitId(null);
+      setSelectedAction('none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      if (grantsSelfExtraTurn) {
+        setSelectedUnitId(selectedUnit.id);
+      }
+      return;
+    }
+
+    // 2.5. Iota: A Zona Relógio (creates 3x3 clock-hand zone on target ground)
+    if (skill && skill.createsClockZoneTurns && skill.createsClockZoneTurns > 0) {
+      const zoneCenter = targetAoEPoint || { x: target.x, y: target.y };
+      soundManager.playMagicSpell();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'magical', skill.aoeRadius || 1, skill, zoneCenter);
+      }
+
+      const zoneTiles = getAoETiles(
+        zoneCenter,
+        skill.aoeRadius || 1,
+        grid[0].length,
+        grid.length,
+        skill.aoeType || 'clock_hand_3x3',
+        { x: selectedUnit.x, y: selectedUnit.y }
+      );
+      const zoneKeySet = new Set(zoneTiles.map((pt) => `${pt.x},${pt.y}`));
+
+      setGrid((prevGrid) => {
+        const nextGrid = prevGrid.map((row, ry) =>
+          row.map((cell, rx) =>
+            zoneKeySet.has(`${rx},${ry}`)
+              ? { ...cell, clockZoneTurns: skill.createsClockZoneTurns }
+              : cell
+          )
+        );
+        gridRef.current = nextGrid;
+        return nextGrid;
+      });
+
+      addFloatingNumber(zoneCenter.x, zoneCenter.y, `⏳ Zona Relógio (${skill.createsClockZoneTurns}T)!`, 'status', '#FBBF24');
+
+      const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedUnits = units.map((u) => {
+        let nextU = u;
+        if (u.id === selectedUnit.id) {
+          const updatedSkills = u.skills.map((s) => {
+            if (s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+              return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+            }
+            return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+          });
+          nextU = { ...nextU, hasAttacked: true, skills: updatedSkills, skillUsesCount: nextSkillUsesCount };
+        }
+
+        if (!u.isDead && zoneKeySet.has(`${u.x},${u.y}`)) {
+          if (u.faction === 'player') {
+            const curEffs = (nextU.statusEffects || []).filter((e) => e.type !== 'buff_mov');
+            nextU = {
+              ...nextU,
+              statusEffects: [...curEffs, { type: 'buff_mov', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
+            };
+            addFloatingNumber(u.x, u.y, '+2 Movimento (Relógio)!', 'status', '#38BDF8');
+          } else {
+            const isImmune = (nextU.statusEffects || []).some((e) => e.type === 'immune' && e.duration > 0);
+            if (!isImmune) {
+              const curEffs = (nextU.statusEffects || []).filter((e) => e.type !== 'slow' && e.type !== 'debuff_def');
+              nextU = {
+                ...nextU,
+                statusEffects: [
+                  ...curEffs,
+                  { type: 'slow', duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+                  { type: 'debuff_def', duration: 2, value: 20, appliedTurn: turnNumberRef.current },
+                ],
+              };
+              addFloatingNumber(u.x, u.y, '-2 Mov & -20% Def (Relógio)!', 'status', '#EF4444');
+            }
+          }
+        }
+        return nextU;
+      });
+
+      setUnits(updatedUnits);
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => {
+          let updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          const prevStats = updated.lineageQuestStats || {};
+          updated = {
+            ...updated,
+            lineageQuestStats: {
+              ...prevStats,
+              skillsCast: (prevStats.skillsCast || 0) + 1,
+            },
+          };
+          progressRef.current = updated;
+          savePlayerProgress(updated);
+          return updated;
+        });
+      }
+
+      setTargetTeleportPoint(null);
+      setTargetAoEPoint(null);
       setTargetUnitId(null);
       setSelectedAction('none');
       setActiveSkill(null);
@@ -4827,6 +5151,12 @@ export function App() {
             addFloatingNumber(t.x, t.y, 'Invisível!', 'status', '#8B5CF6');
           } else if (eff.type === 'taunt') {
             addFloatingNumber(t.x, t.y, 'Provocação!', 'status', '#EF4444');
+          } else if (eff.type === 'immune') {
+            addFloatingNumber(t.x, t.y, '🛡️ Invulnerável!', 'status', '#FBBF24');
+          } else if (eff.type === 'stun') {
+            allyHasMoved = true;
+            allyHasAttacked = true;
+            addFloatingNumber(t.x, t.y, '⏳ Preso no Tempo!', 'status', '#38BDF8');
           }
           currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), eff];
         };
@@ -5206,43 +5536,45 @@ export function App() {
       );
     }
 
-    // Parallel Version Action Mirroring (Valsa dos Reflexos: Zeta)
-    const parallelClone = updatedUnits.find(
+    // Parallel Version Action Mirroring (Zeta: O Fim do Tempo)
+    const parallelClones = updatedUnits.filter(
       (u) =>
         !u.isDead &&
         u.isSummoned &&
         u.summonedByUnitId === selectedUnit.id &&
         (u.className === 'Versão Paralela' || u.className === 'Eco Temporal' || u.summonedBySkillId === 'valsa_reflexos_zeta' || u.summonedBySkillId === 'oitava_bala_het')
     );
-    if (parallelClone && targetsToHit.length > 0) {
-      addFloatingNumber(parallelClone.x, parallelClone.y, '⏳ Ação Espelhada!', 'status', '#DC2626');
-      for (const t of targetsToHit) {
-        if (t.faction === 'enemy') {
-          const currentT = updatedUnits.find((u) => u.id === t.id);
-          if (currentT && !currentT.isDead && currentT.currentHp > 0) {
-            if (boardRef.current) {
-              boardRef.current.playAttackAnimation(parallelClone.id, currentT.id, skill?.damageType || 'physical', 0, skill);
-            }
-            const cloneDmgResult = rollActualDamage(parallelClone, currentT, skill);
-            const mirrorDmg = Math.max(1, cloneDmgResult.finalDamage);
-            const nextHp = Math.max(0, currentT.currentHp - mirrorDmg);
-            currentT.currentHp = nextHp;
-            parallelClone.damageDealt = (parallelClone.damageDealt || 0) + mirrorDmg;
-            addFloatingNumber(currentT.x, currentT.y, `-${mirrorDmg} (Eco Paralelo)`, cloneDmgResult.damageType, '#DC2626');
-            if (nextHp === 0) {
-              currentT.isDead = true;
-              totalKills++;
-              soundManager.playDeath();
+    if (parallelClones.length > 0 && targetsToHit.length > 0) {
+      for (const parallelClone of parallelClones) {
+        addFloatingNumber(parallelClone.x, parallelClone.y, '⏳ Ação Espelhada!', 'status', '#DC2626');
+        for (const t of targetsToHit) {
+          if (t.faction === 'enemy') {
+            const currentT = updatedUnits.find((u) => u.id === t.id);
+            if (currentT && !currentT.isDead && currentT.currentHp > 0) {
               if (boardRef.current) {
-                boardRef.current.playDeathAnimation(currentT.id);
+                boardRef.current.playAttackAnimation(parallelClone.id, currentT.id, skill?.damageType || 'physical', 0, skill);
+              }
+              const cloneDmgResult = rollActualDamage(parallelClone, currentT, skill);
+              const mirrorDmg = Math.max(1, cloneDmgResult.finalDamage);
+              const nextHp = Math.max(0, currentT.currentHp - mirrorDmg);
+              currentT.currentHp = nextHp;
+              parallelClone.damageDealt = (parallelClone.damageDealt || 0) + mirrorDmg;
+              addFloatingNumber(currentT.x, currentT.y, `-${mirrorDmg} (Eco Paralelo)`, cloneDmgResult.damageType, '#DC2626');
+              if (nextHp === 0) {
+                currentT.isDead = true;
+                totalKills++;
+                soundManager.playDeath();
+                if (boardRef.current) {
+                  boardRef.current.playDeathAnimation(currentT.id);
+                }
               }
             }
-          }
-        } else if (t.faction === 'player' && t.id !== selectedUnit.id && t.id !== parallelClone.id) {
-          const currentT = updatedUnits.find((u) => u.id === t.id);
-          if (currentT && !currentT.isDead) {
-            if (skill?.statusEffect?.type === 'buff_mov') {
-              addFloatingNumber(currentT.x, currentT.y, '+2 Movimento (Espelho)!', 'status', '#38BDF8');
+          } else if (t.faction === 'player' && t.id !== selectedUnit.id && t.id !== parallelClone.id) {
+            const currentT = updatedUnits.find((u) => u.id === t.id);
+            if (currentT && !currentT.isDead) {
+              if (skill?.statusEffect?.type === 'buff_mov') {
+                addFloatingNumber(currentT.x, currentT.y, '+2 Movimento (Espelho)!', 'status', '#38BDF8');
+              }
             }
           }
         }
@@ -5541,6 +5873,12 @@ export function App() {
           addFloatingNumber(finalAttackerX, finalAttackerY, '🦊 Astúcia da Kitsune (Cooldown Restaurado)!', 'status', '#F472B6');
         }
 
+        const reduceAllCooldownsBy =
+          totalKills > 0 && skill?.reducesAllCooldownsOnKill ? skill.reducesAllCooldownsOnKill : 0;
+        if (reduceAllCooldownsBy > 0) {
+          addFloatingNumber(finalAttackerX, finalAttackerY, `⏳ Abate! -${reduceAllCooldownsBy} Cooldown em Todas!`, 'status', '#FBBF24');
+        }
+
         const isLayingRubras = skill?.id === 'lagrimas_rubras' || Boolean(skill?.requiredSkillUses && skill.requiredSkillUses > 0);
         const nextSkillUsesCount = isLayingRubras
           ? 0
@@ -5561,7 +5899,17 @@ export function App() {
             if (isKitsuneEligible) {
               return { ...s, currentCooldown: 0, lastUsedTurn: turnNumberRef.current };
             }
-            return { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current };
+            return {
+              ...s,
+              currentCooldown: Math.max(0, s.cooldownMax - reduceAllCooldownsBy),
+              lastUsedTurn: turnNumberRef.current,
+            };
+          }
+          if (reduceAllCooldownsBy > 0) {
+            return {
+              ...s,
+              currentCooldown: Math.max(0, s.currentCooldown - reduceAllCooldownsBy),
+            };
           }
           return s;
         });
@@ -5717,9 +6065,11 @@ export function App() {
       if (u.faction === 'enemy' && !u.isDead) {
         let currentHp = u.currentHp;
         let isDead: boolean = Boolean(u.isDead);
+        let nextEffects = u.statusEffects || [];
+        let effectsChanged = false;
 
         // Burn tick (Queimadura) - 2% da vida máxima
-        const burn = u.statusEffects?.find((e) => e.type === 'burn');
+        const burn = nextEffects.find((e) => e.type === 'burn');
         if (burn && !isDead) {
           anyMonsterDamagedByDoT = true;
           const bDmg = Math.max(1, Math.round(u.maxHp * ((burn.value || 2) / 100)));
@@ -5729,7 +6079,7 @@ export function App() {
         }
 
         // Poison tick (Veneno) - 2% da vida máxima
-        const poison = u.statusEffects?.find((e) => e.type === 'poison');
+        const poison = nextEffects.find((e) => e.type === 'poison');
         if (poison && !isDead) {
           anyMonsterDamagedByDoT = true;
           const pDmg = Math.max(1, Math.round(u.maxHp * ((poison.value || 2) / 100)));
@@ -5738,12 +6088,27 @@ export function App() {
           addFloatingNumber(u.x, u.y, `-${pDmg} Veneno (2%)`, 'status', '#A855F7');
         }
 
+        // Zona Relógio (Iota): inimigos dentro da área sofrem -2 Mov e -20% Def
+        const standingClockTile = gridRef.current?.[u.y]?.[u.x];
+        if (!isDead && standingClockTile?.clockZoneTurns && standingClockTile.clockZoneTurns > 0) {
+          const isImmune = nextEffects.some((e) => e.type === 'immune' && e.duration > 0);
+          if (!isImmune) {
+            nextEffects = [
+              ...nextEffects.filter((e) => e.type !== 'slow' && e.type !== 'debuff_def'),
+              { type: 'slow', duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+              { type: 'debuff_def', duration: 2, value: 20, appliedTurn: turnNumberRef.current },
+            ];
+            effectsChanged = true;
+            addFloatingNumber(u.x, u.y, '⏳ -2 Mov & -20% Def (Relógio)!', 'status', '#F59E0B');
+          }
+        }
+
         if (isDead && !u.isDead && u.monsterTypeId) {
           dotKilledMonsterTypes.push(u.monsterTypeId);
         }
 
-        if (isDead !== u.isDead || currentHp !== u.currentHp) {
-          return { ...u, currentHp, isDead };
+        if (isDead !== u.isDead || currentHp !== u.currentHp || effectsChanged) {
+          return { ...u, currentHp, isDead, statusEffects: nextEffects };
         }
       }
       return u;
@@ -7490,6 +7855,11 @@ export function App() {
             const newTurns = cell.mistTurns - 1;
             updatedCell.mistTurns = newTurns > 0 ? newTurns : undefined;
           }
+          if (cell.clockZoneTurns && cell.clockZoneTurns > 0) {
+            changed = true;
+            const newTurns = cell.clockZoneTurns - 1;
+            updatedCell.clockZoneTurns = newTurns > 0 ? newTurns : undefined;
+          }
           return updatedCell;
         })
       );
@@ -7562,6 +7932,19 @@ export function App() {
                     appliedTurn: turnNumberRef.current,
                   });
                   addFloatingNumber(unitX, unitY, '🔇 Silenciado (Névoa)!', 'status', '#A855F7');
+                }
+              }
+              // Zona Relógio (Iota): Aliados que começarem o turno na zona recebem +2 Movimento
+              if (standingTile && standingTile.clockZoneTurns && standingTile.clockZoneTurns > 0) {
+                const hasMovBuff = updatedEffects.some((e) => e.type === 'buff_mov' && e.duration > 0 && (e.value || 0) >= 2);
+                if (!hasMovBuff) {
+                  updatedEffects.push({
+                    type: 'buff_mov',
+                    duration: 1,
+                    value: 2,
+                    appliedTurn: turnNumberRef.current,
+                  });
+                  addFloatingNumber(unitX, unitY, '⏳ +2 Mov (Zona Relógio)!', 'status', '#FBBF24');
                 }
               }
             }
@@ -7877,8 +8260,10 @@ export function App() {
             .map((e) => {
               if (e.type === 'summon_lifetime') return e;
               if (e.type === 'taunt') return e;
-              if (e.type === 'stun') {
-                if (e.appliedTurn === currentTurn) return e;
+              if (e.type === 'stun' || e.type === 'immune') {
+                if (e.appliedTurn === undefined || e.appliedTurn === currentTurn) {
+                  return { ...e, appliedTurn: currentTurn };
+                }
                 return { ...e, duration: e.duration - 1 };
               }
               if (e.type === 'invisible') {
@@ -7914,12 +8299,68 @@ export function App() {
             addFloatingNumber(u.x, u.y, `+${u.lineageStandStillDamageBonusPercent}% Dano (Foco Élfico)`, 'status', '#10B981');
           }
 
+          // Âncora do Passado: Delta — conta regressiva de 2 turnos e rebobina automaticamente ao expirar
+          let nextX = u.x;
+          let nextY = u.y;
+          let nextHp = u.currentHp;
+          let finalEffects = updatedEffects;
+          let nextTimeAnchor = u.timeAnchor;
+          let didAutoRewind = false;
+
+          if (u.timeAnchor) {
+            if (u.timeAnchor.appliedTurn === currentTurn) {
+              nextTimeAnchor = u.timeAnchor;
+            } else {
+              const remainingTurns = u.timeAnchor.turnsLeft - 1;
+              if (remainingTurns > 0) {
+                nextTimeAnchor = { ...u.timeAnchor, turnsLeft: remainingTurns };
+              } else {
+                const dest = findNearestFreeWalkableTile(
+                  gridRef.current || [],
+                  processedSummons,
+                  u.id,
+                  u.timeAnchor.x,
+                  u.timeAnchor.y
+                );
+                if (boardRef.current && (dest.x !== u.x || dest.y !== u.y)) {
+                  boardRef.current.playMoveAnimation(u.id, u.x, u.y, dest.x, dest.y);
+                }
+                nextX = dest.x;
+                nextY = dest.y;
+                nextHp = Math.min(u.maxHp, Math.max(u.currentHp, u.timeAnchor.hp));
+                const healedByAnchor = nextHp - u.currentHp;
+                finalEffects = updatedEffects.filter((e) => !isDebuffStatus(e.type));
+                if (finalEffects.length < updatedEffects.length) {
+                  addFloatingNumber(dest.x, dest.y, '✨ Debuffs Purificados!', 'status', '#38BDF8');
+                }
+                if (healedByAnchor > 0) {
+                  addFloatingNumber(dest.x, dest.y, `+${healedByAnchor} HP (Passado)`, 'healing', '#56E59A');
+                }
+                addFloatingNumber(dest.x, dest.y, '⏪ Âncora do Passado Rebobinada!', 'status', '#FBBF24');
+                soundManager.playMagicSpell();
+                nextTimeAnchor = undefined;
+                didAutoRewind = true;
+              }
+            }
+          }
+
           return {
             ...u,
+            x: nextX,
+            y: nextY,
+            currentHp: nextHp,
+            timeAnchor: nextTimeAnchor,
             centaurMovedTilesThisTurn: 0,
-            statusEffects: updatedEffects,
+            statusEffects: finalEffects,
             skills: u.skills.map((s) => {
               if (s.requiredSkillUses && s.requiredSkillUses > 0) return s;
+              if (didAutoRewind && (s.id === 'pirueta_reversa_delta' || s.id === 'quarta_bala_dalet')) {
+                return {
+                  ...s,
+                  currentCooldown: s.cooldownMax,
+                  lastUsedTurn: currentTurn,
+                };
+              }
               if (s.lastUsedTurn === currentTurn) return s;
 
               // O cooldown de invocações só começa a contar após a criatura morrer
@@ -8908,7 +9349,11 @@ export function App() {
     <div className="h-screen w-screen bg-[#10131C] text-[#F3F4F8] flex flex-col overflow-hidden font-sans select-none relative">
       <div
         className={`h-full w-full flex flex-col overflow-hidden transition-all ${
-          isVoidColorDrainActive ? 'grayscale contrast-125 brightness-90 duration-75' : 'duration-500'
+          isVoidColorDrainActive
+            ? 'grayscale contrast-125 brightness-90 duration-75'
+            : isTimeStopVisualActive
+            ? 'sepia-[.35] saturate-150 contrast-110 brightness-95 duration-700'
+            : 'duration-500'
         }`}
       >
       <TopBar
@@ -9363,6 +9808,67 @@ export function App() {
               O MUNDO PERDE AS CORES...
             </span>
             <div className="h-1 w-64 sm:w-96 rounded-full bg-gradient-to-r from-transparent via-[#A855F7] to-transparent shadow-[0_0_20px_#A855F7]" />
+          </div>
+        </div>
+      )}
+
+      {isTimeStopBannerActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center animate-fade-in transition-opacity bg-black/35 backdrop-blur-[1.5px]">
+          <div className="relative flex flex-col items-center gap-5">
+            {/* Relógio Astral Animado na Tela */}
+            <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-[#FBBF24]/80 shadow-[0_0_50px_rgba(245,158,11,0.75)] animate-[spin_10s_linear_infinite]" />
+              <div className="absolute inset-2 rounded-full border-2 border-dashed border-[#EF4444]/80 animate-[spin_6s_linear_infinite_reverse]" />
+              <svg viewBox="0 0 120 120" className="w-32 h-32 sm:w-40 sm:h-40 drop-shadow-[0_0_18px_rgba(239,68,68,0.85)]">
+                <circle cx="60" cy="60" r="52" fill="rgba(16,19,28,0.85)" stroke="#FBBF24" strokeWidth="2.5" />
+                <circle cx="60" cy="60" r="44" fill="none" stroke="rgba(220,38,38,0.55)" strokeWidth="1.2" strokeDasharray="3 4" />
+                {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((deg) => (
+                  <line
+                    key={deg}
+                    x1="60"
+                    y1="11"
+                    x2="60"
+                    y2="17"
+                    stroke="#FDE68A"
+                    strokeWidth={deg % 90 === 0 ? '3' : '1.5'}
+                    transform={`rotate(${deg} 60 60)`}
+                  />
+                ))}
+                {/* Ponteiro das Horas (Preto/Dourado) */}
+                <line
+                  x1="60"
+                  y1="60"
+                  x2="60"
+                  y2="30"
+                  stroke="#FBBF24"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  className="origin-[60px_60px] animate-[spin_8s_linear_infinite]"
+                />
+                {/* Ponteiro dos Minutos (Vermelho Carmesim) */}
+                <line
+                  x1="60"
+                  y1="60"
+                  x2="60"
+                  y2="20"
+                  stroke="#EF4444"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  className="origin-[60px_60px] animate-[spin_3s_linear_infinite]"
+                />
+                <circle cx="60" cy="60" r="4.5" fill="#FBBF24" stroke="#DC2626" strokeWidth="1.5" />
+              </svg>
+            </div>
+            <span
+              className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-[0.14em] text-[#FDE68A] select-none"
+              style={{
+                textShadow:
+                  '0 0 20px rgba(245, 158, 11, 0.95), 0 0 45px rgba(220, 38, 38, 0.85), 0 0 80px rgba(153, 27, 27, 0.9), 0 4px 12px rgba(0, 0, 0, 0.95)',
+              }}
+            >
+              O TEMPO SE CURVA AO MEU COMPASSO...
+            </span>
+            <div className="h-1 w-72 sm:w-[28rem] rounded-full bg-gradient-to-r from-transparent via-[#EF4444] to-transparent shadow-[0_0_20px_#EF4444]" />
           </div>
         </div>
       )}

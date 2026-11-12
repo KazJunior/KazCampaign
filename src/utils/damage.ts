@@ -54,6 +54,8 @@ export function calculateBaseDamage(
       if (skill.id === 'resistencia_suprema') {
         const ratio = skill.power ? Math.min(1.0, power) : 0.5;
         healAmount = Math.max(1, Math.round(attacker.maxHp * ratio));
+      } else if (skill.healsWithAtk) {
+        healAmount = Math.round(attacker.atk * power);
       } else {
         healAmount = Math.round(attacker.mag * power);
       }

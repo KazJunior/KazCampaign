@@ -214,12 +214,20 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isStunImmuneConsecutive || isImmune) && (
+        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
             </div>
             <div className="flex flex-wrap gap-1.5">
+              {selectedUnit.timeAnchor && (
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F59E0B]/20 border border-[#F59E0B]/40 text-[#FCD34D] flex items-center gap-1"
+                  title="Âncora do Passado: Rebobina para a posição e HP salvos"
+                >
+                  ⚓ Âncora ({selectedUnit.timeAnchor.x},{selectedUnit.timeAnchor.y} | {selectedUnit.timeAnchor.hp} HP | {selectedUnit.timeAnchor.turnsLeft}T)
+                </span>
+              )}
               {isImmune && (
                 <span
                   className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#C084FC] flex items-center gap-1"

@@ -536,6 +536,44 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
           clockRingMesh.name = 'pulseRing';
           group.add(clockRingMesh);
         }
+        // Zona Relógio (Iota - Dançarina do Tempo)
+        if (tile.clockZoneTurns && tile.clockZoneTurns > 0) {
+          addTileHighlight(x, y, 0x991b1b, 0.50, 0xfbbf24, true, 0.052);
+          const dialGeo = new THREE.RingGeometry(0.24, 0.42, 24);
+          dialGeo.rotateX(-Math.PI / 2);
+          const dialMat = new THREE.MeshBasicMaterial({
+            color: 0xfbbf24,
+            transparent: true,
+            opacity: 0.72,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          const dialMesh = new THREE.Mesh(dialGeo, dialMat);
+          dialMesh.position.set(x + 0.5, 0.054, y + 0.5);
+          dialMesh.name = 'pulseRing';
+          group.add(dialMesh);
+
+          const handGeo = new THREE.PlaneGeometry(0.08, 0.68);
+          handGeo.rotateX(-Math.PI / 2);
+          const handMat = new THREE.MeshBasicMaterial({
+            color: 0xdc2626,
+            transparent: true,
+            opacity: 0.78,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+          });
+          const handMesh1 = new THREE.Mesh(handGeo, handMat);
+          handMesh1.position.set(x + 0.5, 0.055, y + 0.5);
+          handMesh1.rotation.y = Math.PI / 6;
+          handMesh1.name = 'pulseRing';
+          group.add(handMesh1);
+
+          const handMesh2 = new THREE.Mesh(handGeo, handMat);
+          handMesh2.position.set(x + 0.5, 0.055, y + 0.5);
+          handMesh2.rotation.y = -Math.PI / 3;
+          handMesh2.name = 'pulseRing';
+          group.add(handMesh2);
+        }
       }
     }
 

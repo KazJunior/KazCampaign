@@ -56,17 +56,16 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           Prévia de {preview.skill ? preview.skill.name : isHeal ? 'Cura' : isMagic ? 'Ataque Mágico' : 'Ataque Físico'}
         </span>
         <span
-          className={`text-[11px] px-2 py-0.5 rounded border font-bold ${
-            isTeleport
+          className={`text-[11px] px-2 py-0.5 rounded border font-bold ${isTeleport
               ? 'bg-[#8B5CF6]/15 text-[#A78BFA] border-[#8B5CF6]/30'
               : isSupportOnly
-              ? 'bg-[#38BDF8]/15 text-[#38BDF8] border-[#38BDF8]/30'
-              : isHeal
-              ? 'bg-[#56E59A]/15 text-[#56E59A] border-[#56E59A]/30'
-              : isMagic
-              ? 'bg-[#B58AFF]/15 text-[#B58AFF] border-[#B58AFF]/30'
-              : 'bg-[#FF5252]/15 text-[#FF5252] border-[#FF5252]/30'
-          }`}
+                ? 'bg-[#38BDF8]/15 text-[#38BDF8] border-[#38BDF8]/30'
+                : isHeal
+                  ? 'bg-[#56E59A]/15 text-[#56E59A] border-[#56E59A]/30'
+                  : isMagic
+                    ? 'bg-[#B58AFF]/15 text-[#B58AFF] border-[#B58AFF]/30'
+                    : 'bg-[#FF5252]/15 text-[#FF5252] border-[#FF5252]/30'
+            }`}
         >
           {isSummon ? 'INVOCAÇÃO' : isTeleport ? 'TELEPORTE' : isSupportOnly ? 'SUPORTE' : preview.damageType.toUpperCase()}
         </span>
@@ -86,13 +85,12 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
             {preview.isGroundTarget ? 'Local da Mira' : 'Alvo'}
           </div>
           <div
-            className={`font-bold text-sm truncate ${
-              preview.isGroundTarget
+            className={`font-bold text-sm truncate ${preview.isGroundTarget
                 ? 'text-[#F59E0B]'
                 : preview.target.faction === 'player'
-                ? 'text-[#4C8DFF]'
-                : 'text-[#E65353]'
-            }`}
+                  ? 'text-[#4C8DFF]'
+                  : 'text-[#E65353]'
+              }`}
           >
             {preview.isGroundTarget
               ? `🎯 Área (${preview.groundTargetPoint?.x ?? 0}, ${preview.groundTargetPoint?.y ?? 0})`
@@ -150,6 +148,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
                 return `🛡️ +${finalVal} Escudo ${preview.skill.shieldPercentOfMaxHp ? `(${Math.round(preview.skill.shieldPercentOfMaxHp * 100)}% Vida) ` : ''}${preview.skill.statusEffect.reflectRatio ? `(Espinhos ${Math.round(preview.skill.statusEffect.reflectRatio * 100)}%) ` : ''}${targetHasExcessShield ? '(-50% Excesso)' : ''} (${preview.skill.statusEffect.duration}T)`;
               })()}
               {preview.skill.statusEffect.type === 'invisible' && `👁️ Invisibilidade (${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'immune' && `🛡️ Invulnerável a Dano e Efeitos (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'stun' && (
                 isBossStunImmune ? (
@@ -213,7 +212,53 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.secondaryStatusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.secondaryStatusEffect.value || 1} Mov, ${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.secondaryStatusEffect.value}% (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'electrified' && `⚡ Eletrificado (1% Vida Máx por casa movida, ${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'stun' && (
+                preview.skill.targetType === 'ally'
+                  ? `⏳ Preso no Tempo / Incapaz de Agir (${preview.skill.secondaryStatusEffect.duration}T)`
+                  : `⚡ Atordoamento (${preview.skill.secondaryStatusEffect.duration}T)`
+              )}
             </span>
+          </div>
+        )}
+
+        {preview.skill?.isTimeAnchor && (
+          <div className="flex items-center justify-between text-xs bg-[#451A03]/40 p-2.5 rounded-lg border border-[#F59E0B]/40">
+            <span className="text-[#FDE68A] font-semibold">Âncora do Passado:</span>
+            <span className="font-bold text-[#FBBF24]">
+              {preview.attacker.timeAnchor
+                ? `⏪ Rebobina para (${preview.attacker.timeAnchor.x}, ${preview.attacker.timeAnchor.y}), restaura ${preview.attacker.timeAnchor.hp} HP e purifica debuffs`
+                : `⚓ Marca posição/HP atuais por 2T e ganha +${Math.max(1, Math.round(preview.attacker.atk * 0.5))} Escudo`}
+            </span>
+          </div>
+        )}
+
+        {preview.skill?.createsClockZoneTurns && preview.skill.createsClockZoneTurns > 0 && (
+          <div className="flex items-center justify-between text-xs bg-[#450A0A]/40 p-2.5 rounded-lg border border-[#F59E0B]/40">
+            <span className="text-[#FDE68A] font-semibold">Zona do Relógio ({preview.skill.createsClockZoneTurns}T):</span>
+            <span className="font-bold text-[#FBBF24]">
+              ⏳ Aliados +2 Mov | Inimigos -2 Mov & -20% Def
+            </span>
+          </div>
+        )}
+
+        {preview.skill?.reducesAllCooldownsOnKill && preview.skill.reducesAllCooldownsOnKill > 0 && (
+          <div className="flex items-center justify-between text-xs bg-[#1E1B4B]/50 p-2.5 rounded-lg border border-[#818CF8]/40">
+            <span className="text-[#C7D2FE] font-semibold">Fluxo de Abate:</span>
+            <span className="font-bold text-[#A5B4FC]">⏳ Abater reduz todos os Cooldowns em -{preview.skill.reducesAllCooldownsOnKill}T</span>
+          </div>
+        )}
+
+        {preview.skill?.reducesAllCooldownsOnCast && preview.skill.reducesAllCooldownsOnCast > 0 && (
+          <div className="flex items-center justify-between text-xs bg-[#1E1B4B]/50 p-2.5 rounded-lg border border-[#818CF8]/40">
+            <span className="text-[#C7D2FE] font-semibold">Aceleração Temporal:</span>
+            <span className="font-bold text-[#A5B4FC]">⏳ Reduz todos os Cooldowns em -{preview.skill.reducesAllCooldownsOnCast}T</span>
+          </div>
+        )}
+
+        {preview.skill?.resetsAllCooldownsOnCast && (
+          <div className="flex items-center justify-between text-xs bg-[#450A0A]/50 p-2.5 rounded-lg border border-[#EF4444]/40">
+            <span className="text-[#FCA5A5] font-semibold">Colapso Temporal:</span>
+            <span className="font-bold text-[#FBBF24]">⏳ Invoca {preview.skill.summonCloneCount || 2} Clones, Reseta Cooldowns e Escudo Global (+{Math.max(1, Math.round(preview.attacker.atk * (preview.skill.allAlliesShieldPercentOfAtk || 0.7)))} em Todos Aliados)</span>
           </div>
         )}
 
@@ -296,17 +341,17 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
                 const baseVal = preview.skill.shieldPercentOfMaxHp
                   ? Math.max(1, Math.round(preview.attacker.maxHp * preview.skill.shieldPercentOfMaxHp))
                   : preview.skill.shieldPercentOfMag
-                  ? Math.max(1, Math.round(preview.attacker.mag * preview.skill.shieldPercentOfMag))
-                  : preview.skill.shieldPercentOfAtk
-                  ? Math.max(1, Math.round(preview.attacker.atk * preview.skill.shieldPercentOfAtk))
-                  : preview.skill.casterStatusEffect.value;
+                    ? Math.max(1, Math.round(preview.attacker.mag * preview.skill.shieldPercentOfMag))
+                    : preview.skill.shieldPercentOfAtk
+                      ? Math.max(1, Math.round(preview.attacker.atk * preview.skill.shieldPercentOfAtk))
+                      : preview.skill.casterStatusEffect.value;
                 const scaleLabel = preview.skill.shieldPercentOfMaxHp
                   ? `(${Math.round(preview.skill.shieldPercentOfMaxHp * 100)}% Vida)`
                   : preview.skill.shieldPercentOfMag
-                  ? `(${Math.round(preview.skill.shieldPercentOfMag * 100)}% Magia)`
-                  : preview.skill.shieldPercentOfAtk
-                  ? `(${Math.round(preview.skill.shieldPercentOfAtk * 100)}% Ataque)`
-                  : '';
+                    ? `(${Math.round(preview.skill.shieldPercentOfMag * 100)}% Magia)`
+                    : preview.skill.shieldPercentOfAtk
+                      ? `(${Math.round(preview.skill.shieldPercentOfAtk * 100)}% Ataque)`
+                      : '';
                 return `🛡️ Ganha Escudo (+${baseVal} ${scaleLabel})`;
               })()}
               {preview.skill.casterStatusEffect.type === 'invisible' && `👤 Fica Invisível (${preview.skill.casterStatusEffect.duration}T)`}
@@ -378,39 +423,37 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
 
         {preview.skill && preview.skill.aoeRadius > 0 && (
           <div
-            className={`border px-3 py-1.5 rounded-lg text-xs font-black flex items-center justify-between ${
-              preview.skill.targetType === 'ally'
+            className={`border px-3 py-1.5 rounded-lg text-xs font-black flex items-center justify-between ${preview.skill.targetType === 'ally'
                 ? 'bg-[#38BDF8]/15 border-[#38BDF8]/50 text-[#38BDF8]'
                 : preview.isGroundTarget
-                ? 'bg-[#F59E0B]/15 border-[#F59E0B]/50 text-[#F59E0B]'
-                : 'bg-[#FF9800]/15 border-[#FF9800]/50 text-[#FF9800]'
-            }`}
+                  ? 'bg-[#F59E0B]/15 border-[#F59E0B]/50 text-[#F59E0B]'
+                  : 'bg-[#FF9800]/15 border-[#FF9800]/50 text-[#FF9800]'
+              }`}
           >
             <span className="flex items-center gap-1.5 uppercase">
               <span>{preview.skill.targetType === 'ally' ? '✨' : preview.isGroundTarget ? '🎯' : '💥'}</span>
               {preview.skill.targetType === 'ally'
                 ? `Área (${getAoELabel(preview.skill)})`
                 : preview.isGroundTarget
-                ? `Área no Solo (${getAoELabel(preview.skill)})`
-                : `Ataque em Área (${getAoELabel(preview.skill)})`}
+                  ? `Área no Solo (${getAoELabel(preview.skill)})`
+                  : `Ataque em Área (${getAoELabel(preview.skill)})`}
             </span>
             <span
-              className={`px-2 py-0.5 rounded text-[11px] ${
-                preview.skill.targetType === 'ally'
+              className={`px-2 py-0.5 rounded text-[11px] ${preview.skill.targetType === 'ally'
                   ? 'bg-[#38BDF8]/25 text-[#38BDF8]'
                   : preview.isGroundTarget
-                  ? 'bg-[#F59E0B]/25 text-[#F59E0B]'
-                  : 'bg-[#FF9800]/25 text-[#FF9800]'
-              }`}
+                    ? 'bg-[#F59E0B]/25 text-[#F59E0B]'
+                    : 'bg-[#FF9800]/25 text-[#FF9800]'
+                }`}
             >
-              {preview.aoeTargetsCount || 1}{' '}
+              {preview.aoeTargetsCount ?? 1}{' '}
               {preview.aoeTargetsCount === 1
                 ? preview.skill.targetType === 'ally'
                   ? 'aliado na área'
                   : 'alvo ao redor'
                 : preview.skill.targetType === 'ally'
-                ? 'aliados na área'
-                : 'alvos ao redor'}
+                  ? 'aliados na área'
+                  : 'alvos ao redor'}
             </span>
           </div>
         )}
@@ -436,10 +479,10 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           {isTeleport
             ? 'Confirmar Teleporte'
             : isHeal
-            ? 'Confirmar Ação'
-            : preview.isGroundTarget
-            ? 'Confirmar Ataque em Área'
-            : 'Confirmar Ataque'}
+              ? 'Confirmar Ação'
+              : preview.isGroundTarget
+                ? 'Confirmar Ataque em Área'
+                : 'Confirmar Ataque'}
         </button>
       </div>
     </div>
