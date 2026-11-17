@@ -1060,7 +1060,12 @@ function createLineageVisualFeatures3D(unit: Unit): THREE.Group {
 function buildCharacterMesh(unit: Unit): THREE.Group {
   const char = new THREE.Group();
   char.name = 'miniatureChar';
-  const key = unit.avatarKey;
+  const isDancerUnit =
+    unit.avatarKey === 'dancarina_tempo' ||
+    unit.className === 'dancarina_tempo' ||
+    unit.name === 'Dançarina do Tempo' ||
+    unit.skills?.some((s) => s.id === 'estocada_dupla_alfa' || s.id === 'estocada_clone_eco');
+  const key = isDancerUnit ? 'dancarina_tempo' : unit.avatarKey;
 
   // 1. Monstro normal dedicado dos Atos II a V (Fases 11 a 50)
   const normalMonsterBuilder = NORMAL_MONSTER_BUILDERS[key];
