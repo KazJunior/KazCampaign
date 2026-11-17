@@ -686,6 +686,11 @@ export function sanitizeUnlockedClasses(
     }
   });
 
+  // 3. Automatically restore Dançarina do Tempo for players who already defeated Stage 110
+  if (completedLevels.includes(110)) {
+    allowed.add('dancarina_tempo');
+  }
+
   return Array.from(allowed);
 }
 

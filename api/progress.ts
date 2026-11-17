@@ -291,7 +291,8 @@ function resolveUnlockedClasses(
   existingDbClasses: unknown,
   incomingClasses: unknown,
   maxCompleted: number,
-  leaderboardParty?: unknown
+  leaderboardParty?: unknown,
+  completedLevels: number[] = []
 ): string[] {
   const allowed = new Set<string>(INITIAL_CLASSES);
 
@@ -326,6 +327,9 @@ function resolveUnlockedClasses(
     if (maxCompleted >= reqLvl) {
       allowed.add(normalizeClass(cName));
     }
+  }
+  if (completedLevels.includes(110)) {
+    allowed.add('dancarina_tempo');
   }
 
   // 4. Preserve valid classes found in leaderboard party (if level requirement met)
@@ -462,7 +466,7 @@ export async function GET(req: Request): Promise<Response> {
 
     const completedLevels = mergeNumberArrays(row.completed_levels, null);
     const maxCompleted = calculateMaxCompleted(lbHighest, row.active_adventure, row.adventure_history, completedLevels);
-    const safeUnlocked = resolveUnlockedClasses(row.unlocked_classes, null, maxCompleted, lbParty);
+    const safeUnlocked = resolveUnlockedClasses(row.unlocked_classes, null, maxCompleted, lbParty, completedLevels);
     const safeParty = sanitizeParty(row.selected_party_classes, safeUnlocked);
 
     const monsterKills = mergeNumericMap(row.monster_kills, null);
@@ -602,7 +606,7 @@ export async function POST(req: Request): Promise<Response> {
     const completedLevels = mergeNumberArrays(ex.completed_levels, body.completedLevels);
 
     const maxCompleted = calculateMaxCompleted(lbHighest, activeAdventure, adventureHistory, completedLevels);
-    const safeUnlocked = resolveUnlockedClasses(existingDbUnlocked, body.unlockedClasses, maxCompleted, lbParty);
+    const safeUnlocked = resolveUnlockedClasses(existingDbUnlocked, body.unlockedClasses, maxCompleted, lbParty, completedLevels);
     const safeParty = sanitizeParty(body.selectedPartyClasses, safeUnlocked);
     const unlockedLevel = Math.max(
       1,
