@@ -8553,7 +8553,7 @@ export function App() {
     });
 
     // SECRET CLASS UNLOCK: Carrasco do Vazio
-    // Condição: Derrotar Astaroth (Fase 10) utilizando apenas classes corpo a corpo (Alcance 1, Cavaleiro Arcano ou Lanceiro)
+    // Condição: Derrotar Astaroth (Fase 10) utilizando apenas classes corpo a corpo (Alcance 1, Cavaleiro Arcano, Lanceiro ou Dançarina do Tempo)
     if (currentLevel.id === 10 && !currentUnlocked.includes('carrasco_vazio')) {
       const activeParty = latestProg.activeAdventure?.partyClasses || latestProg.selectedPartyClasses;
       const allMelee =

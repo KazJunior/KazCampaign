@@ -516,7 +516,7 @@ export interface SecretClassUnlockInfo {
 export const SECRET_CLASS_UNLOCK_CONDITIONS: Record<string, SecretClassUnlockInfo> = {
   carrasco_vazio: {
     title: 'Samurai do Vazio',
-    description: 'Derrote Astaroth (Fase 10) utilizando apenas classes de combate corpo a corpo (Alcance 1, Cavaleiro Arcano ou Lanceiro).',
+    description: 'Derrote Astaroth (Fase 10) utilizando apenas classes de combate corpo a corpo (Alcance 1, Cavaleiro Arcano, Lanceiro ou Dançarina do Tempo).',
     riddle: `Nas sombras mais profundas do Trono, onde a luz jamais alcançou... O Samurai do Vazio observa os tolos que ousam invadir o domínio de Astaroth.
 
 Se desejas empunhar a lâmina proibida que rasga o espaço, abandone a covardia do refúgio gerado por métodos fúteis e inferiores de combate.
@@ -546,7 +546,12 @@ Atravesse o portal proibido, supere o Fantasma do Tempo e abata o Verme Cósmico
 export function isMeleeClassForSecretUnlock(className: string): boolean {
   const cDef = CLASS_DEFINITIONS[className];
   if (!cDef) return false;
-  return cDef.range === 1 || className === 'cavaleiro_arcano' || className === 'lanceiro';
+  return (
+    cDef.range === 1 ||
+    className === 'cavaleiro_arcano' ||
+    className === 'lanceiro' ||
+    className === 'pistoleiro_tempo'
+  );
 }
 
 export function isMageClassForSecretUnlock(className: string): boolean {
