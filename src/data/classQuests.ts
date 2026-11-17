@@ -1,4 +1,5 @@
 import type { ClassMission, ClassSkin, PlayerProgress } from '../types/game';
+import { normalizeClassId } from './units';
 
 // ============================================================================
 // 1. SKINS DE CADA CLASSE (Padrão + 2 Desbloqueáveis por Missões)
@@ -2064,7 +2065,7 @@ export function incrementClassStat(
   amount: number = 1
 ): PlayerProgress {
   if (!className || amount <= 0) return currentProgress;
-  const canonical = className === 'engenheiro' ? 'druida' : className;
+  const canonical = normalizeClassId(className);
   const currentData = currentProgress.classMissionsProgress?.[canonical] || {
     completedMissions: [],
     stats: {},

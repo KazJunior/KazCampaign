@@ -1,5 +1,5 @@
 import type { AudioSettings, PlayerProgress, ActiveBattleState } from '../types/game';
-import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
+import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, normalizeClassId, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
 import { getHatchDuration } from '../data/pets';
 import { ALL_CLASS_MISSIONS } from '../data/classQuests';
 import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from '../data/lineageQuests';
@@ -111,7 +111,7 @@ export function mergeClassMissionsProgress(
     if (!src || typeof src !== 'object') return;
     for (const [rawClass, entry] of Object.entries(src)) {
       if (!entry || typeof entry !== 'object') continue;
-      const cKey = rawClass === 'engenheiro' ? 'druida' : rawClass;
+      const cKey = normalizeClassId(rawClass);
       const prev = result[cKey] || { completedMissions: [], stats: {} };
       const completedSet = new Set<string>([
         ...(Array.isArray(prev.completedMissions) ? prev.completedMissions : []),
@@ -186,15 +186,20 @@ export function mergeMissionAndLineageFields(
     ])
   );
 
+  const normalizeSkinId = (id: string) => {
+    if (id === 'pistoleiro_tempo_default') return 'dancarina_tempo_default';
+    if (id === 'pistoleiro_tempo_noiva') return 'dancarina_tempo_noiva';
+    return id;
+  };
   const equippedClassSkins: Record<string, string> = {};
   if (base?.equippedClassSkins && typeof base.equippedClassSkins === 'object') {
     for (const [k, v] of Object.entries(base.equippedClassSkins)) {
-      if (typeof v === 'string' && v) equippedClassSkins[k === 'engenheiro' ? 'druida' : k] = v;
+      if (typeof v === 'string' && v) equippedClassSkins[normalizeClassId(k)] = normalizeSkinId(v);
     }
   }
   if (incoming?.equippedClassSkins && typeof incoming.equippedClassSkins === 'object') {
     for (const [k, v] of Object.entries(incoming.equippedClassSkins)) {
-      if (typeof v === 'string' && v) equippedClassSkins[k === 'engenheiro' ? 'druida' : k] = v;
+      if (typeof v === 'string' && v) equippedClassSkins[normalizeClassId(k)] = normalizeSkinId(v);
     }
   }
 
@@ -224,14 +229,14 @@ export function mergeMissionAndLineageFields(
   if (base?.selectedPartyLineages && typeof base.selectedPartyLineages === 'object') {
     for (const [k, v] of Object.entries(base.selectedPartyLineages)) {
       if (typeof v === 'string' && v) {
-        selectedPartyLineages[k === 'engenheiro' ? 'druida' : k] = v === 'draconato' ? 'dragonoide' : v;
+        selectedPartyLineages[normalizeClassId(k)] = v === 'draconato' ? 'dragonoide' : v;
       }
     }
   }
   if (incoming?.selectedPartyLineages && typeof incoming.selectedPartyLineages === 'object') {
     for (const [k, v] of Object.entries(incoming.selectedPartyLineages)) {
       if (typeof v === 'string' && v) {
-        selectedPartyLineages[k === 'engenheiro' ? 'druida' : k] = v === 'draconato' ? 'dragonoide' : v;
+        selectedPartyLineages[normalizeClassId(k)] = v === 'draconato' ? 'dragonoide' : v;
       }
     }
   }
@@ -309,13 +314,13 @@ export function loadPlayerProgress(): PlayerProgress {
 
     // Sanitize unlocked classes: user retains all valid unlocked classes and gets boss classes
     let unlockedClasses = sanitizeUnlockedClasses(parsed.unlockedClasses, maxCompleted, completedLevels)
-      .map((c) => (c === 'engenheiro' ? 'druida' : c))
-      .filter((c) => c !== 'engenheiro');
+      .map(normalizeClassId)
+      .filter((c) => c !== 'engenheiro' && c !== 'pistoleiro_tempo');
     unlockedClasses = Array.from(new Set(unlockedClasses));
 
     // Retroactively unlock any classes earned by completed boss/mini-boss levels
     Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, info]) => {
-      const canonicalName = cName === 'engenheiro' ? 'druida' : cName;
+      const canonicalName = normalizeClassId(cName);
       if ((completedLevels.includes(info.requiredLevel) || maxCompleted >= info.requiredLevel) && !unlockedClasses.includes(canonicalName)) {
         unlockedClasses.push(canonicalName);
       }
@@ -365,7 +370,7 @@ export function loadPlayerProgress(): PlayerProgress {
       activeAdventure = {
         ...activeAdventure,
         partyClasses: Array.isArray(activeAdventure.partyClasses)
-          ? sanitizePartyClasses(activeAdventure.partyClasses.map((c: string) => (c === 'engenheiro' ? 'druida' : c)), unlockedClasses)
+          ? sanitizePartyClasses(activeAdventure.partyClasses.map(normalizeClassId), unlockedClasses)
           : selectedPartyClasses,
         inventory: Array.isArray(activeAdventure.inventory) ? activeAdventure.inventory : [],
         equipment: activeAdventure.equipment || {},
@@ -394,6 +399,10 @@ export function loadPlayerProgress(): PlayerProgress {
           rawUnits.druida = { ...rawUnits.engenheiro, className: 'druida' };
         }
         delete rawUnits.engenheiro;
+        if (rawUnits.pistoleiro_tempo && !rawUnits.dancarina_tempo) {
+          rawUnits.dancarina_tempo = { ...rawUnits.pistoleiro_tempo, className: 'dancarina_tempo' };
+        }
+        delete rawUnits.pistoleiro_tempo;
         return {
           ...createInitialUnitsState(),
           ...rawUnits,
@@ -448,7 +457,7 @@ export function savePlayerProgress(progress: PlayerProgress): void {
         ...(Array.isArray(progress.unlockedClasses) ? progress.unlockedClasses : []),
         ...INITIAL_CLASSES,
       ])
-    ).map((c) => (c === 'engenheiro' ? 'druida' : c));
+    ).map(normalizeClassId);
     const nowIso = new Date().toISOString();
     const safeProgress: PlayerProgress = {
       ...progress,

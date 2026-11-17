@@ -5,7 +5,9 @@ const INITIAL_LINEAGES = ['humano', 'elfo', 'anao'];
 
 function normalizeClass(c: unknown): string {
   if (typeof c !== 'string') return '';
-  return c === 'engenheiro' ? 'druida' : c;
+  if (c === 'engenheiro') return 'druida';
+  if (c === 'pistoleiro_tempo') return 'dancarina_tempo';
+  return c;
 }
 
 function normalizeLineage(l: unknown): string {
@@ -50,6 +52,7 @@ const ALL_VALID_CLASSES = new Set<string>([
   'invocador',
   'alquimista',
   'dancarina_tempo',
+  'pistoleiro_tempo',
 ]);
 
 const LINEAGE_QUEST_THRESHOLDS: Array<{

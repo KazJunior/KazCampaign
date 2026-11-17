@@ -23,7 +23,7 @@ import type {
 import { isDebuffStatus } from './types/game';
 import { LEVELS, getLevelById, createTrainingLevel, isTileInClockHands } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
-import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
+import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
 import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from './data/lineageQuests';
 import { LineageUnlockCelebrationModal } from './components/LineageUnlockCelebrationModal';
@@ -252,7 +252,7 @@ export function App() {
             ...(localP.unlockedClasses || []),
             ...(cloudP.unlockedClasses || []),
           ])
-        ).map((c) => (c === 'engenheiro' ? 'druida' : c));
+        ).map(normalizeClassId);
         const safeUnlocked = sanitizeUnlockedClasses(combinedUnlocked, maxCompleted, mergedCompletedLevels);
         
         // Prefer local selectedPartyClasses if it has 4 valid classes (to prevent stale cloud overwrites)

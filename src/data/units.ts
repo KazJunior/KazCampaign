@@ -647,6 +647,12 @@ export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: strin
 
 };
 
+export function normalizeClassId(c: string): string {
+  if (c === 'engenheiro') return 'druida';
+  if (c === 'pistoleiro_tempo') return 'dancarina_tempo';
+  return c;
+}
+
 export function sanitizeUnlockedClasses(
   rawUnlocked: string[] | undefined,
   maxLevelCompleted: number = 0,
@@ -658,7 +664,7 @@ export function sanitizeUnlockedClasses(
   // Boss unlock classes (CLASS_UNLOCK_CONDITIONS, such as 'druida') strictly require completing their required stage!
   if (Array.isArray(rawUnlocked)) {
     for (const rawC of rawUnlocked) {
-      const c = rawC === 'engenheiro' ? 'druida' : rawC;
+      const c = normalizeClassId(rawC);
       if (typeof c === 'string' && CLASS_DEFINITIONS[c]) {
         const unlockCond = CLASS_UNLOCK_CONDITIONS[c];
         if (unlockCond) {
@@ -675,7 +681,7 @@ export function sanitizeUnlockedClasses(
   // 2. Automatically grant any boss unlocks earned by level progression or completed levels
   Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
     if (maxLevelCompleted >= cond.requiredLevel || completedLevels.includes(cond.requiredLevel)) {
-      const canonicalName = cName === 'engenheiro' ? 'druida' : cName;
+      const canonicalName = normalizeClassId(cName);
       allowed.add(canonicalName);
     }
   });
@@ -684,11 +690,11 @@ export function sanitizeUnlockedClasses(
 }
 
 export function sanitizePartyClasses(party: string[] | undefined, unlockedClasses: string[]): string[] {
-  const validUnlocked = new Set(unlockedClasses.map((c) => (c === 'engenheiro' ? 'druida' : c)));
+  const validUnlocked = new Set(unlockedClasses.map(normalizeClassId));
   const result: string[] = [];
   if (Array.isArray(party)) {
     for (const rawC of party) {
-      const c = rawC === 'engenheiro' ? 'druida' : rawC;
+      const c = normalizeClassId(rawC);
       if (typeof c === 'string' && validUnlocked.has(c) && !result.includes(c)) {
         result.push(c);
       }
@@ -724,7 +730,7 @@ export function createPlayerUnit(
   skin?: ClassSkin | null,
   lineageId?: string | null
 ): Unit {
-  const targetClassKey = className === 'engenheiro' ? 'druida' : className;
+  const targetClassKey = normalizeClassId(className);
   const def = CLASS_DEFINITIONS[targetClassKey] || CLASS_DEFINITIONS[className] || CLASS_DEFINITIONS['guerreiro'];
   const growth = def.statGrowth || { hp: 12, atk: 3, mag: 3, def: 2, res: 1 };
   const levelOffsets = Math.max(0, level - 1);
