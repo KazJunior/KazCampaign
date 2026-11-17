@@ -34,7 +34,7 @@ export function createInitialUnitsState(): PlayerProgress['unitsState'] {
     ceifador: { className: 'ceifador', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     invocador: { className: 'invocador', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     alquimista: { className: 'alquimista', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
-    pistoleiro_tempo: { className: 'pistoleiro_tempo', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    dancarina_tempo: { className: 'dancarina_tempo', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
   };
 }
 

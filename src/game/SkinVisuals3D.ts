@@ -72,7 +72,7 @@ export function applySkinThemeToMiniature(charMesh: THREE.Group, unit: Unit): vo
             cloned.color.copy(skinColor);
             cloned.transparent = true;
             cloned.opacity = 0.88;
-          } else if (skin.id === 'pistoleiro_tempo_noiva') {
+          } else if (skin.id === 'dancarina_tempo_noiva') {
             if (isMetal) {
               cloned.color.setHex(0xfbbf24); // Ouro astral reluzente
               cloned.metalness = 0.95;

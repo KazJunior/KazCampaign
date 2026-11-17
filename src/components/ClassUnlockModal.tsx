@@ -167,7 +167,7 @@ function getClassIcon(avatarKey: string, size = 24) {
       return <PawPrint size={size} />;
     case 'alquimista':
       return <FlaskConical size={size} />;
-    case 'pistoleiro_tempo':
+    case 'dancarina_tempo':
       return <Clock size={size} />;
     default:
       return <Sparkles size={size} />;

@@ -389,5 +389,5 @@ export const DEFAULT_CLASS_LINEAGES: Record<string, string> = {
   ceifador: 'humano',
   invocador: 'elfo',
   alquimista: 'anao',
-  pistoleiro_tempo: 'humano',
+  dancarina_tempo: 'humano',
 };

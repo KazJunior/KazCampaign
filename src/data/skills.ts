@@ -7578,12 +7578,12 @@ export const SKILLS: Record<string, Skill> = {
   estocada_dupla_alfa: {
     id: 'estocada_dupla_alfa',
     name: 'Estocada Dupla: Alfa',
-    description: 'O florete vermelho do Futuro e o florete preto do Passado desferem estocadas gêmeas em sincronia graciosa (alcance 1-3). Causa 160% de dano híbrido e desacelera o alvo (-1 de Movimento por 2 turnos).',
+    description: 'O florete vermelho do Futuro e o florete preto do Passado desferem estocadas gêmeas em sincronia graciosa (alcance 1-2). Causa 160% de dano físico e desacelera o alvo (-1 de Movimento por 2 turnos).',
     damageType: 'physical',
     category: 'attack',
     power: 1.6,
     rangeMin: 1,
-    rangeMax: 3,
+    rangeMax: 2,
     aoeRadius: 0,
     cooldownMax: 0,
     currentCooldown: 0,
@@ -7647,8 +7647,8 @@ export const SKILLS: Record<string, Skill> = {
   estocada_estase_epsilon: {
     id: 'estocada_estase_epsilon',
     name: 'Estocada de Estase: Épsilon',
-    description: 'Uma estocada fulgurante que rompe o fluxo do alvo causando 160% de dano mágico. Se abater o inimigo, reduz o cooldown de todas as habilidades em 1 turno.',
-    damageType: 'magical',
+    description: 'Uma estocada fulgurante que rompe o fluxo do alvo causando 160% de dano físico. Se abater o inimigo, reduz o cooldown de todas as habilidades em 1 turno.',
+    damageType: 'physical',
     category: 'attack',
     power: 1.6,
     rangeMin: 1,
@@ -7684,8 +7684,8 @@ export const SKILLS: Record<string, Skill> = {
   turbilhao_rubro_negro_eta: {
     id: 'turbilhao_rubro_negro_eta',
     name: 'Turbilhão Rubro-Negro: Eta',
-    description: 'Executa um rodopio em espiral cósmica entrelaçando os rastros vermelho (Futuro) e preto (Passado) em uma área de Raio 2. Causa 160% de dano mágico a todos os inimigos e drena 50% do dano causado como vida!',
-    damageType: 'magical',
+    description: 'Executa um rodopio em espiral cósmica entrelaçando os rastros vermelho (Futuro) e preto (Passado) em uma área de Raio 2. Causa 160% de dano físico a todos os inimigos e drena 50% do dano causado como vida!',
+    damageType: 'physical',
     category: 'attack',
     power: 1.6,
     rangeMin: 1,
@@ -7786,8 +7786,8 @@ export const SKILLS: Record<string, Skill> = {
   valsa_fim_tempos_omega: {
     id: 'valsa_fim_tempos_omega',
     name: 'Valsa do Fim dos Tempos: Ômega',
-    description: 'O florete preto (Passado) e o florete vermelho (Futuro) cruzam-se em uma rotação de colapso supremo em formato de grande X (alcance 1-3, raio 2 diagonal). Causa 220% de dano mágico catastrófico a todos na área e atordoa (Stun por 1 turno).',
-    damageType: 'magical',
+    description: 'O florete preto (Passado) e o florete vermelho (Futuro) cruzam-se em uma rotação de colapso supremo em formato de grande X (alcance 1-3, raio 2 diagonal). Causa 220% de dano físico catastrófico a todos na área e atordoa (Stun por 1 turno).',
+    damageType: 'physical',
     category: 'attack',
     power: 2.2,
     rangeMin: 1,
@@ -8728,7 +8728,7 @@ export const CLASS_LEARNABLE_SKILL_IDS: Record<string, string[]> = {
     'muralha_de_fumaca',
     'reagente_radioativo',
   ],
-  pistoleiro_tempo: [
+  dancarina_tempo: [
     'passo_acelerado_beta',
     'corte_passado_gama',
     'pirueta_reversa_delta',
@@ -8765,7 +8765,7 @@ export const CLASS_MISSION_REWARD_SKILLS: Record<string, string[]> = {
   ceifador: ['ceifa_apocaliptica', 'avatar_da_morte'],
   invocador: ['exercito_ancestral', 'tita_behemoth'],
   alquimista: ['megabomba_quimica', 'pedra_filosofal'],
-  pistoleiro_tempo: ['estocada_porvir_psi', 'valsa_fim_tempos_omega'],
+  dancarina_tempo: ['estocada_porvir_psi', 'valsa_fim_tempos_omega'],
 };
 
 export function getLearnableSkillsForClass(className: string, unlockedMissionSkillIds: string[] = []): string[] {

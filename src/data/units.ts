@@ -439,8 +439,8 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     statGrowth: { hp: 11, atk: 4, mag: 3, def: 2, res: 2 },
     goldCost: 100000,
   },
-  pistoleiro_tempo: {
-    className: 'pistoleiro_tempo',
+  dancarina_tempo: {
+    className: 'dancarina_tempo',
     name: 'Dançarina do Tempo',
     role: 'Dança das Lâminas Temporais & Floretes Gêmeos',
     maxHp: 95,
@@ -449,9 +449,9 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     def: 7,
     res: 9,
     mov: 4,
-    range: 3,
+    range: 2,
     color: '#DC2626',
-    avatarKey: 'pistoleiro_tempo',
+    avatarKey: 'dancarina_tempo',
     baseSkillId: 'estocada_dupla_alfa',
     description: 'Bailarina lendária que domina o fluxo do tempo brandindo dois floretes gêmeos: o vermelho, que corta o Futuro com aceleração incisiva, e o preto, que comanda o Passado através de reversão e ecos atemporais.',
     statGrowth: { hp: 12, atk: 4, mag: 4, def: 2, res: 2 },
@@ -532,7 +532,7 @@ Preso entre as runas roubadas, o traidor zomba da morte terrena. O aço vulgar d
 
 Para que ele morra de verdade e seus pecados sejam purificados, o traidor deve ser subjugado pela retribuição dos magos originais. Formem uma irmandade tecida apenas pelo arcano e restaurem a harmonia que ele violou.`,
   },
-  pistoleiro_tempo: {
+  dancarina_tempo: {
     title: 'Dançarina do Tempo',
     description: 'Na Fase 1, passe 5 turnos sem se mover, atacar ou realizar qualquer ação para abrir a Ruptura no Tempo. Entre no Portal Vermelho e vença as 10 Fases Secretas do Tempo, derrotando o Verme Cósmico Devorador do Tempo na 10ª fase.',
     riddle: `No primeiro passo da jornada, onde os precipitados sacam suas armas, apenas aquele que permanece imóvel diante do fluxo do tempo ouvirá o bater do grande relógio...
@@ -550,7 +550,7 @@ export function isMeleeClassForSecretUnlock(className: string): boolean {
     cDef.range === 1 ||
     className === 'cavaleiro_arcano' ||
     className === 'lanceiro' ||
-    className === 'pistoleiro_tempo'
+    className === 'dancarina_tempo'
   );
 }
 

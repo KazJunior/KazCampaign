@@ -2299,7 +2299,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
     shakeIntensity: 0.22,
   }),
 
-  // DANÇARINA DO TEMPO (pistoleiro_tempo)
+  // DANÇARINA DO TEMPO (dancarina_tempo)
   corte_passado_gama: defVFX('corte_passado_gama', 'shield_bastion', {
     durationMs: 650,
     casterMotion: 'stance_guard',

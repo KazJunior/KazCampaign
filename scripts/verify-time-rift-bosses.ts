@@ -149,7 +149,7 @@ console.log('✅ Drops de todas as Fases 101 a 110 validados com sucesso');
 // 5. Recompensa e Desbloqueio da Classe Secreta
 // -------------------------------------------------------------
 console.log('\n-------------------------------------------------------------');
-const dancerUnlock = SECRET_CLASS_UNLOCK_CONDITIONS['pistoleiro_tempo'];
+const dancerUnlock = SECRET_CLASS_UNLOCK_CONDITIONS['dancarina_tempo'];
 assert(dancerUnlock, 'Condição de desbloqueio da Dançarina do Tempo deve existir');
 console.log(`✅ Desbloqueio Secreto Confirmado: "${dancerUnlock.title}" vinculado à vitória contra o Verme Cósmico`);
 

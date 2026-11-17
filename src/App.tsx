@@ -3718,7 +3718,7 @@ export function App() {
           hasAttacked: false,
           isDead: false,
           color: '#DC2626',
-          avatarKey: 'pistoleiro_tempo',
+          avatarKey: 'dancarina_tempo',
           skills: [JSON.parse(JSON.stringify(SKILLS.estocada_clone_eco))],
           learnedSkillIds: ['estocada_clone_eco'],
           statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
@@ -4500,7 +4500,7 @@ export function App() {
             hasAttacked: false,
             isDead: false,
             color: '#DC2626',
-            avatarKey: 'pistoleiro_tempo',
+            avatarKey: 'dancarina_tempo',
             skills: [JSON.parse(JSON.stringify(SKILLS.estocada_clone_eco))],
             learnedSkillIds: ['estocada_clone_eco'],
             statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
@@ -8161,7 +8161,7 @@ export function App() {
 
     const currentTurn = turnNumberRef.current;
 
-    // SEGREDO DO PISTOLEIRO DO TEMPO (FASE 1):
+    // SEGREDO DA DANÇARINA DO TEMPO (FASE 1):
     // Se o jogador passar 5 turnos seguidos na Fase 1 sem se mover, atacar ou realizar qualquer outra ação,
     // após o 5º turno cria uma ruptura no tempo e invoca um Portal Vermelho no centro da fase!
     if (
@@ -8580,8 +8580,8 @@ export function App() {
 
     // SECRET CLASS UNLOCK: Dançarina do Tempo (Cronos)
     // Condição: Derrotar o Verme Cósmico Devorador do Tempo na 10ª Fase Secreta do Tempo (ID 110)
-    if (currentLevel.id === 110 && !currentUnlocked.includes('pistoleiro_tempo')) {
-      newlyUnlocked.push('pistoleiro_tempo');
+    if (currentLevel.id === 110 && !currentUnlocked.includes('dancarina_tempo')) {
+      newlyUnlocked.push('dancarina_tempo');
     }
 
     // RARE DROP CLASS UNLOCK: Sniper

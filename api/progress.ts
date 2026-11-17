@@ -49,7 +49,7 @@ const ALL_VALID_CLASSES = new Set<string>([
   'ceifador',
   'invocador',
   'alquimista',
-  'pistoleiro_tempo',
+  'dancarina_tempo',
 ]);
 
 const LINEAGE_QUEST_THRESHOLDS: Array<{

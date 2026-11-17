@@ -610,7 +610,7 @@ export function getUnitAvatar(key: string, size = 16) {
       return <PawPrint size={size} />;
     case 'alquimista':
       return <FlaskConical size={size} />;
-    case 'pistoleiro_tempo':
+    case 'dancarina_tempo':
     case 'time_phantom_boss':
     case 'cosmic_time_worm_boss':
     case 'clockwork_guardian':

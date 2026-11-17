@@ -619,7 +619,7 @@ function getClassGlyph(avatarKey?: string): React.ReactNode {
       return <PawPrint size={20} />;
     case 'alquimista':
       return <FlaskConical size={20} />;
-    case 'pistoleiro_tempo':
+    case 'dancarina_tempo':
       return <Clock size={20} />;
     default:
       return <Shield size={20} />;

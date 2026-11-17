@@ -633,7 +633,7 @@ function getClassIcon(avatarKey: string, size = 20) {
       return <PawPrint size={size} />;
     case 'alquimista':
       return <FlaskConical size={size} />;
-    case 'pistoleiro_tempo':
+    case 'dancarina_tempo':
       return <Clock size={size} />;
     default:
       return <Shield size={size} />;

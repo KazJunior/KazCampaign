@@ -1142,8 +1142,8 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'alquimista':
       buildAlquimistaMini(char);
       break;
-    case 'pistoleiro_tempo':
-      buildPistoleiroTempoMini(char);
+    case 'dancarina_tempo':
+      buildDancarinaTempoMini(char);
       break;
 
     case 'goblin':
@@ -4619,7 +4619,7 @@ function buildAlquimistaMini(group: THREE.Group) {
 // DANÇARINA DO TEMPO MINIATURE (Floretes Gêmeos: Vermelho e Preto)
 // Prima Ballerina das Lâminas Temporais & Dança dos Dois Tempos
 // ============================================================================
-function buildPistoleiroTempoMini(group: THREE.Group) {
+function buildDancarinaTempoMini(group: THREE.Group) {
   // Materiais refinados de alta fidelidade
   const dressRed = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.45 }); // Carmesim nobre
   const dressBrightRed = new THREE.MeshStandardMaterial({ color: 0xbe123c, roughness: 0.4 }); // Carmesim vivo
