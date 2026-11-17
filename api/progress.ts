@@ -299,15 +299,7 @@ function resolveUnlockedClasses(
   const checkAndAdd = (raw: unknown) => {
     const c = normalizeClass(raw);
     if (!c || !ALL_VALID_CLASSES.has(c)) return;
-    const reqLvl = CLASS_UNLOCK_LEVELS[c];
-    if (typeof reqLvl === 'number') {
-      if (maxCompleted >= reqLvl) {
-        allowed.add(c);
-      }
-    } else {
-      // Purchasable or secret class
-      allowed.add(c);
-    }
+    allowed.add(c);
   };
 
   // 1. Check classes in database
@@ -626,7 +618,7 @@ export async function POST(req: Request): Promise<Response> {
     const safePartyLineages = sanitizeLineageMap(ex.selected_party_lineages, body.selectedPartyLineages);
 
     if (activeAdventure && Array.isArray(activeAdventure.partyClasses)) {
-      activeAdventure.partyClasses = sanitizeParty(activeAdventure.partyClasses, safeUnlocked);
+      activeAdventure.partyClasses = sanitizeParty(activeAdventure.partyClasses, Array.from(ALL_VALID_CLASSES));
     }
     if (activeAdventure && activeAdventure.partyLineages && typeof activeAdventure.partyLineages === 'object') {
       activeAdventure.partyLineages = sanitizeLineageMap(null, activeAdventure.partyLineages);

@@ -660,20 +660,12 @@ export function sanitizeUnlockedClasses(
 ): string[] {
   const allowed = new Set<string>(INITIAL_CLASSES);
 
-  // 1. Preserve valid classes unlocked via shop (purchasable) or secret conditions.
-  // Boss unlock classes (CLASS_UNLOCK_CONDITIONS, such as 'druida') strictly require completing their required stage!
+  // 1. Preserve all valid classes already present in rawUnlocked (including shop, secret, and admin-granted unlocks)
   if (Array.isArray(rawUnlocked)) {
     for (const rawC of rawUnlocked) {
       const c = normalizeClassId(rawC);
       if (typeof c === 'string' && CLASS_DEFINITIONS[c]) {
-        const unlockCond = CLASS_UNLOCK_CONDITIONS[c];
-        if (unlockCond) {
-          if (maxLevelCompleted >= unlockCond.requiredLevel || completedLevels.includes(unlockCond.requiredLevel)) {
-            allowed.add(c);
-          }
-        } else {
-          allowed.add(c);
-        }
+        allowed.add(c);
       }
     }
   }
@@ -712,6 +704,14 @@ export function sanitizePartyClasses(party: string[] | undefined, unlockedClasse
     }
   }
   return result.slice(0, 4);
+}
+
+/**
+ * Sanitizes an active adventure's party without replacing valid playable classes
+ * with 'guerreiro' mid-adventure if unlockedClasses hasn't synced yet.
+ */
+export function sanitizeAdventurePartyClasses(party: string[] | undefined): string[] {
+  return sanitizePartyClasses(party, Object.keys(CLASS_DEFINITIONS));
 }
 
 export function createPlayerUnit(

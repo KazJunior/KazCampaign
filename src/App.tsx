@@ -23,7 +23,7 @@ import type {
 import { isDebuffStatus } from './types/game';
 import { LEVELS, getLevelById, createTrainingLevel, isTileInClockHands } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
-import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
+import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeAdventurePartyClasses, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
 import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from './data/lineageQuests';
 import { LineageUnlockCelebrationModal } from './components/LineageUnlockCelebrationModal';
@@ -331,7 +331,7 @@ export function App() {
               ...cloudAlive,
               partyClasses:
                 Array.isArray(cloudAlive.partyClasses) && cloudAlive.partyClasses.length === 4
-                  ? sanitizePartyClasses(cloudAlive.partyClasses, safeUnlocked)
+                  ? sanitizeAdventurePartyClasses(cloudAlive.partyClasses)
                   : (safeParty || INITIAL_CLASSES),
               partyLineages: cloudAlive.partyLineages || missionAndLineage.selectedPartyLineages,
               battleState: cloudAlive.battleState || null,
@@ -345,7 +345,7 @@ export function App() {
               ...localAlive,
               partyClasses:
                 Array.isArray(localAlive.partyClasses) && localAlive.partyClasses.length === 4
-                  ? sanitizePartyClasses(localAlive.partyClasses, safeUnlocked)
+                  ? sanitizeAdventurePartyClasses(localAlive.partyClasses)
                   : (safeParty || INITIAL_CLASSES),
               partyLineages: localAlive.partyLineages || missionAndLineage.selectedPartyLineages,
               battleState: localAlive.battleState || localBState || null,
@@ -365,7 +365,7 @@ export function App() {
               ...chosen,
               partyClasses:
                 Array.isArray(chosen.partyClasses) && chosen.partyClasses.length === 4
-                  ? sanitizePartyClasses(chosen.partyClasses, safeUnlocked)
+                  ? sanitizeAdventurePartyClasses(chosen.partyClasses)
                   : (safeParty || INITIAL_CLASSES),
               partyLineages: chosen.partyLineages || missionAndLineage.selectedPartyLineages,
               battleState: bState || null,
@@ -387,7 +387,7 @@ export function App() {
             ...chosen,
             partyClasses:
               Array.isArray(chosen.partyClasses) && chosen.partyClasses.length === 4
-                ? sanitizePartyClasses(chosen.partyClasses, safeUnlocked)
+                ? sanitizeAdventurePartyClasses(chosen.partyClasses)
                 : (safeParty || INITIAL_CLASSES),
             partyLineages: chosen.partyLineages || missionAndLineage.selectedPartyLineages,
             battleState: bState || null,

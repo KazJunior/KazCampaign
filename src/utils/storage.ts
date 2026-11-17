@@ -1,5 +1,5 @@
 import type { AudioSettings, PlayerProgress, ActiveBattleState } from '../types/game';
-import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, normalizeClassId, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
+import { INITIAL_CLASSES, CLASS_UNLOCK_CONDITIONS, getMaxCompletedLevel, normalizeClassId, sanitizeAdventurePartyClasses, sanitizeUnlockedClasses, sanitizePartyClasses } from '../data/units';
 import { getHatchDuration } from '../data/pets';
 import { ALL_CLASS_MISSIONS } from '../data/classQuests';
 import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from '../data/lineageQuests';
@@ -370,7 +370,7 @@ export function loadPlayerProgress(): PlayerProgress {
       activeAdventure = {
         ...activeAdventure,
         partyClasses: Array.isArray(activeAdventure.partyClasses)
-          ? sanitizePartyClasses(activeAdventure.partyClasses.map(normalizeClassId), unlockedClasses)
+          ? sanitizeAdventurePartyClasses(activeAdventure.partyClasses)
           : selectedPartyClasses,
         inventory: Array.isArray(activeAdventure.inventory) ? activeAdventure.inventory : [],
         equipment: activeAdventure.equipment || {},
