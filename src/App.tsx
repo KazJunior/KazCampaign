@@ -7563,7 +7563,7 @@ export function App() {
                     } else if (isDragonImmune(eff.type)) {
                       addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imune a Queimadura!', 'status', '#F97316');
                     } else {
-                      currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff }];
+                      currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff, appliedTurn: turnNumberRef.current }];
                       if (eff.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
                       else if (eff.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
                       else if (eff.type === 'stun') addFloatingNumber(finalTargetX, finalTargetY, 'Atordoado!', 'status', '#FACC15');
@@ -7583,7 +7583,7 @@ export function App() {
                     } else if (isDragonImmune(eff2.type)) {
                       addFloatingNumber(finalTargetX, finalTargetY, '🛡️ Imune a Queimadura!', 'status', '#F97316');
                     } else {
-                      currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2 }];
+                      currentEffects = [...currentEffects.filter((e) => e.type !== eff2.type), { ...eff2, appliedTurn: turnNumberRef.current }];
                       if (eff2.type === 'burn') addFloatingNumber(finalTargetX, finalTargetY, isBleedSkill ? '🩸 Sangramento (2T)!' : 'Em Chamas!', 'status', isBleedSkill ? '#DC2626' : '#F97316');
                       else if (eff2.type === 'poison') addFloatingNumber(finalTargetX, finalTargetY, 'Envenenado!', 'status', '#A855F7');
                       else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
