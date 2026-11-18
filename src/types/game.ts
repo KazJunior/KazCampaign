@@ -291,6 +291,7 @@ export interface Unit {
   lineagePhoenixRevive1Hp?: boolean;
   lineageExtraAttackEveryTurn?: boolean;
   nefalimExtraAttackUsed?: boolean;
+  nefalimSkillUsedThisTurn?: boolean;
   lineageCentaurCharge?: boolean;
   centaurMovedTilesThisTurn?: number;
   lineageBleedBonusDamagePercent?: number;

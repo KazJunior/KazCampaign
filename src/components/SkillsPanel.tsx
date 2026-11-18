@@ -169,7 +169,8 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
 
   const isAlly = selectedUnit.faction === 'player';
   const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
-  const canAct = isAlly && isPlayerTurn && !selectedUnit.hasAttacked && !isStunned;
+  const isNefalimBasicOnly = Boolean(selectedUnit.nefalimSkillUsedThisTurn && !selectedUnit.hasAttacked);
+  const canAct = isAlly && isPlayerTurn && !selectedUnit.hasAttacked && !isStunned && !isNefalimBasicOnly;
   const skills = selectedUnit.skills || [];
 
   return (
@@ -201,6 +202,16 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
             <Zap size={14} className="text-[#FACC15] shrink-0" />
             <span className="text-xs font-bold text-[#FACC15]">
               ⚡ Unidade Atordoada: Incapaz de conjurar habilidades!
+            </span>
+          </div>
+        )}
+
+        {/* Nefalim Basic Attack Only Alert */}
+        {isNefalimBasicOnly && !isStunned && (
+          <div className="mt-2 p-2 rounded-lg bg-[#C084FC]/15 border border-[#C084FC]/50 flex items-center gap-2">
+            <Sparkles size={14} className="text-[#C084FC] shrink-0" />
+            <span className="text-xs font-bold text-[#C084FC]">
+              ⚔️ Frenesi Nefalim: Habilidade já usada — use Ataque Básico (A)!
             </span>
           </div>
         )}

@@ -505,7 +505,7 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                     const reqUses = skill.requiredSkillUses || 0;
                     const currentUses = selectedUnit.skillUsesCount || 0;
                     const isChargingUltimate = reqUses > 0 && currentUses < reqUses;
-                    const disabled = !isAlly || !canAct || isOnCd || isChargingUltimate;
+                    const disabled = !isAlly || !canAct || selectedUnit.hasAttacked || Boolean(selectedUnit.nefalimSkillUsedThisTurn) || isOnCd || isChargingUltimate;
 
                     let badgeColor = 'bg-[#4C8DFF]/20 text-[#4C8DFF] border-[#4C8DFF]/30';
                     let typeName = 'Físico';

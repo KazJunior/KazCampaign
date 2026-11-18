@@ -224,7 +224,7 @@ export const LINEAGES: LineageDefinition[] = [
     title: 'Híbrido Proibido de Anjo & Demônio',
     description: 'A lendária prole nascida da união proibida entre Anjos e Demônios. Conduz uma torrente incansável de golpes duplos onde a luz e a escuridão se chocam.',
     bonusTitle: 'Frenesi da Dualidade Proibida',
-    bonusDescription: 'Em todo turno, pode usar um ataque adicional a suas ações normais. +12 de dano físico e +10 de vida.',
+    bonusDescription: 'Em todo turno, pode usar um Ataque Básico (A) adicional além de uma habilidade. +12 de dano físico e +10 de vida.',
     iconName: 'Sparkles',
     color: '#C084FC',
     stats: {

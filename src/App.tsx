@@ -3510,6 +3510,13 @@ export function App() {
       return;
     }
 
+    if (activeSkill && selectedUnit.nefalimSkillUsedThisTurn) {
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Nefalim: Apenas Ataque Básico (A) disponível!', 'status', '#C084FC');
+      setActiveSkill(null);
+      setDamagePreview(null);
+      return;
+    }
+
     if (!timePortalSpawnedRef.current) {
       hasPlayerActedInStage1Ref.current = true;
     }
@@ -3789,8 +3796,21 @@ export function App() {
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
 
+      const isNefalimSummonExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimSummonExtra) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
       const updatedUnits = units.map((u) =>
-        u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
+        u.id === selectedUnit.id
+          ? {
+              ...u,
+              hasAttacked: isNefalimSummonExtra ? false : true,
+              nefalimExtraAttackUsed: isNefalimSummonExtra ? true : u.nefalimExtraAttackUsed,
+              nefalimSkillUsedThisTurn: true,
+              skills: updatedSkills,
+            }
+          : u
       );
       updatedUnits.push(newCreature);
       setUnits(updatedUnits);
@@ -3801,7 +3821,7 @@ export function App() {
 
       setTargetTeleportPoint(null);
       setTargetUnitId(null);
-      setSelectedAction('none');
+      setSelectedAction(isNefalimSummonExtra ? 'attack' : 'none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
       return;
@@ -3851,9 +3871,24 @@ export function App() {
         return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
       });
 
+      const isNefalimTeleportExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimTeleportExtra) {
+        addFloatingNumber(destX, destY, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
       const updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
-          ? { ...u, x: destX, y: destY, hasAttacked: true, skills: updatedSkills, statusEffects: updatedEffects, skillUsesCount: nextSkillUsesCount }
+          ? {
+              ...u,
+              x: destX,
+              y: destY,
+              hasAttacked: isNefalimTeleportExtra ? false : true,
+              nefalimExtraAttackUsed: isNefalimTeleportExtra ? true : u.nefalimExtraAttackUsed,
+              nefalimSkillUsedThisTurn: true,
+              skills: updatedSkills,
+              statusEffects: updatedEffects,
+              skillUsesCount: nextSkillUsesCount,
+            }
           : u
       );
 
@@ -3884,7 +3919,7 @@ export function App() {
       }
       setTargetTeleportPoint(null);
       setTargetUnitId(null);
-      setSelectedAction('none');
+      setSelectedAction(isNefalimTeleportExtra ? 'attack' : 'none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
       return;
@@ -3941,9 +3976,20 @@ export function App() {
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
 
+      const isNefalimCorpseExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimCorpseExtra) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
       const updatedUnits = units.map((u) => {
         if (u.id === selectedUnit.id) {
-          return { ...u, hasAttacked: true, skills: updatedSkills };
+          return {
+            ...u,
+            hasAttacked: isNefalimCorpseExtra ? false : true,
+            nefalimExtraAttackUsed: isNefalimCorpseExtra ? true : u.nefalimExtraAttackUsed,
+            nefalimSkillUsedThisTurn: true,
+            skills: updatedSkills,
+          };
         }
         if (deadMonster && u.id === deadMonster.id) {
           return { ...u, corpseConsumed: true };
@@ -3979,7 +4025,7 @@ export function App() {
       }
       setTargetTeleportPoint(null);
       setTargetUnitId(null);
-      setSelectedAction('none');
+      setSelectedAction(isNefalimCorpseExtra ? 'attack' : 'none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
       return;
@@ -4060,8 +4106,22 @@ export function App() {
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
 
+      const isNefalimArmyExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimArmyExtra) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
       const updatedUnits = units.map((u) =>
-        u.id === selectedUnit.id ? { ...u, hasAttacked: true, alchemistMixtures: [], skills: updatedSkills } : u
+        u.id === selectedUnit.id
+          ? {
+              ...u,
+              hasAttacked: isNefalimArmyExtra ? false : true,
+              nefalimExtraAttackUsed: isNefalimArmyExtra ? true : u.nefalimExtraAttackUsed,
+              nefalimSkillUsedThisTurn: true,
+              alchemistMixtures: [],
+              skills: updatedSkills,
+            }
+          : u
       );
 
       setUnits([...updatedUnits, ...spawnedSkeletons]);
@@ -4091,7 +4151,7 @@ export function App() {
       }
       setTargetTeleportPoint(null);
       setTargetUnitId(null);
-      setSelectedAction('none');
+      setSelectedAction(isNefalimArmyExtra ? 'attack' : 'none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
       return;
@@ -4163,8 +4223,21 @@ export function App() {
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
 
+      const isNefalimSacrificeExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimSacrificeExtra) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
       let finalUnitsAfterSacrifice = updatedUnitsAfterSacrifice.map((u) =>
-        u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
+        u.id === selectedUnit.id
+          ? {
+              ...u,
+              hasAttacked: isNefalimSacrificeExtra ? false : true,
+              nefalimExtraAttackUsed: isNefalimSacrificeExtra ? true : u.nefalimExtraAttackUsed,
+              nefalimSkillUsedThisTurn: true,
+              skills: updatedSkills,
+            }
+          : u
       );
 
       const splitCheck = await checkAndTriggerChimeraSplit(finalUnitsAfterSacrifice);
@@ -4179,8 +4252,8 @@ export function App() {
 
       setUnits(finalUnitsAfterSacrifice);
 
-      setSelectedUnitId(null);
-      setSelectedAction('none');
+      setSelectedUnitId(isNefalimSacrificeExtra ? selectedUnit.id : null);
+      setSelectedAction(isNefalimSacrificeExtra ? 'attack' : 'none');
       setActiveSkill(null);
       setTargetUnitId(null);
       setTargetAoEPoint(null);
@@ -4462,6 +4535,13 @@ export function App() {
         }
       }
 
+      const isNefalimSelfExtra =
+        !grantsSelfExtraTurn &&
+        Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimSelfExtra) {
+        addFloatingNumber(nextCasterX, nextCasterY, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
       let updatedUnits = units.map((u) =>
         u.id === selectedUnit.id
           ? {
@@ -4469,8 +4549,14 @@ export function App() {
               x: nextCasterX,
               y: nextCasterY,
               currentHp: currentUnitHp,
-              hasAttacked: grantsSelfExtraTurn ? false : true,
+              hasAttacked: grantsSelfExtraTurn || isNefalimSelfExtra ? false : true,
               hasMoved: grantsSelfExtraTurn ? false : u.hasMoved,
+              nefalimExtraAttackUsed: grantsSelfExtraTurn
+                ? u.nefalimExtraAttackUsed
+                : isNefalimSelfExtra
+                ? true
+                : u.nefalimExtraAttackUsed,
+              nefalimSkillUsedThisTurn: grantsSelfExtraTurn ? false : true,
               skills: updatedSkills,
               statusEffects: updatedEffects,
               skillUsesCount: nextSkillUsesCount,
@@ -4633,10 +4719,10 @@ export function App() {
       }
 
       setTargetUnitId(null);
-      setSelectedAction('none');
+      setSelectedAction(isNefalimSelfExtra ? 'attack' : 'none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
-      if (grantsSelfExtraTurn) {
+      if (grantsSelfExtraTurn || isNefalimSelfExtra) {
         setSelectedUnitId(selectedUnit.id);
       }
       return;
@@ -4674,6 +4760,11 @@ export function App() {
 
       addFloatingNumber(zoneCenter.x, zoneCenter.y, `⏳ Zona Relógio (${skill.createsClockZoneTurns}T)!`, 'status', '#FBBF24');
 
+      const isNefalimClockExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimClockExtra) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
       const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
       const updatedUnits = units.map((u) => {
         let nextU = u;
@@ -4684,7 +4775,14 @@ export function App() {
             }
             return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
           });
-          nextU = { ...nextU, hasAttacked: true, skills: updatedSkills, skillUsesCount: nextSkillUsesCount };
+          nextU = {
+            ...nextU,
+            hasAttacked: isNefalimClockExtra ? false : true,
+            nefalimExtraAttackUsed: isNefalimClockExtra ? true : nextU.nefalimExtraAttackUsed,
+            nefalimSkillUsedThisTurn: true,
+            skills: updatedSkills,
+            skillUsesCount: nextSkillUsesCount,
+          };
         }
 
         if (!u.isDead && zoneKeySet.has(`${u.x},${u.y}`)) {
@@ -4735,7 +4833,7 @@ export function App() {
       setTargetTeleportPoint(null);
       setTargetAoEPoint(null);
       setTargetUnitId(null);
-      setSelectedAction('none');
+      setSelectedAction(isNefalimClockExtra ? 'attack' : 'none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
       return;
@@ -5578,6 +5676,10 @@ export function App() {
               halfHpTriggerTurn: newHalfHpTriggerTurn,
               hasMoved: allyHasMoved,
               hasAttacked: allyHasAttacked,
+              nefalimSkillUsedThisTurn:
+                skill?.grantsExtraTurn && t.faction === 'player' && t.id !== selectedUnit.id
+                  ? false
+                  : u.nefalimSkillUsedThisTurn,
             }
           : u
       );
@@ -5961,15 +6063,6 @@ export function App() {
           return s;
         });
 
-        const isNefalimExtra =
-          !isExecutionKill &&
-          Boolean(u.lineageExtraAttackEveryTurn) &&
-          !u.nefalimExtraAttackUsed;
-
-        if (isNefalimExtra) {
-          addFloatingNumber(finalAttackerX, finalAttackerY, '⚔️ Ataque Adicional (Nefalim)!', 'status', '#F59E0B');
-        }
-
         const isBetaExtraTurn = skill?.id === 'passo_acelerado_beta' || skill?.id === 'primeira_bala_aleph';
         if (isBetaExtraTurn) {
           addFloatingNumber(finalAttackerX, finalAttackerY, '⏱️ Passo Acelerado: Ação Extra Concedida!', 'status', '#DC2626');
@@ -5977,6 +6070,21 @@ export function App() {
         }
 
         const grantsAttackerExtraTurn = isExecutionKill || isArcanoMundoSelfTurn || isBetaExtraTurn;
+        const isNefalimExtra =
+          !grantsAttackerExtraTurn &&
+          Boolean(u.lineageExtraAttackEveryTurn) &&
+          !u.nefalimExtraAttackUsed;
+
+        if (isNefalimExtra) {
+          addFloatingNumber(
+            finalAttackerX,
+            finalAttackerY,
+            skill ? '⚔️ Ataque Básico Adicional (Nefalim)!' : '⚔️ Ação Adicional (Nefalim)!',
+            'status',
+            '#F59E0B'
+          );
+        }
+
         return {
           ...u,
           x: finalAttackerX,
@@ -5984,7 +6092,14 @@ export function App() {
           currentHp: finalAttackerHp,
           hasMoved: grantsAttackerExtraTurn ? false : (canMoveAgain ? false : u.hasMoved),
           hasAttacked: grantsAttackerExtraTurn ? false : (isNefalimExtra ? false : true),
-          nefalimExtraAttackUsed: isNefalimExtra ? true : u.nefalimExtraAttackUsed,
+          nefalimExtraAttackUsed: grantsAttackerExtraTurn
+            ? u.nefalimExtraAttackUsed
+            : isNefalimExtra
+            ? true
+            : u.nefalimExtraAttackUsed,
+          nefalimSkillUsedThisTurn: grantsAttackerExtraTurn
+            ? false
+            : Boolean(u.nefalimSkillUsedThisTurn || skill),
           centaurMovedTilesThisTurn: 0,
           hasUsedKitsuneReset: isKitsuneEligible ? true : u.hasUsedKitsuneReset,
           skills: updatedSkills,
@@ -6095,6 +6210,9 @@ export function App() {
       setSelectedAction('move');
     } else if (selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed) {
       setSelectedUnitId(selectedUnit.id);
+      if (skill) {
+        setSelectedAction('attack');
+      }
     }
 
     setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 200);
@@ -8120,6 +8238,7 @@ export function App() {
             hasMoved: isCocooned || isStunned ? true : false,
             hasAttacked: isCocooned || isStunned ? true : false,
             nefalimExtraAttackUsed: false,
+            nefalimSkillUsedThisTurn: false,
           };
         } else {
           // Enemy units: AI turn has ended, decrement status effects & cooldowns
@@ -8991,6 +9110,10 @@ export function App() {
       if (!selectedUnit || selectedUnit.faction !== 'player' || selectedUnit.hasAttacked || phase !== 'player_turn') {
         return;
       }
+      if (selectedUnit.nefalimSkillUsedThisTurn) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Nefalim: Apenas Ataque Básico (A) disponível!', 'status', '#C084FC');
+        return;
+      }
       if (selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) {
         addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
         return;
@@ -9096,6 +9219,11 @@ export function App() {
         // 1 2 3 4 5 6 7 8 9 - Atalhos para habilidades
         const digitMatch = code.match(/^(?:Digit|Numpad)([1-9])$/) || (key >= '1' && key <= '9' ? [, key] : null);
         if (digitMatch && !selectedUnit.hasAttacked && !isStunned) {
+          if (selectedUnit.nefalimSkillUsedThisTurn) {
+            e.preventDefault();
+            addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Nefalim: Apenas Ataque Básico (A) disponível!', 'status', '#C084FC');
+            return;
+          }
           const index = parseInt(digitMatch[1], 10) - 1;
           const skill = selectedUnit.skills?.[index];
           const reqUses = skill?.requiredSkillUses || 0;

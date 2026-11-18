@@ -935,6 +935,7 @@ export function createPlayerUnit(
     lineagePhoenixRevive1Hp: lineage.phoenixRevive1Hp,
     lineageExtraAttackEveryTurn: lineage.extraAttackEveryTurn,
     nefalimExtraAttackUsed: false,
+    nefalimSkillUsedThisTurn: false,
     lineageCentaurCharge: Boolean(lineage.centaurCharge),
     centaurMovedTilesThisTurn: 0,
     lineageBleedBonusDamagePercent: lineage.bleedBonusDamagePercent,
