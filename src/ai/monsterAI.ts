@@ -52,8 +52,8 @@ export function decideMonsterAction(
   if (monster.isMiniBoss && monster.currentHp / monster.maxHp <= 0.5) {
     monster.bossPhase = 2;
   }
-  // Astaroth Boss Phases
-  if (monster.isBoss) {
+  // Astaroth Boss Phases (não sobrescrever bossPhase da Quimera)
+  if (monster.isBoss && !monster.monsterTypeId?.startsWith('quimera')) {
     const hpRatio = monster.currentHp / monster.maxHp;
     if (hpRatio <= 0.3) {
       monster.bossPhase = 3;

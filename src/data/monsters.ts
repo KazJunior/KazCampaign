@@ -1107,7 +1107,7 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
       'quimera_cuspe_veneno',
       'quimera_pisoteio_cabra',
     ],
-    description: 'BOSS PODEROSO (FASE 30): Besta colossal de três cabeças. Ao atingir 30% da vida, divide-se em Leão, Serpente e Cabra.',
+    description: 'BOSS PODEROSO (FASE 30): Besta colossal de três cabeças. Ao ter sua vida zerada, divide-se em Leão, Serpente e Cabra.',
     isBoss: true,
   },
   quimera_leao: {

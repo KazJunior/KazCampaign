@@ -829,7 +829,7 @@ export const LEVELS: LevelConfig[] = [
     environment: 'fortress',
     width: 10,
     height: 8,
-    description: 'A colossal Quimera desperta! Ao ser enfraquecida (30% de vida), sua essência se divide em três feras: Leão, Serpente e Cabra!',
+    description: 'A colossal Quimera desperta! Ao ter sua vida zerada, sua essência se divide em três feras: Leão, Serpente e Cabra!',
     objectives: [
       'Derrote a Quimera Ancestral (Fase 1) e suas 3 feras divididas (Fase 2)!',
       'Desbloqueie a classe Berserker.',

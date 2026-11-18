@@ -760,7 +760,7 @@ export function App() {
   }, [audioSettings]);
 
   const selectedUnit = units.find((u) => u.id === selectedUnitId) || null;
-  const bossUnit = units.find((u) => u.isBoss || u.isMiniBoss) || null;
+  const bossUnit = units.find((u) => (u.isBoss || u.isMiniBoss) && !u.isDead) || units.find((u) => u.isBoss || u.isMiniBoss) || null;
 
   // Start or resume a specific level within an adventure run
   const startLevel = (levelId: number, customUnitsState?: Record<string, UnitProgression>) => {
@@ -2241,15 +2241,24 @@ export function App() {
     }
   }, [currentLevel, isDailyMode]);
 
-  // Divisão Quimérica (Fase 2 da Quimera na Fase 30 quando <= 30% HP)
+  // Divisão Quimérica (Fase 2 da Quimera na Fase 30 quando zerar a vida)
   const checkAndTriggerChimeraSplit = useCallback(
-    async (candidateUnits: Unit[], currentGrid: TileData[][] = grid): Promise<{ didSplit: boolean; updatedUnits: Unit[] }> => {
+    async (candidateUnits: Unit[], currentGrid: TileData[][] = gridRef.current?.length ? gridRef.current : grid): Promise<{ didSplit: boolean; updatedUnits: Unit[] }> => {
+      const alreadyHasSplitBeasts = candidateUnits.some(
+        (u) =>
+          u.monsterTypeId === 'quimera_leao' ||
+          u.monsterTypeId === 'quimera_serpente' ||
+          u.monsterTypeId === 'quimera_cabra'
+      );
+      if (alreadyHasSplitBeasts) {
+        return { didSplit: false, updatedUnits: candidateUnits };
+      }
+
       const chimera = candidateUnits.find(
         (u) =>
           u.faction === 'enemy' &&
-          u.monsterTypeId === 'quimera_venenosa' &&
-          (!u.bossPhase || u.bossPhase === 1) &&
-          (u.currentHp <= u.maxHp * 0.3 || u.isDead)
+          (u.monsterTypeId === 'quimera_venenosa' || u.id.includes('quimera_venenosa') || u.avatarKey === 'venom_chimera_boss') &&
+          (u.currentHp <= 0 || u.isDead)
       );
 
       if (!chimera) {
@@ -2278,7 +2287,7 @@ export function App() {
         if (
           prefX >= 0 && prefX < gWidth &&
           prefY >= 0 && prefY < gHeight &&
-          currentGrid[prefY][prefX].isWalkable &&
+          currentGrid[prefY]?.[prefX]?.isWalkable &&
           !occupied.has(`${prefX},${prefY}`)
         ) {
           occupied.add(`${prefX},${prefY}`);
@@ -2292,7 +2301,7 @@ export function App() {
               if (
                 nx >= 0 && nx < gWidth &&
                 ny >= 0 && ny < gHeight &&
-                currentGrid[ny][nx].isWalkable &&
+                currentGrid[ny]?.[nx]?.isWalkable &&
                 !occupied.has(`${nx},${ny}`)
               ) {
                 occupied.add(`${nx},${ny}`);
@@ -2571,13 +2580,20 @@ export function App() {
 
   // Check battle status
   const checkBattleStatusWithUnits = useCallback(async (currentUnits: Unit[]) => {
-    const chimeraNeedingSplit = currentUnits.find(
+    const alreadyHasSplitBeasts = currentUnits.some(
       (u) =>
-        u.faction === 'enemy' &&
-        u.monsterTypeId === 'quimera_venenosa' &&
-        (!u.bossPhase || u.bossPhase === 1) &&
-        (u.currentHp <= u.maxHp * 0.3 || u.isDead)
+        u.monsterTypeId === 'quimera_leao' ||
+        u.monsterTypeId === 'quimera_serpente' ||
+        u.monsterTypeId === 'quimera_cabra'
     );
+    const chimeraNeedingSplit =
+      !alreadyHasSplitBeasts &&
+      currentUnits.find(
+        (u) =>
+          u.faction === 'enemy' &&
+          (u.monsterTypeId === 'quimera_venenosa' || u.id.includes('quimera_venenosa') || u.avatarKey === 'venom_chimera_boss') &&
+          (u.currentHp <= 0 || u.isDead)
+      );
     if (chimeraNeedingSplit) {
       await checkAndTriggerChimeraSplit(currentUnits);
       return;
@@ -2888,6 +2904,11 @@ export function App() {
 
         return u;
       });
+
+      const splitCheck = await checkAndTriggerChimeraSplit(updatedUnits);
+      if (splitCheck.didSplit) {
+        updatedUnits = splitCheck.updatedUnits;
+      }
 
       const crystalCheck = await checkAndTriggerCrystalDestruction(updatedUnits);
       if (crystalCheck.didTrigger) {
@@ -4142,11 +4163,21 @@ export function App() {
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
       );
 
-      setUnits(
-        updatedUnitsAfterSacrifice.map((u) =>
-          u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
-        )
+      let finalUnitsAfterSacrifice = updatedUnitsAfterSacrifice.map((u) =>
+        u.id === selectedUnit.id ? { ...u, hasAttacked: true, skills: updatedSkills } : u
       );
+
+      const splitCheck = await checkAndTriggerChimeraSplit(finalUnitsAfterSacrifice);
+      if (splitCheck.didSplit) {
+        finalUnitsAfterSacrifice = splitCheck.updatedUnits;
+      }
+
+      const crystalCheck = await checkAndTriggerCrystalDestruction(finalUnitsAfterSacrifice);
+      if (crystalCheck.didTrigger) {
+        finalUnitsAfterSacrifice = crystalCheck.updatedUnits;
+      }
+
+      setUnits(finalUnitsAfterSacrifice);
 
       setSelectedUnitId(null);
       setSelectedAction('none');
@@ -4156,6 +4187,7 @@ export function App() {
       setTargetTeleportPoint(null);
       setDamagePreview(null);
       setIsAnimatingAction(false);
+      setTimeout(() => checkBattleStatusWithUnits(finalUnitsAfterSacrifice), 200);
       return;
     }
 
@@ -5228,13 +5260,20 @@ export function App() {
         t.lastStunTurn !== undefined &&
         turnNumber - t.lastStunTurn <= 1;
 
-      const isChimeraPhase1 = t.monsterTypeId === 'quimera_venenosa' && (!t.bossPhase || t.bossPhase === 1);
-      const isChimeraTriggeringSplit = isChimeraPhase1 && (newHp <= t.maxHp * 0.3);
+      const isChimeraPhase1 =
+        (t.monsterTypeId === 'quimera_venenosa' || t.id.includes('quimera_venenosa') || t.avatarKey === 'venom_chimera_boss') &&
+        !updatedUnits.some(
+          (u) =>
+            u.monsterTypeId === 'quimera_leao' ||
+            u.monsterTypeId === 'quimera_serpente' ||
+            u.monsterTypeId === 'quimera_cabra'
+        );
+      const isChimeraTriggeringSplit = isChimeraPhase1 && newHp <= 0;
 
       const isTargetStatusImmune = currentEffects.some((e) => e.type === 'immune' && e.duration > 0);
 
       if (isChimeraTriggeringSplit) {
-        // Chimera Phase 1 reached 30% HP or less - will split into 3 beasts
+        // Chimera Phase 1 reached 0 HP - will split into 3 beasts
         newHp = 0;
       } else if (newHp === 0) {
         soundManager.playDeath();
@@ -6770,6 +6809,10 @@ export function App() {
           soundManager.playStep();
 
           if (monsterDiedFromShock) {
+            const shockSplit = await checkAndTriggerChimeraSplit(currentUnits);
+            if (shockSplit.didSplit) {
+              currentUnits = shockSplit.updatedUnits;
+            }
             await new Promise((r) => setTimeout(r, 300 * delayMult));
             continue;
           }
@@ -7792,6 +7835,11 @@ export function App() {
           }
         }
       }
+    }
+
+    const finalAiSplit = await checkAndTriggerChimeraSplit(currentUnits);
+    if (finalAiSplit.didSplit) {
+      currentUnits = finalAiSplit.updatedUnits;
     }
 
     const playerLiving = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
