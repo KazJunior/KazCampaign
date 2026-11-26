@@ -15,10 +15,49 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v2.3',
+    date: '26 de Novembro de 2026',
+    title: 'Rework do Omnimago (Reações Elementais), Novas Condições Congelando & Ventania e Upgrades',
+    isLatest: true,
+    tag: 'Rework & Sistema Elemental',
+    changes: [
+      {
+        highlight: 'Rework Completo do Omnimago & Sistema de Reações Elementais',
+        description: 'O Omnimago foi totalmente reformulado com 15 habilidades (incluindo 4 novas habilidades normais — Salto Prismático, Relâmpago Glacial, Ciclone Vulcânico e Harmonia dos Quatro Elementos — e 2 habilidades exclusivas de Missão de Classe: Feixe de Convergência Prismática e Singularidade dos Quatro Elementos). Atingir inimigos já afetados por efeitos elementais (Queimadura, Congelando, Eletrificado ou Ventania) ativa Reações Elementais como Choque Térmico, Supercondutor, Sobrecarga Explosiva, Tempestade Ígnea, Nevasca Paralisante, Estilhaço Glacial, Arco Ciclônico, Tempestade Estática, Catarse Térmica, Fusão Criovoltaica, Fúria Piroclástica e Colapso Criogênico, exibidas diretamente na prévia de ataque.',
+        type: 'new',
+      },
+      {
+        highlight: 'Suprema do Omnimago: Apocalipse Prismático com Animação 3D e Fala na Tela',
+        description: 'A habilidade suprema Apocalipse Prismático agora possui animação 3D exclusiva com cúpula cósmica, convergência dos 4 orbes elementais, pilar prismático celeste, 4 ondas de choque coloridas, efeito visual prismático na tela e fala dramática com Mandala Tetra-Elemental animada. Além do dano em área massiva (raio 2), aplica todos os 4 efeitos elementais (Queimadura, Congelando, Eletrificado e Ventania) por 2 turnos nos inimigos atingidos e ganha +15% de dano por efeito elemental já ativo.',
+        type: 'new',
+      },
+      {
+        highlight: 'Nova Condição Elemental do Mago de Gelo: Congelando (-20% DEF/RES)',
+        description: 'Todas as habilidades ofensivas do Mago de Gelo (além de inimigos empurrados pela Muralha de Gelo) agora aplicam a condição Congelando, que reduz em 20% tanto a Defesa Física quanto a Resistência Mágica do alvo por 1 turno, com indicador visual dedicado no painel e anel cristalino 3D.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Nova Condição Elemental do Mago de Vento: Ventania (-1 Movimento)',
+        description: 'As habilidades ofensivas e repulsoras do Mago de Vento agora aplicam, além do empurrão, a condição Ventania, reduzindo em 1 o alcance de movimento dos inimigos por 1 turno, com indicador próprio na interface e anel ciclônico 3D.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Balanceamento do Omnimago & Padronização de Efeitos',
+        description: 'Calibrados os multiplicadores de dano e recargas de todas as habilidades do Omnimago ao padrão do jogo, removidos os atordoamentos das reações elementais (substituídos por quebra de defesa, redução de dano de 1 turno e lentidão) e padronizado o escalonamento de Eletrificado para 1% da vida máxima por casa movida.',
+        type: 'buff',
+      },
+      {
+        highlight: 'Correção: Omnimago na Tela de Upgrades da Base',
+        description: 'Adicionados os 5 níveis de aprimoramento permanente do Omnimago na Base de Operações (Centelha Prismática até Soberano dos Quatro Elementos), corrigindo sua ausência na aba de Upgrades de Classes.',
+        type: 'fix',
+      },
+    ],
+  },
+  {
     version: 'v2.2',
     date: '29 de Outubro de 2026',
     title: '5 Novas Linhagens (Minotauro, Anjo, Demônio, Nefalim, Fênix) & Missões Variadas',
-    isLatest: true,
+    isLatest: false,
     tag: 'Linhagens & Missões',
     changes: [
       {
