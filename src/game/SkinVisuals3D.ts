@@ -2,6 +2,16 @@ import * as THREE from 'three';
 import type { Unit } from '../types/game';
 import { getSkinById } from '../data/classQuests';
 
+function createGlowMat(color: number, emissiveIntensity = 1.6): THREE.MeshStandardMaterial {
+  return new THREE.MeshStandardMaterial({
+    color,
+    emissive: color,
+    emissiveIntensity,
+    roughness: 0.25,
+    metalness: 0.2,
+  });
+}
+
 /**
  * Aplica a paleta de cores e o brilho característicos da Skin equipada
  * aos componentes procedurais da miniatura 3D (roupas, armaduras, mantos e lâminas).
