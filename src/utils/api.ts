@@ -123,10 +123,13 @@ export async function fetchCloudProgress(): Promise<any | null> {
 }
 
 /** Sincroniza progresso com o Neon Database */
-export async function saveCloudProgress(progress: any, keepalive = false): Promise<{ ok: boolean; gold?: number } | null> {
+export async function saveCloudProgress(
+  progress: any,
+  keepalive = false
+): Promise<{ ok: boolean; gold?: number; unlockedClasses?: string[] } | null> {
   if (!getToken()) return null;
   try {
-    const data = await request<{ ok: boolean; gold?: number }>('/api/progress', {
+    const data = await request<{ ok: boolean; gold?: number; unlockedClasses?: string[] }>('/api/progress', {
       method: 'POST',
       body: progress,
       auth: true,

@@ -970,6 +970,57 @@ export function createSkinVisualFeatures3D(unit: Unit): THREE.Group | null {
     windCrown.position.set(0, 0.84, 0);
     skinGroup.add(windCrown);
   }
+  // 25. XAMÃ
+  else if (sId === 'xama_tempestade') {
+    const stormHalo = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.02, 6, 16), createGlowMat(0x06b6d4, 1.8));
+    stormHalo.rotation.x = Math.PI / 2;
+    stormHalo.position.set(0, 0.92, 0);
+    skinGroup.add(stormHalo);
+  } else if (sId === 'xama_ancestral') {
+    const aura = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.025, 6, 18), createGlowMat(0xf59e0b, 2.0));
+    aura.rotation.x = Math.PI / 2;
+    aura.position.set(0, 0.12, 0);
+    skinGroup.add(aura);
+    const crown = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.02, 6, 14), createGlowMat(0xfde047, 1.8));
+    crown.rotation.x = Math.PI / 2;
+    crown.position.set(0, 0.96, 0);
+    skinGroup.add(crown);
+  }
+  // 26. ARTÍFICE
+  else if (sId === 'artifice_voltaico') {
+    const coil = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.02, 6, 16), createGlowMat(0xfacc15, 1.8));
+    coil.rotation.x = Math.PI / 2;
+    coil.position.set(0, 0.56, 0);
+    skinGroup.add(coil);
+  } else if (sId === 'artifice_aegis') {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.025, 6, 16), createGlowMat(0xc084fc, 1.9));
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 0.14, 0);
+    skinGroup.add(ring);
+  }
+  // 27. CAVALEIRO
+  else if (sId === 'cavaleiro_carmesim') {
+    const crest = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.24, 6), createGlowMat(0xef4444, 1.7));
+    crest.position.set(0, 1.20, -0.04);
+    skinGroup.add(crest);
+  } else if (sId === 'cavaleiro_campeao') {
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.022, 6, 16), createGlowMat(0xfde047, 2.0));
+    halo.rotation.x = Math.PI / 2;
+    halo.position.set(0, 1.22, -0.02);
+    skinGroup.add(halo);
+  }
+  // 28. CANHONEIRO
+  else if (sId === 'canhoneiro_corsario') {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.02, 6, 14), createGlowMat(0x2dd4bf, 1.6));
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 0.10, 0);
+    skinGroup.add(ring);
+  } else if (sId === 'canhoneiro_imperial') {
+    const crown = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.022, 6, 14), createGlowMat(0xfbbf24, 2.0));
+    crown.rotation.x = Math.PI / 2;
+    crown.position.set(0, 0.96, 0);
+    skinGroup.add(crown);
+  }
 
   return skinGroup;
 }

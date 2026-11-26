@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import {CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS } from '../data/units';
+import { CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, CHALLENGE_CLASS_UNLOCK_CONDITIONS } from '../data/units';
 import type { PlayerProgress } from '../types/game';
 import { ClassUnlockQuestsModal } from './ClassUnlockQuestsModal';
 import { getEquippedSkin } from '../data/classQuests';
@@ -30,7 +30,7 @@ import {
   Zap,
   X,
   Palette,
-  Lock, PawPrint, FlaskConical, Clock } from 'lucide-react';
+  Lock, PawPrint, FlaskConical, Clock, Wrench, Bomb } from 'lucide-react';
 
 interface PartySelectionModalProps {
   progress?: PlayerProgress;
@@ -279,7 +279,8 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
             const classDef = CLASS_DEFINITIONS[cKey];
             const isUnlocked = unlockedClasses.includes(cKey);
             const isSelected = selected.includes(cKey);
-            const unlockCondition = CLASS_UNLOCK_CONDITIONS[cKey];
+            const challengeCondition = CHALLENGE_CLASS_UNLOCK_CONDITIONS[cKey];
+            const unlockCondition = CLASS_UNLOCK_CONDITIONS[cKey] || challengeCondition;
             const isSecret = !!classDef.isSecret;
             const goldCost = classDef.goldCost;
             const isPurchasable = typeof goldCost === 'number';
@@ -333,6 +334,10 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                         ) : isPurchasable ? (
                           <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#F0B44D]/20 border border-[#F0B44D]/60 text-[#F0B44D]">
                             {goldCost.toLocaleString('pt-BR')} 🪙
+                          </span>
+                        ) : challengeCondition ? (
+                          <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#F59E0B]/20 border border-[#F59E0B]/60 text-[#FBBF24]">
+                            Desafio
                           </span>
                         ) : (
                           <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-[#E65353]/20 border border-[#E65353]/50 text-[#E65353]">
@@ -497,6 +502,8 @@ export const PartySelectionModal: React.FC<PartySelectionModalProps> = ({
                         className={`p-2 rounded-xl text-[10px] leading-tight ${
                           isSecret
                             ? 'bg-[#240046]/40 border border-[#7B2CBF]/40 text-[#E0AAFF]'
+                            : challengeCondition
+                            ? 'bg-[#10131C] border border-[#F59E0B]/40 text-[#FCD34D]'
                             : 'bg-[#10131C] border border-[#E65353]/30 text-[#F87171]'
                         }`}
                       >
@@ -635,6 +642,16 @@ function getClassIcon(avatarKey: string, size = 20) {
       return <FlaskConical size={size} />;
     case 'dancarina_tempo':
       return <Clock size={size} />;
+    case 'xama':
+      return <Sparkles size={size} />;
+    case 'artifice':
+      return <Wrench size={size} />;
+    case 'cavaleiro':
+      return <Shield size={size} />;
+    case 'canhoneiro':
+      return <Bomb size={size} />;
+    case 'omnimage':
+      return <Sparkles size={size} />;
     default:
       return <Shield size={size} />;
   }

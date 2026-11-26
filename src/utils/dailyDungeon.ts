@@ -121,6 +121,10 @@ const CANDIDATE_CLASSES = [
   'ceifador',
   'invocador',
   'alquimista',
+  'xama',
+  'artifice',
+  'cavaleiro',
+  'canhoneiro',
 ];
 
 const CANDIDATE_BOSSES = [

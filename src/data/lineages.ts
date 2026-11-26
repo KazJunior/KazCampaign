@@ -390,4 +390,8 @@ export const DEFAULT_CLASS_LINEAGES: Record<string, string> = {
   invocador: 'elfo',
   alquimista: 'anao',
   dancarina_tempo: 'humano',
+  xama: 'elfo',
+  artifice: 'anao',
+  cavaleiro: 'humano',
+  canhoneiro: 'anao',
 };

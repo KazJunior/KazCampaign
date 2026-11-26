@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import {Sparkles, Shield, Target, HeartPulse, Footprints, Swords, Skull, BookOpen, Flame, Check, Sun, Crosshair, Music, Snowflake, TreePine, Zap, Wind, PawPrint, FlaskConical, Clock } from 'lucide-react';
+import {Sparkles, Shield, Target, HeartPulse, Footprints, Swords, Skull, BookOpen, Flame, Check, Sun, Crosshair, Music, Snowflake, TreePine, Zap, Wind, PawPrint, FlaskConical, Clock, Wrench, Bomb } from 'lucide-react';
 import { CLASS_DEFINITIONS } from '../data/units';
 import { soundManager } from '../utils/audio';
 
@@ -169,6 +169,14 @@ function getClassIcon(avatarKey: string, size = 24) {
       return <FlaskConical size={size} />;
     case 'dancarina_tempo':
       return <Clock size={size} />;
+    case 'xama':
+      return <Sparkles size={size} />;
+    case 'artifice':
+      return <Wrench size={size} />;
+    case 'cavaleiro':
+      return <Shield size={size} />;
+    case 'canhoneiro':
+      return <Bomb size={size} />;
     default:
       return <Sparkles size={size} />;
   }

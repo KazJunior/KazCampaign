@@ -456,6 +456,74 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     description: 'Bailarina lendária que domina o fluxo do tempo brandindo dois floretes gêmeos: o vermelho, que corta o Futuro com aceleração incisiva, e o preto, que comanda o Passado através de reversão e ecos atemporais.',
     statGrowth: { hp: 12, atk: 4, mag: 4, def: 2, res: 2 },
     isSecret: true,
+  },
+  xama: {
+    className: 'xama',
+    name: 'Xamã',
+    role: 'Totens Espirituais, Cura & Maldições Ancestrais',
+    maxHp: 82,
+    atk: 12,
+    mag: 25,
+    def: 7,
+    res: 11,
+    mov: 3,
+    range: 3,
+    color: '#0D9488',
+    avatarKey: 'xama',
+    baseSkillId: 'raio_espiritual',
+    description: 'Místico espiritual que invoca totens sagrados de cura, trovão e proteção no campo de batalha, combinando bênçãos ancestrais, maldições tribais e fúria elemental dos espíritos.',
+    statGrowth: { hp: 11, atk: 2, mag: 4, def: 2, res: 2 },
+  },
+  artifice: {
+    className: 'artifice',
+    name: 'Artífice',
+    role: 'Torretas Mecânicas, Drones & Engenharia Arcana',
+    maxHp: 82,
+    atk: 22,
+    mag: 20,
+    def: 8,
+    res: 7,
+    mov: 3,
+    range: 3,
+    color: '#0284C7',
+    avatarKey: 'artifice',
+    baseSkillId: 'disparo_arcano_mecanico',
+    description: 'Engenheiro arcano-mecânico que domina o campo montando torretas balistas, bobinas voltaicas e drones reparadores, além de disparar lasers perfurantes, ganchos e granadas táticas.',
+    statGrowth: { hp: 10, atk: 3, mag: 3, def: 2, res: 2 },
+  },
+  cavaleiro: {
+    className: 'cavaleiro',
+    name: 'Cavaleiro',
+    role: 'Cavalaria Pesada Montada & Cargas de Impacto',
+    maxHp: 115,
+    atk: 25,
+    mag: 6,
+    def: 11,
+    res: 6,
+    mov: 4,
+    range: 1,
+    color: '#2563EB',
+    avatarKey: 'cavaleiro',
+    baseSkillId: 'investida_de_lanca',
+    description: 'Guerreiro de elite montado em seu corcel de guerra blindado. Combina alta mobilidade, armadura pesada e cargas avassaladoras com lança de justa para atropelar e romper formações inimigas.',
+    statGrowth: { hp: 14, atk: 3, mag: 1, def: 3, res: 1 },
+  },
+  canhoneiro: {
+    className: 'canhoneiro',
+    name: 'Canhoneiro',
+    role: 'Artilharia Pesada, Explosões & Bombardeio',
+    maxHp: 78,
+    atk: 27,
+    mag: 6,
+    def: 6,
+    res: 5,
+    mov: 2,
+    range: 4,
+    color: '#B91C1C',
+    avatarKey: 'canhoneiro',
+    baseSkillId: 'tiro_de_canhao',
+    description: 'Especialista em armas de pólvora pesada empunhando um canhão portátil de alto calibre. Desfere bombardeios explosivos em área, disparos perfurantes e recuos devastadores à longa distância.',
+    statGrowth: { hp: 9, atk: 4, mag: 1, def: 2, res: 1 },
   }
 };
 
@@ -506,6 +574,72 @@ export const CLASS_UNLOCK_CONDITIONS: Record<string, ClassUnlockInfo> = {
     description: 'Derrote a Quimera Ancestral na Fase 30 para desbloquear o Berserker.',
   },
 };
+
+export interface ChallengeClassUnlockInfo {
+  requiredLevel: number;
+  requiredClasses?: string[];
+  requiredClassLineage?: {
+    className: string;
+    lineageId: string;
+  };
+  description: string;
+}
+
+export const CHALLENGE_CLASS_UNLOCK_CONDITIONS: Record<string, ChallengeClassUnlockInfo> = {
+  cavaleiro: {
+    requiredLevel: 10,
+    requiredClassLineage: { className: 'guerreiro', lineageId: 'centauro' },
+    description: 'Vença a Fase 10 com um Guerreiro de linhagem Centauro na equipe.',
+  },
+  xama: {
+    requiredLevel: 15,
+    requiredClasses: ['necromante', 'curandeiro'],
+    description: 'Vença a Fase 15 utilizando Necromante e Curandeiro no mesmo time.',
+  },
+  canhoneiro: {
+    requiredLevel: 20,
+    requiredClasses: ['arqueiro', 'sniper'],
+    description: 'Vença a Fase 20 utilizando Arqueiro e Sniper no time.',
+  },
+  artifice: {
+    requiredLevel: 20,
+    requiredClasses: ['invocador', 'necromante', 'mago_runico'],
+    description: 'Vença a Fase 20 utilizando Invocador, Necromante e Mago Rúnico no mesmo time.',
+  },
+};
+
+export function checkChallengeClassUnlocks(
+  levelId: number,
+  partyClasses: string[],
+  partyLineages: Record<string, string> = {},
+  alreadyUnlocked: string[] = []
+): string[] {
+  const normalizedParty = partyClasses.map(normalizeClassId);
+  const unlocked: string[] = [];
+
+  Object.entries(CHALLENGE_CLASS_UNLOCK_CONDITIONS).forEach(([classKey, cond]) => {
+    if (alreadyUnlocked.includes(classKey)) return;
+    if (levelId !== cond.requiredLevel) return;
+
+    if (cond.requiredClasses && cond.requiredClasses.length > 0) {
+      const hasAllRequired = cond.requiredClasses.every((reqClass) =>
+        normalizedParty.includes(reqClass)
+      );
+      if (!hasAllRequired) return;
+    }
+
+    if (cond.requiredClassLineage) {
+      const { className, lineageId } = cond.requiredClassLineage;
+      const hasHero = normalizedParty.includes(className);
+      const heroLineage = partyLineages[className] || DEFAULT_CLASS_LINEAGES[className] || 'humano';
+      if (!hasHero || heroLineage !== lineageId) return;
+    }
+
+    unlocked.push(classKey);
+  });
+
+  return unlocked;
+}
 
 export interface SecretClassUnlockInfo {
   title: string;
@@ -644,7 +778,6 @@ export const PURCHASABLE_CLASSES: Record<string, { goldCost: number; name: strin
     name: 'Alquimista',
     description: 'Compre o Alquimista por 100.000 moedas de ouro.',
   },
-
 };
 
 export function normalizeClassId(c: string): string {

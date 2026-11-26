@@ -190,6 +190,34 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 4, cost: 80000, bonus: { hp: 48, atk: 6, mag: 4, res: 2 }, name: 'Valsa dos Ponteiros', description: '+48 HP, +6 ATK, +4 MAG e +2 RES permanente.' },
     { level: 5, cost: 100000, bonus: { hp: 68, atk: 8, mag: 6, def: 2, res: 3 }, name: 'Prima Ballerina do Tempo', description: '+68 HP, +8 ATK, +6 MAG, +2 DEF e +3 RES permanente.' },
   ],
+  xama: [
+    { level: 1, cost: 10000, bonus: { hp: 15, mag: 2 }, name: 'Sussurro dos Espíritos', description: '+15 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 22, mag: 3, res: 1 }, name: 'Totens Consagrados', description: '+22 HP, +3 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 30, mag: 4, def: 1, res: 1 }, name: 'Pacto Ancestral', description: '+30 HP, +4 MAG, +1 DEF e +1 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 40, mag: 5, def: 2, res: 2 }, name: 'Voz da Tempestade', description: '+40 HP, +5 MAG, +2 DEF e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 50, mag: 7, def: 2, res: 3 }, name: 'Grande Xamã Espiritual', description: '+50 HP, +7 MAG, +2 DEF e +3 RES permanente.' },
+  ],
+  artifice: [
+    { level: 1, cost: 10000, bonus: { hp: 15, atk: 2, mag: 1 }, name: 'Engrenagens de Precisão', description: '+15 HP, +2 ATK e +1 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 22, atk: 3, mag: 2, def: 1 }, name: 'Chassi Reforçado', description: '+22 HP, +3 ATK, +2 MAG e +1 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 30, atk: 4, mag: 2, def: 1, res: 1 }, name: 'Núcleo Voltaico', description: '+30 HP, +4 ATK, +2 MAG, +1 DEF e +1 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 40, atk: 5, mag: 4, def: 2, res: 1 }, name: 'Oficina de Guerra', description: '+40 HP, +5 ATK, +4 MAG, +2 DEF e +1 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 52, atk: 6, mag: 5, def: 3, res: 2 }, name: 'Arquiteto Supremo', description: '+52 HP, +6 ATK, +5 MAG, +3 DEF e +2 RES permanente.' },
+  ],
+  cavaleiro: [
+    { level: 1, cost: 10000, bonus: { hp: 18, def: 1, atk: 1 }, name: 'Estribos de Ferro', description: '+18 HP, +1 ATK e +1 DEF permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 26, atk: 2, def: 2 }, name: 'Barda Real', description: '+26 HP, +2 ATK e +2 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 36, atk: 3, def: 2, res: 1 }, name: 'Lança de Justa Temperada', description: '+36 HP, +3 ATK, +2 DEF e +1 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 48, atk: 4, def: 2, res: 1 }, name: 'Carga Implacável', description: '+48 HP, +4 ATK, +2 DEF e +1 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 62, atk: 6, def: 3, res: 2 }, name: 'Campeão da Cavalaria', description: '+62 HP, +6 ATK, +3 DEF e +2 RES permanente.' },
+  ],
+  canhoneiro: [
+    { level: 1, cost: 10000, bonus: { hp: 14, atk: 2 }, name: 'Pólvora Refinada', description: '+14 HP e +2 ATK permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 20, atk: 3, def: 1 }, name: 'Cano de Bronze Pesado', description: '+20 HP, +3 ATK e +1 DEF permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 26, atk: 4, def: 1, res: 1 }, name: 'Obuses Incendiários', description: '+26 HP, +4 ATK, +1 DEF e +1 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 36, atk: 5, def: 1, res: 1 }, name: 'Bateria de Cerco', description: '+36 HP, +5 ATK, +1 DEF e +1 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 48, atk: 8, def: 2, res: 2 }, name: 'Mestre da Artilharia', description: '+48 HP, +8 ATK, +2 DEF e +2 RES permanente.' },
+  ],
 
 };
 

@@ -15,10 +15,49 @@ export interface ChangelogEntry {
 
 export const GAME_CHANGELOG: ChangelogEntry[] = [
   {
+    version: 'v2.4',
+    date: '26 de Novembro de 2026',
+    title: '4 Novas Classes (Xamã, Artífice, Cavaleiro Montado e Canhoneiro), Desafios de Desbloqueio & Balanceamento',
+    isLatest: true,
+    tag: 'Novas Classes',
+    changes: [
+      {
+        highlight: 'Nova Classe: Xamã (Totens Espirituais, Cura & Maldições)',
+        description: 'Místico espiritual de alcance 3 com 10 habilidades aprendíveis e 2 habilidades exclusivas de Missão de Classe (Círculo dos Três Totens e Tempestade dos Espíritos). Invoca 3 totens 3D distintos no campo de batalha — Totem da Nascente (cura aliada), Totem do Trovão (descarga elétrica) e Totem Guardião (escudo protetor) — além de contar com 5 níveis de upgrade, 3 skins e 3 missões de classe.',
+        type: 'new',
+      },
+      {
+        highlight: 'Nova Classe: Artífice (Torretas Mecânicas, Drones & Engenharia Arcana)',
+        description: 'Engenheiro híbrido de alcance 3 com 10 habilidades aprendíveis e 2 habilidades de Missão de Classe (Canhão Tesla Portátil e Barreira Aegis Mecânica). Monta 3 construtos 3D táticos no tabuleiro — Torreta Balista, Bobina Tesla e Drone Médico — além de disparar lasers perfurantes, ganchos magnéticos, minas e granadas de choque, com 5 níveis de upgrade, 3 skins e 3 missões.',
+        type: 'new',
+      },
+      {
+        highlight: 'Nova Classe: Cavaleiro (Cavalaria Pesada Montada)',
+        description: 'Guerreiro de elite montado em um corcel de guerra 3D blindado com alta mobilidade (MOV 4), 10 habilidades aprendíveis de carga, empurrão, salto montado e justa, mais 2 habilidades de Missão de Classe (Lança Real Imparável e Carga dos Campeões), 5 níveis de upgrade, 3 skins exclusivas (incluindo montarias temáticas) e 3 missões.',
+        type: 'new',
+      },
+      {
+        highlight: 'Nova Classe: Canhoneiro (Artilharia Pesada & Bombardeio)',
+        description: 'Especialista em pólvora pesada de alcance 4 armado com um canhão portátil de alto calibre, 10 habilidades aprendíveis com explosões em área, quebra de armadura, recuo tático e queimaduras, além de 2 habilidades de Missão de Classe (Canhão Colossal e Chuva de Obuses Suprema), 5 níveis de upgrade, 3 skins e 3 missões.',
+        type: 'new',
+      },
+      {
+        highlight: 'Novos Desafios Táticos de Desbloqueio das 4 Classes',
+        description: 'As 4 novas classes são desbloqueadas cumprindo desafios específicos de composição e linhagem: Cavaleiro (vencer a Fase 10 com um Guerreiro de linhagem Centauro na equipe), Xamã (vencer a Fase 15 com Necromante e Curandeiro no mesmo time), Canhoneiro (vencer a Fase 20 com Arqueiro e Sniper no time) e Artífice (vencer a Fase 20 com Invocador, Necromante e Mago Rúnico no mesmo time).',
+        type: 'new',
+      },
+      {
+        highlight: 'Balanceamento Geral das 4 Novas Classes & Invocações',
+        description: 'Atributos base, crescimento por nível, upgrades permanentes, multiplicadores de habilidades, escudos e escalonamento dos totens do Xamã e construtos do Artífice foram calibrados frente às classes equivalentes do jogo, garantindo identidade tática única sem desequilibrar a campanha.',
+        type: 'buff',
+      },
+    ],
+  },
+  {
     version: 'v2.3',
     date: '26 de Novembro de 2026',
     title: 'Rework do Omnimago (Reações Elementais), Novas Condições Congelando & Ventania e Upgrades',
-    isLatest: true,
+    isLatest: false,
     tag: 'Rework & Sistema Elemental',
     changes: [
       {

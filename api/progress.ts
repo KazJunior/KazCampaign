@@ -53,6 +53,10 @@ const ALL_VALID_CLASSES = new Set<string>([
   'alquimista',
   'dancarina_tempo',
   'pistoleiro_tempo',
+  'xama',
+  'artifice',
+  'cavaleiro',
+  'canhoneiro',
 ]);
 
 const LINEAGE_QUEST_THRESHOLDS: Array<{
@@ -717,7 +721,7 @@ export async function POST(req: Request): Promise<Response> {
         unlocked_level = EXCLUDED.unlocked_level,
         updated_at = NOW()`;
 
-    return json({ ok: true, gold: finalGold });
+    return json({ ok: true, gold: finalGold, unlockedClasses: safeUnlocked });
   } catch (err) {
     console.error('POST /api/progress error', err);
     const msg = err instanceof Error ? err.message : '';

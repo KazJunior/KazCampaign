@@ -35,6 +35,10 @@ export function createInitialUnitsState(): PlayerProgress['unitsState'] {
     invocador: { className: 'invocador', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     alquimista: { className: 'alquimista', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
     dancarina_tempo: { className: 'dancarina_tempo', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    xama: { className: 'xama', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    artifice: { className: 'artifice', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    cavaleiro: { className: 'cavaleiro', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
+    canhoneiro: { className: 'canhoneiro', level: 1, xp: 0, bonusAtk: 0, bonusDef: 0, bonusHp: 0, bonusMag: 0, bonusRes: 0, learnedSkillIds: [], skillLevels: {} },
   };
 }
 
@@ -473,21 +477,60 @@ export function savePlayerProgress(progress: PlayerProgress): void {
     }
 
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(safeProgress));
-    saveCloudProgress(safeProgress, true).then((res) => {
-      if (res && typeof res.gold === 'number' && res.gold !== safeProgress.gold) {
-        try {
-          const raw = localStorage.getItem(PROGRESS_KEY);
-          const current = raw ? JSON.parse(raw) : { ...safeProgress };
+    const applyCloudSaveResponse = (res: { ok: boolean; gold?: number; unlockedClasses?: string[] } | null) => {
+      if (!res) return;
+      try {
+        const raw = localStorage.getItem(PROGRESS_KEY);
+        const current = raw ? JSON.parse(raw) : { ...safeProgress };
+        let changed = false;
+
+        if (typeof res.gold === 'number' && res.gold !== current.gold) {
           current.gold = res.gold;
-          localStorage.setItem(PROGRESS_KEY, JSON.stringify(current));
+          changed = true;
           if (typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('kazcampaign_gold_sync', { detail: { gold: res.gold } }));
           }
-        } catch {
-          // ignore
         }
+
+        if (Array.isArray(res.unlockedClasses) && res.unlockedClasses.length > 0) {
+          const prevSet = new Set<string>((Array.isArray(current.unlockedClasses) ? current.unlockedClasses : []).map(normalizeClassId));
+          const merged = Array.from(new Set([...prevSet, ...res.unlockedClasses.map(normalizeClassId)]));
+          if (merged.length !== prevSet.size) {
+            current.unlockedClasses = merged;
+            changed = true;
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('kazcampaign_classes_sync', { detail: { unlockedClasses: merged } }));
+            }
+          }
+        }
+
+        if (changed) {
+          localStorage.setItem(PROGRESS_KEY, JSON.stringify(current));
+        }
+      } catch {
+        // ignore
       }
-    }).catch(() => { });
+    };
+
+    saveCloudProgress(safeProgress, true)
+      .then((res) => {
+        if (res && res.ok) {
+          applyCloudSaveResponse(res);
+          return;
+        }
+        // Retry automático após 2s caso a gravação na nuvem falhe por oscilação de rede
+        if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+        cloudSyncTimeout = setTimeout(() => {
+          try {
+            const latestRaw = localStorage.getItem(PROGRESS_KEY);
+            const latestParsed = latestRaw ? JSON.parse(latestRaw) : safeProgress;
+            saveCloudProgress(latestParsed, false).then(applyCloudSaveResponse).catch(() => { });
+          } catch {
+            saveCloudProgress(safeProgress, false).then(applyCloudSaveResponse).catch(() => { });
+          }
+        }, 2000);
+      })
+      .catch(() => { });
   } catch (err) {
     console.error('Failed to save progress to localStorage:', err);
   }

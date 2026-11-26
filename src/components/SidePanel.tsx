@@ -631,6 +631,20 @@ export function getUnitAvatar(key: string, size = 16) {
       return <PawPrint size={size} />;
     case 'alquimista':
       return <FlaskConical size={size} />;
+    case 'xama':
+    case 'totem_cura':
+    case 'totem_trovao':
+    case 'totem_pedra':
+      return <Sparkles size={size} />;
+    case 'artifice':
+    case 'torreta_balista':
+    case 'bobina_tesla':
+    case 'drone_medico':
+      return <Wrench size={size} />;
+    case 'cavaleiro':
+      return <Shield size={size} />;
+    case 'canhoneiro':
+      return <Flame size={size} />;
     case 'dancarina_tempo':
     case 'time_phantom_boss':
     case 'cosmic_time_worm_boss':

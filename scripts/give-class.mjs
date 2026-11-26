@@ -63,6 +63,10 @@ const VALID_CLASSES = [
   'invocador',
   'alquimista',
   'dancarina_tempo',
+  'xama',
+  'artifice',
+  'cavaleiro',
+  'canhoneiro',
 ];
 
 const username = process.argv[2]?.trim();

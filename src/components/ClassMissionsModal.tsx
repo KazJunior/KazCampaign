@@ -32,7 +32,7 @@ import {
   Coins,
   Palette,
   X,
-  Check, PawPrint, FlaskConical, Clock } from 'lucide-react';
+  Check, PawPrint, FlaskConical, Clock, Wrench, Bomb } from 'lucide-react';
 
 interface ClassMissionsModalProps {
   progress: PlayerProgress;
@@ -621,6 +621,16 @@ function getClassGlyph(avatarKey?: string): React.ReactNode {
       return <FlaskConical size={20} />;
     case 'dancarina_tempo':
       return <Clock size={20} />;
+    case 'xama':
+      return <Sparkles size={20} />;
+    case 'artifice':
+      return <Wrench size={20} />;
+    case 'cavaleiro':
+      return <Shield size={20} />;
+    case 'canhoneiro':
+      return <Bomb size={20} />;
+    case 'omnimage':
+      return <Sparkles size={20} />;
     default:
       return <Shield size={20} />;
   }

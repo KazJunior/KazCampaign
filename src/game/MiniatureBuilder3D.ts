@@ -1150,6 +1150,36 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'dancarina_tempo':
       buildDancarinaTempoMini(char);
       break;
+    case 'xama':
+      buildXamaMini(char);
+      break;
+    case 'artifice':
+      buildArtificeMini(char);
+      break;
+    case 'cavaleiro':
+      buildCavaleiroMini(char);
+      break;
+    case 'canhoneiro':
+      buildCanhoneiroMini(char);
+      break;
+    case 'totem_cura':
+      buildTotemMini(char, 0x10b981);
+      break;
+    case 'totem_trovao':
+      buildTotemMini(char, 0xfacc15);
+      break;
+    case 'totem_pedra':
+      buildTotemMini(char, 0x78716c);
+      break;
+    case 'torreta_balista':
+      buildTorretaMini(char, false);
+      break;
+    case 'bobina_tesla':
+      buildTorretaMini(char, true);
+      break;
+    case 'drone_medico':
+      buildDroneMini(char);
+      break;
 
     case 'goblin':
       buildGoblinMini(char);
@@ -5638,6 +5668,503 @@ function buildChronosDrakeMini(group: THREE.Group) {
   pendulumBarb.position.set(0, 0.34, -0.52);
   pendulumBarb.rotation.x = Math.PI / 3;
   group.add(pendulumBarb);
+}
+
+// =============================================================
+// NEW HERO CLASSES: XAMÃ, ARTÍFICE, CAVALEIRO (MONTADO), CANHONEIRO
+// =============================================================
+
+function buildXamaMini(group: THREE.Group) {
+  const robeMat = new THREE.MeshStandardMaterial({ color: 0x0d9488, roughness: 0.75 });
+  const leatherMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+  const boneMat = new THREE.MeshStandardMaterial({ color: 0xf5f5dc, roughness: 0.5 });
+  const spiritGlow = new THREE.MeshStandardMaterial({
+    color: 0x2dd4bf,
+    emissive: 0x14b8a6,
+    emissiveIntensity: 1.5,
+  });
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.85 });
+
+  // Tribal robe skirt + torso
+  const skirt = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.40, 8), robeMat);
+  skirt.position.set(0, 0.20, 0);
+  skirt.castShadow = true;
+  group.add(skirt);
+
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.30, 8), leatherMat);
+  torso.position.set(0, 0.48, 0);
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Feathered shoulder mantle
+  const mantle = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.23, 0.10, 8), robeMat);
+  mantle.position.set(0, 0.60, 0);
+  group.add(mantle);
+
+  // Head + tribal spirit mask
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), leatherMat);
+  head.position.set(0, 0.74, 0);
+  group.add(head);
+
+  const mask = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.17, 0.06), boneMat);
+  mask.position.set(0, 0.74, 0.10);
+  group.add(mask);
+
+  // Glowing turquoise mask eyes
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 6, 6), spiritGlow);
+    eye.position.set(side * 0.04, 0.76, 0.13);
+    group.add(eye);
+  }
+
+  // Antler headdress
+  for (const side of [-1, 1]) {
+    const antler = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.022, 0.26, 6), boneMat);
+    antler.position.set(side * 0.11, 0.90, 0.02);
+    antler.rotation.z = -side * 0.42;
+    group.add(antler);
+
+    const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.014, 0.12, 5), boneMat);
+    branch.position.set(side * 0.17, 0.95, 0.05);
+    branch.rotation.z = -side * 0.85;
+    group.add(branch);
+  }
+
+  // Arms
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 0.26, 6), robeMat);
+    arm.position.set(side * 0.20, 0.50, 0.06);
+    arm.rotation.x = Math.PI / 5;
+    group.add(arm);
+  }
+
+  // Totem Staff (Right Hand)
+  const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.026, 0.96, 6), woodMat);
+  staff.position.set(0.24, 0.48, 0.14);
+  group.add(staff);
+
+  const totemHead = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.14, 0.09), boneMat);
+  totemHead.position.set(0.24, 0.94, 0.14);
+  group.add(totemHead);
+
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 10), spiritGlow);
+  orb.position.set(0.24, 1.07, 0.14);
+  group.add(orb);
+}
+
+function buildArtificeMini(group: THREE.Group) {
+  const coatMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.6, metalness: 0.25 });
+  const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.75, roughness: 0.35 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.7 });
+  const coreGlow = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0ea5e9,
+    emissiveIntensity: 1.6,
+  });
+
+  // Boots & legs
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.28, 7), steelMat);
+    leg.position.set(side * 0.09, 0.14, 0);
+    group.add(leg);
+  }
+
+  // Armored technician coat & chest
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.34, 0.20), coatMat);
+  torso.position.set(0, 0.45, 0);
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Brass chest harness + glowing arcane core
+  const core = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.04, 12), coreGlow);
+  core.rotation.x = Math.PI / 2;
+  core.position.set(0, 0.49, 0.105);
+  group.add(core);
+
+  // Brass pauldrons
+  for (const side of [-1, 1]) {
+    const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.085, 8, 8), brassMat);
+    pauldron.position.set(side * 0.19, 0.58, 0);
+    group.add(pauldron);
+  }
+
+  // Mechanical gear backpack
+  const backpack = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.14), steelMat);
+  backpack.position.set(0, 0.48, -0.16);
+  group.add(backpack);
+
+  const gear = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.02, 6, 10), brassMat);
+  gear.position.set(0, 0.50, -0.24);
+  group.add(gear);
+
+  // Head + brass engineer goggles
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), skinMat);
+  head.position.set(0, 0.73, 0);
+  group.add(head);
+
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.115, 0.12, 0.08, 10), brassMat);
+  cap.position.set(0, 0.80, 0);
+  group.add(cap);
+
+  for (const side of [-1, 1]) {
+    const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 10), coreGlow);
+    lens.rotation.x = Math.PI / 2;
+    lens.position.set(side * 0.045, 0.75, 0.105);
+    group.add(lens);
+  }
+
+  // Arcane-mechanical repeater rifle (Right Hand)
+  const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.10, 0.42), steelMat);
+  gunBody.position.set(0.20, 0.46, 0.22);
+  group.add(gunBody);
+
+  const gunCoil = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.22, 8), coreGlow);
+  gunCoil.rotation.x = Math.PI / 2;
+  gunCoil.position.set(0.20, 0.47, 0.38);
+  group.add(gunCoil);
+}
+
+function buildCavaleiroMini(group: THREE.Group) {
+  // === 1. WARHORSE (CAVALO DE GUERRA 3D) ===
+  const horseCoatMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.78 });
+  const maneMat = new THREE.MeshStandardMaterial({ color: 0x1e1b18, roughness: 0.9 });
+  const hoofMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+  const bardingMat = new THREE.MeshStandardMaterial({ color: 0x1d4ed8, metalness: 0.45, roughness: 0.4 });
+  const armorMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.85, roughness: 0.25 });
+  const goldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.25 });
+
+  // 4 Horse Legs + Hooves
+  const horseLegs = [
+    { x: -0.11, z: 0.20 },
+    { x: 0.11, z: 0.20 },
+    { x: -0.11, z: -0.20 },
+    { x: 0.11, z: -0.20 },
+  ];
+  horseLegs.forEach((p) => {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.035, 0.34, 7), horseCoatMat);
+    leg.position.set(p.x, 0.19, p.z);
+    leg.castShadow = true;
+    group.add(leg);
+
+    const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.044, 0.06, 7), hoofMat);
+    hoof.position.set(p.x, 0.03, p.z);
+    group.add(hoof);
+  });
+
+  // Horse Barrel / Torso
+  const horseBody = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.24, 0.56), horseCoatMat);
+  horseBody.position.set(0, 0.42, 0);
+  horseBody.castShadow = true;
+  group.add(horseBody);
+
+  // Royal Blue & Gold Caparison (Armored Horse Barding)
+  const caparison = new THREE.Mesh(new THREE.BoxGeometry(0.31, 0.20, 0.46), bardingMat);
+  caparison.position.set(0, 0.40, 0);
+  group.add(caparison);
+
+  const goldTrim = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.035, 0.47), goldMat);
+  goldTrim.position.set(0, 0.31, 0);
+  group.add(goldTrim);
+
+  // Horse Arched Neck
+  const horseNeck = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.26, 0.17), horseCoatMat);
+  horseNeck.position.set(0, 0.58, 0.26);
+  horseNeck.rotation.x = Math.PI / 6;
+  horseNeck.castShadow = true;
+  group.add(horseNeck);
+
+  // Horse Mane
+  const mane = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.26, 0.07), maneMat);
+  mane.position.set(0, 0.62, 0.20);
+  mane.rotation.x = Math.PI / 6;
+  group.add(mane);
+
+  // Horse Head & Muzzle + Armored Chanfron
+  const horseHead = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.14, 0.26), horseCoatMat);
+  horseHead.position.set(0, 0.70, 0.38);
+  horseHead.rotation.x = Math.PI / 8;
+  group.add(horseHead);
+
+  const chanfron = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.20), armorMat);
+  chanfron.position.set(0, 0.75, 0.40);
+  chanfron.rotation.x = Math.PI / 8;
+  group.add(chanfron);
+
+  // Horse Ears
+  for (const side of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.09, 4), horseCoatMat);
+    ear.position.set(side * 0.045, 0.80, 0.30);
+    group.add(ear);
+  }
+
+  // Horse Flowing Tail
+  const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.055, 0.34, 6), maneMat);
+  tail.position.set(0, 0.34, -0.34);
+  tail.rotation.x = Math.PI / 5;
+  group.add(tail);
+
+  // Saddle
+  const saddle = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.06, 0.22), maneMat);
+  saddle.position.set(0, 0.56, -0.02);
+  group.add(saddle);
+
+  // === 2. MOUNTED KNIGHT IN SADDLE ===
+  // Rider armored torso
+  const riderTorso = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, 0.18), armorMat);
+  riderTorso.position.set(0, 0.74, -0.02);
+  riderTorso.castShadow = true;
+  group.add(riderTorso);
+
+  const tabard = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.24, 0.20), bardingMat);
+  tabard.position.set(0, 0.72, -0.02);
+  group.add(tabard);
+
+  // Rider armored legs gripping saddle
+  for (const side of [-1, 1]) {
+    const rLeg = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.24, 0.09), armorMat);
+    rLeg.position.set(side * 0.16, 0.56, 0.02);
+    rLeg.rotation.x = -0.25;
+    group.add(rLeg);
+
+    const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), armorMat);
+    pauldron.position.set(side * 0.16, 0.86, -0.02);
+    group.add(pauldron);
+  }
+
+  // Great Helm + Visor + Tall Golden Plume
+  const helm = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.10, 0.18, 8), armorMat);
+  helm.position.set(0, 0.99, -0.01);
+  group.add(helm);
+
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.03, 0.04), hoofMat);
+  visor.position.set(0, 1.00, 0.085);
+  group.add(visor);
+
+  const plume = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.18, 6), goldMat);
+  plume.position.set(0, 1.13, -0.05);
+  plume.rotation.x = -Math.PI / 5;
+  group.add(plume);
+
+  // Flowing Royal Cape behind rider
+  const cape = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.34, 0.03), bardingMat);
+  cape.position.set(0, 0.72, -0.20);
+  cape.rotation.x = Math.PI / 6;
+  group.add(cape);
+
+  // Kite Shield (Left Arm)
+  const shield = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.22), bardingMat);
+  shield.position.set(-0.22, 0.74, 0.08);
+  group.add(shield);
+
+  const shieldCross = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.20, 0.04), goldMat);
+  shieldCross.position.set(-0.225, 0.74, 0.08);
+  group.add(shieldCross);
+
+  // Couched Jousting Lance (Right Arm, pointing forward!)
+  const lance = new THREE.Mesh(new THREE.ConeGeometry(0.045, 1.15, 8), armorMat);
+  lance.rotation.x = Math.PI / 2;
+  lance.position.set(0.22, 0.76, 0.42);
+  lance.castShadow = true;
+  group.add(lance);
+
+  const lanceGuard = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.14, 8), goldMat);
+  lanceGuard.rotation.x = -Math.PI / 2;
+  lanceGuard.position.set(0.22, 0.76, 0.06);
+  group.add(lanceGuard);
+
+  const pennant = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.10, 0.22), goldMat);
+  pennant.position.set(0.22, 0.69, 0.68);
+  group.add(pennant);
+}
+
+function buildCanhoneiroMini(group: THREE.Group) {
+  const coatMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.7 });
+  const darkMetal = new THREE.MeshStandardMaterial({ color: 0x27272a, metalness: 0.85, roughness: 0.35 });
+  const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.8, roughness: 0.3 });
+  const leatherMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xf1c27d, roughness: 0.7 });
+  const emberGlow = new THREE.MeshStandardMaterial({
+    color: 0xf97316,
+    emissive: 0xea580c,
+    emissiveIntensity: 1.8,
+  });
+
+  // Heavy boots & legs
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.28, 7), leatherMat);
+    leg.position.set(side * 0.10, 0.14, 0);
+    group.add(leg);
+  }
+
+  // Sturdy gunner torso
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.36, 0.22), coatMat);
+  torso.position.set(0, 0.46, 0);
+  torso.castShadow = true;
+  group.add(torso);
+
+  // Bandolier & powder keg on back
+  const keg = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.24, 10), bronzeMat);
+  keg.position.set(0, 0.48, -0.17);
+  group.add(keg);
+
+  // Head + Artillery Hat
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), skinMat);
+  head.position.set(0, 0.74, 0);
+  group.add(head);
+
+  const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 10), darkMetal);
+  hatBrim.position.set(0, 0.82, 0);
+  group.add(hatBrim);
+
+  const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.12, 0.10, 8), coatMat);
+  hatTop.position.set(0, 0.88, 0);
+  group.add(hatTop);
+
+  // Heavy Portable Hand-Cannon (Right side/shoulder)
+  const cannonBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.62, 12), darkMetal);
+  cannonBarrel.rotation.x = Math.PI / 2;
+  cannonBarrel.position.set(0.22, 0.50, 0.22);
+  cannonBarrel.castShadow = true;
+  group.add(cannonBarrel);
+
+  // Bronze muzzle ring + breach ring
+  const muzzleRing = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.022, 8, 14), bronzeMat);
+  muzzleRing.position.set(0.22, 0.50, 0.52);
+  group.add(muzzleRing);
+
+  const breechRing = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.02, 8, 14), bronzeMat);
+  breechRing.position.set(0.22, 0.50, 0.05);
+  group.add(breechRing);
+
+  // Glowing fuse ember at cannon breech
+  const fuse = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), emberGlow);
+  fuse.position.set(0.22, 0.62, -0.02);
+  group.add(fuse);
+}
+
+// Summons: Xamã Totems, Artífice Turrets & Drone
+function buildTotemMini(group: THREE.Group, glowHex: number) {
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.85 });
+  const stoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
+  const glowMat = new THREE.MeshStandardMaterial({
+    color: glowHex,
+    emissive: glowHex,
+    emissiveIntensity: 1.5,
+  });
+
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.12, 8), stoneMat);
+  base.position.set(0, 0.06, 0);
+  group.add(base);
+
+  const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.68, 8), woodMat);
+  pillar.position.set(0, 0.44, 0);
+  pillar.castShadow = true;
+  group.add(pillar);
+
+  // Carved wings on totem
+  for (const side of [-1, 1]) {
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.08, 0.04), woodMat);
+    wing.position.set(side * 0.18, 0.58, 0);
+    wing.rotation.z = side * 0.25;
+    group.add(wing);
+  }
+
+  // Glowing carved eyes + floating spirit crystal
+  for (const side of [-1, 1]) {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.024, 6, 6), glowMat);
+    eye.position.set(side * 0.04, 0.62, 0.11);
+    group.add(eye);
+  }
+  const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.085, 0), glowMat);
+  crystal.position.set(0, 0.90, 0);
+  group.add(crystal);
+}
+
+function buildTorretaMini(group: THREE.Group, isTesla: boolean) {
+  const steelMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.35 });
+  const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.25 });
+  const glowColor = isTesla ? 0xfacc15 : 0x38bdf8;
+  const glowMat = new THREE.MeshStandardMaterial({
+    color: glowColor,
+    emissive: glowColor,
+    emissiveIntensity: 1.6,
+  });
+
+  // Tripod legs
+  for (let i = 0; i < 3; i++) {
+    const angle = (i * Math.PI * 2) / 3;
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.30, 6), steelMat);
+    leg.position.set(Math.cos(angle) * 0.13, 0.14, Math.sin(angle) * 0.13);
+    leg.rotation.z = Math.cos(angle) * 0.35;
+    leg.rotation.x = -Math.sin(angle) * 0.35;
+    group.add(leg);
+  }
+
+  // Turret core housing
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.15, 0.20, 10), steelMat);
+  body.position.set(0, 0.34, 0);
+  body.castShadow = true;
+  group.add(body);
+
+  if (isTesla) {
+    // Copper Tesla coil mast + 3 rings + crackling orb
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.05, 0.42, 8), brassMat);
+    mast.position.set(0, 0.62, 0);
+    group.add(mast);
+
+    for (let r = 0; r < 3; r++) {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.11 - r * 0.018, 0.018, 6, 12), brassMat);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(0, 0.52 + r * 0.10, 0);
+      group.add(ring);
+    }
+
+    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 10), glowMat);
+    orb.position.set(0, 0.88, 0);
+    group.add(orb);
+  } else {
+    // Ballista turret bow arms + twin barrels
+    const bow = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.06), brassMat);
+    bow.position.set(0, 0.44, 0.08);
+    group.add(bow);
+
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.40, 8), steelMat);
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0, 0.44, 0.16);
+    group.add(barrel);
+
+    const sight = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 8), glowMat);
+    sight.position.set(0, 0.51, 0.06);
+    group.add(sight);
+  }
+}
+
+function buildDroneMini(group: THREE.Group) {
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.7, roughness: 0.3 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.6, roughness: 0.35 });
+  const healGlow = new THREE.MeshStandardMaterial({
+    color: 0x10b981,
+    emissive: 0x10b981,
+    emissiveIntensity: 1.6,
+  });
+
+  // Hovering sphere hull
+  const hull = new THREE.Mesh(new THREE.SphereGeometry(0.16, 12, 12), bodyMat);
+  hull.position.set(0, 0.56, 0);
+  hull.castShadow = true;
+  group.add(hull);
+
+  // Stabilizer ring
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.022, 6, 16), trimMat);
+  ring.rotation.x = Math.PI / 2;
+  ring.position.set(0, 0.56, 0);
+  group.add(ring);
+
+  // Glowing green medical eye
+  const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), healGlow);
+  eye.position.set(0, 0.56, 0.15);
+  group.add(eye);
 }
 
 

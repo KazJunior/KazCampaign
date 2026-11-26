@@ -24,7 +24,7 @@ import { isDebuffStatus } from './types/game';
 import { evaluateOmnimagoReaction } from './utils/elementalReactions';
 import { LEVELS, getLevelById, createTrainingLevel, isTileInClockHands } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
-import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeAdventurePartyClasses, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
+import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeAdventurePartyClasses, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock, checkChallengeClassUnlocks } from './data/units';
 import { SKILLS, getEvolvedSkill, MAX_SKILL_LEVEL, CLASS_LEARNABLE_SKILL_IDS, CLASS_MISSION_REWARD_SKILLS } from './data/skills';
 import { checkLineageUnlockQuests, INITIAL_UNLOCKED_LINEAGES } from './data/lineageQuests';
 import { LineageUnlockCelebrationModal } from './components/LineageUnlockCelebrationModal';
@@ -542,34 +542,52 @@ export function App() {
       }
     };
 
+    const handleClassesSync = (e: Event) => {
+      const custom = e as CustomEvent<{ unlockedClasses: string[] }>;
+      if (custom.detail && Array.isArray(custom.detail.unlockedClasses)) {
+        setProgress((prev) => {
+          const prevList = (prev.unlockedClasses || []).map(normalizeClassId);
+          const merged = Array.from(new Set([...prevList, ...custom.detail.unlockedClasses.map(normalizeClassId)]));
+          if (merged.length !== prevList.length) {
+            const next = { ...prev, unlockedClasses: merged };
+            progressRef.current = next;
+            return next;
+          }
+          return prev;
+        });
+      }
+    };
+
     const handleWindowFocus = async () => {
       if (!authUser || authUser.id === 0) return;
       try {
         const cloudP = await fetchCloudProgress();
         if (cloudP) {
-          setProgress((prev) => {
-            const missionAndLineage = mergeMissionAndLineageFields(prev, cloudP, true);
-            const nextGold = typeof cloudP.gold === 'number' ? cloudP.gold : prev.gold;
-            const mergedClasses = Array.from(
-              new Set([
-                ...(prev.unlockedClasses || []),
-                ...(Array.isArray(cloudP.unlockedClasses) ? cloudP.unlockedClasses : []),
-              ])
-            );
-            const updated: PlayerProgress = {
-              ...prev,
-              gold: nextGold,
-              unlockedClasses: mergedClasses,
-              ...missionAndLineage,
-            };
-            progressRef.current = updated;
-            try {
-              localStorage.setItem('rpg_tactics_progress_v4', JSON.stringify(updated));
-            } catch {
-              // ignore
-            }
-            return updated;
-          });
+          const prevSnapshot = progressRef.current;
+          const missionAndLineage = mergeMissionAndLineageFields(prevSnapshot, cloudP, true);
+          const nextGold = typeof cloudP.gold === 'number' ? cloudP.gold : prevSnapshot.gold;
+          const cloudClassesList = (Array.isArray(cloudP.unlockedClasses) ? cloudP.unlockedClasses : []).map(normalizeClassId);
+          const cloudClassesSet = new Set(cloudClassesList);
+          const prevClassesList = (prevSnapshot.unlockedClasses || []).map(normalizeClassId);
+          const mergedClasses = Array.from(new Set([...prevClassesList, ...cloudClassesList]));
+          const hasUnsyncedLocalClasses = prevClassesList.some((c) => !cloudClassesSet.has(c));
+
+          const updated: PlayerProgress = {
+            ...prevSnapshot,
+            gold: nextGold,
+            unlockedClasses: mergedClasses,
+            ...missionAndLineage,
+          };
+          progressRef.current = updated;
+          setProgress(updated);
+          try {
+            localStorage.setItem('rpg_tactics_progress_v4', JSON.stringify(updated));
+          } catch {
+            // ignore
+          }
+          if (hasUnsyncedLocalClasses) {
+            saveCloudProgress(updated, true).catch(() => { });
+          }
         }
       } catch {
         // ignore background fetch error
@@ -577,9 +595,11 @@ export function App() {
     };
 
     window.addEventListener('kazcampaign_gold_sync', handleGoldSync);
+    window.addEventListener('kazcampaign_classes_sync', handleClassesSync);
     window.addEventListener('focus', handleWindowFocus);
     return () => {
       window.removeEventListener('kazcampaign_gold_sync', handleGoldSync);
+      window.removeEventListener('kazcampaign_classes_sync', handleClassesSync);
       window.removeEventListener('focus', handleWindowFocus);
     };
   }, [authUser]);
@@ -587,7 +607,7 @@ export function App() {
   const handleLogout = async () => {
     if (authUser && authUser.id !== 0) {
       try {
-        await saveCloudProgress(progress);
+        await saveCloudProgress(progressRef.current || progress, true);
       } catch (err) {
         console.warn('Erro ao sincronizar progresso em nuvem antes de sair:', err);
       }
@@ -3764,6 +3784,219 @@ export function App() {
           damageDealt: 0,
           kills: 0,
         };
+      } else if (sType === 'totem_cura') {
+        addFloatingNumber(spawnX, spawnY, '🗿 Totem da Nascente Erguido!', 'status', '#10B981');
+        newCreature = {
+          id: `summon_totem_cura_${Date.now()}`,
+          name: 'Totem da Nascente',
+          className: 'Totem da Nascente',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          atk: getSummonStat(selectedUnit.atk, 0.3),
+          mag: getSummonStat(selectedUnit.mag, 0.7),
+          def: getSummonStat(selectedUnit.def, 0.6),
+          res: getSummonStat(selectedUnit.res, 0.7),
+          mov: 1,
+          range: 2,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: true,
+          hasAttacked: false,
+          isDead: false,
+          color: '#10B981',
+          avatarKey: 'totem_cura',
+          skills: [JSON.parse(JSON.stringify(SKILLS.cura_totem_xama))],
+          learnedSkillIds: ['cura_totem_xama'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'totem_trovao') {
+        addFloatingNumber(spawnX, spawnY, '⚡ Totem do Trovão Erguido!', 'status', '#FACC15');
+        newCreature = {
+          id: `summon_totem_trovao_${Date.now()}`,
+          name: 'Totem do Trovão',
+          className: 'Totem do Trovão',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          atk: getSummonStat(selectedUnit.atk, 0.3),
+          mag: getSummonStat(selectedUnit.mag, 0.75),
+          def: getSummonStat(selectedUnit.def, 0.55),
+          res: getSummonStat(selectedUnit.res, 0.65),
+          mov: 1,
+          range: 3,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: true,
+          hasAttacked: false,
+          isDead: false,
+          color: '#FACC15',
+          avatarKey: 'totem_trovao',
+          skills: [JSON.parse(JSON.stringify(SKILLS.descarga_totem_xama))],
+          learnedSkillIds: ['descarga_totem_xama'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'totem_pedra') {
+        addFloatingNumber(spawnX, spawnY, '🪨 Totem Guardião Erguido!', 'status', '#78716C');
+        newCreature = {
+          id: `summon_totem_pedra_${Date.now()}`,
+          name: 'Totem Guardião',
+          className: 'Totem Guardião',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.7),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.7),
+          atk: getSummonStat(selectedUnit.atk, 0.35),
+          mag: getSummonStat(selectedUnit.mag, 0.65),
+          def: getSummonStat(selectedUnit.def, 0.8),
+          res: getSummonStat(selectedUnit.res, 0.8),
+          mov: 1,
+          range: 2,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: true,
+          hasAttacked: false,
+          isDead: false,
+          color: '#78716C',
+          avatarKey: 'totem_pedra',
+          skills: [JSON.parse(JSON.stringify(SKILLS.escudo_totem_xama))],
+          learnedSkillIds: ['escudo_totem_xama'],
+          statusEffects: [
+            { type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current },
+            { type: 'taunt', duration: 1, value: 1, appliedTurn: turnNumberRef.current },
+          ],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'torreta_balista') {
+        addFloatingNumber(spawnX, spawnY, '⚙️ Torreta Balista Montada!', 'status', '#0284C7');
+        newCreature = {
+          id: `summon_torreta_${Date.now()}`,
+          name: 'Torreta Balista',
+          className: 'Torreta Balista',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          atk: getSummonStat(selectedUnit.atk, 0.75),
+          mag: getSummonStat(selectedUnit.mag, 0.35),
+          def: getSummonStat(selectedUnit.def, 0.65),
+          res: getSummonStat(selectedUnit.res, 0.55),
+          mov: 1,
+          range: 4,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: true,
+          hasAttacked: false,
+          isDead: false,
+          color: '#0284C7',
+          avatarKey: 'torreta_balista',
+          skills: [JSON.parse(JSON.stringify(SKILLS.tiro_torreta_balista))],
+          learnedSkillIds: ['tiro_torreta_balista'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'bobina_tesla') {
+        addFloatingNumber(spawnX, spawnY, '⚡ Bobina de Choque Ativada!', 'status', '#EAB308');
+        newCreature = {
+          id: `summon_bobina_${Date.now()}`,
+          name: 'Bobina Voltaica',
+          className: 'Bobina Voltaica',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          atk: getSummonStat(selectedUnit.atk, 0.35),
+          mag: getSummonStat(selectedUnit.mag, 0.75),
+          def: getSummonStat(selectedUnit.def, 0.6),
+          res: getSummonStat(selectedUnit.res, 0.65),
+          mov: 1,
+          range: 3,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: true,
+          hasAttacked: false,
+          isDead: false,
+          color: '#EAB308',
+          avatarKey: 'bobina_tesla',
+          skills: [JSON.parse(JSON.stringify(SKILLS.arco_bobina_tesla))],
+          learnedSkillIds: ['arco_bobina_tesla'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
+      } else if (sType === 'drone_medico') {
+        addFloatingNumber(spawnX, spawnY, '🤖 Drone Reparador Lançado!', 'status', '#38BDF8');
+        newCreature = {
+          id: `summon_drone_${Date.now()}`,
+          name: 'Drone Reparador',
+          className: 'Drone Reparador',
+          faction: 'player',
+          isSummoned: true,
+          summonTurnsLeft: 3,
+          summonedByUnitId: selectedUnit.id,
+          summonedBySkillId: skill.id,
+          level: selectedUnit.level,
+          xp: 0,
+          maxXp: 100,
+          maxHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          currentHp: getSummonStat(selectedUnit.maxHp, 0.45),
+          atk: getSummonStat(selectedUnit.atk, 0.3),
+          mag: getSummonStat(selectedUnit.mag, 0.75),
+          def: getSummonStat(selectedUnit.def, 0.55),
+          res: getSummonStat(selectedUnit.res, 0.65),
+          mov: 3,
+          range: 2,
+          x: spawnX,
+          y: spawnY,
+          hasMoved: false,
+          hasAttacked: false,
+          isDead: false,
+          color: '#38BDF8',
+          avatarKey: 'drone_medico',
+          skills: [JSON.parse(JSON.stringify(SKILLS.reparo_drone_medico))],
+          learnedSkillIds: ['reparo_drone_medico'],
+          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          damageDealt: 0,
+          kills: 0,
+        };
       } else {
         // Behemoth (Colosso de Rocha e Fogo)
         addFloatingNumber(spawnX, spawnY, '🌋 Titã Behemoth Desperto!', 'status', '#F59E0B');
@@ -5993,6 +6226,25 @@ export function App() {
 
         updatedUnits = updatedUnits.map((u) => (u.id === ally.id ? { ...u, statusEffects: allyEffects } : u));
       }
+    }
+
+    // All-allies shield from ATK on offensive skills (e.g. Protocolo Aegis Supremo, Carga dos Campeões)
+    if (skill?.allAlliesShieldPercentOfAtk && skill.allAlliesShieldPercentOfAtk > 0) {
+      const baseShieldVal = Math.max(1, Math.round(selectedUnit.atk * skill.allAlliesShieldPercentOfAtk));
+      soundManager.playShield();
+      updatedUnits = updatedUnits.map((u) => {
+        if (u.faction !== selectedUnit.faction || u.isDead) return u;
+        const uEffects = [...(u.statusEffects || [])];
+        const hadExcessShield = uEffects.some((e) => e.type === 'excess_shield' && e.duration > 0);
+        const finalVal = hadExcessShield ? Math.max(1, Math.round(baseShieldVal * 0.5)) : baseShieldVal;
+        addFloatingNumber(u.x, u.y, `+${finalVal} Escudo`, 'shield', '#38BDF8');
+        const nextEffs = [
+          ...uEffects.filter((e) => e.type !== 'shield' && e.type !== 'excess_shield'),
+          { type: 'shield' as const, duration: 2, value: finalVal, appliedTurn: turnNumberRef.current },
+          { type: 'excess_shield' as const, duration: 1, value: 50, appliedTurn: turnNumberRef.current },
+        ];
+        return { ...u, statusEffects: nextEffs };
+      });
     }
 
     // Retrieve attacker's updated state from the loop (in case attacker healed or shielded themselves)
@@ -8929,6 +9181,29 @@ export function App() {
     const newlyUnlocked: string[] = [];
     Object.entries(CLASS_UNLOCK_CONDITIONS).forEach(([cName, cond]) => {
       if (currentLevel.id === cond.requiredLevel && !currentUnlocked.includes(cName)) {
+        newlyUnlocked.push(cName);
+      }
+    });
+
+    // CHALLENGE CLASS UNLOCKS (Cavaleiro, Xamã, Canhoneiro, Artífice)
+    const activePartyForUnlocks = latestProg.activeAdventure?.partyClasses || latestProg.selectedPartyClasses;
+    const activePartyLineagesForUnlocks: Record<string, string> = {
+      ...(latestProg.selectedPartyLineages || {}),
+      ...(latestProg.activeAdventure?.partyLineages || {}),
+    };
+    partyUnits.forEach((u) => {
+      if (u.className && u.lineageId) {
+        activePartyLineagesForUnlocks[u.className] = u.lineageId;
+      }
+    });
+    const challengeUnlocks = checkChallengeClassUnlocks(
+      currentLevel.id,
+      activePartyForUnlocks,
+      activePartyLineagesForUnlocks,
+      currentUnlocked
+    );
+    challengeUnlocks.forEach((cName) => {
+      if (!newlyUnlocked.includes(cName)) {
         newlyUnlocked.push(cName);
       }
     });
