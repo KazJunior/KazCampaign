@@ -23,7 +23,7 @@ export const GAME_CHANGELOG: ChangelogEntry[] = [
     changes: [
       {
         highlight: 'Nova Classe: Xamã (Totens Espirituais, Cura & Maldições)',
-        description: 'Místico espiritual de alcance 3 com 10 habilidades aprendíveis e 2 habilidades exclusivas de Missão de Classe (Círculo dos Três Totens e Tempestade dos Espíritos). Invoca 3 totens 3D distintos no campo de batalha — Totem da Nascente (cura aliada), Totem do Trovão (descarga elétrica) e Totem Guardião (escudo protetor) — além de contar com 5 níveis de upgrade, 3 skins e 3 missões de classe.',
+        description: 'Místico espiritual de alcance 3 com 10 habilidades aprendíveis e 2 habilidades exclusivas de Missão de Classe (Ascensão Espiritual e Tempestade dos Espíritos). Invoca 3 totens 3D inalvejáveis (2 turnos de duração, 5 turnos de recarga) — Totem da Nascente (cura aliada), Totem do Trovão (descarga elétrica) e Totem Guardião (escudo protetor) — além de contar com 5 níveis de upgrade, 3 skins e 3 missões de classe.',
         type: 'new',
       },
       {

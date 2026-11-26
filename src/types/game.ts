@@ -246,6 +246,7 @@ export interface Unit {
   hasUsedHalfHpSkill?: boolean; // Se a habilidade única de 50% HP já foi utilizada (ativa apenas 1 vez por combate)
 
   isSummoned?: boolean;
+  isUntargetable?: boolean; // Unidade inalvejável por inimigos (ex: Totens do Xamã)
   summonTurnsLeft?: number;
   summonedByUnitId?: string;
   summonedBySkillId?: string;

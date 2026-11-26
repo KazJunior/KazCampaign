@@ -22,6 +22,7 @@ import type {
 } from './types/game';
 import { isDebuffStatus } from './types/game';
 import { evaluateOmnimagoReaction } from './utils/elementalReactions';
+import { isArtificeTowerUpgradeSkill, isArtificeConstruct, applyArtificeTowerUpgrade } from './utils/artificeUpgrades';
 import { LEVELS, getLevelById, createTrainingLevel, isTileInClockHands } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeAdventurePartyClasses, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock, checkChallengeClassUnlocks } from './data/units';
@@ -3354,16 +3355,25 @@ export function App() {
         const isInvocadorSummonOnlySkill =
           selectedUnit.className === 'invocador' &&
           (activeSkill?.id === 'sacrificio_explosivo' || activeSkill?.id === 'transfusao_vital');
+        const isArtificeTowerOnlySkill = isArtificeTowerUpgradeSkill(activeSkill?.id);
 
         if (isInvocadorSummonOnlySkill && clickedUnit.faction === 'player' && !clickedUnit.isSummoned) {
           addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Afeta apenas invocações!', 'status', '#EF4444');
           soundManager.playSelect();
           return;
         }
+        if (isArtificeTowerOnlySkill && clickedUnit.faction === 'player' && !isArtificeConstruct(clickedUnit)) {
+          addFloatingNumber(clickedUnit.x, clickedUnit.y, 'Afeta apenas torres/construtos do Artífice!', 'status', '#EF4444');
+          soundManager.playSelect();
+          return;
+        }
 
         const isFactionValid =
           (targetType === 'enemy' && clickedUnit.faction === 'enemy') ||
-          (targetType === 'ally' && clickedUnit.faction === 'player' && (!isInvocadorSummonOnlySkill || clickedUnit.isSummoned)) ||
+          (targetType === 'ally' &&
+            clickedUnit.faction === 'player' &&
+            (!isInvocadorSummonOnlySkill || clickedUnit.isSummoned) &&
+            (!isArtificeTowerOnlySkill || isArtificeConstruct(clickedUnit))) ||
           targetType === 'any';
 
         let isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
@@ -3785,14 +3795,15 @@ export function App() {
           kills: 0,
         };
       } else if (sType === 'totem_cura') {
-        addFloatingNumber(spawnX, spawnY, '🗿 Totem da Nascente Erguido!', 'status', '#10B981');
+        addFloatingNumber(spawnX, spawnY, '🗿 Totem da Nascente (Inalvejável 2T)!', 'status', '#10B981');
         newCreature = {
           id: `summon_totem_cura_${Date.now()}`,
           name: 'Totem da Nascente',
           className: 'Totem da Nascente',
           faction: 'player',
           isSummoned: true,
-          summonTurnsLeft: 3,
+          isUntargetable: true,
+          summonTurnsLeft: 2,
           summonedByUnitId: selectedUnit.id,
           summonedBySkillId: skill.id,
           level: selectedUnit.level,
@@ -3815,19 +3826,20 @@ export function App() {
           avatarKey: 'totem_cura',
           skills: [JSON.parse(JSON.stringify(SKILLS.cura_totem_xama))],
           learnedSkillIds: ['cura_totem_xama'],
-          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
           damageDealt: 0,
           kills: 0,
         };
       } else if (sType === 'totem_trovao') {
-        addFloatingNumber(spawnX, spawnY, '⚡ Totem do Trovão Erguido!', 'status', '#FACC15');
+        addFloatingNumber(spawnX, spawnY, '⚡ Totem do Trovão (Inalvejável 2T)!', 'status', '#FACC15');
         newCreature = {
           id: `summon_totem_trovao_${Date.now()}`,
           name: 'Totem do Trovão',
           className: 'Totem do Trovão',
           faction: 'player',
           isSummoned: true,
-          summonTurnsLeft: 3,
+          isUntargetable: true,
+          summonTurnsLeft: 2,
           summonedByUnitId: selectedUnit.id,
           summonedBySkillId: skill.id,
           level: selectedUnit.level,
@@ -3850,19 +3862,20 @@ export function App() {
           avatarKey: 'totem_trovao',
           skills: [JSON.parse(JSON.stringify(SKILLS.descarga_totem_xama))],
           learnedSkillIds: ['descarga_totem_xama'],
-          statusEffects: [{ type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current }],
+          statusEffects: [{ type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current }],
           damageDealt: 0,
           kills: 0,
         };
       } else if (sType === 'totem_pedra') {
-        addFloatingNumber(spawnX, spawnY, '🪨 Totem Guardião Erguido!', 'status', '#78716C');
+        addFloatingNumber(spawnX, spawnY, '🪨 Totem Guardião (Inalvejável 2T)!', 'status', '#78716C');
         newCreature = {
           id: `summon_totem_pedra_${Date.now()}`,
           name: 'Totem Guardião',
           className: 'Totem Guardião',
           faction: 'player',
           isSummoned: true,
-          summonTurnsLeft: 3,
+          isUntargetable: true,
+          summonTurnsLeft: 2,
           summonedByUnitId: selectedUnit.id,
           summonedBySkillId: skill.id,
           level: selectedUnit.level,
@@ -3886,8 +3899,7 @@ export function App() {
           skills: [JSON.parse(JSON.stringify(SKILLS.escudo_totem_xama))],
           learnedSkillIds: ['escudo_totem_xama'],
           statusEffects: [
-            { type: 'summon_lifetime', duration: 3, value: 3, appliedTurn: turnNumberRef.current },
-            { type: 'taunt', duration: 1, value: 1, appliedTurn: turnNumberRef.current },
+            { type: 'summon_lifetime', duration: 2, value: 2, appliedTurn: turnNumberRef.current },
           ],
           damageDealt: 0,
           kills: 0,
@@ -4505,6 +4517,71 @@ export function App() {
       setDamagePreview(null);
       setIsAnimatingAction(false);
       setTimeout(() => checkBattleStatusWithUnits(finalUnitsAfterSacrifice), 200);
+      return;
+    }
+
+    // 0.97. Melhorias de Torres/Construtos do Artífice (Manutenção de Campo, Calibração Modular, Sobrecarga do Núcleo)
+    if (skill && isArtificeTowerUpgradeSkill(skill.id)) {
+      const targetTower = units.find((u) => u.id === targetUnitId);
+      if (!targetTower || targetTower.isDead || !isArtificeConstruct(targetTower)) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Selecione uma torre/construto do Artífice!', 'status', '#EF4444');
+        setIsAnimatingAction(false);
+        return;
+      }
+
+      soundManager.playUpgrade();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, targetTower.id, 'healing', 0, skill);
+      }
+
+      const upgradeRes = applyArtificeTowerUpgrade(targetTower, skill.id, turnNumberRef.current);
+      if (upgradeRes.healedAmount > 0) {
+        addFloatingNumber(targetTower.x, targetTower.y, `+${upgradeRes.healedAmount}`, 'healing', '#56E59A');
+      }
+      addFloatingNumber(targetTower.x, targetTower.y, upgradeRes.summaryText, 'status', upgradeRes.accentColor);
+
+      const useKitsuneReset = Boolean(selectedUnit.lineageKitsuneFreeSkillReset && !selectedUnit.hasUsedKitsuneReset);
+      if (useKitsuneReset) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '🦊 Truque Místico (Sem Recarga)!', 'status', '#F472B6');
+      }
+
+      const updatedSkills = selectedUnit.skills.map((s) =>
+        s.id === skill.id
+          ? { ...s, currentCooldown: useKitsuneReset ? 0 : s.cooldownMax, lastUsedTurn: turnNumberRef.current }
+          : s
+      );
+
+      const isNefalimExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      if (isNefalimExtra) {
+        addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
+      }
+
+      const finalUnitsAfterUpgrade = units.map((u) => {
+        if (u.id === targetTower.id) {
+          return upgradeRes.updatedTower;
+        }
+        if (u.id === selectedUnit.id) {
+          return {
+            ...u,
+            hasAttacked: isNefalimExtra ? false : true,
+            hasUsedKitsuneReset: useKitsuneReset ? true : u.hasUsedKitsuneReset,
+            nefalimExtraAttackUsed: isNefalimExtra ? true : u.nefalimExtraAttackUsed,
+            nefalimSkillUsedThisTurn: true,
+            skills: updatedSkills,
+          };
+        }
+        return u;
+      });
+
+      setUnits(finalUnitsAfterUpgrade);
+      setSelectedUnitId(isNefalimExtra ? selectedUnit.id : null);
+      setSelectedAction(isNefalimExtra ? 'attack' : 'none');
+      setActiveSkill(null);
+      setTargetUnitId(null);
+      setTargetAoEPoint(null);
+      setTargetTeleportPoint(null);
+      setDamagePreview(null);
+      setIsAnimatingAction(false);
       return;
     }
 
@@ -6868,7 +6945,7 @@ export function App() {
           bossSkill = SKILLS.boss_malakor_colapso_temporal;
         }
 
-        const livingPlayers = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+        const livingPlayers = currentUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isUntargetable);
 
         if (bossType === 'astaroth') {
           // Fase 10: 200% de dano mágico em todos os inimigos no mapa
@@ -6937,7 +7014,7 @@ export function App() {
           }
 
           // Puxa todos os heróis sobreviventes para casas adjacentes a Astaroth
-          const survivingHeroes = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+          const survivingHeroes = currentUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isUntargetable);
           if (survivingHeroes.length > 0) {
             const adjacentOffsets = [
               { dx: 0, dy: -1 },
@@ -7512,7 +7589,7 @@ export function App() {
                 const debuffVal = skill.debuffsAllPlayersAtk;
                 const debuffDur = skill.debuffDuration || 2;
                 currentUnits = currentUnits.map((u) => {
-                  if (u.faction === 'player' && !u.isDead) {
+                  if (u.faction === 'player' && !u.isDead && !u.isUntargetable) {
                     const uEffects = [
                       ...(u.statusEffects || []).filter((e) => e.type !== 'debuff_atk'),
                       { type: 'debuff_atk' as const, duration: debuffDur, value: debuffVal, appliedTurn: turnNumberRef.current },
@@ -7622,6 +7699,7 @@ export function App() {
                   (u) =>
                     u.faction === 'player' &&
                     !u.isDead &&
+                    !u.isUntargetable &&
                     hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
                 );
               } else if (skill?.aoeCenteredOnCaster) {
@@ -7641,10 +7719,11 @@ export function App() {
                   (u) =>
                     u.faction === 'player' &&
                     !u.isDead &&
+                    !u.isUntargetable &&
                     hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
                 );
               } else if (aoeRad >= 90) {
-                enemyTargets = currentUnits.filter((u) => u.faction === 'player' && !u.isDead);
+                enemyTargets = currentUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isUntargetable);
                 hitTiles = [];
               } else if (skill?.isLinePierce) {
                 const origin = { x: finalMonsterX, y: finalMonsterY };
@@ -7663,6 +7742,7 @@ export function App() {
                   (u) =>
                     u.faction === 'player' &&
                     !u.isDead &&
+                    !u.isUntargetable &&
                     hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
                 );
               } else if (aoeRad > 0) {
@@ -7679,10 +7759,11 @@ export function App() {
                   (u) =>
                     u.faction === 'player' &&
                     !u.isDead &&
+                    !u.isUntargetable &&
                     hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
                 );
               } else {
-                enemyTargets = [freshTarget];
+                enemyTargets = freshTarget.isUntargetable ? [] : [freshTarget];
                 hitTiles = [{ x: freshTarget.x, y: freshTarget.y }];
               }
 
@@ -8524,7 +8605,7 @@ export function App() {
             .map((e) => (e.type === 'taunt' ? { ...e, duration: e.duration - 1 } : e))
             .filter((e) => e.duration > 0);
 
-          if (!isDead) {
+          if (!isDead && !u.isUntargetable) {
             // Burn tick (Queimadura)
             const burn = u.statusEffects?.find((e) => e.type === 'burn');
             if (burn && !u.lineageBurnImmune && !u.lineageCrowdControlImmunity) {

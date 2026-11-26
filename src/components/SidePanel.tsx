@@ -220,12 +220,20 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(isPoisoned || isBurned || isStunned || isSlowed || isFreezing || isGaled || isElectrified || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isAtkDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
+        {(selectedUnit.isUntargetable || isPoisoned || isBurned || isStunned || isSlowed || isFreezing || isGaled || isElectrified || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isAtkDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
             </div>
             <div className="flex flex-wrap gap-1.5">
+              {selectedUnit.isUntargetable && (
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#14B8A6]/20 border border-[#14B8A6]/50 text-[#5EEAD4] flex items-center gap-1"
+                  title="Inalvejável: não pode ser alvejado por ataques, habilidades ou efeitos inimigos"
+                >
+                  ✨ Inalvejável{selectedUnit.summonTurnsLeft ? ` (${selectedUnit.summonTurnsLeft}T)` : ''}
+                </span>
+              )}
               {selectedUnit.timeAnchor && (
                 <span
                   className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#F59E0B]/20 border border-[#F59E0B]/40 text-[#FCD34D] flex items-center gap-1"

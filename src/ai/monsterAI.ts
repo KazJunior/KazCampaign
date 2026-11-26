@@ -22,7 +22,7 @@ export function decideMonsterAction(
   if (monster.monsterTypeId?.startsWith('cristal_')) return null;
   if (monster.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)) return null;
 
-  const allAlivePlayers = allUnits.filter((u) => u.faction === 'player' && !u.isDead);
+  const allAlivePlayers = allUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isUntargetable);
   if (allAlivePlayers.length === 0) return null;
 
   // Invisible units or heroes trapped in dark cocoon cannot be targeted by AI
