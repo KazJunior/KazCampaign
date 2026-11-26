@@ -21,6 +21,7 @@ import type {
   UnitProgression,
 } from './types/game';
 import { isDebuffStatus } from './types/game';
+import { evaluateOmnimagoReaction } from './utils/elementalReactions';
 import { LEVELS, getLevelById, createTrainingLevel, isTileInClockHands } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeAdventurePartyClasses, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock } from './data/units';
@@ -711,6 +712,10 @@ export function App() {
   const [isTimeStopBannerActive, setIsTimeStopBannerActive] = useState(false);
   const timeStopVisualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const timeStopBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isPrismaticVisualActive, setIsPrismaticVisualActive] = useState(false);
+  const [isPrismaticBannerActive, setIsPrismaticBannerActive] = useState(false);
+  const prismaticVisualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prismaticBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -1260,6 +1265,8 @@ export function App() {
     setIsTimeStopBannerActive(false);
     setIsVoidColorDrainActive(false);
     setIsVoidTextBannerActive(false);
+    setIsPrismaticVisualActive(false);
+    setIsPrismaticBannerActive(false);
     setIsClockHandBannerActive(false);
     setCurrentView('battle');
     setShowEquipment(true); // Abre o modal de equipamentos para o jogador distribuir os 18 itens nos heróis
@@ -2852,7 +2859,11 @@ export function App() {
           const defIgnore = Math.min(0.35, petSkill.defenseIgnoreRatio || 0);
           const effectiveDef = petSkill.damageType === 'magical' ? u.res : u.def;
           const defDebuff = u.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
-          const mitigatedDef = defDebuff ? Math.round(effectiveDef * (1 - defDebuff.value / 100)) : effectiveDef;
+          const freezingDebuff = u.statusEffects?.find((e) => e.type === 'freezing' && e.duration > 0);
+          let mitigatedDef = defDebuff ? Math.round(effectiveDef * (1 - defDebuff.value / 100)) : effectiveDef;
+          if (freezingDebuff) {
+            mitigatedDef = Math.round(mitigatedDef * (1 - (freezingDebuff.value || 20) / 100));
+          }
           const finalDef = Math.round(mitigatedDef * (1 - defIgnore));
           const dmg = Math.max(5, Math.round(rawDmg - (finalDef * 0.4)));
 
@@ -4932,6 +4943,21 @@ export function App() {
 
     const aoeCenter = targetAoEPoint || { x: target.x, y: target.y };
 
+    if (skill?.id === 'cataclisma_omnielemental') {
+      soundManager.playVictory();
+      if (prismaticVisualTimerRef.current) clearTimeout(prismaticVisualTimerRef.current);
+      if (prismaticBannerTimerRef.current) clearTimeout(prismaticBannerTimerRef.current);
+      setIsPrismaticVisualActive(true);
+      setIsPrismaticBannerActive(true);
+
+      prismaticBannerTimerRef.current = setTimeout(() => {
+        setIsPrismaticBannerActive(false);
+      }, 3600);
+      prismaticVisualTimerRef.current = setTimeout(() => {
+        setIsPrismaticVisualActive(false);
+      }, 9000);
+    }
+
     if (boardRef.current) {
       await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius, skill, targetAoEPoint || undefined);
     }
@@ -5090,13 +5116,33 @@ export function App() {
           enemyOnPillar.x = destX;
           enemyOnPillar.y = destY;
 
-          updatedUnits = updatedUnits.map((u) => (u.id === enemyOnPillar.id ? { ...u, x: destX, y: destY } : u));
-          targetsToHit = targetsToHit.map((t) => (t.id === enemyOnPillar.id ? { ...t, x: destX, y: destY } : t));
+          const applyPillarFreezing = (effs: StatusEffect[] = []) => {
+            if (obsType !== 'ice_pillar') return effs;
+            if (effs.some((e) => e.type === 'immune' && e.duration > 0)) return effs;
+            return [
+              ...effs.filter((e) => e.type !== 'freezing'),
+              { type: 'freezing' as const, duration: 1, value: 20, appliedTurn: turnNumberRef.current },
+            ];
+          };
+
+          updatedUnits = updatedUnits.map((u) =>
+            u.id === enemyOnPillar.id
+              ? { ...u, x: destX, y: destY, statusEffects: applyPillarFreezing(u.statusEffects) }
+              : u
+          );
+          targetsToHit = targetsToHit.map((t) =>
+            t.id === enemyOnPillar.id
+              ? { ...t, x: destX, y: destY, statusEffects: applyPillarFreezing(t.statusEffects) }
+              : t
+          );
 
           if (boardRef.current) {
             await boardRef.current.playMoveAnimation(enemyOnPillar.id, fromX, fromY, destX, destY);
           }
           addFloatingNumber(destX, destY, '💨 Empurrado pelo Pilar!', 'status', '#38BDF8');
+          if (obsType === 'ice_pillar' && !(enemyOnPillar.statusEffects || []).some((e) => e.type === 'immune' && e.duration > 0)) {
+            addFloatingNumber(destX, destY, '❄️ Congelando (-20% DEF/RES)!', 'status', '#38BDF8');
+          }
           soundManager.playPhysicalAttack();
         }
       }
@@ -5131,12 +5177,26 @@ export function App() {
     let bleedInflictedCount = 0;
     let enemiesPushedCount = 0;
     const killedMonsterTypeIds: string[] = [];
+    let reactionCooldownReduction = 0;
+    const reactionCasterEffects: StatusEffect[] = [];
+    const pendingBurnSpreadOrigins: { x: number; y: number; sourceId: string }[] = [];
+    const pendingReactionSplashHits: { x: number; y: number; sourceId: string; damage: number }[] = [];
 
     for (const t of targetsToHit) {
       let currentEffects = [...(t.statusEffects || [])];
+      const elementalReaction = evaluateOmnimagoReaction(selectedUnit, t, skill);
       const isMain = t.id === target.id;
       const dmgResult = isMain ? { finalDamage, isKill, damageType } : rollActualDamage(selectedUnit, t, skill);
       let actualDmg = dmgResult.finalDamage;
+      if (elementalReaction) {
+        addFloatingNumber(t.x, t.y, `${elementalReaction.emoji} ${elementalReaction.name}!`, 'status', elementalReaction.color);
+        if (elementalReaction.reduceCasterCooldowns) {
+          reactionCooldownReduction = Math.max(reactionCooldownReduction, elementalReaction.reduceCasterCooldowns);
+        }
+        if (elementalReaction.bonusCasterEffects && elementalReaction.bonusCasterEffects.length > 0) {
+          reactionCasterEffects.push(...elementalReaction.bonusCasterEffects);
+        }
+      }
       if (alchemistBonusDmgPercent > 0) {
         actualDmg = Math.round(actualDmg * (1 + alchemistBonusDmgPercent / 100));
       }
@@ -5183,7 +5243,7 @@ export function App() {
       }
 
       if (dmgResult.damageType !== 'healing' && actualDmg > 0) {
-        if (skill?.ignoresShield || alchemistIgnoresShield) {
+        if (skill?.ignoresShield || alchemistIgnoresShield || elementalReaction?.ignoresShield) {
           addFloatingNumber(t.x, t.y, 'Ignorou Escudo!', 'status', '#A855F7');
         } else {
           let absorbedDamage = 0;
@@ -5421,6 +5481,8 @@ export function App() {
               else if (eff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${eff.value}%!`, 'status', '#EF4444');
               else if (eff.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
               else if (eff.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
+              else if (eff.type === 'freezing') addFloatingNumber(t.x, t.y, `❄️ Congelando (-${eff.value || 20}% DEF/RES)!`, 'status', '#38BDF8');
+              else if (eff.type === 'gale') addFloatingNumber(t.x, t.y, `🌪️ Ventania (-${eff.value || 1} Mov)!`, 'status', '#2DD4BF');
             }
           }
 
@@ -5459,6 +5521,68 @@ export function App() {
               else if (eff2.type === 'slow') addFloatingNumber(t.x, t.y, 'Lentidão!', 'status', '#60A5FA');
               else if (eff2.type === 'taunt') addFloatingNumber(t.x, t.y, 'Provocado!', 'status', '#EF4444');
               else if (eff2.type === 'electrified') addFloatingNumber(t.x, t.y, '⚡ Eletrificado!', 'status', '#FACC15');
+              else if (eff2.type === 'freezing') addFloatingNumber(t.x, t.y, `❄️ Congelando (-${eff2.value || 20}% DEF/RES)!`, 'status', '#38BDF8');
+              else if (eff2.type === 'gale') addFloatingNumber(t.x, t.y, `🌪️ Ventania (-${eff2.value || 1} Mov)!`, 'status', '#2DD4BF');
+            }
+          }
+
+          // Omnimago Suprema: Apocalipse Prismático aplica os 4 efeitos elementais nos sobreviventes
+          if (skill?.id === 'cataclisma_omnielemental' && dmgResult.damageType !== 'healing') {
+            const fourElements: StatusEffect[] = [
+              { type: 'burn', duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+              { type: 'freezing', duration: 2, value: 20, appliedTurn: turnNumberRef.current },
+              { type: 'electrified', duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+              { type: 'gale', duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+            ];
+            for (const qEff of fourElements) {
+              if (qEff.type === 'burn' && isTargetBurnPoisonImmune) continue;
+              currentEffects = [...currentEffects.filter((e) => e.type !== qEff.type), qEff];
+              if (t.faction !== 'player') {
+                statusInflictedCount++;
+                if (qEff.type === 'burn') bleedInflictedCount++;
+              }
+            }
+            addFloatingNumber(t.x, t.y, '🌈 4 Elementos Aplicados!', 'status', '#E879F9');
+          }
+
+          // Omnimago Elemental Reaction bonus effects on target
+          if (elementalReaction) {
+            if (elementalReaction.extendElementalEffectsBy && elementalReaction.extendElementalEffectsBy > 0) {
+              const ext = elementalReaction.extendElementalEffectsBy;
+              currentEffects = currentEffects.map((e) =>
+                e.type === 'burn' || e.type === 'freezing' || e.type === 'electrified' || e.type === 'gale'
+                  ? { ...e, duration: e.duration + ext }
+                  : e
+              );
+              addFloatingNumber(t.x, t.y, `✨ Efeitos Elementais +${ext}T!`, 'status', '#D946EF');
+            }
+            if (elementalReaction.bonusTargetEffects && elementalReaction.bonusTargetEffects.length > 0) {
+              for (const bEff of elementalReaction.bonusTargetEffects) {
+                if (bEff.type === 'stun' && isBossStunImmune) {
+                  addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+                  continue;
+                }
+                if ((bEff.type === 'burn' || bEff.type === 'poison') && isTargetBurnPoisonImmune) {
+                  continue;
+                }
+                currentEffects = [
+                  ...currentEffects.filter((e) => e.type !== bEff.type),
+                  { ...bEff, appliedTurn: turnNumberRef.current },
+                ];
+                if (t.faction !== 'player') statusInflictedCount++;
+                if (bEff.type === 'stun') {
+                  addFloatingNumber(t.x, t.y, '⚡ Atordoado (Reação)!', 'status', '#FACC15');
+                  if (isBossMonster) {
+                    newLastStunTurn = turnNumber;
+                  }
+                } else if (bEff.type === 'debuff_def') {
+                  addFloatingNumber(t.x, t.y, `🛡️ Defesa -${bEff.value}%!`, 'status', '#EF4444');
+                } else if (bEff.type === 'debuff_atk') {
+                  addFloatingNumber(t.x, t.y, `⚔️ Dano -${bEff.value}%!`, 'status', '#38BDF8');
+                } else if (bEff.type === 'slow') {
+                  addFloatingNumber(t.x, t.y, `👣 Lentidão (-${bEff.value || 1} Mov)!`, 'status', '#60A5FA');
+                }
+              }
             }
           }
         } else if ((skill?.statusEffect || skill?.secondaryStatusEffect) && dmgResult.damageType !== 'healing') {
@@ -5479,17 +5603,18 @@ export function App() {
         }
       }
 
-      // Knockback displacement (Disparo de Impacto, Habilidades de Vento)
+      // Knockback displacement (Disparo de Impacto, Habilidades de Vento, Reações Elementais)
       let finalTargetX = t.x;
       let finalTargetY = t.y;
-      if (skill?.knockback && skill.knockback > 0 && newHp > 0) {
+      const totalKnockback = (skill?.knockback || 0) + (elementalReaction?.extraKnockback || 0);
+      if (totalKnockback > 0 && newHp > 0) {
         // Determine push origin: for ground AoE skills, push outward from the impact center
         const originX =
-          skill.canTargetGround && aoeCenter && (t.x !== aoeCenter.x || t.y !== aoeCenter.y)
+          skill?.canTargetGround && aoeCenter && (t.x !== aoeCenter.x || t.y !== aoeCenter.y)
             ? aoeCenter.x
             : finalAttackerX;
         const originY =
-          skill.canTargetGround && aoeCenter && (t.x !== aoeCenter.x || t.y !== aoeCenter.y)
+          skill?.canTargetGround && aoeCenter && (t.x !== aoeCenter.x || t.y !== aoeCenter.y)
             ? aoeCenter.y
             : finalAttackerY;
         const dx = t.x - originX;
@@ -5506,7 +5631,7 @@ export function App() {
         let currY = t.y;
         let stepsPushed = 0;
         const extraPush = selectedUnit.lineageExtraPushDistance || 0;
-        const maxSteps = skill.knockback + extraPush;
+        const maxSteps = totalKnockback + extraPush;
 
         for (let s = 0; s < maxSteps; s++) {
           const nextX = currX + pushX;
@@ -5522,7 +5647,7 @@ export function App() {
           } else {
             if (t.faction !== 'player') {
               // Caster's primary stat for scaling collision damage
-              const statPower = skill.damageType === 'magical'
+              const statPower = skill?.damageType === 'magical'
                 ? (selectedUnit.mag || selectedUnit.atk)
                 : (selectedUnit.atk || selectedUnit.mag);
               // Substantial collision damage: 40% of caster's primary stat + baseline
@@ -5624,10 +5749,11 @@ export function App() {
         }
       }
 
-      // DIRECT PULL (Fenda Singular: puxa em direção ao conjurador)
-      if (skill?.pull && skill.pull > 0 && newHp > 0 && t.faction !== 'player') {
-        const dx = finalAttackerX - t.x;
-        const dy = finalAttackerY - t.y;
+      // DIRECT PULL (Fenda Singular, Arco Ciclônico: puxa em direção ao conjurador)
+      const totalPull = (skill?.pull || 0) + (elementalReaction?.extraPull || 0);
+      if (totalPull > 0 && newHp > 0 && t.faction !== 'player') {
+        const dx = finalAttackerX - finalTargetX;
+        const dy = finalAttackerY - finalTargetY;
         let pX = 0;
         let pY = 0;
         if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) {
@@ -5636,10 +5762,10 @@ export function App() {
           pY = Math.sign(dy);
         }
 
-        let currX = t.x;
-        let currY = t.y;
+        let currX = finalTargetX;
+        let currY = finalTargetY;
         let pulledSteps = 0;
-        for (let s = 0; s < skill.pull; s++) {
+        for (let s = 0; s < totalPull; s++) {
           const nextX = currX + pX;
           const nextY = currY + pY;
           if (nextX === finalAttackerX && nextY === finalAttackerY) break;
@@ -5654,13 +5780,41 @@ export function App() {
         }
 
         if (pulledSteps > 0) {
+          const fromPullX = finalTargetX;
+          const fromPullY = finalTargetY;
           finalTargetX = currX;
           finalTargetY = currY;
           if (boardRef.current) {
-            await boardRef.current.playMoveAnimation(t.id, t.x, t.y, currX, currY);
+            await boardRef.current.playMoveAnimation(t.id, fromPullX, fromPullY, currX, currY);
           }
           addFloatingNumber(currX, currY, '🌀 Puxado!', 'status', '#9D4EDD');
+
+          const elecEff = currentEffects.find((e) => e.type === 'electrified' && e.duration > 0);
+          if (elecEff && newHp > 0) {
+            const elecDmg = Math.max(1, Math.round(t.maxHp * ((elecEff.value || 1) / 100))) * pulledSteps;
+            newHp = Math.max(0, newHp - elecDmg);
+            addFloatingNumber(currX, currY, `-${elecDmg} Choque (${pulledSteps}x)`, 'status', '#FACC15');
+            if (newHp === 0) {
+              soundManager.playDeath();
+              totalKills++;
+              if (boardRef.current) {
+                await boardRef.current.playDeathAnimation(t.id);
+              }
+            }
+          }
         }
+      }
+
+      if (elementalReaction?.spreadBurnRadius && elementalReaction.spreadBurnRadius > 0) {
+        pendingBurnSpreadOrigins.push({ x: finalTargetX, y: finalTargetY, sourceId: t.id });
+      }
+      if (elementalReaction?.splashDamageRatio && elementalReaction.splashDamageRatio > 0 && actualDmg > 0) {
+        pendingReactionSplashHits.push({
+          x: finalTargetX,
+          y: finalTargetY,
+          sourceId: t.id,
+          damage: Math.max(1, Math.round(actualDmg * elementalReaction.splashDamageRatio)),
+        });
       }
 
       updatedUnits = updatedUnits.map((u) =>
@@ -5683,6 +5837,55 @@ export function App() {
             }
           : u
       );
+    }
+
+    // Omnimago Elemental Reaction AoE spread: Tempestade Ígnea (espalha Queimadura para adjacentes)
+    for (const origin of pendingBurnSpreadOrigins) {
+      updatedUnits = updatedUnits.map((u) => {
+        if (u.faction !== 'enemy' || u.isDead || u.id === origin.sourceId) return u;
+        const dist = Math.abs(u.x - origin.x) + Math.abs(u.y - origin.y);
+        if (dist > 1) return u;
+        const uEffs = u.statusEffects || [];
+        const isBurnImmune = u.bossVersion === 'light' || uEffs.some((e) => (e.type === 'immune' || e.type === 'immune_burn_poison') && e.duration > 0);
+        if (isBurnImmune) return u;
+        statusInflictedCount++;
+        bleedInflictedCount++;
+        addFloatingNumber(u.x, u.y, '🔥🌪️ Queimadura Espalhada!', 'status', '#FB923C');
+        return {
+          ...u,
+          statusEffects: [
+            ...uEffs.filter((e) => e.type !== 'burn'),
+            { type: 'burn' as const, duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+          ],
+        };
+      });
+    }
+
+    // Omnimago Elemental Reaction Splash: Sobrecarga Explosiva (dano explosivo em adjacentes)
+    for (const splash of pendingReactionSplashHits) {
+      for (const adj of updatedUnits) {
+        if (adj.faction !== 'enemy' || adj.isDead || adj.id === splash.sourceId) continue;
+        const dist = Math.abs(adj.x - splash.x) + Math.abs(adj.y - splash.y);
+        if (dist > 1) continue;
+        if (adj.crystalsAlive || adj.statusEffects?.some((e) => (e.type === 'immune' || e.type === 'immune_magical') && e.duration > 0)) {
+          continue;
+        }
+        const nextSplashHp = Math.max(0, adj.currentHp - splash.damage);
+        const splashDead = nextSplashHp === 0;
+        totalDmgDone += splash.damage;
+        addFloatingNumber(adj.x, adj.y, `-${splash.damage} ⚡🔥 Sobrecarga`, 'magical', '#F59E0B');
+        updatedUnits = updatedUnits.map((u) =>
+          u.id === adj.id ? { ...u, currentHp: nextSplashHp, isDead: splashDead } : u
+        );
+        if (splashDead) {
+          soundManager.playDeath();
+          totalKills++;
+          if (adj.monsterTypeId) killedMonsterTypeIds.push(adj.monsterTypeId);
+          if (boardRef.current) {
+            await boardRef.current.playDeathAnimation(adj.id);
+          }
+        }
+      }
     }
 
     // Parallel Version Action Mirroring (Zeta: O Fim do Tempo)
@@ -5929,6 +6132,9 @@ export function App() {
     if (skill?.secondaryCasterStatusEffect) {
       applyCasterEffect(skill.secondaryCasterStatusEffect);
     }
+    for (const rCasterEff of reactionCasterEffects) {
+      applyCasterEffect(rCasterEff);
+    }
 
     // ACTION RESET MECHANIC ON KILL: Carrasco do Vazio or any skill with resetsActionOnKill
     const isExecutionKill =
@@ -6027,6 +6233,10 @@ export function App() {
         if (reduceAllCooldownsBy > 0) {
           addFloatingNumber(finalAttackerX, finalAttackerY, `⏳ Abate! -${reduceAllCooldownsBy} Cooldown em Todas!`, 'status', '#FBBF24');
         }
+        if (reactionCooldownReduction > 0) {
+          addFloatingNumber(finalAttackerX, finalAttackerY, `⚡❄️ Supercondutor (-${reactionCooldownReduction}T Cooldown)!`, 'status', '#FACC15');
+        }
+        const totalOtherCooldownReduction = Math.max(reduceAllCooldownsBy, reactionCooldownReduction);
 
         const isLayingRubras = skill?.id === 'lagrimas_rubras' || Boolean(skill?.requiredSkillUses && skill.requiredSkillUses > 0);
         const nextSkillUsesCount = isLayingRubras
@@ -6054,10 +6264,10 @@ export function App() {
               lastUsedTurn: turnNumberRef.current,
             };
           }
-          if (reduceAllCooldownsBy > 0) {
+          if (totalOtherCooldownReduction > 0) {
             return {
               ...s,
-              currentCooldown: Math.max(0, s.currentCooldown - reduceAllCooldownsBy),
+              currentCooldown: Math.max(0, s.currentCooldown - totalOtherCooldownReduction),
             };
           }
           return s;
@@ -7017,7 +7227,7 @@ export function App() {
                 } else if (eff.type === 'immune') {
                   addFloatingNumber(freshTarget.x, freshTarget.y, `🛡️ Imunidade a Efeitos (${eff.duration}T)!`, 'status', '#A855F7');
                   currentEffects = currentEffects.filter((e) =>
-                    !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified'].includes(e.type)
+                    !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified', 'freezing', 'gale'].includes(e.type)
                   );
                 }
                 currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), eff];
@@ -7038,7 +7248,7 @@ export function App() {
               if (skill.cleansesDebuffs) {
                 const prevCount = currentEffects.length;
                 currentEffects = currentEffects.filter(
-                  (e) => !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified'].includes(e.type)
+                  (e) => !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified', 'freezing', 'gale'].includes(e.type)
                 );
                 if (currentEffects.length < prevCount) {
                   addFloatingNumber(freshTarget.x, freshTarget.y, '⏳ Causalidade Rebobinada (Purificado)!', 'status', '#10B981');
@@ -7713,7 +7923,7 @@ export function App() {
                   const isValgarSkill = choice.skillToUse?.id?.startsWith('valgar') || choice.skillToUse?.id === 'boss_valgar_banquete_sangue';
                   const isBleedSkill = isValgarSkill || choice.skillToUse?.id === 'quimera_garras_leao';
                   const isMinotaurImmune = (type: string) =>
-                    Boolean(t.lineageCrowdControlImmunity) && (type === 'burn' || type === 'poison' || type === 'slow');
+                    Boolean(t.lineageCrowdControlImmunity) && (type === 'burn' || type === 'poison' || type === 'slow' || type === 'gale');
                   const isDragonImmune = (type: string) =>
                     Boolean(t.lineageBurnImmune) && type === 'burn';
 
@@ -7732,6 +7942,8 @@ export function App() {
                       else if (eff.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff.value}%!`, 'status', '#EF4444');
                       else if (eff.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff.value}%!`, 'status', '#EF4444');
                       else if (eff.type === 'electrified') addFloatingNumber(finalTargetX, finalTargetY, '⚡ Eletrificado!', 'status', '#FACC15');
+                      else if (eff.type === 'freezing') addFloatingNumber(finalTargetX, finalTargetY, `❄️ Congelando (-${eff.value || 20}% DEF/RES)!`, 'status', '#38BDF8');
+                      else if (eff.type === 'gale') addFloatingNumber(finalTargetX, finalTargetY, `🌪️ Ventania (-${eff.value || 1} Mov)!`, 'status', '#2DD4BF');
                       else if (eff.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
                       else if (eff.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
                     }
@@ -7750,6 +7962,8 @@ export function App() {
                       else if (eff2.type === 'debuff_def') addFloatingNumber(finalTargetX, finalTargetY, `Defesa -${eff2.value}%!`, 'status', '#EF4444');
                       else if (eff2.type === 'debuff_atk') addFloatingNumber(finalTargetX, finalTargetY, `Dano -${eff2.value}%!`, 'status', '#EF4444');
                       else if (eff2.type === 'slow') addFloatingNumber(finalTargetX, finalTargetY, `Lentidão (-${eff2.value || 1} Mov)!`, 'status', '#60A5FA');
+                      else if (eff2.type === 'freezing') addFloatingNumber(finalTargetX, finalTargetY, `❄️ Congelando (-${eff2.value || 20}% DEF/RES)!`, 'status', '#38BDF8');
+                      else if (eff2.type === 'gale') addFloatingNumber(finalTargetX, finalTargetY, `🌪️ Ventania (-${eff2.value || 1} Mov)!`, 'status', '#2DD4BF');
                       else if (eff2.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
                       else if (eff2.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
                     }
@@ -7869,7 +8083,7 @@ export function App() {
                 } else if (cEff.type === 'immune') {
                   addFloatingNumber(finalMonsterX, finalMonsterY, `🛡️ Imunidade a Efeitos (${cEff.duration}T)!`, 'status', '#A855F7');
                   finalMonsterEffects = finalMonsterEffects.filter((e) =>
-                    !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified'].includes(e.type)
+                    !['burn', 'poison', 'stun', 'slow', 'debuff_def', 'debuff_atk', 'taunt', 'electrified', 'freezing', 'gale'].includes(e.type)
                   );
                 } else if (cEff.type === 'immune_physical') {
                   addFloatingNumber(finalMonsterX, finalMonsterY, `🛡️ Imune a Dano Físico (${cEff.duration}T)!`, 'status', '#60A5FA');
@@ -9537,6 +9751,8 @@ export function App() {
             ? 'grayscale contrast-125 brightness-90 duration-75'
             : isTimeStopVisualActive
             ? 'sepia-[.35] saturate-150 contrast-110 brightness-95 duration-700'
+            : isPrismaticVisualActive
+            ? 'saturate-[1.55] contrast-110 brightness-105 duration-500'
             : 'duration-500'
         }`}
       >
@@ -10061,6 +10277,58 @@ export function App() {
               O TEMPO SE CURVA AO MEU COMPASSO...
             </span>
             <div className="h-1 w-72 sm:w-[28rem] rounded-full bg-gradient-to-r from-transparent via-[#EF4444] to-transparent shadow-[0_0_20px_#EF4444]" />
+          </div>
+        </div>
+      )}
+
+      {isPrismaticBannerActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center animate-fade-in transition-opacity bg-[#0D051A]/40 backdrop-blur-[1.5px]">
+          <div className="relative flex flex-col items-center gap-5">
+            {/* Mandala Tetra-Elemental Animada na Tela */}
+            <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-[#D946EF]/80 shadow-[0_0_55px_rgba(217,70,239,0.75)] animate-[spin_9s_linear_infinite]" />
+              <div className="absolute inset-2 rounded-full border-2 border-dashed border-[#38BDF8]/80 animate-[spin_5s_linear_infinite_reverse]" />
+              <svg viewBox="0 0 120 120" className="w-32 h-32 sm:w-40 sm:h-40 drop-shadow-[0_0_20px_rgba(217,70,239,0.9)]">
+                <circle cx="60" cy="60" r="50" fill="rgba(16,8,30,0.85)" stroke="#E879F9" strokeWidth="2" />
+                <polygon
+                  points="60,12 108,60 60,108 12,60"
+                  fill="none"
+                  stroke="rgba(232,121,249,0.6)"
+                  strokeWidth="1.6"
+                  className="origin-[60px_60px] animate-[spin_12s_linear_infinite]"
+                />
+                <polygon
+                  points="26,26 94,26 94,94 26,94"
+                  fill="none"
+                  stroke="rgba(56,189,248,0.5)"
+                  strokeWidth="1.3"
+                  className="origin-[60px_60px] animate-[spin_8s_linear_infinite_reverse]"
+                />
+                {/* 4 Orbes Elementais (Fogo, Gelo, Raio, Vento) */}
+                <g className="origin-[60px_60px] animate-[spin_4s_linear_infinite]">
+                  <circle cx="60" cy="14" r="7.5" fill="#FF5722" stroke="#FED7AA" strokeWidth="1.5" />
+                  <circle cx="106" cy="60" r="7.5" fill="#06B6D4" stroke="#CFFAFE" strokeWidth="1.5" />
+                  <circle cx="60" cy="106" r="7.5" fill="#FACC15" stroke="#FEF9C3" strokeWidth="1.5" />
+                  <circle cx="14" cy="60" r="7.5" fill="#14B8A6" stroke="#CCFBF1" strokeWidth="1.5" />
+                </g>
+                {/* Núcleo Prismático */}
+                <circle cx="60" cy="60" r="14" fill="rgba(217,70,239,0.35)" stroke="#F0ABFC" strokeWidth="2" />
+                <circle cx="60" cy="60" r="6.5" fill="#FFFFFF" />
+              </svg>
+            </div>
+            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.28em] text-[#F0ABFC]">
+              ✦ APOCALIPSE PRISMÁTICO ✦
+            </span>
+            <span
+              className="text-2xl sm:text-5xl md:text-6xl font-black uppercase tracking-[0.12em] text-[#FDF4FF] select-none max-w-4xl"
+              style={{
+                textShadow:
+                  '0 0 18px rgba(217, 70, 239, 0.95), 0 0 40px rgba(6, 182, 212, 0.85), 0 0 75px rgba(255, 87, 34, 0.8), 0 4px 12px rgba(0, 0, 0, 0.95)',
+              }}
+            >
+              FOGO, GELO, VENTO E RAIO... CURVEM-SE À CONVERGÊNCIA!
+            </span>
+            <div className="h-1.5 w-72 sm:w-[30rem] rounded-full bg-gradient-to-r from-[#FF5722] via-[#FACC15] via-[#06B6D4] to-[#14B8A6] shadow-[0_0_24px_rgba(217,70,239,0.9)]" />
           </div>
         </div>
       )}

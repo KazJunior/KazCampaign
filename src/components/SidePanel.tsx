@@ -82,7 +82,13 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isStunned = selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0);
   const slowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
   const isSlowed = !!slowEffect;
-  const slowPenalty = slowEffect ? (slowEffect.value ?? 1) : 0;
+  const galeEffect = selectedUnit.statusEffects?.find((e) => e.type === 'gale' && e.duration > 0);
+  const isGaled = !!galeEffect;
+  const freezingEffect = selectedUnit.statusEffects?.find((e) => e.type === 'freezing' && e.duration > 0);
+  const isFreezing = !!freezingEffect;
+  const electrifiedEffect = selectedUnit.statusEffects?.find((e) => e.type === 'electrified' && e.duration > 0);
+  const isElectrified = !!electrifiedEffect;
+  const slowPenalty = (slowEffect ? (slowEffect.value ?? 1) : 0) + (galeEffect ? (galeEffect.value ?? 1) : 0);
   const buffMovEffect = selectedUnit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
   const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
   const effectiveMov = isStunned ? 0 : Math.min(4, Math.max(1, (selectedUnit.mov + movBonus) - slowPenalty));
@@ -214,7 +220,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(isPoisoned || isStunned || isSlowed || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
+        {(isPoisoned || isBurned || isStunned || isSlowed || isFreezing || isGaled || isElectrified || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isAtkDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
@@ -276,7 +282,22 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               )}
               {isSlowed && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#60A5FA]/20 border border-[#60A5FA]/40 text-[#60A5FA] flex items-center gap-1">
-                  👣 Lentidão (-{slowPenalty} Mov, {slowEffect?.duration}T)
+                  👣 Lentidão (-{slowEffect?.value ?? 1} Mov, {slowEffect?.duration}T)
+                </span>
+              )}
+              {isFreezing && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#38BDF8]/20 border border-[#38BDF8]/40 text-[#7DD3FC] flex items-center gap-1">
+                  ❄️ Congelando (-{freezingEffect?.value || 20}% DEF/RES, {freezingEffect?.duration}T)
+                </span>
+              )}
+              {isGaled && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#14B8A6]/20 border border-[#14B8A6]/40 text-[#5EEAD4] flex items-center gap-1">
+                  🌪️ Ventania (-{galeEffect?.value || 1} Mov, {galeEffect?.duration}T)
+                </span>
+              )}
+              {isElectrified && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FACC15]/20 border border-[#FACC15]/40 text-[#FDE047] flex items-center gap-1">
+                  ⚡ Eletrificado ({electrifiedEffect?.duration}T)
                 </span>
               )}
               {activeShield && (

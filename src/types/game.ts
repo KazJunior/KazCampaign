@@ -52,7 +52,9 @@ export type StatusEffectType =
   | 'immune_burn_poison'
   | 'dodge_counter'
   | 'bleed'
-  | 'summon_lifetime';
+  | 'summon_lifetime'
+  | 'freezing'
+  | 'gale';
 
 export const DEBUFF_STATUS_TYPES: ReadonlySet<StatusEffectType> = new Set([
   'poison',
@@ -66,6 +68,8 @@ export const DEBUFF_STATUS_TYPES: ReadonlySet<StatusEffectType> = new Set([
   'electrified',
   'taunt',
   'dark_cocoon',
+  'freezing',
+  'gale',
 ]);
 
 export function isDebuffStatus(type: StatusEffectType): boolean {
@@ -185,6 +189,7 @@ export interface Skill {
   isTimeAnchor?: boolean; // Marca posição/HP e rebobina no 2º uso ou ao expirar
   allAlliesShieldPercentOfAtk?: number; // Concede escudo a todos os aliados baseado em % do ATK do conjurador
   summonCloneCount?: number; // Quantidade de clones invocados em ladrilhos adjacentes
+  elementalTag?: 'fire' | 'ice' | 'lightning' | 'wind' | 'omni'; // Afinidade elemental para reações do Omnimago
 
   level?: number; // Skill evolution level (1, 2, 3...)
 }

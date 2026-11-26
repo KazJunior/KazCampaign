@@ -93,9 +93,8 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
               </div>
               <div className="min-w-0">
                 <span
-                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                    PET_RARITY_CONFIG[equippedPet.rarity].badgeBg
-                  }`}
+                  className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border ${PET_RARITY_CONFIG[equippedPet.rarity].badgeBg
+                    }`}
                 >
                   {PET_RARITY_CONFIG[equippedPet.rarity].label}
                 </span>
@@ -131,13 +130,12 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                           if (isSelected && onClearPetSkill) onClearPetSkill();
                           else onSelectPetSkill(sk);
                         }}
-                        className={`w-full p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 text-xs ${
-                          isSelected
+                        className={`w-full p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 text-xs ${isSelected
                             ? 'bg-amber-500/20 border-amber-400 text-white shadow-lg ring-1 ring-amber-400'
                             : !canActivate
-                            ? 'bg-[#161A26]/50 border-[#343B50]/50 opacity-60 cursor-not-allowed'
-                            : 'bg-[#161A26] border-[#343B50] hover:border-amber-400 hover:bg-[#1E2538] text-[#F3F4F8]'
-                        }`}
+                              ? 'bg-[#161A26]/50 border-[#343B50]/50 opacity-60 cursor-not-allowed'
+                              : 'bg-[#161A26] border-[#343B50] hover:border-amber-400 hover:bg-[#1E2538] text-[#F3F4F8]'
+                          }`}
                       >
                         <div className="flex items-center justify-between font-bold">
                           <span className="flex items-center gap-1.5">
@@ -267,22 +265,20 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                 key={skill.id}
                 disabled={disabled}
                 onClick={() => onSelectSkill(skill)}
-                className={`w-full p-3 rounded-xl border text-left transition-all relative flex flex-col gap-2 ${
-                  isSelected
+                className={`w-full p-3 rounded-xl border text-left transition-all relative flex flex-col gap-2 ${isSelected
                     ? 'bg-[#D4AD65]/20 border-[#D4AD65] text-white shadow-lg ring-1 ring-[#D4AD65]'
                     : disabled
-                    ? 'bg-[#10131C]/60 border-[#343B50]/60 opacity-65 cursor-not-allowed'
-                    : 'bg-[#10131C] border-[#343B50] hover:border-[#D4AD65]/70 hover:bg-[#161B26] text-[#F3F4F8]'
-                }`}
+                      ? 'bg-[#10131C]/60 border-[#343B50]/60 opacity-65 cursor-not-allowed'
+                      : 'bg-[#10131C] border-[#343B50] hover:border-[#D4AD65]/70 hover:bg-[#161B26] text-[#F3F4F8]'
+                  }`}
               >
                 {/* Header row: Icon, Name & Cooldown */}
                 <div className="flex items-start gap-2.5">
                   <div
-                    className={`p-2 rounded-lg border shrink-0 ${
-                      isSelected
+                    className={`p-2 rounded-lg border shrink-0 ${isSelected
                         ? 'bg-[#D4AD65] text-[#10131C] border-[#D4AD65]'
                         : 'bg-[#1B2030] text-[#D4AD65] border-[#343B50]'
-                    }`}
+                      }`}
                   >
                     {getSkillIcon(skill.iconName, 18)}
                   </div>
@@ -292,11 +288,10 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       <div className="flex items-center gap-1.5 min-w-0">
                         {index < 9 && (
                           <span
-                            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${
-                              isSelected
+                            className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border shrink-0 ${isSelected
                                 ? 'bg-[#D4AD65] text-[#10131C] border-[#D4AD65]'
                                 : 'bg-[#161A26] text-[#D4AD65] border-[#343B50]'
-                            }`}
+                              }`}
                             title={`Atalho: tecla ${index + 1}`}
                           >
                             {index + 1}
@@ -384,6 +379,8 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       {skill.statusEffect.type === 'poison' && `☠️ Veneno (-${skill.statusEffect.value}% Vida Máx)`}
                       {skill.statusEffect.type === 'stun' && '⚡ Atordoa (1 Turno)'}
                       {skill.statusEffect.type === 'slow' && `👣 Lentidão (-${skill.statusEffect.value || 1} Mov)`}
+                      {skill.statusEffect.type === 'freezing' && `❄️ Congelando (-${skill.statusEffect.value || 20}% DEF/RES)`}
+                      {skill.statusEffect.type === 'gale' && `🌪️ Ventania (-${skill.statusEffect.value || 1} Mov)`}
                       {skill.statusEffect.type === 'shield' && `🛡️ Concede +${skill.statusEffect.value} Escudo${skill.statusEffect.reflectRatio ? ` (Reflete ${Math.round(skill.statusEffect.reflectRatio * 100)}%)` : ''}`}
                       {skill.statusEffect.type === 'buff_atk' && `⚔️ Aumenta Dano em +${skill.statusEffect.value}%`}
                       {skill.statusEffect.type === 'electrified' && '⚡ Eletrificado (1% Vida Máx/casa)'}
@@ -396,9 +393,16 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                       {skill.secondaryStatusEffect.type === 'poison' && `☠️ Veneno (-${skill.secondaryStatusEffect.value}% Vida Máx)`}
                       {skill.secondaryStatusEffect.type === 'stun' && '⚡ Atordoa (1 Turno)'}
                       {skill.secondaryStatusEffect.type === 'slow' && `👣 Lentidão (-${skill.secondaryStatusEffect.value || 1} Mov)`}
+                      {skill.secondaryStatusEffect.type === 'freezing' && `❄️ Congelando (-${skill.secondaryStatusEffect.value || 20}% DEF/RES)`}
+                      {skill.secondaryStatusEffect.type === 'gale' && `🌪️ Ventania (-${skill.secondaryStatusEffect.value || 1} Mov)`}
                       {skill.secondaryStatusEffect.type === 'debuff_def' && `🛡️ Defesa -${skill.secondaryStatusEffect.value}%`}
                       {skill.secondaryStatusEffect.type === 'electrified' && '⚡ Eletrificado (1% Vida Máx/casa)'}
                       <span className="text-[#A7B0C4] text-[9px]">({skill.secondaryStatusEffect.duration}T)</span>
+                    </span>
+                  )}
+                  {skill.id === 'cataclisma_omnielemental' && (
+                    <span className="text-[10px] font-medium text-[#E879F9]">
+                      🌈 Aplica Queimadura, Congelando, Eletrificado e Ventania (2T)
                     </span>
                   )}
                   {(skill.defenseIgnoreRatio ?? 0) > 0 && (
@@ -461,13 +465,12 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                     if (isSelected && onClearPetSkill) onClearPetSkill();
                     else onSelectPetSkill(sk);
                   }}
-                  className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between gap-2 text-xs ${
-                    isSelected
+                  className={`w-full p-2 rounded-xl border text-left transition-all flex items-center justify-between gap-2 text-xs ${isSelected
                       ? 'bg-amber-500/20 border-amber-400 text-white shadow-lg ring-1 ring-amber-400'
                       : !canActivate
-                      ? 'bg-[#161A26]/50 border-[#343B50]/50 opacity-60 cursor-not-allowed'
-                      : 'bg-[#161A26] border-[#343B50] hover:border-amber-400 hover:bg-[#1E2538] text-[#F3F4F8]'
-                  }`}
+                        ? 'bg-[#161A26]/50 border-[#343B50]/50 opacity-60 cursor-not-allowed'
+                        : 'bg-[#161A26] border-[#343B50] hover:border-amber-400 hover:bg-[#1E2538] text-[#F3F4F8]'
+                    }`}
                 >
                   <div className="min-w-0">
                     <div className="font-bold truncate text-[#F3F4F8] flex items-center gap-1.5">

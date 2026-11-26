@@ -148,6 +148,13 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 4, cost: 80000, bonus: { hp: 38, mag: 5, res: 2 }, name: 'Olho do Vendaval', description: '+38 HP, +5 MAG e +2 RES permanente.' },
     { level: 5, cost: 100000, bonus: { hp: 52, mag: 8, res: 3, def: 3 }, name: 'Lorde dos Tempestuosos', description: '+52 HP, +8 MAG, +3 RES e +3 DEF permanente.' },
   ],
+  omnimago: [
+    { level: 1, cost: 10000, bonus: { hp: 16, mag: 2 }, name: 'Centelha Prismática', description: '+16 HP e +2 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 24, mag: 3, res: 1 }, name: 'Convergência Elemental', description: '+24 HP, +3 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 32, mag: 4, def: 1, res: 2 }, name: 'Harmonia dos Quatro Elementos', description: '+32 HP, +4 MAG, +1 DEF e +2 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 44, mag: 6, def: 1, res: 2 }, name: 'Cataclismo Arcano', description: '+44 HP, +6 MAG, +1 DEF e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 60, mag: 9, def: 2, res: 3 }, name: 'Soberano dos Quatro Elementos', description: '+60 HP, +9 MAG, +2 DEF e +3 RES permanente.' },
+  ],
   cartomante: [
     { level: 1, cost: 10000, bonus: { hp: 15, mag: 2 }, name: 'Baralho Cigano', description: '+15 HP e +2 MAG permanente.' },
     { level: 2, cost: 30000, bonus: { hp: 22, mag: 3, res: 1 }, name: 'Visão dos Astros', description: '+22 HP, +3 MAG e +1 RES permanente.' },

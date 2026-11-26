@@ -1714,7 +1714,7 @@ export const CLASS_MISSIONS: Record<string, ClassMission[]> = {
       statKey: 'damage_dealt',
       targetValue: 15000,
       rewardType: 'skill',
-      rewardSkillId: 'cataclisma_omnielemental',
+      rewardSkillId: 'feixe_convergencia_prismatica',
       rewardGold: 25000,
     },
     {
@@ -1737,7 +1737,8 @@ export const CLASS_MISSIONS: Record<string, ClassMission[]> = {
       description: 'Elimine 60 inimigos no campo de batalha com o Omnimago.',
       statKey: 'kills',
       targetValue: 60,
-      rewardType: 'skin',
+      rewardType: 'both',
+      rewardSkillId: 'singularidade_elemental',
       rewardSkinId: 'omnimago_avatar',
       rewardGold: 50000,
     },

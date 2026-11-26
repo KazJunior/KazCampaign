@@ -2,6 +2,7 @@ import React from 'react';
 import type { DamagePreview } from '../types/game';
 import { Swords, HeartPulse, AlertTriangle, Wand2, Skull } from 'lucide-react';
 import { getAoELabel } from '../utils/pathfinding';
+import { evaluateOmnimagoReaction } from '../utils/elementalReactions';
 
 interface ActionPreviewModalProps {
   preview: DamagePreview;
@@ -37,6 +38,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
     isBossMonster &&
     preview.target?.lastStunTurn !== undefined &&
     ((turnNumber ?? 1) - preview.target.lastStunTurn <= 1);
+  const elementalReaction = evaluateOmnimagoReaction(preview.attacker, preview.target, preview.skill);
 
   return (
     <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1B2030] border-2 border-[#D4AD65] p-3 sm:p-4 rounded-2xl shadow-2xl text-[#F3F4F8] max-w-md w-[calc(100%-1rem)] sm:w-full select-none max-h-[85vh] overflow-y-auto">
@@ -162,9 +164,38 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.statusEffect.type === 'burn' && `🔥 Queimadura (-${preview.skill.statusEffect.value}% Vida Máx, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'poison' && `☠️ Veneno (-${preview.skill.statusEffect.value}% Vida Máx, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.statusEffect.value || 1} Mov, ${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'freezing' && `❄️ Congelando (-${preview.skill.statusEffect.value || 20}% DEF/RES, ${preview.skill.statusEffect.duration}T)`}
+              {preview.skill.statusEffect.type === 'gale' && `🌪️ Ventania (-${preview.skill.statusEffect.value || 1} Mov, ${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.statusEffect.value}% (${preview.skill.statusEffect.duration}T)`}
               {preview.skill.statusEffect.type === 'electrified' && `⚡ Eletrificado (1% Vida Máx por casa movida, ${preview.skill.statusEffect.duration}T)`}
             </span>
+          </div>
+        )}
+
+        {preview.skill?.id === 'cataclisma_omnielemental' && (
+          <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#D946EF]/40">
+            <span className="text-[#F0ABFC]">Efeitos Elementais:</span>
+            <span className="font-bold text-[#E879F9] text-right">
+              🔥 Queimadura + ❄️ Congelando + ⚡ Eletrificado + 🌪️ Ventania (2T)
+            </span>
+          </div>
+        )}
+
+        {elementalReaction && (
+          <div
+            className="flex flex-col gap-0.5 text-xs p-2.5 rounded-lg border"
+            style={{
+              backgroundColor: `${elementalReaction.color}18`,
+              borderColor: `${elementalReaction.color}70`,
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-black uppercase tracking-wider text-[10px]" style={{ color: elementalReaction.color }}>
+                {elementalReaction.emoji} Reação Elemental Ativada
+              </span>
+              <span className="font-black text-xs text-white">{elementalReaction.name}</span>
+            </div>
+            <span className="text-[11px] text-[#F3F4F8]/90">{elementalReaction.summary}</span>
           </div>
         )}
 
@@ -210,6 +241,8 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
               {preview.skill.secondaryStatusEffect.type === 'buff_mov' && `💨 +${preview.skill.secondaryStatusEffect.value} Movimento (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'taunt' && `📢 Provocação / Agro (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'slow' && `👣 Lentidão (-${preview.skill.secondaryStatusEffect.value || 1} Mov, ${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'freezing' && `❄️ Congelando (-${preview.skill.secondaryStatusEffect.value || 20}% DEF/RES, ${preview.skill.secondaryStatusEffect.duration}T)`}
+              {preview.skill.secondaryStatusEffect.type === 'gale' && `🌪️ Ventania (-${preview.skill.secondaryStatusEffect.value || 1} Mov, ${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'debuff_def' && `🛡️ Defesa -${preview.skill.secondaryStatusEffect.value}% (${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'electrified' && `⚡ Eletrificado (1% Vida Máx por casa movida, ${preview.skill.secondaryStatusEffect.duration}T)`}
               {preview.skill.secondaryStatusEffect.type === 'stun' && (

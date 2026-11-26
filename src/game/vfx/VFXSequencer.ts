@@ -181,6 +181,10 @@ export class VFXSequencer {
           this.runCrimsonHorizon(sequence, casterPos, targetPos, aoeRadius, finish);
           break;
 
+        case 'prismatic_apocalypse':
+          this.runPrismaticApocalypse(sequence, targetPos, aoeRadius, finish);
+          break;
+
         case 'dimensional_wave':
           this.runDimensionalWave(sequence, casterPos, targetPos, dir, aoeRadius, finish);
           break;
@@ -1774,6 +1778,253 @@ export class VFXSequencer {
           giantSlash.scale.setScalar(0.8 + endT * 0.55);
           domeMat.opacity = Math.max(0, 0.72 * (1 - endT));
           horizonMat.opacity = Math.max(0, 0.95 * (1 - endT));
+        }
+      },
+      onComplete: () => {
+        this.deps.particlesGroup.remove(group);
+        disposeHierarchy(group);
+        onCompleteCallback();
+      },
+    });
+  }
+
+  // ==========================================
+  // 16B. PRISMATIC APOCALYPSE (Ultimate do Omnimago: Apocalipse Prismático 5x5)
+  // ==========================================
+  private runPrismaticApocalypse(
+    sequence: VFXSequence,
+    targetPos: THREE.Vector3,
+    aoeRadius: number,
+    onCompleteCallback: () => void
+  ): void {
+    const duration = sequence.durationMs || 3000;
+    const center = targetPos;
+    const domeRad = Math.max(2.6, aoeRadius + 0.8);
+
+    const group = new THREE.Group();
+    group.position.set(center.x, 0, center.z);
+    this.deps.particlesGroup.add(group);
+
+    // 4 Elemental colors: Fire, Ice, Lightning, Wind
+    const elemColors = [0xff5722, 0x06b6d4, 0xfacc15, 0x14b8a6];
+    const prismaticColor = sequence.primaryColor ?? 0xd946ef;
+
+    // 1. Cosmic-Prismatic Dome enveloping the 5x5 zone
+    const domeGeo = new THREE.SphereGeometry(domeRad, 24, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+    const domeMat = new THREE.MeshBasicMaterial({
+      color: 0x160826,
+      transparent: true,
+      opacity: 0.65,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const dome = new THREE.Mesh(domeGeo, domeMat);
+    group.add(dome);
+
+    // 2. Counter-rotating ground arcane rings
+    const outerRingGeo = new THREE.RingGeometry(domeRad * 0.88, domeRad * 1.03, 36);
+    outerRingGeo.rotateX(-Math.PI / 2);
+    const outerRingMat = new THREE.MeshBasicMaterial({
+      color: prismaticColor,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+    });
+    const outerRing = new THREE.Mesh(outerRingGeo, outerRingMat);
+    outerRing.position.y = 0.06;
+    group.add(outerRing);
+
+    const innerRingGeo = new THREE.RingGeometry(domeRad * 0.45, domeRad * 0.56, 24);
+    innerRingGeo.rotateX(-Math.PI / 2);
+    const innerRingMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.8,
+      depthWrite: false,
+    });
+    const innerRing = new THREE.Mesh(innerRingGeo, innerRingMat);
+    innerRing.position.y = 0.08;
+    group.add(innerRing);
+
+    // 3. 4 Orbiting Elemental Orbs (Fire, Ice, Lightning, Wind) spiraling inward
+    const orbs: THREE.Mesh[] = [];
+    const orbGeo = new THREE.SphereGeometry(0.24, 14, 12);
+    for (let i = 0; i < 4; i++) {
+      const orbMat = new THREE.MeshBasicMaterial({
+        color: elemColors[i],
+        transparent: true,
+        opacity: 0.95,
+      });
+      const orb = new THREE.Mesh(orbGeo, orbMat);
+      group.add(orb);
+      orbs.push(orb);
+    }
+
+    // 4. Central Prismatic Core Sphere
+    const coreGeo = new THREE.SphereGeometry(0.32, 16, 14);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+    });
+    const core = new THREE.Mesh(coreGeo, coreMat);
+    core.position.y = 1.65;
+    group.add(core);
+
+    // 5. Colossal Vertical Prismatic Sky Beam
+    const pillarGeo = new THREE.CylinderGeometry(0.55, 0.85, 8.5, 20, 1, true);
+    const pillarMat = new THREE.MeshBasicMaterial({
+      color: prismaticColor,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+    pillar.position.y = 4.25;
+    group.add(pillar);
+
+    const innerBeamGeo = new THREE.CylinderGeometry(0.22, 0.35, 8.5, 16, 1, true);
+    const innerBeamMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    const innerBeam = new THREE.Mesh(innerBeamGeo, innerBeamMat);
+    innerBeam.position.y = 4.25;
+    group.add(innerBeam);
+
+    // 6. 4 Staggered Expanding Elemental Shockwave Rings
+    const shockwaves: { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; delay: number }[] = [];
+    for (let i = 0; i < 4; i++) {
+      const swGeo = new THREE.RingGeometry(0.35, 0.62, 32);
+      swGeo.rotateX(-Math.PI / 2);
+      const swMat = new THREE.MeshBasicMaterial({
+        color: elemColors[i],
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+      });
+      const sw = new THREE.Mesh(swGeo, swMat);
+      sw.position.y = 0.1 + i * 0.04;
+      group.add(sw);
+      shockwaves.push({ mesh: sw, mat: swMat, delay: i * 0.08 });
+    }
+
+    let burstFireDone = false;
+    let burstIceDone = false;
+    let burstElecDone = false;
+    let burstStarsDone = false;
+
+    this.deps.addTask({
+      id: `vfx_prismatic_apocalypse_${this.idCounter++}`,
+      type: 'skill',
+      startTime: Date.now(),
+      duration,
+      isComplete: false,
+      onUpdate: (progress) => {
+        outerRing.rotation.z = progress * Math.PI * 3;
+        innerRing.rotation.z = -progress * Math.PI * 5;
+
+        if (progress < 0.36) {
+          // Phase 1: Convergence — Dome opens & 4 elemental orbs spiral inward into the central core
+          const t = progress / 0.36;
+          const easeOut = 1 - Math.pow(1 - t, 2);
+          dome.scale.setScalar(easeOut);
+          outerRing.scale.setScalar(easeOut);
+          innerRing.scale.setScalar(easeOut);
+
+          const orbitRadius = domeRad * 0.92 * (1 - t * 0.88);
+          const orbitAngleBase = t * Math.PI * 3.5;
+          const orbHeight = 0.45 + t * 1.2;
+
+          for (let i = 0; i < 4; i++) {
+            const angle = orbitAngleBase + (i * Math.PI) / 2;
+            const ox = Math.cos(angle) * orbitRadius;
+            const oz = Math.sin(angle) * orbitRadius;
+            orbs[i].position.set(ox, orbHeight, oz);
+            orbs[i].scale.setScalar(0.8 + t * 0.5);
+            this.deps.spawnParticleDot(
+              center.x + ox,
+              orbHeight,
+              center.z + oz,
+              elemColors[i],
+              0.075,
+              0.032
+            );
+          }
+
+          coreMat.opacity = t * 0.95;
+          core.scale.setScalar(0.35 + t * 1.15);
+        } else if (progress < 0.72) {
+          // Phase 2: Prismatic Cataclysm — Sky beam strikes + 4 elemental bursts unleash
+          const t = (progress - 0.36) / 0.36;
+          dome.scale.setScalar(1);
+          outerRing.scale.setScalar(1);
+          innerRing.scale.setScalar(1);
+
+          for (let i = 0; i < 4; i++) {
+            orbs[i].visible = false;
+          }
+
+          const beamPulse = Math.sin(t * Math.PI);
+          pillarMat.opacity = 0.82 * beamPulse;
+          pillar.scale.set(0.9 + t * 0.9, 1, 0.9 + t * 0.9);
+          pillar.rotation.y = progress * Math.PI * 6;
+
+          innerBeamMat.opacity = 0.95 * beamPulse;
+          innerBeam.scale.set(0.8 + t * 0.6, 1, 0.8 + t * 0.6);
+
+          coreMat.opacity = Math.max(0, 1 - t * 0.7);
+          core.scale.setScalar(1.5 + t * 1.6);
+
+          // Sequential multi-element bursts across the 5x5 area
+          if (!burstFireDone) {
+            burstFireDone = true;
+            this.deps.spawnFireExplosion(center.x, 0.45, center.z, true);
+          }
+          if (t >= 0.22 && !burstIceDone) {
+            burstIceDone = true;
+            this.deps.spawnIceShatter(center.x, 0.45, center.z, true);
+          }
+          if (t >= 0.44 && !burstElecDone) {
+            burstElecDone = true;
+            this.deps.spawnElectricSparks(center.x, 0.55, center.z, 0xfacc15);
+          }
+          if (t >= 0.66 && !burstStarsDone) {
+            burstStarsDone = true;
+            this.deps.spawnGoldenStars(center.x, 0.4, center.z, 28);
+          }
+
+          // Continuous multi-element particle storm inside the dome
+          for (let k = 0; k < 3; k++) {
+            const randColor = elemColors[Math.floor(Math.random() * 4)];
+            const rx = center.x + (Math.random() - 0.5) * domeRad * 1.7;
+            const rz = center.z + (Math.random() - 0.5) * domeRad * 1.7;
+            this.deps.spawnParticleDot(rx, 0.2 + Math.random() * 2.0, rz, randColor, 0.07, 0.036);
+          }
+        } else {
+          // Phase 3: 4 Elemental Shockwaves expand outward & dome dissolves
+          const t = (progress - 0.72) / 0.28;
+          pillarMat.opacity = Math.max(0, 0.35 * (1 - t));
+          innerBeamMat.opacity = Math.max(0, 0.4 * (1 - t));
+          coreMat.opacity = Math.max(0, 0.3 * (1 - t));
+          domeMat.opacity = Math.max(0, 0.65 * (1 - t));
+          outerRingMat.opacity = Math.max(0, 0.9 * (1 - t));
+          innerRingMat.opacity = Math.max(0, 0.8 * (1 - t));
+
+          for (const sw of shockwaves) {
+            const localT = Math.max(0, Math.min(1, (t - sw.delay) / (1 - sw.delay)));
+            if (localT > 0) {
+              sw.mesh.scale.setScalar(0.5 + localT * (domeRad * 1.9));
+              sw.mat.opacity = Math.sin(localT * Math.PI) * 0.92;
+            }
+          }
         }
       },
       onComplete: () => {

@@ -15,6 +15,7 @@ export type VFXAnimationType =
   | 'cannon_barrage'     // Heavy arcing bomb/grenade/flask with area blast
   | 'black_hole'         // Gravitational singularity with accretion disk & cross pull
   | 'crimson_horizon'    // 5x5 world-darkening dome + criss-crossing crimson horizon slashes
+  | 'prismatic_apocalypse' // 5x5 tetra-elemental convergence dome, 4 orbiting orbs, prismatic sky pillar & 4 shockwaves
   | 'dimensional_wave'   // Traveling wide crescent wave / ground fissure (rect_3x2, line, cleave)
   | 'chain_hook'         // 3D roots, chains, tentacles or webs binding the target
   | 'sonic_symphony'     // Expanding 3D soundwave rings & musical/roar resonance

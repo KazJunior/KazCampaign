@@ -1513,6 +1513,40 @@ function createStatusAuras(unit: Unit): THREE.Group {
     auraGroup.add(elecMesh);
   }
 
+  // 11. Freezing (Crystalline icy-cyan hexagonal ring at base)
+  const hasFreezing = unit.statusEffects?.some((e) => e.type === 'freezing' && e.duration > 0);
+  if (hasFreezing) {
+    const freezeGeo = new THREE.RingGeometry(0.38, 0.48, 6);
+    freezeGeo.rotateX(-Math.PI / 2);
+    const freezeMat = new THREE.MeshBasicMaterial({
+      color: 0x67e8f9,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide,
+    });
+    const freezeMesh = new THREE.Mesh(freezeGeo, freezeMat);
+    freezeMesh.position.y = 0.062;
+    freezeMesh.name = 'auraRing';
+    auraGroup.add(freezeMesh);
+  }
+
+  // 12. Gale (Swirling teal wind ring at base)
+  const hasGale = unit.statusEffects?.some((e) => e.type === 'gale' && e.duration > 0);
+  if (hasGale) {
+    const galeGeo = new THREE.RingGeometry(0.40, 0.49, 10);
+    galeGeo.rotateX(-Math.PI / 2);
+    const galeMat = new THREE.MeshBasicMaterial({
+      color: 0x2dd4bf,
+      transparent: true,
+      opacity: 0.78,
+      side: THREE.DoubleSide,
+    });
+    const galeMesh = new THREE.Mesh(galeGeo, galeMat);
+    galeMesh.position.y = 0.065;
+    galeMesh.name = 'auraRing';
+    auraGroup.add(galeMesh);
+  }
+
   auraGroup.traverse((child) => {
     child.raycast = () => {};
     child.userData = { ...child.userData, isAura: true };

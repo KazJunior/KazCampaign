@@ -213,9 +213,12 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
 
   const activeShield = selectedUnit.statusEffects?.find((e) => e.type === 'shield' && e.value > 0);
   const slowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'slow' && e.duration > 0);
+  const galeEffect = selectedUnit.statusEffects?.find((e) => e.type === 'gale' && e.duration > 0);
   const buffMovEffect = selectedUnit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
   const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
-  const slowPenalty = slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0;
+  const slowPenalty =
+    (slowEffect ? Math.min(1, slowEffect.value ?? 1) : 0) +
+    (galeEffect ? (galeEffect.value ?? 1) : 0);
   const effectiveMov = isStunned ? 0 : Math.min(4, Math.max(1, (selectedUnit.mov + movBonus) - slowPenalty));
 
   return (
@@ -641,6 +644,8 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
                           {eff.type === 'poison' && `☠️ Veneno (-${eff.value || 2}%, ${eff.duration}T)`}
                           {eff.type === 'stun' && `⚡ Atordoado (${eff.duration}T)`}
                           {eff.type === 'slow' && `👣 Lentidão (-${eff.value || 1} Mov)`}
+                          {eff.type === 'freezing' && `❄️ Congelando (-${eff.value || 20}% DEF/RES, ${eff.duration}T)`}
+                          {eff.type === 'gale' && `🌪️ Ventania (-${eff.value || 1} Mov, ${eff.duration}T)`}
                           {eff.type === 'buff_atk' && `⚔️ Buff ATK +${eff.value}%`}
                           {eff.type === 'buff_mov' && `💨 Movimento +${eff.value} (${eff.duration}T)`}
                           {eff.type === 'invisible' && `👁️ Invisível (${eff.duration}T)`}

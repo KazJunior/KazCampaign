@@ -1,4 +1,5 @@
 import type { DamagePreview, DamageType, Skill, Unit } from '../types/game';
+import { evaluateOmnimagoReaction } from './elementalReactions';
 
 export interface CalculatedDamage {
   rawDamage: number;
@@ -145,10 +146,19 @@ export function calculateBaseDamage(
       attackStat = Math.round(attackStat * (1 + attacker.lineageBleedBonusDamagePercent / 100));
     }
 
+    const elementalReaction = evaluateOmnimagoReaction(attacker, target, skill);
+    if (elementalReaction && elementalReaction.damageBonusPercent > 0) {
+      attackStat = Math.round(attackStat * (1 + elementalReaction.damageBonusPercent / 100));
+    }
+
     let targetDef = damageType === 'physical' ? target.def : target.res;
     const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
     if (defDebuff) {
       targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
+    }
+    const freezingDebuff = target.statusEffects?.find((e) => e.type === 'freezing' && e.duration > 0);
+    if (freezingDebuff) {
+      targetDef = Math.round(targetDef * (1 - (freezingDebuff.value || 20) / 100));
     }
 
     if (skill.defenseIgnoreRatio) {
@@ -212,6 +222,10 @@ export function calculateBaseDamage(
   const defDebuff = target.statusEffects?.find((e) => e.type === 'debuff_def' && e.duration > 0);
   if (defDebuff) {
     targetDef = Math.round(targetDef * (1 - defDebuff.value / 100));
+  }
+  const freezingDebuff = target.statusEffects?.find((e) => e.type === 'freezing' && e.duration > 0);
+  if (freezingDebuff) {
+    targetDef = Math.round(targetDef * (1 - (freezingDebuff.value || 20) / 100));
   }
   if (attacker.lineageIgnoreDefenseExclusive && attacker.lineageIgnoreDefenseExclusive > 0) {
     targetDef = Math.round(targetDef * (1 - attacker.lineageIgnoreDefenseExclusive / 100));
@@ -291,8 +305,9 @@ export function getDamagePreview(
   const maxDamage = Math.max(minDamage, Math.ceil(base * 1.1));
   const avgDamage = Math.round((minDamage + maxDamage) / 2);
 
-  // Consider active shields when previewing target HP after hit (unless skill ignores shields)
-  const targetShield = skill?.ignoresShield
+  // Consider active shields when previewing target HP after hit (unless skill or reaction ignores shields)
+  const previewReaction = evaluateOmnimagoReaction(attacker, target, skill);
+  const targetShield = skill?.ignoresShield || previewReaction?.ignoresShield
     ? 0
     : (target.statusEffects
         ?.filter((e) => e.type === 'shield' && e.value > 0)
