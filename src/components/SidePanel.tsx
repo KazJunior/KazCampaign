@@ -678,6 +678,9 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'cavaleiro':
       return <Shield size={size} />;
     case 'canhoneiro':
+    case 'barril_polvora':
+    case 'barril_polvora_shrapnel':
+    case 'barril_polvora_gravity':
       return <Flame size={size} />;
     case 'dancarina_tempo':
     case 'time_phantom_boss':

@@ -23,6 +23,26 @@ import type {
 import { isDebuffStatus } from './types/game';
 import { evaluateOmnimagoReaction } from './utils/elementalReactions';
 import { isArtificeTowerUpgradeSkill, isArtificeConstruct, applyArtificeTowerUpgrade } from './utils/artificeUpgrades';
+import {
+  isPowderBarrelUnit,
+  createPowderBarrelUnit,
+  enforceBarrelLimit,
+  previewBarrelChain,
+  getBarrelVariantMeta,
+  buildBarrelExplosionVfxSkill,
+  DEFAULT_BARREL_CHAIN_RANGE,
+  BARREL_CHAIN_ESCALATION_PERCENT,
+  MAX_BARREL_CHAIN_ESCALATION_PERCENT,
+  BARREL_OVERLAP_DAMAGE_MULTIPLIER,
+} from './utils/powderBarrels';
+import {
+  isCavalryKnight,
+  getCavalryMomentumPercent,
+  getTrampleLineCandidates,
+  getTramplePathTiles,
+  findNearestSafeAdjacentTile,
+  MAX_CAVALRY_MOMENTUM_TILES,
+} from './utils/cavalry';
 import { LEVELS, getLevelById, createTrainingLevel, isTileInClockHands } from './data/levels';
 import { DEFAULT_CLASS_LINEAGES } from './data/lineages';
 import { createPlayerUnit, CLASS_DEFINITIONS, CLASS_UNLOCK_CONDITIONS, INITIAL_CLASSES, getMaxCompletedLevel, normalizeClassId, sanitizeAdventurePartyClasses, sanitizeUnlockedClasses, sanitizePartyClasses, isMeleeClassForSecretUnlock, isMageClassForSecretUnlock, checkChallengeClassUnlocks } from './data/units';
@@ -2161,6 +2181,15 @@ export function App() {
       selectedUnit.statusEffects?.some((e) => e.type === 'stun' && e.duration > 0)
     )
       return [];
+    if (activeSkill && activeSkill.isTrampleCharge) {
+      return getTrampleLineCandidates(
+        { x: selectedUnit.x, y: selectedUnit.y },
+        activeSkill.rangeMin,
+        activeSkill.rangeMax,
+        grid,
+        units
+      );
+    }
     if (activeSkill && (activeSkill.isTeleport || activeSkill.targetType === 'empty_tile')) {
       const rangeMin = activeSkill.rangeMin;
       const rangeMax = activeSkill.rangeMax;
@@ -2206,24 +2235,110 @@ export function App() {
     const alchemistAoeRadius =
       !activeSkill && selectedUnit ? getAlchemistMixtureSummary(selectedUnit).aoeRadius : 0;
     const effectiveAoeRadius = activeSkill ? activeSkill.aoeRadius : alchemistAoeRadius;
-    if (effectiveAoeRadius === 0) return [];
-    if (!activeSkill && selectedAction !== 'attack' && !targetUnitId && !targetAoEPoint) return [];
+    const isTargetingAction = Boolean(activeSkill || selectedAction === 'attack' || targetUnitId || targetAoEPoint);
+    if (!isTargetingAction || !selectedUnit || !grid[0]) return [];
 
+    const gridW = grid[0].length;
+    const gridH = grid.length;
     const aoeType = activeSkill?.aoeType || 'circle';
-    const origin = selectedUnit ? { x: selectedUnit.x, y: selectedUnit.y } : null;
+    const origin = { x: selectedUnit.x, y: selectedUnit.y };
+    const tileMap = new Map<string, Point>();
+    const addTiles = (pts: Point[]) => {
+      pts.forEach((p) => tileMap.set(`${p.x},${p.y}`, p));
+    };
 
-    if (targetAoEPoint) {
-      return getAoETiles(targetAoEPoint, effectiveAoeRadius, grid[0].length, grid.length, aoeType, origin);
+    // Preview de Pavio Rápido (self + detonatesAllBarrels): destaca a explosão de todos os barris no mapa
+    if (activeSkill?.targetType === 'self' && activeSkill.detonatesAllBarrels) {
+      const allBarrelIds = units.filter((u) => !u.isDead && isPowderBarrelUnit(u)).map((b) => b.id);
+      if (allBarrelIds.length > 0) {
+        const chainPreview = previewBarrelChain(units, allBarrelIds, selectedUnit, gridW, gridH);
+        addTiles(chainPreview.blastTiles);
+      }
+      return Array.from(tileMap.values());
+    }
+
+    // Preview de Atropelamento Real / Cavalgada do Trovão (trilha em linha reta + impacto na chegada)
+    if (activeSkill?.isTrampleCharge) {
+      const destPt =
+        targetTeleportPoint ||
+        (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y) ? hoveredTile : null);
+      if (destPt) {
+        const pathPts = getTramplePathTiles(origin, destPt);
+        addTiles(pathPts);
+        if (activeSkill.trampleEndAoeRadius && activeSkill.trampleEndAoeRadius > 0) {
+          addTiles(getAoETiles(destPt, activeSkill.trampleEndAoeRadius, gridW, gridH, 'circle', null));
+        }
+      }
+      return Array.from(tileMap.values());
+    }
+
+    // Preview ao posicionar Barril de Pólvora em casa livre
+    if (activeSkill?.placesBarrelVariant && activeSkill.targetType === 'empty_tile') {
+      const previewCenter =
+        targetTeleportPoint ||
+        (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y) ? hoveredTile : null);
+      if (previewCenter && effectiveAoeRadius > 0) {
+        addTiles(getAoETiles(previewCenter, effectiveAoeRadius, gridW, gridH, aoeType, origin));
+      }
+      return Array.from(tileMap.values());
+    }
+
+    let baseTiles: Point[] = [];
+    if (effectiveAoeRadius > 0) {
+      if (targetAoEPoint) {
+        baseTiles = getAoETiles(targetAoEPoint, effectiveAoeRadius, gridW, gridH, aoeType, origin);
+      } else {
+        const targetUnit = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
+        if (targetUnit) {
+          baseTiles = getAoETiles({ x: targetUnit.x, y: targetUnit.y }, effectiveAoeRadius, gridW, gridH, aoeType, origin);
+        } else if (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y)) {
+          baseTiles = getAoETiles(hoveredTile, effectiveAoeRadius, gridW, gridH, aoeType, origin);
+        }
+      }
+      addTiles(baseTiles);
+    }
+
+    // Preview de Reação em Cadeia de Barris quando a mira toca um barril ou usa detonatesAllBarrels
+    const chainRange = activeSkill?.barrelChainRangeOverride || DEFAULT_BARREL_CHAIN_RANGE;
+    const triggeredBarrelIds = new Set<string>();
+    if (activeSkill?.detonatesAllBarrels && (baseTiles.length > 0 || targetAoEPoint || hoveredTile)) {
+      units.filter((u) => !u.isDead && isPowderBarrelUnit(u)).forEach((b) => triggeredBarrelIds.add(b.id));
+    }
+    if (baseTiles.length > 0) {
+      units
+        .filter((u) => !u.isDead && isPowderBarrelUnit(u) && baseTiles.some((pt) => pt.x === u.x && pt.y === u.y))
+        .forEach((b) => triggeredBarrelIds.add(b.id));
     }
     const targetUnit = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
-    if (targetUnit) {
-      return getAoETiles({ x: targetUnit.x, y: targetUnit.y }, effectiveAoeRadius, grid[0].length, grid.length, aoeType, origin);
+    if (targetUnit && isPowderBarrelUnit(targetUnit)) {
+      triggeredBarrelIds.add(targetUnit.id);
+    } else if (
+      hoveredTile &&
+      attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y)
+    ) {
+      const hoveredBarrel = units.find(
+        (u) => !u.isDead && isPowderBarrelUnit(u) && u.x === hoveredTile.x && u.y === hoveredTile.y
+      );
+      if (hoveredBarrel) {
+        triggeredBarrelIds.add(hoveredBarrel.id);
+      }
     }
-    if (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y)) {
-      return getAoETiles(hoveredTile, effectiveAoeRadius, grid[0].length, grid.length, aoeType, origin);
+
+    if (triggeredBarrelIds.size > 0) {
+      const chainPreview = previewBarrelChain(
+        units,
+        Array.from(triggeredBarrelIds),
+        selectedUnit,
+        gridW,
+        gridH,
+        chainRange,
+        activeSkill?.barrelChainBonusDamagePercent || 0
+      );
+      addTiles(chainPreview.blastTiles);
     }
-    return [];
-  }, [activeSkill, activePetSkill, selectedAction, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles, selectedUnit]);
+
+    return Array.from(tileMap.values());
+  }, [activeSkill, activePetSkill, selectedAction, hoveredTile, targetUnitId, targetAoEPoint, targetTeleportPoint, units, grid, attackableTiles, selectedUnit]);
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
@@ -3105,6 +3220,12 @@ export function App() {
           centaurBonus = (selectedUnit.centaurMovedTilesThisTurn || 0) + movedDistance;
           addFloatingNumber(x, y, `+${centaurBonus * 5}% Dano (Carga Centauro)`, 'status', '#D97706');
         }
+        let nextCavalryMomentum = selectedUnit.cavalryMomentumTiles || 0;
+        if (isCavalryKnight(selectedUnit) && movedDistance > 0) {
+          nextCavalryMomentum = Math.min(MAX_CAVALRY_MOMENTUM_TILES, nextCavalryMomentum + movedDistance);
+          const momentumPct = getCavalryMomentumPercent({ ...selectedUnit, cavalryMomentumTiles: nextCavalryMomentum });
+          addFloatingNumber(x, y, `🐎 +${momentumPct}% Ímpeto de Galope!`, 'status', '#38BDF8');
+        }
 
         if (!isTrainingMode && movedDistance > 0) {
           setProgress((prev) => {
@@ -3151,6 +3272,7 @@ export function App() {
                   isDead: unitDead,
                   statusEffects: updatedMoveEffects,
                   centaurMovedTilesThisTurn: selectedUnit.lineageCentaurCharge ? centaurBonus : u.centaurMovedTilesThisTurn,
+                  cavalryMomentumTiles: isCavalryKnight(selectedUnit) ? nextCavalryMomentum : u.cavalryMomentumTiles,
                 }
               : u
           )
@@ -3230,12 +3352,54 @@ export function App() {
 
     // Attack / Skill targeting execution
     if (selectedUnit && selectedUnit.faction === 'player' && !selectedUnit.hasAttacked) {
-      // Empty-tile targeting (e.g. Teleporte Místico)
+      // Empty-tile targeting (e.g. Teleporte Místico, Invocações, Barris de Pólvora, Atropelamento do Cavaleiro)
       if (activeSkill && (activeSkill.isTeleport || activeSkill.targetType === 'empty_tile')) {
         const isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
         if (isTargetTileValid && !clickedUnit) {
           setTargetTeleportPoint({ x, y });
           setTargetAoEPoint(null);
+          if (activeSkill.isTrampleCharge) {
+            const pathPts = getTramplePathTiles({ x: selectedUnit.x, y: selectedUnit.y }, { x, y });
+            const endPts =
+              activeSkill.trampleEndAoeRadius && activeSkill.trampleEndAoeRadius > 0
+                ? getAoETiles({ x, y }, activeSkill.trampleEndAoeRadius, grid[0].length, grid.length, 'circle', null)
+                : [];
+            const allHitPts = [...pathPts, ...endPts];
+            const trampledEnemies = units.filter(
+              (u) =>
+                u.faction === 'enemy' &&
+                !u.isDead &&
+                allHitPts.some((pt) => pt.x === u.x && pt.y === u.y)
+            );
+            const chargeDist = Math.abs(x - selectedUnit.x) + Math.abs(y - selectedUnit.y);
+            const boostedAttacker: Unit = isCavalryKnight(selectedUnit)
+              ? {
+                  ...selectedUnit,
+                  cavalryMomentumTiles: Math.min(
+                    MAX_CAVALRY_MOMENTUM_TILES,
+                    (selectedUnit.cavalryMomentumTiles || 0) + chargeDist
+                  ),
+                }
+              : selectedUnit;
+            const sampleTarget = trampledEnemies[0] || selectedUnit;
+            const preview = getDamagePreview(boostedAttacker, sampleTarget, activeSkill);
+            preview.isGroundTarget = true;
+            preview.groundTargetPoint = { x, y };
+            preview.aoeTargetsCount = trampledEnemies.length;
+            preview.trampleTargetsCount = trampledEnemies.length;
+            preview.cavalryMomentumPercent = getCavalryMomentumPercent(boostedAttacker);
+            preview.isCantoSkill = Boolean(activeSkill.grantsCantoMove);
+            if (trampledEnemies.length === 0) {
+              preview.minDamage = 0;
+              preview.maxDamage = 0;
+              preview.avgDamage = 0;
+              preview.isKillLikely = false;
+            }
+            setDamagePreview(preview);
+            setTargetUnitId(sampleTarget.id);
+            soundManager.playSelect();
+            return;
+          }
           const preview: DamagePreview = {
             attacker: selectedUnit,
             target: selectedUnit,
@@ -3247,7 +3411,8 @@ export function App() {
             targetHpAfterMin: selectedUnit.currentHp,
             targetHpAfterMax: selectedUnit.currentHp,
             isKillLikely: false,
-            damageType: 'healing',
+            damageType: activeSkill.placesBarrelVariant ? 'physical' : 'healing',
+            isFreeActionSkill: Boolean(activeSkill.isFreeAction),
           };
           setDamagePreview(preview);
           setTargetUnitId(selectedUnit.id);
@@ -3326,8 +3491,17 @@ export function App() {
       }
 
       // AoE Skill Targeting (any slot in attackableTiles: empty ground, occupied by an ally, or occupied by an enemy)
+      // Nota: Canhão Humano & Barril clicado diretamente em um aliado usa o modo de lançamento de aliado (single-target)
+      const isCanhaoHumanoAllyClick =
+        activeSkill?.id === 'canhao_colossal' &&
+        clickedUnit &&
+        clickedUnit.faction === 'player' &&
+        !isPowderBarrelUnit(clickedUnit) &&
+        clickedUnit.id !== selectedUnit.id;
+
       const isAoESkill = Boolean(
         activeSkill &&
+        !isCanhaoHumanoAllyClick &&
         activeSkill.targetType !== 'self' &&
         (activeSkill.aoeRadius > 0 || activeSkill.canTargetGround)
       );
@@ -3344,21 +3518,38 @@ export function App() {
 
           const affectedTargets = units.filter(
             (u) =>
+              !isPowderBarrelUnit(u) &&
               (activeSkill.targetType === 'any' || u.faction === matchFaction) &&
               !u.isDead &&
               hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
           );
 
-          if (affectedTargets.length > 0 || activeSkill.createsObstacle || activeSkill.createsClockZoneTurns) {
+          const barrelsInAoE = activeSkill.detonatesAllBarrels
+            ? units.filter((u) => !u.isDead && isPowderBarrelUnit(u))
+            : units.filter(
+                (u) => !u.isDead && isPowderBarrelUnit(u) && hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+              );
+
+          const canCastOnEmptyGround = Boolean(
+            activeSkill.createsObstacle ||
+            activeSkill.createsClockZoneTurns ||
+            activeSkill.placesBarrelCount ||
+            activeSkill.detonatesAllBarrels ||
+            activeSkill.spawnsBarrelsAfterAoE
+          );
+
+          if (affectedTargets.length > 0 || barrelsInAoE.length > 0 || canCastOnEmptyGround) {
             setTargetTeleportPoint(null);
             setTargetAoEPoint({ x, y });
 
             // Determine primary target for preview and resolution
             let primaryTarget: Unit;
-            if (clickedUnit && affectedTargets.some((u) => u.id === clickedUnit.id)) {
+            if (clickedUnit && (affectedTargets.some((u) => u.id === clickedUnit.id) || isPowderBarrelUnit(clickedUnit))) {
               primaryTarget = clickedUnit;
             } else if (affectedTargets.length > 0) {
               primaryTarget = affectedTargets[0];
+            } else if (barrelsInAoE.length > 0) {
+              primaryTarget = barrelsInAoE[0];
             } else {
               primaryTarget = selectedUnit;
             }
@@ -3367,6 +3558,26 @@ export function App() {
             preview.aoeTargetsCount = affectedTargets.length;
             preview.isGroundTarget = !clickedUnit || primaryTarget.id !== clickedUnit.id;
             preview.groundTargetPoint = { x, y };
+            preview.cavalryMomentumPercent = getCavalryMomentumPercent(
+              selectedUnit,
+              activeSkill.teleportToTarget ? Math.max(0, Math.abs(x - selectedUnit.x) + Math.abs(y - selectedUnit.y) - 1) : 0
+            );
+            preview.isCantoSkill = Boolean(activeSkill.grantsCantoMove);
+
+            if (barrelsInAoE.length > 0) {
+              const chainPrev = previewBarrelChain(
+                units,
+                barrelsInAoE.map((b) => b.id),
+                selectedUnit,
+                grid[0].length,
+                grid.length,
+                activeSkill.barrelChainRangeOverride || DEFAULT_BARREL_CHAIN_RANGE,
+                activeSkill.barrelChainBonusDamagePercent || 0
+              );
+              preview.barrelChainCount = chainPrev.chainBarrels.length;
+              preview.barrelEstimatedDamage = chainPrev.estimatedDamage;
+              preview.barrelEnemiesInBlast = chainPrev.enemiesHitIds.length;
+            }
 
             setDamagePreview(preview);
             setTargetUnitId(primaryTarget.id);
@@ -3399,18 +3610,20 @@ export function App() {
           return;
         }
 
+        const isClickedBarrel = isPowderBarrelUnit(clickedUnit);
         const isFactionValid =
-          (targetType === 'enemy' && clickedUnit.faction === 'enemy') ||
+          (targetType === 'enemy' && (clickedUnit.faction === 'enemy' || isClickedBarrel)) ||
           (targetType === 'ally' &&
             clickedUnit.faction === 'player' &&
+            !isClickedBarrel &&
             (!isInvocadorSummonOnlySkill || clickedUnit.isSummoned) &&
             (!isArtificeTowerOnlySkill || isArtificeConstruct(clickedUnit))) ||
           targetType === 'any';
 
         let isTargetTileValid = attackableTiles.some((pt) => pt.x === x && pt.y === y);
 
-        // AUTO-ATTACK ASSIST: If player has a hero selected (none or move mode) and directly clicks an enemy in basic attack range:
-        if (!isTargetTileValid && !activeSkill && clickedUnit.faction === 'enemy') {
+        // AUTO-ATTACK ASSIST: If player has a hero selected (none or move mode) and directly clicks an enemy or barrel in basic attack range:
+        if (!isTargetTileValid && !activeSkill && (clickedUnit.faction === 'enemy' || isClickedBarrel)) {
           const defaultRangeMin = 1;
           let defaultRangeMax = selectedUnit.range || 1;
           if (selectedUnit.alchemistMixtures?.length) {
@@ -3435,9 +3648,40 @@ export function App() {
           setTargetTeleportPoint(null);
           setTargetAoEPoint({ x: clickedUnit.x, y: clickedUnit.y });
           const effectiveSkill = activeSkill || undefined;
-          const preview = getDamagePreview(selectedUnit, clickedUnit, effectiveSkill);
+          const extraChargeTiles =
+            effectiveSkill?.teleportToTarget && isCavalryKnight(selectedUnit)
+              ? Math.max(0, Math.abs(clickedUnit.x - selectedUnit.x) + Math.abs(clickedUnit.y - selectedUnit.y) - 1)
+              : 0;
+          const previewAttacker: Unit =
+            extraChargeTiles > 0
+              ? {
+                  ...selectedUnit,
+                  cavalryMomentumTiles: Math.min(
+                    MAX_CAVALRY_MOMENTUM_TILES,
+                    (selectedUnit.cavalryMomentumTiles || 0) + extraChargeTiles
+                  ),
+                }
+              : selectedUnit;
+          const preview = getDamagePreview(previewAttacker, clickedUnit, effectiveSkill);
           preview.isGroundTarget = false;
           preview.groundTargetPoint = undefined;
+          preview.cavalryMomentumPercent = getCavalryMomentumPercent(previewAttacker);
+          preview.isCantoSkill = Boolean(effectiveSkill?.grantsCantoMove);
+          preview.isAllyMountRescueSkill = Boolean(effectiveSkill?.isAllyMountRescue);
+          if (isClickedBarrel) {
+            const chainPrev = previewBarrelChain(
+              units,
+              [clickedUnit.id],
+              selectedUnit,
+              grid[0].length,
+              grid.length,
+              effectiveSkill?.barrelChainRangeOverride || DEFAULT_BARREL_CHAIN_RANGE,
+              effectiveSkill?.barrelChainBonusDamagePercent || 0
+            );
+            preview.barrelChainCount = chainPrev.chainBarrels.length;
+            preview.barrelEstimatedDamage = chainPrev.estimatedDamage;
+            preview.barrelEnemiesInBlast = chainPrev.enemiesHitIds.length;
+          }
           if (!effectiveSkill) {
             const alchSummary = getAlchemistMixtureSummary(selectedUnit);
             if (alchSummary.aoeRadius > 0) {
@@ -3566,7 +3810,14 @@ export function App() {
       return;
     }
 
-    // Select / Deselect unit
+    // Select / Deselect unit (Barris de Pólvora não são selecionáveis como heróis controláveis)
+    if (clickedUnit && isPowderBarrelUnit(clickedUnit)) {
+      soundManager.playSelect();
+      const meta = getBarrelVariantMeta(clickedUnit.barrelVariant);
+      addFloatingNumber(clickedUnit.x, clickedUnit.y, `${meta.emoji} ${meta.name}: Atire ou chute para detonar!`, 'status', meta.color);
+      return;
+    }
+
     if (clickedUnit && !(clickedUnit.faction === 'enemy' && clickedUnit.statusEffects?.some((e) => e.type === 'invisible' && e.duration > 0))) {
       setSelectedUnitId(clickedUnit.id);
       setSelectedAction('none');
@@ -3589,6 +3840,340 @@ export function App() {
       setTargetAoEPoint(null);
       setTargetUnitId(null);
     }
+  };
+
+  // CANHONEIRO: Resolvedor central de Detonação de Barris de Pólvora & Reação em Cadeia (BFS)
+  const detonateBarrelChain = async (
+    initialBarrelIds: string[],
+    startingUnits: Unit[],
+    caster: Unit,
+    options?: {
+      triggerSkill?: Skill;
+      extraBonusPercent?: number;
+      chainRange?: number;
+      propagateStatus?: StatusEffect[];
+      propagateIgnoresShield?: boolean;
+      propagateKnockback?: number;
+    }
+  ): Promise<{
+    updatedUnits: Unit[];
+    totalDmgDone: number;
+    totalKills: number;
+    killedMonsterTypeIds: string[];
+    statusInflictedCount: number;
+    enemiesPushedCount: number;
+    barrelsDetonated: number;
+  }> => {
+    let workingUnits = [...startingUnits];
+    const gridW = grid[0]?.length || 0;
+    const gridH = grid.length || 0;
+    const chainRange = options?.chainRange || DEFAULT_BARREL_CHAIN_RANGE;
+    const extraBonus = options?.extraBonusPercent || 0;
+
+    const visited = new Set<string>();
+    const queue: string[] = [];
+    for (const id of initialBarrelIds) {
+      if (!visited.has(id)) {
+        visited.add(id);
+        queue.push(id);
+      }
+    }
+
+    let totalDmgDone = 0;
+    let totalKills = 0;
+    const killedMonsterTypeIds: string[] = [];
+    let statusInflictedCount = 0;
+    let enemiesPushedCount = 0;
+    let barrelsDetonated = 0;
+    const enemyBarrelHitCount = new Map<string, number>();
+    const delayMult = progress.combatSpeed === 'fast' ? 0.5 : 1.0;
+
+    while (queue.length > 0) {
+      const barrelId = queue.shift()!;
+      const barrel = workingUnits.find((u) => u.id === barrelId && !u.isDead && isPowderBarrelUnit(u));
+      if (!barrel) continue;
+
+      const chainIndex = barrelsDetonated;
+      barrelsDetonated++;
+      const meta = getBarrelVariantMeta(barrel.barrelVariant);
+      const chainEscalation = Math.min(
+        MAX_BARREL_CHAIN_ESCALATION_PERCENT,
+        chainIndex * BARREL_CHAIN_ESCALATION_PERCENT
+      );
+      const chainBonusPct = chainEscalation + extraBonus;
+
+      // Marca o barril como detonado imediatamente
+      workingUnits = workingUnits.map((u) =>
+        u.id === barrel.id ? { ...u, currentHp: 0, isDead: true, summonTurnsLeft: 0, statusEffects: [] } : u
+      );
+
+      if (chainIndex > 0) {
+        await new Promise((r) => setTimeout(r, Math.round(140 * delayMult)));
+      }
+
+      soundManager.playPhysicalAttack();
+      soundManager.playMagicSpell();
+
+      const vfxSkill = buildBarrelExplosionVfxSkill(barrel, chainIndex);
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(
+          caster.id,
+          barrel.id,
+          'physical',
+          meta.blastRadius,
+          vfxSkill,
+          { x: barrel.x, y: barrel.y }
+        );
+        boardRef.current.playDeathAnimation(barrel.id);
+      }
+
+      addFloatingNumber(
+        barrel.x,
+        barrel.y,
+        chainIndex === 0
+          ? `${meta.emoji} BOOM!${extraBonus > 0 ? ` (+${extraBonus}%)` : ''}`
+          : `💥 CADEIA x${chainIndex + 1}! (+${chainBonusPct}%)`,
+        'physical',
+        chainIndex > 0 ? '#FACC15' : meta.color
+      );
+
+      // Barril Gravitacional: puxa inimigos em raio 2 uma casa para o centro antes de causar dano
+      if (meta.pullRadius && meta.pullRadius > 0) {
+        const pullCandidates = workingUnits.filter(
+          (u) =>
+            u.faction === 'enemy' &&
+            !u.isDead &&
+            (u.x !== barrel.x || u.y !== barrel.y) &&
+            Math.max(Math.abs(u.x - barrel.x), Math.abs(u.y - barrel.y)) <= meta.pullRadius!
+        );
+        for (const pe of pullCandidates) {
+          const freshPe = workingUnits.find((u) => u.id === pe.id && !u.isDead);
+          if (!freshPe) continue;
+          const dx = barrel.x - freshPe.x;
+          const dy = barrel.y - freshPe.y;
+          let pX = 0;
+          let pY = 0;
+          if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) pX = Math.sign(dx);
+          else if (dy !== 0) pY = Math.sign(dy);
+
+          const nextX = freshPe.x + pX;
+          const nextY = freshPe.y + pY;
+          const inBounds = nextX >= 0 && nextX < gridW && nextY >= 0 && nextY < gridH;
+          const isWalkable = inBounds && grid[nextY][nextX].isWalkable;
+          const isOccupied = inBounds && workingUnits.some((u) => !u.isDead && u.id !== freshPe.id && u.x === nextX && u.y === nextY);
+
+          if (inBounds && isWalkable && !isOccupied) {
+            if (boardRef.current) {
+              await boardRef.current.playMoveAnimation(freshPe.id, freshPe.x, freshPe.y, nextX, nextY);
+            }
+            let pulledHp = freshPe.currentHp;
+            const elecEff = (freshPe.statusEffects || []).find((e) => e.type === 'electrified' && e.duration > 0);
+            if (elecEff && pulledHp > 0) {
+              const elecDmg = Math.max(1, Math.round(freshPe.maxHp * ((elecEff.value || 2) / 100)));
+              pulledHp = Math.max(0, pulledHp - elecDmg);
+              totalDmgDone += elecDmg;
+              addFloatingNumber(nextX, nextY, `-${elecDmg} Choque`, 'status', '#FACC15');
+            }
+            const pulledDead = pulledHp === 0;
+            workingUnits = workingUnits.map((u) =>
+              u.id === freshPe.id ? { ...u, x: nextX, y: nextY, currentHp: pulledHp, isDead: pulledDead } : u
+            );
+            addFloatingNumber(nextX, nextY, '🌀 Puxado!', 'status', '#C084FC');
+            if (pulledDead) {
+              totalKills++;
+              if (freshPe.monsterTypeId) killedMonsterTypeIds.push(freshPe.monsterTypeId);
+              soundManager.playDeath();
+              if (boardRef.current) await boardRef.current.playDeathAnimation(freshPe.id);
+            }
+          }
+        }
+      }
+
+      // Dano da explosão em área 3x3
+      const blastTiles = getAoETiles({ x: barrel.x, y: barrel.y }, meta.blastRadius, gridW, gridH, 'circle', null);
+      const effectivePower = (barrel.barrelPower || meta.defaultPower) * (1 + chainBonusPct / 100);
+      const effectiveIgnoresShield = Boolean(meta.ignoresShield || options?.propagateIgnoresShield);
+      const syntheticBlastSkill: Skill = {
+        ...vfxSkill,
+        power: effectivePower,
+        defenseIgnoreRatio: meta.defenseIgnoreRatio,
+        ignoresShield: effectiveIgnoresShield,
+      };
+
+      const enemiesInBlast = workingUnits.filter(
+        (u) =>
+          u.faction === 'enemy' &&
+          !u.isDead &&
+          blastTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+      );
+
+      for (const enemy of enemiesInBlast) {
+        const freshEnemy = workingUnits.find((u) => u.id === enemy.id && !u.isDead);
+        if (!freshEnemy) continue;
+
+        let curEffects = [...(freshEnemy.statusEffects || [])];
+        const rolled = rollActualDamage(caster, freshEnemy, syntheticBlastSkill);
+        const priorHitsOnEnemy = enemyBarrelHitCount.get(freshEnemy.id) || 0;
+        enemyBarrelHitCount.set(freshEnemy.id, priorHitsOnEnemy + 1);
+        const overlapScale = priorHitsOnEnemy > 0 ? BARREL_OVERLAP_DAMAGE_MULTIPLIER : 1;
+        let dmg = freshEnemy.crystalsAlive ? 0 : Math.max(1, Math.round(rolled.finalDamage * overlapScale));
+
+        if (freshEnemy.crystalsAlive) {
+          addFloatingNumber(freshEnemy.x, freshEnemy.y, '🛡️ Imune pelos Cristais!', 'status', '#A855F7');
+        } else if (dmg > 0) {
+          if (effectiveIgnoresShield) {
+            const hasSh = curEffects.some((e) => e.type === 'shield' && e.value > 0);
+            if (hasSh) {
+              addFloatingNumber(freshEnemy.x, freshEnemy.y, '🛡️⚡ Ignorou Escudo!', 'status', '#C084FC');
+            }
+          } else {
+            const shieldIdx = curEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+            if (shieldIdx >= 0) {
+              const sh = curEffects[shieldIdx];
+              const absorbed = Math.min(sh.value, dmg);
+              dmg -= absorbed;
+              const rem = sh.value - absorbed;
+              if (rem > 0) curEffects[shieldIdx] = { ...sh, value: rem };
+              else curEffects.splice(shieldIdx, 1);
+              addFloatingNumber(freshEnemy.x, freshEnemy.y, `🛡️ -${absorbed}`, 'shield', '#38BDF8');
+            }
+          }
+        }
+
+        const nextHp = Math.max(0, freshEnemy.currentHp - dmg);
+        const died = nextHp === 0;
+        totalDmgDone += dmg;
+        if (dmg > 0) {
+          addFloatingNumber(freshEnemy.x, freshEnemy.y, `-${dmg}`, 'physical', '#FF5252');
+        }
+
+        // Efeitos de status do barril e da habilidade detonadora
+        if (!died) {
+          const isImmune = curEffects.some((e) => e.type === 'immune' && e.duration > 0);
+          const effectsToApply: StatusEffect[] = [];
+          if (meta.statusEffect) effectsToApply.push(meta.statusEffect);
+          if (options?.propagateStatus?.length) effectsToApply.push(...options.propagateStatus);
+
+          if (!isImmune) {
+            for (const eff of effectsToApply) {
+              if (
+                (eff.type === 'burn' || eff.type === 'poison') &&
+                curEffects.some((e) => e.type === 'immune_burn_poison' && e.duration > 0)
+              ) {
+                continue;
+              }
+              curEffects = [
+                ...curEffects.filter((e) => e.type !== eff.type),
+                { ...eff, appliedTurn: turnNumberRef.current },
+              ];
+              statusInflictedCount++;
+              if (eff.type === 'burn') addFloatingNumber(freshEnemy.x, freshEnemy.y, '🔥 Queimadura!', 'status', '#F97316');
+              else if (eff.type === 'debuff_def') addFloatingNumber(freshEnemy.x, freshEnemy.y, `🛡️ -${eff.value}% Def`, 'status', '#F59E0B');
+              else if (eff.type === 'silence') addFloatingNumber(freshEnemy.x, freshEnemy.y, '🔇 Silenciado!', 'status', '#A855F7');
+              else if (eff.type === 'electrified') addFloatingNumber(freshEnemy.x, freshEnemy.y, '⚡ Eletrificado!', 'status', '#FACC15');
+            }
+          }
+        }
+
+        // Empurrão propagado pela explosão (ex: Rastilho / Mega Barril)
+        let finalX = freshEnemy.x;
+        let finalY = freshEnemy.y;
+        let finalHp = nextHp;
+        let finalDead = died;
+
+        if (!finalDead && options?.propagateKnockback && options.propagateKnockback > 0) {
+          const dx = freshEnemy.x - barrel.x;
+          const dy = freshEnemy.y - barrel.y;
+          let pushX = 0;
+          let pushY = 0;
+          if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) pushX = Math.sign(dx);
+          else if (dy !== 0) pushY = Math.sign(dy);
+
+          if (pushX !== 0 || pushY !== 0) {
+            let currX = freshEnemy.x;
+            let currY = freshEnemy.y;
+            let steps = 0;
+            for (let s = 0; s < options.propagateKnockback; s++) {
+              const nX = currX + pushX;
+              const nY = currY + pushY;
+              const inB = nX >= 0 && nX < gridW && nY >= 0 && nY < gridH;
+              const walk = inB && grid[nY][nX].isWalkable;
+              const blocker = inB ? workingUnits.find((u) => !u.isDead && u.id !== freshEnemy.id && u.x === nX && u.y === nY) : undefined;
+              if (inB && walk && !blocker) {
+                currX = nX;
+                currY = nY;
+                steps++;
+              } else {
+                if (blocker && isPowderBarrelUnit(blocker) && !visited.has(blocker.id)) {
+                  visited.add(blocker.id);
+                  queue.push(blocker.id);
+                }
+                const colDmg = Math.max(6, Math.round((caster.atk || 25) * 0.4));
+                finalHp = Math.max(0, finalHp - colDmg);
+                totalDmgDone += colDmg;
+                addFloatingNumber(currX, currY, `💥 Colisão! -${colDmg}`, 'physical', '#F97316');
+                finalDead = finalHp === 0;
+                break;
+              }
+            }
+            if (steps > 0) {
+              finalX = currX;
+              finalY = currY;
+              enemiesPushedCount++;
+              if (boardRef.current) {
+                await boardRef.current.playMoveAnimation(freshEnemy.id, freshEnemy.x, freshEnemy.y, finalX, finalY);
+              }
+              const elecEff = curEffects.find((e) => e.type === 'electrified' && e.duration > 0);
+              if (elecEff && finalHp > 0) {
+                const elecDmg = Math.max(1, Math.round(freshEnemy.maxHp * ((elecEff.value || 2) / 100))) * steps;
+                finalHp = Math.max(0, finalHp - elecDmg);
+                totalDmgDone += elecDmg;
+                finalDead = finalHp === 0;
+                addFloatingNumber(finalX, finalY, `-${elecDmg} Choque (${steps}x)`, 'status', '#FACC15');
+              }
+            }
+          }
+        }
+
+        workingUnits = workingUnits.map((u) =>
+          u.id === freshEnemy.id
+            ? { ...u, x: finalX, y: finalY, currentHp: finalHp, isDead: finalDead, statusEffects: finalDead ? [] : curEffects }
+            : u
+        );
+
+        if (finalDead) {
+          totalKills++;
+          if (freshEnemy.monsterTypeId) killedMonsterTypeIds.push(freshEnemy.monsterTypeId);
+          soundManager.playDeath();
+          if (boardRef.current) {
+            await boardRef.current.playDeathAnimation(freshEnemy.id);
+          }
+        }
+      }
+
+      // Enfileira outros barris dentro do alcance da Reação em Cadeia (Chebyshev <= chainRange)
+      const nearbyBarrels = workingUnits.filter(
+        (u) =>
+          !u.isDead &&
+          isPowderBarrelUnit(u) &&
+          !visited.has(u.id) &&
+          Math.max(Math.abs(u.x - barrel.x), Math.abs(u.y - barrel.y)) <= chainRange
+      );
+      for (const nb of nearbyBarrels) {
+        visited.add(nb.id);
+        queue.push(nb.id);
+      }
+    }
+
+    return {
+      updatedUnits: workingUnits,
+      totalDmgDone,
+      totalKills,
+      killedMonsterTypeIds,
+      statusInflictedCount,
+      enemiesPushedCount,
+      barrelsDetonated,
+    };
   };
 
   // ANIMATED Attack / Skill Confirm
@@ -3654,6 +4239,363 @@ export function App() {
       setSelectedAction('none');
       setActiveSkill(null);
       setIsAnimatingAction(false);
+      return;
+    }
+
+    // 0.92. Canhoneiro: Posicionamento de Barril de Pólvora em casa livre (Ação Livre!)
+    if (skill?.placesBarrelVariant && skill.targetType === 'empty_tile' && targetTeleportPoint) {
+      const spawnX = targetTeleportPoint.x;
+      const spawnY = targetTeleportPoint.y;
+      const variant = skill.placesBarrelVariant;
+      const meta = getBarrelVariantMeta(variant);
+
+      soundManager.playUpgrade();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, selectedUnit.id, 'physical', 0, skill, { x: spawnX, y: spawnY });
+      }
+
+      const { units: limitedUnits, removedBarrels } = enforceBarrelLimit(units, selectedUnit.id, 1);
+      for (const oldB of removedBarrels) {
+        if (boardRef.current) boardRef.current.playDeathAnimation(oldB.id);
+        addFloatingNumber(oldB.x, oldB.y, '💨 Barril Antigo Removido', 'status', '#94A3B8');
+      }
+
+      const newBarrel = createPowderBarrelUnit(
+        selectedUnit,
+        spawnX,
+        spawnY,
+        variant,
+        skill.power,
+        turnNumberRef.current
+      );
+      addFloatingNumber(
+        spawnX,
+        spawnY,
+        `${meta.emoji} ${meta.name}!${skill.isFreeAction ? ' (Ação Livre)' : ''}`,
+        'status',
+        meta.color
+      );
+
+      // Ações Livres de posicionar barril não acumulam carga extra da Suprema no mesmo turno
+      const nextSkillUsesCount = skill.isFreeAction
+        ? (selectedUnit.skillUsesCount || 0)
+        : (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedSkills = selectedUnit.skills.map((s) => {
+        if (!skill.isFreeAction && s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+          return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+        }
+        return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+      });
+
+      const updatedUnits = limitedUnits.map((u) =>
+        u.id === selectedUnit.id
+          ? {
+              ...u,
+              hasAttacked: skill.isFreeAction ? u.hasAttacked : true,
+              skills: updatedSkills,
+              skillUsesCount: nextSkillUsesCount,
+            }
+          : u
+      );
+      updatedUnits.push(newBarrel);
+      setUnits(updatedUnits);
+
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1));
+      }
+
+      setTargetTeleportPoint(null);
+      setTargetUnitId(null);
+      setTargetAoEPoint(null);
+      setSelectedAction(skill.isFreeAction ? 'attack' : 'none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
+    // 0.93. Cavaleiro: Atropelamento Real & Cavalgada do Trovão (galopa em linha reta atravessando inimigos!)
+    if (skill?.isTrampleCharge && targetTeleportPoint) {
+      const originPt = { x: selectedUnit.x, y: selectedUnit.y };
+      const destX = targetTeleportPoint.x;
+      const destY = targetTeleportPoint.y;
+      const chargeDist = Math.abs(destX - originPt.x) + Math.abs(destY - originPt.y);
+
+      const pathPts = getTramplePathTiles(originPt, { x: destX, y: destY });
+      const endAoePts =
+        skill.trampleEndAoeRadius && skill.trampleEndAoeRadius > 0
+          ? getAoETiles({ x: destX, y: destY }, skill.trampleEndAoeRadius, grid[0].length, grid.length, 'circle', null)
+          : [];
+
+      const endAoeKeySet = new Set(endAoePts.map((pt) => `${pt.x},${pt.y}`));
+      const allHitMap = new Map<string, Point>();
+      [...pathPts, ...endAoePts].forEach((pt) => allHitMap.set(`${pt.x},${pt.y}`, pt));
+      const allHitPts = Array.from(allHitMap.values());
+
+      // Soma a distância da cavalgada ao Ímpeto de Galope antes de calcular o dano
+      const totalMomentumTiles = isCavalryKnight(selectedUnit)
+        ? Math.min(MAX_CAVALRY_MOMENTUM_TILES, (selectedUnit.cavalryMomentumTiles || 0) + chargeDist)
+        : 0;
+      const chargedCaster: Unit = { ...selectedUnit, cavalryMomentumTiles: totalMomentumTiles };
+      const momentumPct = getCavalryMomentumPercent(chargedCaster);
+
+      soundManager.playPhysicalAttack();
+      if (boardRef.current) {
+        await boardRef.current.playMoveAnimation(selectedUnit.id, originPt.x, originPt.y, destX, destY);
+        await boardRef.current.playAttackAnimation(
+          selectedUnit.id,
+          selectedUnit.id,
+          'physical',
+          skill.trampleEndAoeRadius || 1,
+          skill,
+          { x: destX, y: destY }
+        );
+      }
+
+      addFloatingNumber(
+        destX,
+        destY,
+        skill.id === 'cavalgada_do_trovao'
+          ? `⚡ CAVALGADA DO TROVÃO!${momentumPct > 0 ? ` (+${momentumPct}% Ímpeto)` : ''}`
+          : `🐎 ATROPELAMENTO REAL!${momentumPct > 0 ? ` (+${momentumPct}% Ímpeto)` : ''}`,
+        'status',
+        '#38BDF8'
+      );
+
+      let workingUnits = units.map((u) =>
+        u.id === selectedUnit.id ? { ...u, x: destX, y: destY } : u
+      );
+
+      const enemiesHit = workingUnits.filter(
+        (u) =>
+          u.faction === 'enemy' &&
+          !u.isDead &&
+          allHitPts.some((pt) => pt.x === u.x && pt.y === u.y)
+      );
+      const barrelsHitIds = workingUnits
+        .filter((u) => !u.isDead && isPowderBarrelUnit(u) && allHitPts.some((pt) => pt.x === u.x && pt.y === u.y))
+        .map((b) => b.id);
+
+      let totalTrampleDmg = 0;
+      let totalTrampleKills = 0;
+      const trampleKilledTypes: string[] = [];
+      let trampleStatusCount = 0;
+      let tramplePushedCount = 0;
+      const gridW = grid[0]?.length || 0;
+      const gridH = grid.length || 0;
+
+      for (const enemy of enemiesHit) {
+        const freshEnemy = workingUnits.find((u) => u.id === enemy.id && !u.isDead);
+        if (!freshEnemy) continue;
+
+        let curEffects = [...(freshEnemy.statusEffects || [])];
+        const rolled = rollActualDamage(chargedCaster, freshEnemy, skill);
+        let dmg = freshEnemy.crystalsAlive ? 0 : rolled.finalDamage;
+
+        if (freshEnemy.crystalsAlive) {
+          addFloatingNumber(freshEnemy.x, freshEnemy.y, '🛡️ Imune pelos Cristais!', 'status', '#A855F7');
+        } else if (dmg > 0) {
+          const shieldIdx = curEffects.findIndex((e) => e.type === 'shield' && e.value > 0);
+          if (shieldIdx >= 0) {
+            const sh = curEffects[shieldIdx];
+            const absorbed = Math.min(sh.value, dmg);
+            dmg -= absorbed;
+            const rem = sh.value - absorbed;
+            if (rem > 0) curEffects[shieldIdx] = { ...sh, value: rem };
+            else curEffects.splice(shieldIdx, 1);
+            addFloatingNumber(freshEnemy.x, freshEnemy.y, `🛡️ -${absorbed}`, 'shield', '#38BDF8');
+          }
+        }
+
+        let nextHp = Math.max(0, freshEnemy.currentHp - dmg);
+        let died = nextHp === 0;
+        totalTrampleDmg += dmg;
+        if (dmg > 0) addFloatingNumber(freshEnemy.x, freshEnemy.y, `-${dmg}`, 'physical', '#FF5252');
+
+        let nextLastStunTurn = freshEnemy.lastStunTurn;
+        if (!died && skill.statusEffect) {
+          const isImmune = curEffects.some((e) => e.type === 'immune' && e.duration > 0);
+          const isStun = skill.statusEffect.type === 'stun';
+          const isEndTarget = endAoeKeySet.size === 0 || endAoeKeySet.has(`${freshEnemy.x},${freshEnemy.y}`);
+          const isBossStunRes =
+            isStun &&
+            Boolean(freshEnemy.isBoss || freshEnemy.isMiniBoss) &&
+            freshEnemy.lastStunTurn !== undefined &&
+            turnNumberRef.current - freshEnemy.lastStunTurn <= 1;
+
+          if (!isImmune && (!isStun || (isEndTarget && !isBossStunRes))) {
+            curEffects = [
+              ...curEffects.filter((e) => e.type !== skill.statusEffect!.type),
+              { ...skill.statusEffect, appliedTurn: turnNumberRef.current },
+            ];
+            trampleStatusCount++;
+            if (isStun) {
+              nextLastStunTurn = turnNumberRef.current;
+              addFloatingNumber(freshEnemy.x, freshEnemy.y, '⚡ Atordoado!', 'status', '#FACC15');
+            } else if (skill.statusEffect.type === 'slow') {
+              addFloatingNumber(freshEnemy.x, freshEnemy.y, '👣 Lentidão (-1 Mov)!', 'status', '#38BDF8');
+            }
+          } else if (isBossStunRes) {
+            addFloatingNumber(freshEnemy.x, freshEnemy.y, '🛡️ Boss Resiste Atordoamento!', 'status', '#94A3B8');
+          }
+        }
+
+        // Empurrão na chegada (Cavalgada do Trovão)
+        let finalEx = freshEnemy.x;
+        let finalEy = freshEnemy.y;
+        if (!died && skill.knockback && skill.knockback > 0) {
+          const dx = freshEnemy.x - destX;
+          const dy = freshEnemy.y - destY;
+          let pX = 0;
+          let pY = 0;
+          if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) pX = Math.sign(dx);
+          else if (dy !== 0) pY = Math.sign(dy);
+          if (pX !== 0 || pY !== 0) {
+            let cx = freshEnemy.x;
+            let cy = freshEnemy.y;
+            let steps = 0;
+            for (let s = 0; s < skill.knockback + (selectedUnit.lineageExtraPushDistance || 0); s++) {
+              const nx = cx + pX;
+              const ny = cy + pY;
+              const inB = nx >= 0 && nx < gridW && ny >= 0 && ny < gridH;
+              const walk = inB && grid[ny][nx].isWalkable;
+              const blocker = inB ? workingUnits.find((u) => !u.isDead && u.id !== freshEnemy.id && u.x === nx && u.y === ny) : undefined;
+              if (inB && walk && !blocker) {
+                cx = nx;
+                cy = ny;
+                steps++;
+              } else {
+                if (blocker && isPowderBarrelUnit(blocker) && !barrelsHitIds.includes(blocker.id)) {
+                  barrelsHitIds.push(blocker.id);
+                }
+                const colDmg = Math.max(6, Math.round(selectedUnit.atk * 0.4));
+                nextHp = Math.max(0, nextHp - colDmg);
+                totalTrampleDmg += colDmg;
+                died = nextHp === 0;
+                addFloatingNumber(cx, cy, `💥 Colisão! -${colDmg}`, 'physical', '#F97316');
+                break;
+              }
+            }
+            if (steps > 0) {
+              finalEx = cx;
+              finalEy = cy;
+              tramplePushedCount++;
+              if (boardRef.current) {
+                await boardRef.current.playMoveAnimation(freshEnemy.id, freshEnemy.x, freshEnemy.y, finalEx, finalEy);
+              }
+            }
+          }
+        }
+
+        workingUnits = workingUnits.map((u) =>
+          u.id === freshEnemy.id
+            ? {
+                ...u,
+                x: finalEx,
+                y: finalEy,
+                currentHp: nextHp,
+                isDead: died,
+                lastStunTurn: nextLastStunTurn,
+                statusEffects: died ? [] : curEffects,
+              }
+            : u
+        );
+
+        if (died) {
+          totalTrampleKills++;
+          if (freshEnemy.monsterTypeId) trampleKilledTypes.push(freshEnemy.monsterTypeId);
+          soundManager.playDeath();
+          if (boardRef.current) await boardRef.current.playDeathAnimation(freshEnemy.id);
+        }
+      }
+
+      if (barrelsHitIds.length > 0) {
+        const detRes = await detonateBarrelChain(barrelsHitIds, workingUnits, chargedCaster, { triggerSkill: skill });
+        workingUnits = detRes.updatedUnits;
+        totalTrampleDmg += detRes.totalDmgDone;
+        totalTrampleKills += detRes.totalKills;
+        trampleKilledTypes.push(...detRes.killedMonsterTypeIds);
+        trampleStatusCount += detRes.statusInflictedCount;
+        tramplePushedCount += detRes.enemiesPushedCount;
+      }
+
+      // Escudo do conjurador (ex: Cavalgada do Trovão)
+      let nextCasterEffects = [...(selectedUnit.statusEffects || [])];
+      if (skill.casterStatusEffect?.type === 'shield') {
+        const shVal = skill.shieldPercentOfMaxHp
+          ? Math.max(1, Math.round(selectedUnit.maxHp * skill.shieldPercentOfMaxHp))
+          : skill.casterStatusEffect.value;
+        soundManager.playShield();
+        addFloatingNumber(destX, destY, `+${shVal} Escudo`, 'shield', '#38BDF8');
+        nextCasterEffects = [
+          ...nextCasterEffects.filter((e) => e.type !== 'shield'),
+          { type: 'shield', duration: skill.casterStatusEffect.duration, value: shVal, appliedTurn: turnNumberRef.current },
+        ];
+      }
+
+      const isReqUlt = Boolean(skill.requiredSkillUses && skill.requiredSkillUses > 0);
+      const nextSkillUsesCount = isReqUlt ? 0 : (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedSkills = selectedUnit.skills.map((s) => {
+        if (s.requiredSkillUses && s.requiredSkillUses > 0) {
+          return {
+            ...s,
+            currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount),
+            lastUsedTurn: s.id === skill.id ? turnNumberRef.current : s.lastUsedTurn,
+          };
+        }
+        return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+      });
+      const isNefalimTrampleExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+
+      workingUnits = workingUnits.map((u) =>
+        u.id === selectedUnit.id
+          ? {
+              ...u,
+              x: destX,
+              y: destY,
+              hasAttacked: isNefalimTrampleExtra ? false : true,
+              hasMoved: skill.grantsCantoMove ? false : u.hasMoved,
+              cavalryMomentumTiles: 0,
+              centaurMovedTilesThisTurn: 0,
+              nefalimExtraAttackUsed: isNefalimTrampleExtra ? true : u.nefalimExtraAttackUsed,
+              nefalimSkillUsedThisTurn: true,
+              skills: updatedSkills,
+              statusEffects: nextCasterEffects,
+              skillUsesCount: nextSkillUsesCount,
+              damageDealt: u.damageDealt + totalTrampleDmg,
+              kills: u.kills + totalTrampleKills,
+            }
+          : u
+      );
+
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => {
+          let p = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          if (totalTrampleDmg > 0) p = incrementClassStat(p, selectedUnit.className, 'damage_dealt', totalTrampleDmg);
+          if (totalTrampleKills > 0) p = incrementClassStat(p, selectedUnit.className, 'kills', totalTrampleKills);
+          if (trampleKilledTypes.length > 0) {
+            const cur = { ...(p.monsterKills || {}) };
+            trampleKilledTypes.forEach((id) => { cur[id] = (cur[id] || 0) + 1; });
+            p = { ...p, monsterKills: cur };
+          }
+          progressRef.current = p;
+          savePlayerProgress(p);
+          return p;
+        });
+      }
+
+      const splitCheck = await checkAndTriggerChimeraSplit(workingUnits);
+      if (splitCheck.didSplit) workingUnits = splitCheck.updatedUnits;
+      const crystalCheck = await checkAndTriggerCrystalDestruction(workingUnits);
+      if (crystalCheck.didTrigger) workingUnits = crystalCheck.updatedUnits;
+
+      setUnits(workingUnits);
+      setTargetTeleportPoint(null);
+      setTargetUnitId(null);
+      setTargetAoEPoint(null);
+      setSelectedAction(skill.grantsCantoMove ? 'move' : isNefalimTrampleExtra ? 'attack' : 'none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      setTimeout(() => checkBattleStatusWithUnits(workingUnits), 200);
       return;
     }
 
@@ -4156,8 +5098,12 @@ export function App() {
       addFloatingNumber(destX, destY, skill.name || 'Teleporte!', 'status', '#8B5CF6');
 
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
-      const effToApply = skill.statusEffect || skill.casterStatusEffect;
-      if (effToApply) {
+      const teleportEffectsToApply = [
+        skill.statusEffect || skill.casterStatusEffect,
+        skill.secondaryStatusEffect,
+      ].filter(Boolean) as StatusEffect[];
+
+      for (const effToApply of teleportEffectsToApply) {
         const eff = { ...effToApply, appliedTurn: turnNumberRef.current };
         if (eff.type === 'shield') {
           if (skill.shieldPercentOfAtk) {
@@ -4178,9 +5124,12 @@ export function App() {
       }
 
 
-      const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
+      // Ações Livres de posicionar barril não acumulam carga extra da Suprema no mesmo turno
+      const nextSkillUsesCount = skill.isFreeAction
+        ? (selectedUnit.skillUsesCount || 0)
+        : (selectedUnit.skillUsesCount || 0) + 1;
       const updatedSkills = selectedUnit.skills.map((s) => {
-        if (s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+        if (!skill.isFreeAction && s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
           return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
         }
         return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
@@ -4191,7 +5140,18 @@ export function App() {
         addFloatingNumber(destX, destY, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
       }
 
-      const updatedUnits = units.map((u) =>
+      const originX = selectedUnit.x;
+      const originY = selectedUnit.y;
+      let baseUnitsForTeleport = units;
+      if (skill.leavesBarrelAtOrigin) {
+        const lim = enforceBarrelLimit(units, selectedUnit.id, 1);
+        baseUnitsForTeleport = lim.units;
+        for (const oldB of lim.removedBarrels) {
+          if (boardRef.current) boardRef.current.playDeathAnimation(oldB.id);
+        }
+      }
+
+      const updatedUnits = baseUnitsForTeleport.map((u) =>
         u.id === selectedUnit.id
           ? {
               ...u,
@@ -4206,6 +5166,19 @@ export function App() {
             }
           : u
       );
+
+      if (skill.leavesBarrelAtOrigin && (originX !== destX || originY !== destY)) {
+        const originBarrel = createPowderBarrelUnit(
+          selectedUnit,
+          originX,
+          originY,
+          'standard',
+          undefined,
+          turnNumberRef.current
+        );
+        updatedUnits.push(originBarrel);
+        addFloatingNumber(originX, originY, '🛢️ Barril Armado!', 'status', '#EA580C');
+      }
 
       setUnits(updatedUnits);
       if (selectedUnit.faction === 'player' && !isTrainingMode) {
@@ -4866,10 +5839,16 @@ export function App() {
         ];
       }
 
-      const nextSkillUsesCount = isTimeUltimate ? 0 : (selectedUnit.skillUsesCount || 0) + 1;
+      const isFreeSelfSkill = Boolean(skill?.isFreeAction);
+      const nextSkillUsesCount = isTimeUltimate
+        ? 0
+        : isFreeSelfSkill
+          ? (selectedUnit.skillUsesCount || 0)
+          : (selectedUnit.skillUsesCount || 0) + 1;
       const reduceAmt = skill.reducesAllCooldownsOnCast || 0;
       const updatedSkills = selectedUnit.skills.map((s) => {
         if (s.requiredSkillUses && s.requiredSkillUses > 0) {
+          if (isFreeSelfSkill) return s;
           return {
             ...s,
             currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount),
@@ -4924,8 +5903,13 @@ export function App() {
         }
       }
 
+      if (isFreeSelfSkill) {
+        addFloatingNumber(nextCasterX, nextCasterY, '🐎 Ação Livre! Movimento Restaurado!', 'status', '#38BDF8');
+      }
+
       const isNefalimSelfExtra =
         !grantsSelfExtraTurn &&
+        !isFreeSelfSkill &&
         Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
       if (isNefalimSelfExtra) {
         addFloatingNumber(nextCasterX, nextCasterY, '⚔️ Ataque Básico Adicional (Nefalim)!', 'status', '#F59E0B');
@@ -4938,14 +5922,14 @@ export function App() {
               x: nextCasterX,
               y: nextCasterY,
               currentHp: currentUnitHp,
-              hasAttacked: grantsSelfExtraTurn || isNefalimSelfExtra ? false : true,
-              hasMoved: grantsSelfExtraTurn ? false : u.hasMoved,
-              nefalimExtraAttackUsed: grantsSelfExtraTurn
+              hasAttacked: isFreeSelfSkill ? u.hasAttacked : (grantsSelfExtraTurn || isNefalimSelfExtra ? false : true),
+              hasMoved: grantsSelfExtraTurn || skill.grantsCantoMove ? false : u.hasMoved,
+              nefalimExtraAttackUsed: grantsSelfExtraTurn || isFreeSelfSkill
                 ? u.nefalimExtraAttackUsed
                 : isNefalimSelfExtra
                 ? true
                 : u.nefalimExtraAttackUsed,
-              nefalimSkillUsedThisTurn: grantsSelfExtraTurn ? false : true,
+              nefalimSkillUsedThisTurn: grantsSelfExtraTurn || isFreeSelfSkill ? false : true,
               skills: updatedSkills,
               statusEffects: updatedEffects,
               skillUsesCount: nextSkillUsesCount,
@@ -5078,12 +6062,43 @@ export function App() {
         }
       }
 
+      // Pavio Rápido (Canhoneiro): Detona TODOS os Barris de Pólvora do mapa ao mesmo tempo!
+      let selfBarrelDmg = 0;
+      let selfBarrelKills = 0;
+      if (skill.detonatesAllBarrels) {
+        const allBarrels = updatedUnits.filter((u) => !u.isDead && isPowderBarrelUnit(u));
+        if (allBarrels.length > 0) {
+          const buffedCaster = updatedUnits.find((u) => u.id === selectedUnit.id) || selectedUnit;
+          const detRes = await detonateBarrelChain(
+            allBarrels.map((b) => b.id),
+            updatedUnits,
+            buffedCaster,
+            {
+              triggerSkill: skill,
+              extraBonusPercent: skill.barrelChainBonusDamagePercent || 0,
+              chainRange: skill.barrelChainRangeOverride || DEFAULT_BARREL_CHAIN_RANGE,
+            }
+          );
+          updatedUnits = detRes.updatedUnits.map((u) =>
+            u.id === selectedUnit.id
+              ? { ...u, damageDealt: u.damageDealt + detRes.totalDmgDone, kills: u.kills + detRes.totalKills }
+              : u
+          );
+          selfBarrelDmg = detRes.totalDmgDone;
+          selfBarrelKills = detRes.totalKills;
+        } else {
+          addFloatingNumber(nextCasterX, nextCasterY, '🛢️ Nenhum Barril ativo no mapa!', 'status', '#F59E0B');
+        }
+      }
+
       setUnits(updatedUnits);
 
       if (selectedUnit.faction === 'player' && !isTrainingMode) {
         const selfHealDone = Math.max(0, currentUnitHp - selectedUnit.currentHp);
         setProgress((prev) => {
           let updated = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          if (selfBarrelDmg > 0) updated = incrementClassStat(updated, selectedUnit.className, 'damage_dealt', selfBarrelDmg);
+          if (selfBarrelKills > 0) updated = incrementClassStat(updated, selectedUnit.className, 'kills', selfBarrelKills);
           const prevStats = updated.lineageQuestStats || {};
           updated = {
             ...updated,
@@ -5107,13 +6122,355 @@ export function App() {
         });
       }
 
+      if (skill.detonatesAllBarrels && selfBarrelKills > 0) {
+        const splitCheck = await checkAndTriggerChimeraSplit(updatedUnits);
+        if (splitCheck.didSplit) updatedUnits = splitCheck.updatedUnits;
+        const crystalCheck = await checkAndTriggerCrystalDestruction(updatedUnits);
+        if (crystalCheck.didTrigger) updatedUnits = crystalCheck.updatedUnits;
+        setUnits(updatedUnits);
+        setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 250);
+      }
+
       setTargetUnitId(null);
-      setSelectedAction(isNefalimSelfExtra ? 'attack' : 'none');
+      setSelectedAction(isFreeSelfSkill ? (skill.grantsCantoMove ? 'move' : 'attack') : (isNefalimSelfExtra ? 'attack' : 'none'));
       setActiveSkill(null);
       setIsAnimatingAction(false);
-      if (grantsSelfExtraTurn || isNefalimSelfExtra) {
+      if (grantsSelfExtraTurn || isNefalimSelfExtra || isFreeSelfSkill) {
         setSelectedUnitId(selectedUnit.id);
       }
+      return;
+    }
+
+    // 2.47. Cavaleiro: Garupa do Corcel (galopa até um aliado, coloca-o na garupa e traz para o lado do Cavaleiro!)
+    if (
+      skill?.isAllyMountRescue &&
+      target.faction === 'player' &&
+      !isPowderBarrelUnit(target) &&
+      target.id !== selectedUnit.id
+    ) {
+      soundManager.playStep();
+      soundManager.playShield();
+      const knightOriginX = selectedUnit.x;
+      const knightOriginY = selectedUnit.y;
+      const allyOriginX = target.x;
+      const allyOriginY = target.y;
+
+      const rescueSpot = findNearestSafeAdjacentTile(
+        { x: knightOriginX, y: knightOriginY },
+        grid,
+        units,
+        [selectedUnit.id, target.id]
+      );
+
+      if (boardRef.current) {
+        // Galopa até o aliado e volta carregando-o na garupa!
+        await boardRef.current.playMoveAnimation(selectedUnit.id, knightOriginX, knightOriginY, allyOriginX, allyOriginY);
+        if (rescueSpot) {
+          await Promise.all([
+            boardRef.current.playMoveAnimation(selectedUnit.id, allyOriginX, allyOriginY, knightOriginX, knightOriginY),
+            boardRef.current.playMoveAnimation(target.id, allyOriginX, allyOriginY, rescueSpot.x, rescueSpot.y),
+          ]);
+        } else {
+          await boardRef.current.playMoveAnimation(selectedUnit.id, allyOriginX, allyOriginY, knightOriginX, knightOriginY);
+        }
+        await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, 'healing', 0, skill);
+      }
+
+      const finalAllyX = rescueSpot ? rescueSpot.x : allyOriginX;
+      const finalAllyY = rescueSpot ? rescueSpot.y : allyOriginY;
+      const shieldVal = Math.max(1, Math.round(selectedUnit.maxHp * (skill.shieldPercentOfMaxHp || 0.15)));
+
+      addFloatingNumber(
+        finalAllyX,
+        finalAllyY,
+        rescueSpot ? `🐎 Resgatado na Garupa! +${shieldVal} Escudo` : `🛡️ Protegido! +${shieldVal} Escudo`,
+        'shield',
+        '#38BDF8'
+      );
+      addFloatingNumber(knightOriginX, knightOriginY, `+${shieldVal} Escudo (Escolta)`, 'shield', '#38BDF8');
+
+      const nextSkillUsesCount = (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedSkills = selectedUnit.skills.map((s) => {
+        if (s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+          return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+        }
+        return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+      });
+      const isNefalimRescueExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+
+      const finalUnits = units.map((u) => {
+        if (u.id === target.id) {
+          let allyEffs = (u.statusEffects || []).filter((e) => !isDebuffStatus(e.type) && e.type !== 'shield');
+          allyEffs.push({ type: 'shield', duration: 2, value: shieldVal, appliedTurn: turnNumberRef.current });
+          return {
+            ...u,
+            x: finalAllyX,
+            y: finalAllyY,
+            statusEffects: allyEffs,
+          };
+        }
+        if (u.id === selectedUnit.id) {
+          const knightEffs = [
+            ...(u.statusEffects || []).filter((e) => e.type !== 'shield'),
+            { type: 'shield' as const, duration: 2, value: shieldVal, appliedTurn: turnNumberRef.current },
+          ];
+          return {
+            ...u,
+            hasAttacked: isNefalimRescueExtra ? false : true,
+            nefalimExtraAttackUsed: isNefalimRescueExtra ? true : u.nefalimExtraAttackUsed,
+            nefalimSkillUsedThisTurn: true,
+            skills: updatedSkills,
+            statusEffects: knightEffs,
+            skillUsesCount: nextSkillUsesCount,
+          };
+        }
+        return u;
+      });
+
+      setUnits(finalUnits);
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1));
+      }
+      setTargetUnitId(null);
+      setTargetAoEPoint(null);
+      setTargetTeleportPoint(null);
+      setSelectedAction(isNefalimRescueExtra ? 'attack' : 'none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      return;
+    }
+
+    // 2.45. Canhoneiro: Chute de Barril (chuta um Barril até 3 casas à frente e detona na chegada/colisão!)
+    if (skill?.id === 'disparo_de_estilhacos' && isPowderBarrelUnit(target)) {
+      soundManager.playPhysicalAttack();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, 'physical', 0, skill);
+      }
+
+      const dx = target.x - selectedUnit.x;
+      const dy = target.y - selectedUnit.y;
+      let pushX = 0;
+      let pushY = 0;
+      if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) pushX = Math.sign(dx);
+      else if (dy !== 0) pushY = Math.sign(dy);
+
+      const gridW = grid[0]?.length || 0;
+      const gridH = grid.length || 0;
+      const maxSteps = (skill.knockback || 3) + (selectedUnit.lineageExtraPushDistance || 0);
+      let currX = target.x;
+      let currY = target.y;
+      let stepsMoved = 0;
+      const initialBarrelIds = [target.id];
+
+      for (let s = 0; s < maxSteps; s++) {
+        const nextX = currX + pushX;
+        const nextY = currY + pushY;
+        const inB = nextX >= 0 && nextX < gridW && nextY >= 0 && nextY < gridH;
+        const walk = inB && grid[nextY][nextX].isWalkable;
+        const blocker = inB ? units.find((u) => !u.isDead && u.id !== target.id && u.x === nextX && u.y === nextY) : undefined;
+        if (inB && walk && !blocker) {
+          currX = nextX;
+          currY = nextY;
+          stepsMoved++;
+        } else {
+          if (blocker && isPowderBarrelUnit(blocker)) {
+            initialBarrelIds.push(blocker.id);
+          }
+          break;
+        }
+      }
+
+      let workingUnits = [...units];
+      if (stepsMoved > 0) {
+        if (boardRef.current) {
+          await boardRef.current.playMoveAnimation(target.id, target.x, target.y, currX, currY);
+        }
+        workingUnits = workingUnits.map((u) => (u.id === target.id ? { ...u, x: currX, y: currY } : u));
+        addFloatingNumber(currX, currY, '🥾 Barril Chutado!', 'status', '#F97316');
+      }
+
+      const detRes = await detonateBarrelChain(initialBarrelIds, workingUnits, selectedUnit, {
+        triggerSkill: skill,
+        extraBonusPercent: skill.barrelChainBonusDamagePercent || 10,
+        chainRange: skill.barrelChainRangeOverride || DEFAULT_BARREL_CHAIN_RANGE,
+        propagateStatus: [{ type: 'debuff_def', duration: 2, value: 20 }],
+      });
+
+      // Ações Livres de posicionar barril não acumulam carga extra da Suprema no mesmo turno
+      const nextSkillUsesCount = skill.isFreeAction
+        ? (selectedUnit.skillUsesCount || 0)
+        : (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedSkills = selectedUnit.skills.map((s) => {
+        if (!skill.isFreeAction && s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+          return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+        }
+        return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+      });
+
+      const isNefalimKickExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+      let finalUnits = detRes.updatedUnits.map((u) =>
+        u.id === selectedUnit.id
+          ? {
+              ...u,
+              hasAttacked: isNefalimKickExtra ? false : true,
+              nefalimExtraAttackUsed: isNefalimKickExtra ? true : u.nefalimExtraAttackUsed,
+              nefalimSkillUsedThisTurn: true,
+              skills: updatedSkills,
+              skillUsesCount: nextSkillUsesCount,
+              damageDealt: u.damageDealt + detRes.totalDmgDone,
+              kills: u.kills + detRes.totalKills,
+            }
+          : u
+      );
+
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => {
+          let p = incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1);
+          if (detRes.totalDmgDone > 0) p = incrementClassStat(p, selectedUnit.className, 'damage_dealt', detRes.totalDmgDone);
+          if (detRes.totalKills > 0) p = incrementClassStat(p, selectedUnit.className, 'kills', detRes.totalKills);
+          progressRef.current = p;
+          savePlayerProgress(p);
+          return p;
+        });
+      }
+
+      const splitCheck = await checkAndTriggerChimeraSplit(finalUnits);
+      if (splitCheck.didSplit) finalUnits = splitCheck.updatedUnits;
+      const crystalCheck = await checkAndTriggerCrystalDestruction(finalUnits);
+      if (crystalCheck.didTrigger) finalUnits = crystalCheck.updatedUnits;
+
+      setUnits(finalUnits);
+      setTargetUnitId(null);
+      setTargetAoEPoint(null);
+      setTargetTeleportPoint(null);
+      setSelectedAction(isNefalimKickExtra ? 'attack' : 'none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
+      setTimeout(() => checkBattleStatusWithUnits(finalUnits), 200);
+      return;
+    }
+
+    // 2.46. Canhoneiro: Canhão Humano & Barril em Aliado (dispara aliado 3 casas à frente + escudo + deixa barril!)
+    if (
+      skill?.id === 'canhao_colossal' &&
+      target.faction === 'player' &&
+      !isPowderBarrelUnit(target) &&
+      target.id !== selectedUnit.id
+    ) {
+      soundManager.playPhysicalAttack();
+      soundManager.playShield();
+      if (boardRef.current) {
+        await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, 'physical', 0, skill);
+      }
+
+      const allyOriginX = target.x;
+      const allyOriginY = target.y;
+      const dx = target.x - selectedUnit.x;
+      const dy = target.y - selectedUnit.y;
+      let pushX = 0;
+      let pushY = 0;
+      if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) pushX = Math.sign(dx);
+      else if (dy !== 0) pushY = Math.sign(dy);
+
+      const gridW = grid[0]?.length || 0;
+      const gridH = grid.length || 0;
+      let currX = target.x;
+      let currY = target.y;
+      let steps = 0;
+      for (let s = 0; s < 3; s++) {
+        const nextX = currX + pushX;
+        const nextY = currY + pushY;
+        const inB = nextX >= 0 && nextX < gridW && nextY >= 0 && nextY < gridH;
+        const walk = inB && grid[nextY][nextX].isWalkable;
+        const occupied = inB && units.some((u) => !u.isDead && u.id !== target.id && u.x === nextX && u.y === nextY);
+        if (inB && walk && !occupied) {
+          currX = nextX;
+          currY = nextY;
+          steps++;
+        } else {
+          break;
+        }
+      }
+
+      if (steps > 0 && boardRef.current) {
+        await boardRef.current.playMoveAnimation(target.id, allyOriginX, allyOriginY, currX, currY);
+      }
+
+      const shieldVal = Math.max(1, Math.round(selectedUnit.atk * (skill.shieldPercentOfAtk || 0.45)));
+      addFloatingNumber(currX, currY, `🚀 Canhão Humano! +${shieldVal} Escudo & +15% ATK`, 'shield', '#38BDF8');
+
+      let workingUnits = units;
+      const canDropOriginBarrel = steps > 0 && grid[allyOriginY]?.[allyOriginX]?.isWalkable;
+      if (canDropOriginBarrel) {
+        const lim = enforceBarrelLimit(workingUnits, selectedUnit.id, 1);
+        workingUnits = lim.units;
+        for (const oldB of lim.removedBarrels) {
+          if (boardRef.current) boardRef.current.playDeathAnimation(oldB.id);
+        }
+      }
+
+      // Ações Livres de posicionar barril não acumulam carga extra da Suprema no mesmo turno
+      const nextSkillUsesCount = skill.isFreeAction
+        ? (selectedUnit.skillUsesCount || 0)
+        : (selectedUnit.skillUsesCount || 0) + 1;
+      const updatedSkills = selectedUnit.skills.map((s) => {
+        if (!skill.isFreeAction && s.requiredSkillUses && s.requiredSkillUses > 0 && s.id !== skill.id) {
+          return { ...s, currentCooldown: Math.max(0, s.requiredSkillUses - nextSkillUsesCount) };
+        }
+        return s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s;
+      });
+      const isNefalimAllyLaunchExtra = Boolean(selectedUnit.lineageExtraAttackEveryTurn && !selectedUnit.nefalimExtraAttackUsed);
+
+      const finalUnits = workingUnits.map((u) => {
+        if (u.id === target.id) {
+          const filtered = (u.statusEffects || []).filter((e) => e.type !== 'shield' && e.type !== 'buff_atk');
+          return {
+            ...u,
+            x: currX,
+            y: currY,
+            statusEffects: [
+              ...filtered,
+              { type: 'shield' as const, duration: 2, value: shieldVal, appliedTurn: turnNumberRef.current },
+              { type: 'buff_atk' as const, duration: 2, value: 15, appliedTurn: turnNumberRef.current },
+            ],
+          };
+        }
+        if (u.id === selectedUnit.id) {
+          return {
+            ...u,
+            hasAttacked: isNefalimAllyLaunchExtra ? false : true,
+            nefalimExtraAttackUsed: isNefalimAllyLaunchExtra ? true : u.nefalimExtraAttackUsed,
+            nefalimSkillUsedThisTurn: true,
+            skills: updatedSkills,
+            skillUsesCount: nextSkillUsesCount,
+          };
+        }
+        return u;
+      });
+
+      if (canDropOriginBarrel) {
+        const originBarrel = createPowderBarrelUnit(
+          selectedUnit,
+          allyOriginX,
+          allyOriginY,
+          'standard',
+          undefined,
+          turnNumberRef.current
+        );
+        finalUnits.push(originBarrel);
+        addFloatingNumber(allyOriginX, allyOriginY, '🛢️ Barril Armado!', 'status', '#EA580C');
+      }
+
+      setUnits(finalUnits);
+      if (selectedUnit.faction === 'player' && !isTrainingMode) {
+        setProgress((prev) => incrementClassStat(prev, selectedUnit.className, 'skill_uses', 1));
+      }
+      setTargetUnitId(null);
+      setTargetAoEPoint(null);
+      setTargetTeleportPoint(null);
+      setSelectedAction(isNefalimAllyLaunchExtra ? 'attack' : 'none');
+      setActiveSkill(null);
+      setIsAnimatingAction(false);
       return;
     }
 
@@ -5294,6 +6651,23 @@ export function App() {
       }
     }
 
+    // Cavaleiro: distância percorrida durante teleportToTarget soma ao Ímpeto de Galope!
+    const chargeMoveDist = Math.abs(finalAttackerX - selectedUnit.x) + Math.abs(finalAttackerY - selectedUnit.y);
+    const effectiveAttackerForDamage: Unit =
+      isCavalryKnight(selectedUnit) && chargeMoveDist > 0
+        ? {
+            ...selectedUnit,
+            cavalryMomentumTiles: Math.min(
+              MAX_CAVALRY_MOMENTUM_TILES,
+              (selectedUnit.cavalryMomentumTiles || 0) + chargeMoveDist
+            ),
+          }
+        : selectedUnit;
+    const activeMomentumPct = getCavalryMomentumPercent(effectiveAttackerForDamage);
+    if (isCavalryKnight(selectedUnit) && activeMomentumPct > 0 && (!skill || skill.damageType !== 'healing')) {
+      addFloatingNumber(finalAttackerX, finalAttackerY, `🐎 +${activeMomentumPct}% Ímpeto!`, 'status', '#38BDF8');
+    }
+
     // ALCHEMIST MIXTURES CHECK ON NORMAL ATTACK:
     const alchemistSummary = !skill ? getAlchemistMixtureSummary(selectedUnit) : null;
     const alchemistMixes = alchemistSummary ? alchemistSummary.mixtures : [];
@@ -5313,7 +6687,7 @@ export function App() {
       );
     }
 
-    const { finalDamage, isKill, damageType } = rollActualDamage(selectedUnit, target, skill);
+    const { finalDamage, isKill, damageType } = rollActualDamage(effectiveAttackerForDamage, target, skill);
 
     if (damageType === 'healing') soundManager.playHeal();
     else if (damageType === 'magical') soundManager.playMagicSpell();
@@ -5364,17 +6738,24 @@ export function App() {
     }
 
     let targetsToHit: Unit[] = [];
+    let resolvedHitTiles: Point[] = [];
+    const triggeredBarrelIds = new Set<string>();
+
+    if (skill?.detonatesAllBarrels) {
+      units.filter((u) => !u.isDead && isPowderBarrelUnit(u)).forEach((b) => triggeredBarrelIds.add(b.id));
+    }
+
     if (skill?.chainCount && skill.chainCount > 1) {
       const chainTargets: Unit[] = [target];
       let currentLink = target;
       const maxChains = skill.chainCount;
       const maxDist = skill.chainRange || 3;
-      const matchFaction = target.faction;
+      const matchFaction = isPowderBarrelUnit(target) ? 'enemy' : target.faction;
 
       for (let c = 1; c < maxChains; c++) {
         const available = units.filter(
           (u) =>
-            u.faction === matchFaction &&
+            (u.faction === matchFaction || (matchFaction === 'enemy' && isPowderBarrelUnit(u))) &&
             !u.isDead &&
             !chainTargets.some((ct) => ct.id === u.id) &&
             Math.abs(u.x - currentLink.x) + Math.abs(u.y - currentLink.y) <= maxDist
@@ -5401,12 +6782,18 @@ export function App() {
         skill?.aoeType || 'circle',
         origin
       );
+      resolvedHitTiles = hitTiles;
       targetsToHit = units.filter(
         (u) =>
+          !isPowderBarrelUnit(u) &&
           u.faction === matchFaction &&
           !u.isDead &&
           hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
       );
+      // Detecta todos os Barris de Pólvora dentro da área de efeito (detonam em cadeia após o impacto)
+      units
+        .filter((u) => !u.isDead && isPowderBarrelUnit(u) && hitTiles.some((pt) => pt.x === u.x && pt.y === u.y))
+        .forEach((b) => triggeredBarrelIds.add(b.id));
     } else {
       if (skill?.createsObstacle && targetAoEPoint) {
         const unitAtTarget = units.find((u) => !u.isDead && u.x === targetAoEPoint.x && u.y === targetAoEPoint.y);
@@ -5415,6 +6802,10 @@ export function App() {
         targetsToHit = [target];
       }
     }
+
+    // Separa Barris de Pólvora de alvos normais para detonação em cadeia limpa
+    targetsToHit.filter((u) => isPowderBarrelUnit(u)).forEach((b) => triggeredBarrelIds.add(b.id));
+    targetsToHit = targetsToHit.filter((u) => !isPowderBarrelUnit(u));
 
     let updatedUnits = [...units];
 
@@ -5564,7 +6955,7 @@ export function App() {
       let currentEffects = [...(t.statusEffects || [])];
       const elementalReaction = evaluateOmnimagoReaction(selectedUnit, t, skill);
       const isMain = t.id === target.id;
-      const dmgResult = isMain ? { finalDamage, isKill, damageType } : rollActualDamage(selectedUnit, t, skill);
+      const dmgResult = isMain ? { finalDamage, isKill, damageType } : rollActualDamage(effectiveAttackerForDamage, t, skill);
       let actualDmg = dmgResult.finalDamage;
       if (elementalReaction) {
         addFloatingNumber(t.x, t.y, `${elementalReaction.emoji} ${elementalReaction.name}!`, 'status', elementalReaction.color);
@@ -6010,6 +7401,107 @@ export function App() {
       // Knockback displacement (Disparo de Impacto, Habilidades de Vento, Reações Elementais)
       let finalTargetX = t.x;
       let finalTargetY = t.y;
+
+      // CAVALEIRO: Arrastão na Lança (empala o inimigo e arrasta alvo + Cavaleiro juntos por N casas!)
+      if (skill?.isSkewerCarry && newHp > 0 && t.faction === 'enemy') {
+        const dx = t.x - finalAttackerX;
+        const dy = t.y - finalAttackerY;
+        let pushX = 0;
+        let pushY = 0;
+        if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) pushX = Math.sign(dx);
+        else if (dy !== 0) pushY = Math.sign(dy);
+
+        const maxDrag = (skill.skewerDistance || 2) + (selectedUnit.lineageExtraPushDistance || 0);
+        let currTx = t.x;
+        let currTy = t.y;
+        let currAx = finalAttackerX;
+        let currAy = finalAttackerY;
+        let stepsDragged = 0;
+
+        if (pushX !== 0 || pushY !== 0) {
+          for (let s = 0; s < maxDrag; s++) {
+            const nextTx = currTx + pushX;
+            const nextTy = currTy + pushY;
+            const inBounds = nextTx >= 0 && nextTx < grid[0].length && nextTy >= 0 && nextTy < grid.length;
+            const isWalkable = inBounds && grid[nextTy][nextTx].isWalkable;
+            const blocker = inBounds
+              ? updatedUnits.find((u) => !u.isDead && u.id !== t.id && u.id !== selectedUnit.id && u.x === nextTx && u.y === nextTy)
+              : undefined;
+
+            if (inBounds && isWalkable && !blocker) {
+              currAx = currTx;
+              currAy = currTy;
+              currTx = nextTx;
+              currTy = nextTy;
+              stepsDragged++;
+            } else {
+              const colDmg = Math.max(8, Math.round((selectedUnit.atk || 25) * 0.45));
+              newHp = Math.max(0, newHp - colDmg);
+              totalDmgDone += colDmg;
+              soundManager.playPhysicalAttack();
+              addFloatingNumber(currTx, currTy, `💥 Esmagado na Lança! -${colDmg}`, 'physical', '#F97316');
+
+              if (blocker && isPowderBarrelUnit(blocker)) {
+                triggeredBarrelIds.add(blocker.id);
+              } else if (blocker && blocker.faction !== 'player') {
+                const secDmg = Math.max(4, Math.round(colDmg * 0.75));
+                const nextBlockerHp = Math.max(0, blocker.currentHp - secDmg);
+                const blockerDead = nextBlockerHp === 0;
+                totalDmgDone += secDmg;
+                addFloatingNumber(nextTx, nextTy, `💥 Impacto! -${secDmg}`, 'physical', '#F97316');
+                updatedUnits = updatedUnits.map((u) =>
+                  u.id === blocker.id ? { ...u, currentHp: nextBlockerHp, isDead: blockerDead } : u
+                );
+                if (blockerDead) {
+                  soundManager.playDeath();
+                  totalKills++;
+                  if (blocker.monsterTypeId) killedMonsterTypeIds.push(blocker.monsterTypeId);
+                  if (boardRef.current) boardRef.current.playDeathAnimation(blocker.id);
+                }
+              }
+
+              if (newHp === 0) {
+                soundManager.playDeath();
+                totalKills++;
+                if (t.monsterTypeId) killedMonsterTypeIds.push(t.monsterTypeId);
+                if (boardRef.current) await boardRef.current.playDeathAnimation(t.id);
+              }
+              break;
+            }
+          }
+
+          if (stepsDragged > 0) {
+            finalTargetX = currTx;
+            finalTargetY = currTy;
+            const prevAttX = finalAttackerX;
+            const prevAttY = finalAttackerY;
+            finalAttackerX = currAx;
+            finalAttackerY = currAy;
+            enemiesPushedCount++;
+            if (boardRef.current) {
+              await Promise.all([
+                boardRef.current.playMoveAnimation(t.id, t.x, t.y, currTx, currTy),
+                boardRef.current.playMoveAnimation(selectedUnit.id, prevAttX, prevAttY, currAx, currAy),
+              ]);
+            }
+            addFloatingNumber(currTx, currTy, '🔱 Arrastão na Lança!', 'status', '#38BDF8');
+
+            const elecEff = currentEffects.find((e) => e.type === 'electrified' && e.duration > 0);
+            if (elecEff && newHp > 0) {
+              const elecDmg = Math.max(1, Math.round(t.maxHp * ((elecEff.value || 1) / 100))) * stepsDragged;
+              newHp = Math.max(0, newHp - elecDmg);
+              totalDmgDone += elecDmg;
+              addFloatingNumber(currTx, currTy, `-${elecDmg} Choque (${stepsDragged}x)`, 'status', '#FACC15');
+              if (newHp === 0) {
+                soundManager.playDeath();
+                totalKills++;
+                if (t.monsterTypeId) killedMonsterTypeIds.push(t.monsterTypeId);
+                if (boardRef.current) await boardRef.current.playDeathAnimation(t.id);
+              }
+            }
+          }
+        }
+      }
       const totalKnockback = (skill?.knockback || 0) + (elementalReaction?.extraKnockback || 0);
       if (totalKnockback > 0 && newHp > 0) {
         // Determine push origin: for ground AoE skills, push outward from the impact center
@@ -6061,10 +7553,12 @@ export function App() {
               soundManager.playPhysicalAttack();
               addFloatingNumber(currX, currY, `💥 Colisão! -${colDmg}`, 'physical', '#F97316');
 
-              // If collided into another enemy unit, that obstacle unit also takes impact shock!
+              // If collided into a Powder Barrel, trigger its explosion! If another enemy, apply impact shock!
               if (inBounds && isOccupied) {
                 const collidedWith = updatedUnits.find((u) => !u.isDead && u.id !== t.id && u.x === nextX && u.y === nextY);
-                if (collidedWith && collidedWith.faction !== 'player') {
+                if (collidedWith && isPowderBarrelUnit(collidedWith)) {
+                  triggeredBarrelIds.add(collidedWith.id);
+                } else if (collidedWith && collidedWith.faction !== 'player') {
                   const secondaryColDmg = Math.max(4, Math.round(colDmg * 0.75));
                   const nextColHp = Math.max(0, collidedWith.currentHp - secondaryColDmg);
                   const colDead = nextColHp === 0;
@@ -6418,6 +7912,118 @@ export function App() {
       });
     }
 
+    // CANHONEIRO: Detonação em Cadeia de todos os Barris de Pólvora atingidos por este ataque / AoE / colisão!
+    if (triggeredBarrelIds.size > 0) {
+      const propagateStatus: StatusEffect[] = [];
+      if (skill?.statusEffect && ['burn', 'debuff_def', 'electrified', 'silence'].includes(skill.statusEffect.type)) {
+        propagateStatus.push(skill.statusEffect);
+      }
+      if (skill?.secondaryStatusEffect && ['burn', 'debuff_def', 'electrified', 'silence'].includes(skill.secondaryStatusEffect.type)) {
+        propagateStatus.push(skill.secondaryStatusEffect);
+      }
+
+      const detRes = await detonateBarrelChain(
+        Array.from(triggeredBarrelIds),
+        updatedUnits,
+        selectedUnit,
+        {
+          triggerSkill: skill,
+          extraBonusPercent: skill?.barrelChainBonusDamagePercent || 0,
+          chainRange: skill?.barrelChainRangeOverride || DEFAULT_BARREL_CHAIN_RANGE,
+          propagateStatus,
+          propagateIgnoresShield: Boolean(skill?.ignoresShield),
+          propagateKnockback: skill?.id === 'bala_de_corrente' ? 1 : undefined,
+        }
+      );
+
+      updatedUnits = detRes.updatedUnits;
+      totalDmgDone += detRes.totalDmgDone;
+      totalKills += detRes.totalKills;
+      killedMonsterTypeIds.push(...detRes.killedMonsterTypeIds);
+      statusInflictedCount += detRes.statusInflictedCount;
+      enemiesPushedCount += detRes.enemiesPushedCount;
+    }
+
+    // CANHONEIRO: Carga Tripla (placesBarrelCount) — posiciona até N barris nas casas livres da linha após empurrar inimigos
+    if (skill?.placesBarrelCount && skill.placesBarrelCount > 0 && skill.placesBarrelVariant && resolvedHitTiles.length > 0) {
+      const freeTiles = resolvedHitTiles.filter(
+        (pt) =>
+          grid[pt.y]?.[pt.x]?.isWalkable &&
+          !updatedUnits.some((u) => !u.isDead && u.x === pt.x && u.y === pt.y)
+      );
+      const tilesToSpawn = freeTiles.slice(0, skill.placesBarrelCount);
+      if (tilesToSpawn.length > 0) {
+        const lim = enforceBarrelLimit(updatedUnits, selectedUnit.id, tilesToSpawn.length);
+        updatedUnits = lim.units;
+        for (const oldB of lim.removedBarrels) {
+          if (boardRef.current) boardRef.current.playDeathAnimation(oldB.id);
+        }
+        tilesToSpawn.forEach((pt, idx) => {
+          const b = createPowderBarrelUnit(
+            selectedUnit,
+            pt.x,
+            pt.y,
+            skill.placesBarrelVariant!,
+            undefined,
+            turnNumberRef.current,
+            idx
+          );
+          updatedUnits.push(b);
+          addFloatingNumber(pt.x, pt.y, '🛢️ Barril!', 'status', '#EA580C');
+        });
+      }
+    }
+
+    // CANHONEIRO: Apocalipse de Pólvora (spawnsBarrelsAfterAoE) — deixa novos barris nas extremidades livres da cruz
+    if (skill?.spawnsBarrelsAfterAoE && skill.spawnsBarrelsAfterAoE > 0 && resolvedHitTiles.length > 0) {
+      const freeOuterTiles = resolvedHitTiles
+        .filter(
+          (pt) =>
+            grid[pt.y]?.[pt.x]?.isWalkable &&
+            !updatedUnits.some((u) => !u.isDead && u.x === pt.x && u.y === pt.y)
+        )
+        .sort(
+          (a, b) =>
+            (Math.abs(b.x - aoeCenter.x) + Math.abs(b.y - aoeCenter.y)) -
+            (Math.abs(a.x - aoeCenter.x) + Math.abs(a.y - aoeCenter.y))
+        )
+        .slice(0, skill.spawnsBarrelsAfterAoE);
+
+      if (freeOuterTiles.length > 0) {
+        const lim = enforceBarrelLimit(updatedUnits, selectedUnit.id, freeOuterTiles.length);
+        updatedUnits = lim.units;
+        for (const oldB of lim.removedBarrels) {
+          if (boardRef.current) boardRef.current.playDeathAnimation(oldB.id);
+        }
+        freeOuterTiles.forEach((pt, idx) => {
+          const b = createPowderBarrelUnit(selectedUnit, pt.x, pt.y, 'standard', undefined, turnNumberRef.current, idx);
+          updatedUnits.push(b);
+          addFloatingNumber(pt.x, pt.y, '🛢️ Barril Armado!', 'status', '#F97316');
+        });
+      }
+    }
+
+    // Escudo global em todos os aliados para habilidades ofensivas com allAlliesShieldPercentOfAtk (ex: Carga dos Campeões)
+    if (skill?.allAlliesShieldPercentOfAtk && skill.allAlliesShieldPercentOfAtk > 0) {
+      const globalShieldVal = Math.max(1, Math.round(selectedUnit.atk * skill.allAlliesShieldPercentOfAtk));
+      soundManager.playShield();
+      updatedUnits = updatedUnits.map((u) => {
+        if (u.faction === selectedUnit.faction && !u.isDead && !isPowderBarrelUnit(u)) {
+          let nextEffs = (u.statusEffects || []).filter((e) => e.type !== 'shield');
+          nextEffs.push({ type: 'shield', duration: 2, value: globalShieldVal, appliedTurn: turnNumberRef.current });
+          if (skill.id === 'carga_dos_campeoes') {
+            nextEffs = nextEffs.filter((e) => e.type !== 'buff_atk');
+            nextEffs.push({ type: 'buff_atk', duration: 2, value: 15, appliedTurn: turnNumberRef.current });
+            addFloatingNumber(u.x, u.y, `🛡️ +${globalShieldVal} Escudo & +15% ATK!`, 'shield', '#38BDF8');
+          } else {
+            addFloatingNumber(u.x, u.y, `🛡️ +${globalShieldVal} Escudo`, 'shield', '#38BDF8');
+          }
+          return { ...u, statusEffects: nextEffs };
+        }
+        return u;
+      });
+    }
+
     // Retrieve attacker's updated state from the loop (in case attacker healed or shielded themselves)
     const attackerAfterLoop = updatedUnits.find((u) => u.id === selectedUnit.id);
     let finalAttackerHp = attackerAfterLoop ? attackerAfterLoop.currentHp : currentAttackerHp;
@@ -6497,14 +8103,21 @@ export function App() {
       ];
     }
 
-    // Repositioning / movement after skill (Recuo Tático / Recuo da Lança)
+    // Repositioning / movement after skill (Canto da Cavalaria / Recuo Tático / Recuo da Lança)
     const canMoveAgain =
+      Boolean(skill?.grantsCantoMove) ||
       skill?.id === 'recuo_tatico' ||
       skill?.id?.startsWith('recuo_tatico') ||
       skill?.id === 'recuo_da_lanca' ||
       skill?.id?.startsWith('recuo_da_lanca');
     if (canMoveAgain) {
-      addFloatingNumber(finalAttackerX, finalAttackerY, 'Recuo Disponível!', 'status', '#60A5FA');
+      addFloatingNumber(
+        finalAttackerX,
+        finalAttackerY,
+        skill?.grantsCantoMove ? '🐎 Canto da Cavalaria: Mova-se novamente!' : 'Recuo Disponível!',
+        'status',
+        '#60A5FA'
+      );
     }
 
     // Caster Status Effect (e.g. self-shield, stealth, or buff on attack)
@@ -6735,6 +8348,7 @@ export function App() {
             ? false
             : Boolean(u.nefalimSkillUsedThisTurn || skill),
           centaurMovedTilesThisTurn: 0,
+          cavalryMomentumTiles: 0,
           hasUsedKitsuneReset: isKitsuneEligible ? true : u.hasUsedKitsuneReset,
           skills: updatedSkills,
           statusEffects: finalAttackerEffects,
@@ -8878,8 +10492,8 @@ export function App() {
             isDead,
             statusEffects: updatedEffects,
             lastClockHandStunTurn: nextLastClockHandStunTurn,
-            hasMoved: isCocooned || isStunned ? true : false,
-            hasAttacked: isCocooned || isStunned ? true : false,
+            hasMoved: u.isPowderBarrel || isCocooned || isStunned ? true : false,
+            hasAttacked: u.isPowderBarrel || isCocooned || isStunned ? true : false,
             nefalimExtraAttackUsed: false,
             nefalimSkillUsedThisTurn: false,
           };
@@ -9169,6 +10783,7 @@ export function App() {
             currentHp: nextHp,
             timeAnchor: nextTimeAnchor,
             centaurMovedTilesThisTurn: 0,
+          cavalryMomentumTiles: 0,
             statusEffects: finalEffects,
             skills: u.skills.map((s) => {
               if (s.requiredSkillUses && s.requiredSkillUses > 0) return s;
@@ -9806,6 +11421,23 @@ export function App() {
       setTargetAoEPoint(null);
       if (sk.targetType === 'self') {
         const preview = getDamagePreview(selectedUnit, selectedUnit, sk);
+        if (sk.detonatesAllBarrels && grid[0]) {
+          const allBarrelIds = units.filter((u) => !u.isDead && isPowderBarrelUnit(u)).map((b) => b.id);
+          if (allBarrelIds.length > 0) {
+            const chainPrev = previewBarrelChain(
+              units,
+              allBarrelIds,
+              selectedUnit,
+              grid[0].length,
+              grid.length,
+              sk.barrelChainRangeOverride || DEFAULT_BARREL_CHAIN_RANGE,
+              sk.barrelChainBonusDamagePercent || 0
+            );
+            preview.barrelChainCount = chainPrev.chainBarrels.length;
+            preview.barrelEstimatedDamage = chainPrev.estimatedDamage;
+            preview.barrelEnemiesInBlast = chainPrev.enemiesHitIds.length;
+          }
+        }
         setDamagePreview(preview);
         setTargetUnitId(selectedUnit.id);
       } else if (sk.targetType === 'ally' && sk.rangeMax === 0 && sk.aoeRadius > 0) {
@@ -10193,7 +11825,7 @@ export function App() {
     );
   }
 
-  const alliesCount = units.filter((u) => u.faction === 'player' && !u.isDead).length;
+  const alliesCount = units.filter((u) => u.faction === 'player' && !u.isDead && !isPowderBarrelUnit(u)).length;
   const enemiesCount = units.filter((u) => u.faction === 'enemy' && !u.isDead).length;
 
   return (

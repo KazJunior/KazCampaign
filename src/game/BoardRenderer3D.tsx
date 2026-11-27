@@ -1261,7 +1261,7 @@ function createUnitHpBar(unit: Unit): THREE.Group {
   hpGroup.userData = { isHpBar: true, unitId: unit.id, unitX: unit.x, unitY: unit.y };
 
   // Height above unit head
-  const barY = unit.isBoss ? 2.15 : unit.isMiniBoss ? 1.85 : 1.48;
+  const barY = unit.isPowderBarrel ? 1.05 : unit.isBoss ? 2.15 : unit.isMiniBoss ? 1.85 : 1.48;
   hpGroup.position.set(0, barY, 0);
 
   // Background frame (clickable for unit targeting)
@@ -1286,7 +1286,9 @@ function createUnitHpBar(unit: Unit): THREE.Group {
   const hpWidth = 0.78 * hpPercent;
   if (hpWidth > 0.01) {
     let fillColor = 0x22c55e; // Green
-    if (hpPercent <= 0.25) fillColor = 0xef4444; // Red
+    if (unit.isPowderBarrel) {
+      fillColor = unit.barrelVariant === 'gravity' ? 0xa855f7 : unit.barrelVariant === 'shrapnel' ? 0xf59e0b : 0xf97316;
+    } else if (hpPercent <= 0.25) fillColor = 0xef4444; // Red
     else if (hpPercent <= 0.5) fillColor = 0xf59e0b; // Amber
 
     const fillGeo = new THREE.PlaneGeometry(hpWidth, 0.09);

@@ -1,5 +1,6 @@
 import type { AlchemistMixture, DamagePreview, DamageType, Skill, StatusEffect, Unit } from '../types/game';
 import { evaluateOmnimagoReaction } from './elementalReactions';
+import { getCavalryMomentumPercent } from './cavalry';
 
 export const ALCHEMIST_MIXTURE_DEFAULT_ATTACKS = 2;
 
@@ -215,6 +216,11 @@ export function calculateBaseDamage(
       attackStat = Math.round(attackStat * (1 + (attacker.centaurMovedTilesThisTurn * 5) / 100));
     }
 
+    const cavalryMomentumPct = getCavalryMomentumPercent(attacker);
+    if (cavalryMomentumPct > 0) {
+      attackStat = Math.round(attackStat * (1 + cavalryMomentumPct / 100));
+    }
+
     const isTargetBleeding = target.statusEffects?.some(
       (e) => (e.type === 'burn' || e.type === 'bleed') && e.duration > 0
     );
@@ -291,6 +297,11 @@ export function calculateBaseDamage(
 
   if (attacker.lineageCentaurCharge && attacker.centaurMovedTilesThisTurn && attacker.centaurMovedTilesThisTurn > 0) {
     attackStat = Math.round(attackStat * (1 + (attacker.centaurMovedTilesThisTurn * 5) / 100));
+  }
+
+  const cavalryMomentumBasicPct = getCavalryMomentumPercent(attacker);
+  if (cavalryMomentumBasicPct > 0) {
+    attackStat = Math.round(attackStat * (1 + cavalryMomentumBasicPct / 100));
   }
 
   const isTargetBleeding = target.statusEffects?.some(

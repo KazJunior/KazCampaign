@@ -505,13 +505,13 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     color: '#2563EB',
     avatarKey: 'cavaleiro',
     baseSkillId: 'investida_de_lanca',
-    description: 'Guerreiro de elite montado em seu corcel de guerra blindado. Combina alta mobilidade, armadura pesada e cargas avassaladoras com lança de justa para atropelar e romper formações inimigas.',
+    description: 'Cavalaria pesada de elite movida por Ímpeto de Galope (+6% dano por casa percorrida no turno, máx. +24%) e Canto (mover após atacar). Atropela formações em linha reta, arrasta inimigos na ponta da lança e resgata aliados na garupa do corcel.',
     statGrowth: { hp: 14, atk: 3, mag: 1, def: 3, res: 1 },
   },
   canhoneiro: {
     className: 'canhoneiro',
     name: 'Canhoneiro',
-    role: 'Artilharia Pesada, Explosões & Bombardeio',
+    role: 'Mestre dos Barris, Reações em Cadeia & Artilharia',
     maxHp: 78,
     atk: 27,
     mag: 6,
@@ -522,7 +522,7 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     color: '#B91C1C',
     avatarKey: 'canhoneiro',
     baseSkillId: 'tiro_de_canhao',
-    description: 'Especialista em armas de pólvora pesada empunhando um canhão portátil de alto calibre. Desfere bombardeios explosivos em área, disparos perfurantes e recuos devastadores à longa distância.',
+    description: 'Mestre da pólvora que espalha Barris Explosivos, de Estilhaços e Gravitacionais pelo campo de batalha. Chuta, ricocheteia e detona barris em Reações em Cadeia devastadoras de longo alcance.',
     statGrowth: { hp: 9, atk: 4, mag: 1, def: 2, res: 1 },
   }
 };

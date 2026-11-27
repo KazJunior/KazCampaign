@@ -1162,6 +1162,15 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'canhoneiro':
       buildCanhoneiroMini(char);
       break;
+    case 'barril_polvora':
+      buildBarrilPolvoraMini(char, 'standard');
+      break;
+    case 'barril_polvora_shrapnel':
+      buildBarrilPolvoraMini(char, 'shrapnel');
+      break;
+    case 'barril_polvora_gravity':
+      buildBarrilPolvoraMini(char, 'gravity');
+      break;
     case 'totem_cura':
       buildTotemMini(char, 0x10b981);
       break;
@@ -6165,6 +6174,97 @@ function buildDroneMini(group: THREE.Group) {
   const eye = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), healGlow);
   eye.position.set(0, 0.56, 0.15);
   group.add(eye);
+}
+
+// Canhoneiro: Barril de Pólvora Explosivo (Padrão, Estilhaços e Gravitacional)
+function buildBarrilPolvoraMini(group: THREE.Group, variant: 'standard' | 'shrapnel' | 'gravity') {
+  const isShrapnel = variant === 'shrapnel';
+  const isGravity = variant === 'gravity';
+
+  const bodyHex = isGravity ? 0x3b0764 : isShrapnel ? 0x334155 : 0x7c2d12;
+  const bandHex = isGravity ? 0x7e22ce : isShrapnel ? 0xd97706 : 0x1e293b;
+  const glowHex = isGravity ? 0xc084fc : isShrapnel ? 0xfbbf24 : 0xf97316;
+
+  const bodyMat = new THREE.MeshStandardMaterial({
+    color: bodyHex,
+    roughness: isShrapnel ? 0.4 : 0.78,
+    metalness: isShrapnel ? 0.72 : isGravity ? 0.45 : 0.12,
+  });
+  const bandMat = new THREE.MeshStandardMaterial({
+    color: bandHex,
+    metalness: 0.75,
+    roughness: 0.35,
+  });
+  const glowMat = new THREE.MeshStandardMaterial({
+    color: glowHex,
+    emissive: glowHex,
+    emissiveIntensity: 1.8,
+  });
+  const powderMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.95 });
+
+  // Bulged barrel body (3 stacked tapered segments)
+  const lower = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.18, 12), bodyMat);
+  lower.position.set(0, 0.09, 0);
+  lower.castShadow = true;
+  group.add(lower);
+
+  const mid = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.20, 12), bodyMat);
+  mid.position.set(0, 0.28, 0);
+  mid.castShadow = true;
+  group.add(mid);
+
+  const upper = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.16, 12), bodyMat);
+  upper.position.set(0, 0.46, 0);
+  upper.castShadow = true;
+  group.add(upper);
+
+  // Iron / brass hoops
+  for (const hoopY of [0.14, 0.42]) {
+    const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.225, 0.022, 6, 16), bandMat);
+    hoop.rotation.x = Math.PI / 2;
+    hoop.position.set(0, hoopY, 0);
+    group.add(hoop);
+  }
+
+  // Glowing center hazard stripe
+  const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.235, 0.018, 6, 16), glowMat);
+  stripe.rotation.x = Math.PI / 2;
+  stripe.position.set(0, 0.28, 0);
+  group.add(stripe);
+
+  // Black powder lid cap
+  const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.03, 12), powderMat);
+  lid.position.set(0, 0.54, 0);
+  group.add(lid);
+
+  // Variant accents: spikes for shrapnel, orbiting gravity ring for gravity
+  if (isShrapnel) {
+    for (let i = 0; i < 6; i++) {
+      const ang = (i * Math.PI * 2) / 6;
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.12, 5), bandMat);
+      spike.position.set(Math.cos(ang) * 0.27, 0.28, Math.sin(ang) * 0.27);
+      spike.rotation.z = -Math.PI / 2;
+      spike.rotation.y = -ang;
+      group.add(spike);
+    }
+  } else if (isGravity) {
+    const orbit = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.016, 6, 20), glowMat);
+    orbit.rotation.x = Math.PI / 2.4;
+    orbit.rotation.y = 0.4;
+    orbit.position.set(0, 0.34, 0);
+    group.add(orbit);
+  }
+
+  // Curved fuse + glowing burning spark on top
+  const fuseMat = new THREE.MeshStandardMaterial({ color: 0xd6d3d1, roughness: 0.9 });
+  const fuse = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.018, 0.18, 6), fuseMat);
+  fuse.position.set(0.03, 0.63, 0);
+  fuse.rotation.z = -0.35;
+  group.add(fuse);
+
+  const spark = new THREE.Mesh(new THREE.OctahedronGeometry(0.068, 0), glowMat);
+  spark.position.set(0.07, 0.73, 0);
+  group.add(spark);
 }
 
 

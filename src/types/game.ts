@@ -113,6 +113,8 @@ export interface AlchemistMixture {
   remainingAttacks?: number;
 }
 
+export type PowderBarrelVariant = 'standard' | 'shrapnel' | 'gravity';
+
 export interface Skill {
   id: string;
   name: string;
@@ -193,6 +195,24 @@ export interface Skill {
   summonCloneCount?: number; // Quantidade de clones invocados em ladrilhos adjacentes
   elementalTag?: 'fire' | 'ice' | 'lightning' | 'wind' | 'omni'; // Afinidade elemental para reações do Omnimago
 
+  // Mecânica de Barris de Pólvora (Canhoneiro)
+  isFreeAction?: boolean; // Não consome o ataque do turno ao ser utilizada
+  placesBarrelVariant?: PowderBarrelVariant; // Posiciona um Barril de Pólvora no alvo
+  placesBarrelCount?: number; // Quantidade de barris posicionados (ex: 3 em linha)
+  detonatesAllBarrels?: boolean; // Detona todos os barris de pólvora do mapa
+  barrelChainBonusDamagePercent?: number; // Bônus extra (%) quando esta habilidade detona um barril
+  barrelChainRangeOverride?: number; // Alcance customizado da reação em cadeia entre barris
+  leavesBarrelAtOrigin?: boolean; // Deixa um barril armado na casa de origem (ex: Salto no Barril / Canhão Humano)
+  spawnsBarrelsAfterAoE?: number; // Deixa N barris livres após a explosão em área
+
+  // Mecânica de Cavalaria (Cavaleiro — Ímpeto, Canto, Atropelamento, Arrastão & Garupa)
+  grantsCantoMove?: boolean; // Canto da Cavalaria: permite mover-se novamente após atacar
+  isTrampleCharge?: boolean; // Atropelamento em linha reta até uma casa livre, pisoteando todos no caminho
+  trampleEndAoeRadius?: number; // Onda de impacto ao chegar no destino do atropelamento (ex: Cavalgada do Trovão)
+  isSkewerCarry?: boolean; // Arrastão na Lança: empala e carrega o inimigo junto por N casas
+  skewerDistance?: number; // Quantidade de casas arrastadas com o inimigo na lança
+  isAllyMountRescue?: boolean; // Garupa do Corcel: busca um aliado e o traz para o lado do Cavaleiro com escudo e purificação
+
   level?: number; // Skill evolution level (1, 2, 3...)
 }
 
@@ -248,7 +268,10 @@ export interface Unit {
   hasUsedHalfHpSkill?: boolean; // Se a habilidade única de 50% HP já foi utilizada (ativa apenas 1 vez por combate)
 
   isSummoned?: boolean;
-  isUntargetable?: boolean; // Unidade inalvejável por inimigos (ex: Totens do Xamã)
+  isUntargetable?: boolean; // Unidade inalvejável por inimigos (ex: Totens do Xamã / Barris do Canhoneiro)
+  isPowderBarrel?: boolean; // Barril de Pólvora explosivo do Canhoneiro
+  barrelVariant?: PowderBarrelVariant;
+  barrelPower?: number; // Multiplicador de dano da explosão do barril
   summonTurnsLeft?: number;
   summonedByUnitId?: string;
   summonedBySkillId?: string;
@@ -302,6 +325,7 @@ export interface Unit {
   nefalimSkillUsedThisTurn?: boolean;
   lineageCentaurCharge?: boolean;
   centaurMovedTilesThisTurn?: number;
+  cavalryMomentumTiles?: number; // Casas cavalgadas neste turno pelo Cavaleiro (Ímpeto de Galope: +6%/casa, máx +24%)
   lineageBleedBonusDamagePercent?: number;
   lineageExtraPushDistance?: number;
   lineageEggDropRateMultiplier?: number;
@@ -361,6 +385,14 @@ export interface DamagePreview {
   isKillLikely: boolean;
   damageType: DamageType;
   aoeTargetsCount?: number;
+  barrelChainCount?: number;
+  barrelEstimatedDamage?: number;
+  barrelEnemiesInBlast?: number;
+  isFreeActionSkill?: boolean;
+  cavalryMomentumPercent?: number;
+  trampleTargetsCount?: number;
+  isCantoSkill?: boolean;
+  isAllyMountRescueSkill?: boolean;
 }
 
 export interface FloatingNumber {

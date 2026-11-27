@@ -20,9 +20,17 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
 }) => {
   const isTeleport = !!preview.skill?.isTeleport;
   const isSummon = !!preview.skill?.isSummonSkill;
+  const isBarrelPlacement = Boolean(preview.skill?.placesBarrelVariant && preview.skill?.targetType === 'empty_tile');
+  const isTargetBarrel = Boolean(preview.target?.isPowderBarrel);
+  const isCanhaoHumanoAlly = Boolean(
+    preview.skill?.id === 'canhao_colossal' &&
+    preview.target?.faction === 'player' &&
+    !isTargetBarrel &&
+    preview.target?.id !== preview.attacker?.id
+  );
   const isHeal = preview.damageType === 'healing';
   const isMagic = preview.damageType === 'magical';
-  const isSupportOnly = isHeal && preview.minDamage === 0;
+  const isSupportOnly = (isHeal && preview.minDamage === 0) || isBarrelPlacement || isCanhaoHumanoAlly;
 
   const targetHasExcessHeal = preview.target.statusEffects?.some(
     (e) => e.type === 'excess_heal' && e.duration > 0
@@ -73,7 +81,19 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
                     : 'bg-[#FF5252]/15 text-[#FF5252] border-[#FF5252]/30'
             }`}
         >
-          {isSummon ? 'INVOCAÇÃO' : isTeleport ? 'TELEPORTE' : preparingMixture ? 'REAGENTE' : isSupportOnly ? 'SUPORTE' : preview.damageType.toUpperCase()}
+          {isBarrelPlacement
+            ? preview.skill?.isFreeAction
+              ? 'BARRIL (LIVRE)'
+              : 'BARRIL'
+            : isSummon
+              ? 'INVOCAÇÃO'
+              : isTeleport
+                ? 'TELEPORTE'
+                : preparingMixture
+                  ? 'REAGENTE'
+                  : isSupportOnly
+                    ? 'SUPORTE'
+                    : preview.damageType.toUpperCase()}
         </span>
       </div>
 
@@ -100,17 +120,142 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           >
             {preview.isGroundTarget
               ? `🎯 Área (${preview.groundTargetPoint?.x ?? 0}, ${preview.groundTargetPoint?.y ?? 0})`
-              : preview.target.name}
+              : isBarrelPlacement
+                ? `🛢️ ${preview.skill?.name || 'Barril de Pólvora'}`
+                : isTargetBarrel
+                  ? `🛢️ ${preview.target.name}`
+                  : preview.target.name}
           </div>
           <div className="text-[11px] text-[#A7B0C4]">
             {preview.isGroundTarget
-              ? `${preview.aoeTargetsCount || 1} ${(preview.aoeTargetsCount || 1) === 1 ? 'alvo ao redor' : 'alvos ao redor'}`
-              : `Lv.${preview.target.level}`}
+              ? `${preview.aoeTargetsCount || 0} ${(preview.aoeTargetsCount || 0) === 1 ? 'alvo ao redor' : 'alvos ao redor'}`
+              : isBarrelPlacement
+                ? 'Armadilha Explosiva (4T)'
+                : isTargetBarrel
+                  ? 'Detona ao ser atingido!'
+                  : `Lv.${preview.target.level}`}
           </div>
         </div>
       </div>
 
       <div className="my-3 space-y-2">
+        {isCanhaoHumanoAlly && (
+          <div className="bg-[#0C4A6E]/50 p-2.5 rounded-xl border border-[#38BDF8]/60 space-y-1 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-[#7DD3FC] uppercase tracking-wider text-[10px]">
+                🚀 Canhão Humano (Lançamento Aliado)
+              </span>
+              <span className="font-black text-[#38BDF8]">
+                +{Math.max(1, Math.round(preview.attacker.atk * (preview.skill?.shieldPercentOfAtk || 0.45)))} Escudo
+              </span>
+            </div>
+            <p className="text-[11px] text-[#E0F2FE]/90">
+              Dispara {preview.target.name} até 3 casas à frente com Escudo (45% ATK) + 15% Ataque (2T) e deixa 1 Barril de Pólvora na casa de partida!
+            </p>
+          </div>
+        )}
+
+        {(preview.isFreeActionSkill || preview.skill?.isFreeAction) && (
+          <div className="bg-[#7C2D12]/45 p-2.5 rounded-xl border border-[#F97316]/60 space-y-1 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-[#FDBA74] uppercase tracking-wider text-[10px]">
+                {preview.skill?.placesBarrelVariant
+                  ? '🛢️ Ação Livre — Não Consome Ataque'
+                  : '🐎 Ação Livre — Não Consome Ataque'}
+              </span>
+              <span className="font-black text-[#FCD34D]">
+                {preview.skill?.placesBarrelVariant
+                  ? (preview.skill?.power ? `${Math.round(preview.skill.power * 100)}% ATK` : 'Explosivo')
+                  : 'Movimento Restaurado'}
+              </span>
+            </div>
+            <p className="text-[11px] text-[#FFEDD5]/90">
+              {preview.skill?.placesBarrelVariant
+                ? 'Você pode disparar neste barril no mesmo turno (Ataque Básico ou Habilidade) para detonar em área e ativar Reação em Cadeia (+10% dano por elo, máx. +30%)!'
+                : 'Purifica penalidades, devolve seu movimento e permite cavalgar e atacar no mesmo turno!'}
+            </p>
+          </div>
+        )}
+
+        {Boolean(preview.cavalryMomentumPercent && preview.cavalryMomentumPercent > 0) && (
+          <div className="flex items-center justify-between text-xs bg-[#0C4A6E]/45 p-2.5 rounded-lg border border-[#38BDF8]/50">
+            <span className="text-[#BAE6FD] font-semibold">🐎 Ímpeto de Galope:</span>
+            <span className="font-black text-[#38BDF8]">+{preview.cavalryMomentumPercent}% Dano da Carga</span>
+          </div>
+        )}
+
+        {Boolean(preview.skill?.isTrampleCharge) && (
+          <div className="flex items-center justify-between text-xs bg-[#1E3A8A]/45 p-2.5 rounded-lg border border-[#60A5FA]/50">
+            <span className="text-[#BFDBFE] font-semibold">🐎 Atropelamento em Linha:</span>
+            <span className="font-bold text-[#93C5FD]">
+              {preview.trampleTargetsCount ?? 0} {(preview.trampleTargetsCount ?? 0) === 1 ? 'inimigo no trajeto' : 'inimigos no trajeto'}
+            </span>
+          </div>
+        )}
+
+        {Boolean(preview.skill?.isSkewerCarry) && (
+          <div className="flex items-center justify-between text-xs bg-[#1E3A8A]/45 p-2.5 rounded-lg border border-[#60A5FA]/50">
+            <span className="text-[#BFDBFE] font-semibold">🔱 Arrastão na Lança:</span>
+            <span className="font-bold text-[#93C5FD]">Arrasta alvo + Cavaleiro {preview.skill?.skewerDistance || 2} casas (+Colisão)</span>
+          </div>
+        )}
+
+        {(preview.isAllyMountRescueSkill || preview.skill?.isAllyMountRescue) && (
+          <div className="bg-[#0C4A6E]/50 p-2.5 rounded-xl border border-[#38BDF8]/60 space-y-1 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-[#7DD3FC] uppercase tracking-wider text-[10px]">
+                🐎 Garupa do Corcel (Resgate Aliado)
+              </span>
+              <span className="font-black text-[#38BDF8]">
+                +{Math.max(1, Math.round(preview.attacker.maxHp * (preview.skill?.shieldPercentOfMaxHp || 0.15)))} Escudo
+              </span>
+            </div>
+            <p className="text-[11px] text-[#E0F2FE]/90">
+              Galopa até {preview.target.name}, purifica debuffs, traz o aliado para uma casa livre ao seu lado e protege ambos com Escudo!
+            </p>
+          </div>
+        )}
+
+        {(preview.isCantoSkill || preview.skill?.grantsCantoMove) && !preview.skill?.isFreeAction && (
+          <div className="flex items-center justify-between text-xs bg-[#1E293B] p-2 rounded-lg border border-[#38BDF8]/40">
+            <span className="text-[#BAE6FD] font-semibold">Canto da Cavalaria:</span>
+            <span className="font-bold text-[#38BDF8]">🐎 Permite mover-se novamente após atacar</span>
+          </div>
+        )}
+
+        {Boolean(preview.barrelChainCount && preview.barrelChainCount > 0) && (
+          <div className="bg-[#7F1D1D]/50 p-2.5 rounded-xl border border-[#EF4444]/60 space-y-1 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-[#FCA5A5] uppercase tracking-wider text-[10px]">
+                💥 {preview.barrelChainCount! > 1 ? `Reação em Cadeia (${preview.barrelChainCount} Barris)` : 'Detonação de Barril'}
+              </span>
+              <span className="font-black text-[#FDE047]">
+                ~{preview.barrelEstimatedDamage ?? 0} Dano
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-[#FEE2E2]">
+              <span>Inimigos nas explosões:</span>
+              <span className="font-bold text-[#FDBA74]">
+                {preview.barrelEnemiesInBlast ?? 0} {(preview.barrelEnemiesInBlast ?? 0) === 1 ? 'inimigo' : 'inimigos'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {preview.skill?.leavesBarrelAtOrigin && (
+          <div className="flex items-center justify-between text-xs bg-[#7C2D12]/35 p-2 rounded-lg border border-[#F97316]/40">
+            <span className="text-[#FED7AA] font-semibold">Barril Armado:</span>
+            <span className="font-bold text-[#FDBA74]">🛢️ Deixa 1 Barril de Pólvora na casa de partida</span>
+          </div>
+        )}
+
+        {preview.skill?.spawnsBarrelsAfterAoE && (
+          <div className="flex items-center justify-between text-xs bg-[#7C2D12]/35 p-2 rounded-lg border border-[#F97316]/40">
+            <span className="text-[#FED7AA] font-semibold">Barris Remanescentes:</span>
+            <span className="font-bold text-[#FDBA74]">🛢️ Posiciona até {preview.skill.spawnsBarrelsAfterAoE} Barris nas extremidades livres</span>
+          </div>
+        )}
+
         {preparingMixture && (
           <div className="bg-[#064E3B]/35 p-3 rounded-xl border border-[#10B981]/50 space-y-1.5 text-xs">
             <div className="flex items-center justify-between">
@@ -525,7 +670,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </div>
         )}
 
-        {!isSupportOnly && (
+        {!isSupportOnly && !isTargetBarrel && (
           <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#343B50]">
             <span className="text-[#A7B0C4]">
               {isHeal ? 'Cura Estimada:' : 'Dano Estimado:'}
@@ -536,7 +681,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </div>
         )}
 
-        {!isSupportOnly && (
+        {!isSupportOnly && !isTargetBarrel && (
           <div className="flex items-center justify-between text-xs bg-[#10131C] p-2.5 rounded-lg border border-[#343B50]">
             <span className="text-[#A7B0C4]">Vida do Alvo (Antes → Depois):</span>
             <span className="font-bold">
@@ -586,7 +731,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
           </div>
         )}
 
-        {preview.isKillLikely && !isHeal && (
+        {preview.isKillLikely && !isHeal && !isTargetBarrel && !isSupportOnly && (
           <div className="bg-[#E65353]/15 border border-[#E65353]/40 text-[#E65353] px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 animate-pulse">
             <AlertTriangle size={14} /> ALTO RISCO DE ELIMINAR O ALVO!
           </div>
