@@ -2665,7 +2665,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
     burstCount: 40,
     shakeIntensity: 0.24,
   }),
-  carga_de_cavalaria: defVFX('carga_de_cavalaria', 'dash_strike', {
+  carga_de_cavalaria: defVFX('carga_de_cavalaria', 'heavy_slam', {
     durationMs: 620,
     casterMotion: 'lunge',
     primaryColor: 0x2563eb,
@@ -2674,9 +2674,9 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
     burstCount: 28,
     shakeIntensity: 0.24,
   }),
-  atropelamento_real: defVFX('atropelamento_real', 'dash_strike', {
+  atropelamento_real: defVFX('atropelamento_real', 'dimensional_wave', {
     durationMs: 640,
-    casterMotion: 'lunge',
+    casterMotion: 'dash_through',
     primaryColor: 0x3b82f6,
     secondaryColor: 0x93c5fd,
     aoeShape: 'line',
@@ -2684,7 +2684,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
     burstCount: 30,
     shakeIntensity: 0.24,
   }),
-  golpe_de_justa: defVFX('golpe_de_justa', 'dash_strike', {
+  golpe_de_justa: defVFX('golpe_de_justa', 'generic_melee', {
     durationMs: 560,
     casterMotion: 'lunge',
     primaryColor: 0x1d4ed8,
@@ -2695,7 +2695,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
   }),
   salto_do_corcel: defVFX('salto_do_corcel', 'holy_pillar', {
     durationMs: 620,
-    casterMotion: 'cast_raise',
+    casterMotion: 'levitate_cast',
     primaryColor: 0x38bdf8,
     secondaryColor: 0xfbbf24,
     particleType: 'stars',
@@ -2736,7 +2736,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
   }),
   tiro_de_canhao: defVFX('tiro_de_canhao', 'combustion', {
     durationMs: 420,
-    casterMotion: 'cast_raise',
+    casterMotion: 'stance_guard',
     primaryColor: 0xea580c,
     secondaryColor: 0xfbbf24,
     particleType: 'sparks',
@@ -2756,7 +2756,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
   }),
   disparo_de_estilhacos: defVFX('disparo_de_estilhacos', 'heavy_slam', {
     durationMs: 520,
-    casterMotion: 'dash_strike',
+    casterMotion: 'lunge',
     primaryColor: 0xf97316,
     secondaryColor: 0xfef08a,
     particleType: 'sparks',
@@ -2783,14 +2783,14 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
     burstCount: 22,
     shakeIntensity: 0.16,
   }),
-  morteiro_incendiario: defVFX('morteiro_incendiario', 'dimensional_wave', {
+  morteiro_incendiario: defVFX('morteiro_incendiario', 'black_hole', {
     durationMs: 650,
-    casterMotion: 'cast_raise',
+    casterMotion: 'levitate_cast',
     primaryColor: 0xa855f7,
     secondaryColor: 0x38bdf8,
     aoeShape: 'circle',
     crater: true,
-    particleType: 'void',
+    particleType: 'shadow',
     burstCount: 34,
     shakeIntensity: 0.26,
   }),
@@ -2806,7 +2806,7 @@ export const SKILL_VFX_REGISTRY: Record<string, VFXSequence> = {
   }),
   carregar_polvora_negra: defVFX('carregar_polvora_negra', 'fire_pillar', {
     durationMs: 520,
-    casterMotion: 'cast_raise',
+    casterMotion: 'levitate_cast',
     primaryColor: 0xef4444,
     secondaryColor: 0xfbbf24,
     particleType: 'fire',
