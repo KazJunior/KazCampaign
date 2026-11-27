@@ -49,6 +49,18 @@ function parseDbClasses(raw: unknown): string[] {
   return [];
 }
 
+const BUILTIN_COUPONS: Array<{
+  code: string;
+  description: string;
+  reward: Record<string, unknown>;
+}> = [
+  {
+    code: 'KAZGOL',
+    description: 'Cupom promocional KAZGOL (+100.000 de Ouro)',
+    reward: { gold: 100000 },
+  },
+];
+
 let couponsSchemaEnsured = false;
 async function ensureCouponsSchema(sql: ReturnType<typeof getSql>): Promise<void> {
   if (couponsSchemaEnsured) return;
@@ -76,6 +88,13 @@ async function ensureCouponsSchema(sql: ReturnType<typeof getSql>): Promise<void
         CONSTRAINT unique_coupon_user UNIQUE(coupon_id, user_id)
       );
     `;
+    for (const c of BUILTIN_COUPONS) {
+      await sql`
+        INSERT INTO coupons (code, description, reward, max_uses, used_count, expires_at, is_active, created_at)
+        VALUES (${c.code}, ${c.description}, ${JSON.stringify(c.reward)}::jsonb, NULL, 0, NULL, true, NOW())
+        ON CONFLICT (code) DO NOTHING
+      `;
+    }
     couponsSchemaEnsured = true;
   } catch (e) {
     console.warn('ensureCouponsSchema warning:', e);
