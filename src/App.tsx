@@ -59,7 +59,13 @@ import {
 } from './utils/storage';
 import { soundManager } from './utils/audio';
 import { getAttackableTiles, getAoETiles, getReachableTiles, getPathTo } from './utils/pathfinding';
-import { getDamagePreview, rollActualDamage } from './utils/damage';
+import {
+  getDamagePreview,
+  rollActualDamage,
+  getAlchemistMixtureSummary,
+  consumeAlchemistMixturesAttack,
+  ALCHEMIST_MIXTURE_DEFAULT_ATTACKS,
+} from './utils/damage';
 import { decideMonsterAction } from './ai/monsterAI';
 import { BoardRenderer3D } from './game/BoardRenderer3D';
 import type { BoardRenderer3DHandle } from './game/BoardRenderer3D';
@@ -1466,6 +1472,7 @@ export function App() {
             currentHp: u.maxHp,
             isDead: false,
             statusEffects: [],
+            alchemistMixtures: [],
           };
         }
         return u;
@@ -2178,22 +2185,27 @@ export function App() {
       }
       return [];
     }
-    if (!activeSkill || activeSkill.aoeRadius === 0) return [];
-    const aoeType = activeSkill.aoeType || 'circle';
+    const alchemistAoeRadius =
+      !activeSkill && selectedUnit ? getAlchemistMixtureSummary(selectedUnit).aoeRadius : 0;
+    const effectiveAoeRadius = activeSkill ? activeSkill.aoeRadius : alchemistAoeRadius;
+    if (effectiveAoeRadius === 0) return [];
+    if (!activeSkill && selectedAction !== 'attack' && !targetUnitId && !targetAoEPoint) return [];
+
+    const aoeType = activeSkill?.aoeType || 'circle';
     const origin = selectedUnit ? { x: selectedUnit.x, y: selectedUnit.y } : null;
 
     if (targetAoEPoint) {
-      return getAoETiles(targetAoEPoint, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin);
+      return getAoETiles(targetAoEPoint, effectiveAoeRadius, grid[0].length, grid.length, aoeType, origin);
     }
     const targetUnit = targetUnitId ? units.find((u) => u.id === targetUnitId) : null;
     if (targetUnit) {
-      return getAoETiles({ x: targetUnit.x, y: targetUnit.y }, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin);
+      return getAoETiles({ x: targetUnit.x, y: targetUnit.y }, effectiveAoeRadius, grid[0].length, grid.length, aoeType, origin);
     }
     if (hoveredTile && attackableTiles.some((pt) => pt.x === hoveredTile.x && pt.y === hoveredTile.y)) {
-      return getAoETiles(hoveredTile, activeSkill.aoeRadius, grid[0].length, grid.length, aoeType, origin);
+      return getAoETiles(hoveredTile, effectiveAoeRadius, grid[0].length, grid.length, aoeType, origin);
     }
     return [];
-  }, [activeSkill, activePetSkill, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles, selectedUnit]);
+  }, [activeSkill, activePetSkill, selectedAction, hoveredTile, targetUnitId, targetAoEPoint, units, grid, attackableTiles, selectedUnit]);
 
   // Handle Defeat: resets adventure progress to 0, archives run to history, keeps gold & unlocked classes
   const handleDefeat = useCallback(() => {
@@ -3184,6 +3196,7 @@ export function App() {
                 ...u,
                 hasAttacked: true,
                 skills: updatedSkills,
+                alchemistMixtures: !skill ? consumeAlchemistMixturesAttack(u.alchemistMixtures) : u.alchemistMixtures,
               };
             }
             return u;
@@ -3407,6 +3420,25 @@ export function App() {
           const preview = getDamagePreview(selectedUnit, clickedUnit, effectiveSkill);
           preview.isGroundTarget = false;
           preview.groundTargetPoint = undefined;
+          if (!effectiveSkill) {
+            const alchSummary = getAlchemistMixtureSummary(selectedUnit);
+            if (alchSummary.aoeRadius > 0) {
+              const hitTiles = getAoETiles(
+                { x: clickedUnit.x, y: clickedUnit.y },
+                alchSummary.aoeRadius,
+                grid[0].length,
+                grid.length,
+                'circle',
+                { x: selectedUnit.x, y: selectedUnit.y }
+              );
+              preview.aoeTargetsCount = units.filter(
+                (u) =>
+                  u.faction === 'enemy' &&
+                  !u.isDead &&
+                  hitTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+              ).length;
+            }
+          }
 
           setDamagePreview(preview);
           setTargetUnitId(clickedUnit.id);
@@ -3566,13 +3598,22 @@ export function App() {
 
     const skill = activeSkill || undefined;
 
-    // 0.9. Alchemist Mixture Skill (Preparation: does NOT consume attack, accumulates mixture)
+    // 0.9. Alchemist Mixture Skill (Preparation: does NOT consume attack, accumulates mixture for 2 attacks)
     if (skill?.isAlchemistMixture && skill.alchemistMixture) {
       soundManager.playUpgrade();
-      const mix = skill.alchemistMixture;
+      const mix = {
+        ...skill.alchemistMixture,
+        remainingAttacks: skill.alchemistMixture.remainingAttacks ?? ALCHEMIST_MIXTURE_DEFAULT_ATTACKS,
+      };
       const currentMixtures = selectedUnit.alchemistMixtures || [];
-      const updatedMixtures = [...currentMixtures, mix];
-      addFloatingNumber(selectedUnit.x, selectedUnit.y, `⚗️ Mistura: ${mix.name}!`, 'status', mix.color || '#F59E0B');
+      const updatedMixtures = [...currentMixtures.filter((m) => m.id !== mix.id), mix];
+      addFloatingNumber(
+        selectedUnit.x,
+        selectedUnit.y,
+        `⚗️ Mistura: ${mix.name} (${mix.remainingAttacks} ataques)!`,
+        'status',
+        mix.color || '#F59E0B'
+      );
 
       const updatedSkills = selectedUnit.skills.map((s) =>
         s.id === skill.id ? { ...s, currentCooldown: s.cooldownMax, lastUsedTurn: turnNumberRef.current } : s
@@ -4374,7 +4415,6 @@ export function App() {
               hasAttacked: isNefalimArmyExtra ? false : true,
               nefalimExtraAttackUsed: isNefalimArmyExtra ? true : u.nefalimExtraAttackUsed,
               nefalimSkillUsedThisTurn: true,
-              alchemistMixtures: [],
               skills: updatedSkills,
             }
           : u
@@ -4638,12 +4678,13 @@ export function App() {
       let isHealSkill = false;
       const isSelfAntiHealed = gridRef.current?.[selectedUnit.y]?.[selectedUnit.x]?.antiHealPermanent;
 
-      if (skill.id === 'resistencia_suprema') {
+      if (skill.id === 'resistencia_suprema' || skill.id === 'infusao_revigorante') {
         if (isSelfAntiHealed) {
           addFloatingNumber(selectedUnit.x, selectedUnit.y, '🚫 Cura Bloqueada (Solo Amaldiçoado)!', 'status', '#A855F7');
         } else {
           isHealSkill = true;
-          const ratio = skill.power ? Math.min(1.0, skill.power) : 0.5;
+          const defaultRatio = skill.id === 'infusao_revigorante' ? 0.4 : 0.5;
+          const ratio = skill.power ? Math.min(1.0, skill.power) : defaultRatio;
           let healAmt = Math.max(1, Math.round(selectedUnit.maxHp * ratio));
           if (hadExcessHeal) {
             healAmt = Math.max(1, Math.round(healAmt * 0.5));
@@ -4680,6 +4721,13 @@ export function App() {
       }
 
       let updatedEffects = [...(selectedUnit.statusEffects || [])];
+      if (skill.cleansesDebuffs) {
+        const prevCount = updatedEffects.length;
+        updatedEffects = updatedEffects.filter((e) => !isDebuffStatus(e.type));
+        if (updatedEffects.length < prevCount) {
+          addFloatingNumber(nextCasterX, nextCasterY, '✨ Debuffs Purificados!', 'status', '#38BDF8');
+        }
+      }
       let givesShield = false;
       let isAnchorRewind = false;
 
@@ -4839,6 +4887,8 @@ export function App() {
         } else {
           addFloatingNumber(nextCasterX, nextCasterY, '⏱️ Ação Extra Concedida!', 'status', '#DC2626');
         }
+      } else if (reduceAmt > 0) {
+        addFloatingNumber(nextCasterX, nextCasterY, `⏳ -${reduceAmt} Cooldown em Todas!`, 'status', '#38BDF8');
       }
 
       // Random Tarot effect for O Louco
@@ -5227,22 +5277,22 @@ export function App() {
     }
 
     // ALCHEMIST MIXTURES CHECK ON NORMAL ATTACK:
-    const alchemistMixes = !skill ? (selectedUnit.alchemistMixtures || []) : [];
-    let alchemistBonusDmgPercent = 0;
-    let alchemistAoe = 0;
-    let alchemistLifesteal = 0;
-    let alchemistIgnoresShield = false;
-    const alchemistStatusEffects: StatusEffect[] = [];
+    const alchemistSummary = !skill ? getAlchemistMixtureSummary(selectedUnit) : null;
+    const alchemistMixes = alchemistSummary ? alchemistSummary.mixtures : [];
+    const alchemistBonusDmgPercent = alchemistSummary ? alchemistSummary.damageBonusPercent : 0;
+    const alchemistAoe = alchemistSummary ? alchemistSummary.aoeRadius : 0;
+    const alchemistLifesteal = alchemistSummary ? alchemistSummary.lifestealPercent : 0;
+    const alchemistIgnoresShield = alchemistSummary ? alchemistSummary.ignoresShield : false;
+    const alchemistStatusEffects: StatusEffect[] = alchemistSummary ? alchemistSummary.statusEffects : [];
 
     if (alchemistMixes.length > 0) {
-      alchemistMixes.forEach((m) => {
-        alchemistBonusDmgPercent += m.damageBonusPercent || 0;
-        if (m.aoeRadius && m.aoeRadius > alchemistAoe) alchemistAoe = m.aoeRadius;
-        if (m.lifestealPercent && m.lifestealPercent > alchemistLifesteal) alchemistLifesteal = m.lifestealPercent;
-        if (m.statusEffect) alchemistStatusEffects.push(m.statusEffect);
-        if (m.ignoresShield) alchemistIgnoresShield = true;
-      });
-      addFloatingNumber(selectedUnit.x, selectedUnit.y, `🧪 REAÇÃO QUÍMICA (+${alchemistBonusDmgPercent}% Dano)!`, 'status', '#10B981');
+      addFloatingNumber(
+        selectedUnit.x,
+        selectedUnit.y,
+        `🧪 REAÇÃO QUÍMICA (+${alchemistBonusDmgPercent}% Dano)!`,
+        'status',
+        '#10B981'
+      );
     }
 
     const { finalDamage, isKill, damageType } = rollActualDamage(selectedUnit, target, skill);
@@ -5252,6 +5302,7 @@ export function App() {
     else soundManager.playPhysicalAttack();
 
     const aoeCenter = targetAoEPoint || { x: target.x, y: target.y };
+    const aoeRadius = (skill?.aoeRadius || 0) || alchemistAoe;
 
     if (skill?.id === 'cataclisma_omnielemental') {
       soundManager.playVictory();
@@ -5269,7 +5320,7 @@ export function App() {
     }
 
     if (boardRef.current) {
-      await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, skill?.aoeRadius, skill, targetAoEPoint || undefined);
+      await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, aoeRadius, skill, targetAoEPoint || undefined);
     }
 
     if (skill?.id === 'lagrimas_rubras') {
@@ -5294,7 +5345,6 @@ export function App() {
       }, 13000);
     }
 
-        const aoeRadius = (skill?.aoeRadius || 0) || alchemistAoe;
     let targetsToHit: Unit[] = [];
     if (skill?.chainCount && skill.chainCount > 1) {
       const chainTargets: Unit[] = [target];
@@ -5506,20 +5556,6 @@ export function App() {
         if (elementalReaction.bonusCasterEffects && elementalReaction.bonusCasterEffects.length > 0) {
           reactionCasterEffects.push(...elementalReaction.bonusCasterEffects);
         }
-      }
-      if (alchemistBonusDmgPercent > 0) {
-        actualDmg = Math.round(actualDmg * (1 + alchemistBonusDmgPercent / 100));
-      }
-      if (alchemistStatusEffects.length > 0) {
-        alchemistStatusEffects.forEach((eff) => {
-          currentEffects = [...currentEffects.filter((e) => e.type !== eff.type), { ...eff, appliedTurn: turnNumberRef.current }];
-          statusInflictedCount++;
-        });
-      }
-      if (alchemistLifesteal > 0 && actualDmg > 0) {
-        const lifestealHeal = Math.round(actualDmg * (alchemistLifesteal / 100));
-        currentAttackerHp = Math.min(selectedUnit.maxHp, currentAttackerHp + lifestealHeal);
-        addFloatingNumber(selectedUnit.x, selectedUnit.y, `+${lifestealHeal} (Alquimia Vampírica)`, 'healing', '#10B981');
       }
 
       // Cleansing of debuffs (e.g. Purificação Sagrada)
@@ -5895,7 +5931,47 @@ export function App() {
               }
             }
           }
-        } else if ((skill?.statusEffect || skill?.secondaryStatusEffect) && dmgResult.damageType !== 'healing') {
+          // Alchemist Mixture status effects on Normal Attack
+          if (!skill && alchemistStatusEffects.length > 0 && dmgResult.damageType !== 'healing') {
+            for (const aEff of alchemistStatusEffects) {
+              if (aEff.type === 'stun' && isBossStunImmune) {
+                addFloatingNumber(t.x, t.y, 'Resistiu ao Atordoamento!', 'status', '#FACC15');
+                continue;
+              }
+              if ((aEff.type === 'burn' || aEff.type === 'poison') && isTargetBurnPoisonImmune) {
+                addFloatingNumber(t.x, t.y, '🛡️ Imune a Queimadura/Veneno!', 'status', '#FACC15');
+                continue;
+              }
+              const appliedAlchEff: StatusEffect = { ...aEff, appliedTurn: turnNumberRef.current };
+              if (aEff.type === 'poison' && selectedUnit.lineagePotentPoison) {
+                appliedAlchEff.value = 2;
+                currentEffects = [
+                  ...currentEffects.filter((e) => e.type !== 'debuff_def'),
+                  { type: 'debuff_def', duration: aEff.duration || 2, value: 15, appliedTurn: turnNumberRef.current },
+                ];
+                addFloatingNumber(t.x, t.y, '☠️ Veneno Potente (-15% DEF)!', 'status', '#84CC16');
+              }
+              currentEffects = [...currentEffects.filter((e) => e.type !== appliedAlchEff.type), appliedAlchEff];
+              if (t.faction !== 'player') {
+                statusInflictedCount++;
+                if (aEff.type === 'poison') poisonInflictedCount++;
+                if (aEff.type === 'burn' || aEff.type === 'bleed') bleedInflictedCount++;
+              }
+              if (aEff.type === 'burn') addFloatingNumber(t.x, t.y, 'Em Chamas!', 'status', '#F97316');
+              else if (aEff.type === 'poison' && !selectedUnit.lineagePotentPoison) addFloatingNumber(t.x, t.y, 'Envenenado!', 'status', '#A855F7');
+              else if (aEff.type === 'stun') {
+                addFloatingNumber(t.x, t.y, 'Atordoado!', 'status', '#FACC15');
+                if (isBossMonster) {
+                  newLastStunTurn = turnNumber;
+                }
+              } else if (aEff.type === 'slow') addFloatingNumber(t.x, t.y, `Lentidão (-${aEff.value || 1} Mov)!`, 'status', '#60A5FA');
+              else if (aEff.type === 'debuff_def') addFloatingNumber(t.x, t.y, `Defesa -${aEff.value}%!`, 'status', '#EF4444');
+            }
+          }
+        } else if (
+          (skill?.statusEffect || skill?.secondaryStatusEffect || (!skill && alchemistStatusEffects.length > 0)) &&
+          dmgResult.damageType !== 'healing'
+        ) {
           addFloatingNumber(t.x, t.y, '🛡️ Imune a Efeitos!', 'status', '#A855F7');
         }
       }
@@ -6332,10 +6408,11 @@ export function App() {
       finalAttackerEffects = finalAttackerEffects.filter((e) => e.type !== 'invisible');
     }
 
-    // LIFESTEAL & AUTO-CURA DA HABILIDADE (Golpe Sagrado: 30%, Dreno de Vida, etc.)
+    // LIFESTEAL & AUTO-CURA DA HABILIDADE (Golpe Sagrado: 30%, Dreno de Vida, Alquimia Vampírica, etc.)
     const isGolpeSagrado = skill?.id === 'golpe_sagrado' || skill?.id?.startsWith('golpe_sagrado');
     const lifestealPct =
       (selectedUnit.lineageLifestealPercent || 0) +
+      (!skill ? alchemistLifesteal : 0) +
       (skill?.lifestealPercent ??
         (skill?.id === 'dreno_de_vida' || skill?.id === 'dreno_de_seiva'
           ? 100
@@ -6364,7 +6441,7 @@ export function App() {
         const actualHealed = newHp - finalAttackerHp;
         if (actualHealed > 0) {
           finalAttackerHp = newHp;
-          const tag = isGolpeSagrado ? 'Cura Sagrada' : 'Dreno';
+          const tag = isGolpeSagrado ? 'Cura Sagrada' : (!skill && alchemistLifesteal > 0 ? 'Alquimia Vampírica' : 'Dreno');
           addFloatingNumber(finalAttackerX, finalAttackerY, `+${actualHealed} (${tag})`, 'healing', '#56E59A');
           soundManager.playHeal();
         } else {
@@ -6643,6 +6720,7 @@ export function App() {
           hasUsedKitsuneReset: isKitsuneEligible ? true : u.hasUsedKitsuneReset,
           skills: updatedSkills,
           statusEffects: finalAttackerEffects,
+          alchemistMixtures: !skill ? consumeAlchemistMixturesAttack(u.alchemistMixtures) : u.alchemistMixtures,
           damageDealt: u.damageDealt + totalDmgDone,
           kills: u.kills + totalKills,
           skillUsesCount: nextSkillUsesCount,

@@ -7442,7 +7442,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_explosivo: {
     id: 'reagente_explosivo',
     name: 'Reagente Explosivo',
-    description: 'Prepara pólvora nitrocelulósica no frasco. Adiciona +40% de Dano e transforma o próximo Ataque Normal em dano em Área (Raio 1)! Efeitos são cumulativos e usados apenas ao atacar normalmente.',
+    description: 'Prepara pólvora nitrocelulósica no frasco. Adiciona +40% de Dano e transforma os próximos 2 Ataques Normais em dano em Área (Raio 1)! Efeitos são cumulativos e usados apenas ao atacar normalmente.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7465,7 +7465,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_glacial: {
     id: 'reagente_glacial',
     name: 'Reagente Criogênico',
-    description: 'Mistura nitrogênio líquido e cristais de permafrost. Adiciona +25% de Dano e faz o próximo Ataque Normal aplicar Lentidão Severa (-2 Movimento por 2 turnos). Efeitos são cumulativos!',
+    description: 'Mistura nitrogênio líquido e cristais de permafrost. Adiciona +25% de Dano e faz os próximos 2 Ataques Normais aplicarem Lentidão Severa (-2 Movimento por 2 turnos). Efeitos são cumulativos!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7488,7 +7488,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_venenoso: {
     id: 'reagente_venenoso',
     name: 'Extrato de Toxina Venenosa',
-    description: 'Adiciona peçonha concentrada ao frasco. Concede +20% de Dano e faz o próximo Ataque Normal aplicar Veneno por 2 turnos. Efeitos são cumulativos!',
+    description: 'Adiciona peçonha concentrada ao frasco. Concede +20% de Dano e faz os próximos 2 Ataques Normais aplicarem Veneno por 2 turnos. Efeitos são cumulativos!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7511,7 +7511,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_acido: {
     id: 'reagente_acido',
     name: 'Solução Ácida Corrosiva',
-    description: 'Mistura ácido sulfúrico refinado. Adiciona +30% de Dano e faz o próximo Ataque Normal despedaçar a armadura dos alvos (-30% de Defesa por 2 turnos). Cumulativo!',
+    description: 'Mistura ácido sulfúrico refinado. Adiciona +30% de Dano e faz os próximos 2 Ataques Normais despedaçarem a armadura dos alvos (-30% de Defesa por 2 turnos). Cumulativo!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7534,7 +7534,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_vampirico: {
     id: 'reagente_vampirico',
     name: 'Elixir da Sangria',
-    description: 'Injeta essência de sangue demoníaco. Adiciona +25% de Dano e 50% de Roubo de Vida ao dano total causado pelo próximo Ataque Normal! Cumulativo!',
+    description: 'Injeta essência de sangue demoníaco. Adiciona +25% de Dano e 50% de Roubo de Vida ao dano total causado pelos próximos 2 Ataques Normais! Cumulativo!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7557,7 +7557,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_neurotoxico: {
     id: 'reagente_neurotoxico',
     name: 'Gás Neurotóxico',
-    description: 'Mistura toxina paralisante ao frasco. Adiciona +30% de Dano e faz o próximo Ataque Normal Atordoar (Stun por 1 turno) o inimigo atingido! Cumulativo!',
+    description: 'Mistura toxina paralisante ao frasco. Adiciona +30% de Dano e faz os próximos 2 Ataques Normais Atordoarem (Stun por 1 turno) o inimigo atingido! Cumulativo!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7580,7 +7580,7 @@ export const SKILLS: Record<string, Skill> = {
   catalisador_etereo: {
     id: 'catalisador_etereo',
     name: 'Catalisador de Alcance',
-    description: 'Injeta propulsor de éter volátil. Adiciona +35% de Dano e +2 de Alcance ao próximo Ataque Normal (atingindo a até 5 casas de distância!). Cumulativo!',
+    description: 'Injeta propulsor de éter volátil. Adiciona +35% de Dano e +2 de Alcance aos próximos 2 Ataques Normais (atingindo a até 5 casas de distância!). Cumulativo!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7603,7 +7603,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_incendiario: {
     id: 'reagente_incendiario',
     name: 'Napalm Alquímico',
-    description: 'Mistura óleo alquímico ardente. Adiciona +35% de Dano e faz o próximo Ataque Normal Queimar os inimigos (Queimadura por 2 turnos). Cumulativo!',
+    description: 'Mistura óleo alquímico ardente. Adiciona +35% de Dano e faz os próximos 2 Ataques Normais Queimarem os inimigos (Queimadura por 2 turnos). Cumulativo!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7629,7 +7629,7 @@ export const SKILLS: Record<string, Skill> = {
     description: 'Ingere um tônico revigorante emergencial: restaura 40% da vida máxima, purifica todos os debuffs e reduz o tempo de recarga de todos os outros reagentes em 1 turno.',
     damageType: 'healing',
     category: 'support',
-    power: 0,
+    power: 0.4,
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
@@ -7637,7 +7637,7 @@ export const SKILLS: Record<string, Skill> = {
     currentCooldown: 0,
     targetType: 'self',
     cleansesDebuffs: true,
-    statusEffect: { type: 'shield', duration: 2, value: 45 },
+    reducesAllCooldownsOnCast: 1,
     iconName: 'Heart',
   },
   muralha_de_fumaca: {
@@ -7659,7 +7659,7 @@ export const SKILLS: Record<string, Skill> = {
   reagente_radioativo: {
     id: 'reagente_radioativo',
     name: 'Mistura Radioativa Instável',
-    description: 'Enriquece o frasco com isótopos proibidos. Adiciona +35% de Dano e faz o próximo Ataque Normal ignorar escudos dos alvos! Cumulativo!',
+    description: 'Enriquece o frasco com isótopos proibidos. Adiciona +35% de Dano e faz os próximos 2 Ataques Normais ignorarem escudos dos alvos! Cumulativo!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7682,7 +7682,7 @@ export const SKILLS: Record<string, Skill> = {
   megabomba_quimica: {
     id: 'megabomba_quimica',
     name: 'Grande Conflagração Química',
-    description: 'Adiciona +35% de Dano e expande o próximo Ataque Normal para uma colossal Área de Raio 2, aplicando veneno e quebra de armadura em todos os inimigos atingidos!',
+    description: 'Adiciona +35% de Dano e expande os próximos 2 Ataques Normais para uma colossal Área de Raio 2, aplicando veneno e quebra de armadura em todos os inimigos atingidos!',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -7699,6 +7699,7 @@ export const SKILLS: Record<string, Skill> = {
       damageBonusPercent: 35,
       aoeRadius: 2,
       statusEffect: { type: 'poison', duration: 2, value: 2 },
+      secondaryStatusEffect: { type: 'debuff_def', duration: 2, value: 30 },
       color: '#D97706',
     },
     iconName: 'Bomb',
@@ -7706,7 +7707,7 @@ export const SKILLS: Record<string, Skill> = {
   pedra_filosofal: {
     id: 'pedra_filosofal',
     name: 'Transmutação da Pedra Filosofal',
-    description: 'O ápice da alquimia universal! Adiciona +50% de Dano ao próximo Ataque Normal.',
+    description: 'O ápice da alquimia universal! Adiciona +50% de Dano aos próximos 2 Ataques Normais.',
     damageType: 'healing',
     category: 'support',
     power: 0,
@@ -10165,10 +10166,23 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
   const clone: Skill = JSON.parse(JSON.stringify(canonicalBase));
   clone.level = effectiveLevel;
 
-  // Aumento de escalonamento: +0.2 de poder por nível acima de 1 (+0.1 para cura de vida máxima) até o limite de Nível 5
+  // Aumento de escalonamento: +0.2 de poder por nível acima de 1 (+0.1 para Resistência Suprema, +0.05 para Elixir de Revitalização) até o limite de Nível 5
   if (canonicalBase.power > 0) {
-    const powerStep = canonicalBase.id === 'resistencia_suprema' ? 0.1 : 0.2;
+    const powerStep =
+      canonicalBase.id === 'resistencia_suprema'
+        ? 0.1
+        : canonicalBase.id === 'infusao_revigorante'
+        ? 0.05
+        : 0.2;
     clone.power = Math.round((canonicalBase.power + powerStep * (effectiveLevel - 1)) * 100) / 100;
+  }
+
+  // Escalonamento de reagentes do Alquimista (+5% de bônus de dano por nível acima de 1)
+  if (canonicalBase.alchemistMixture && clone.alchemistMixture) {
+    clone.alchemistMixture = {
+      ...clone.alchemistMixture,
+      damageBonusPercent: canonicalBase.alchemistMixture.damageBonusPercent + 5 * (effectiveLevel - 1),
+    };
   }
 
   // Melhorias de recarga (cooldown) NÃO devem ser fornecidas
@@ -10355,6 +10369,21 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
       evolvedDesc = `Habilidade suprema: Regenera ${newPct}% da vida máxima instantaneamente e retém todo o agro inimigo com Provocação por 1 turno.`;
     } else if (evolvedDesc.includes(`${basePct}%`)) {
       evolvedDesc = evolvedDesc.replace(`${basePct}%`, `${newPct}%`);
+    }
+  }
+
+  // 1.5. Bônus de dano de misturas do Alquimista
+  if (
+    canonicalBase.alchemistMixture &&
+    clone.alchemistMixture &&
+    clone.alchemistMixture.damageBonusPercent !== canonicalBase.alchemistMixture.damageBonusPercent
+  ) {
+    const baseBonus = canonicalBase.alchemistMixture.damageBonusPercent;
+    const newBonus = clone.alchemistMixture.damageBonusPercent;
+    if (evolvedDesc.includes(`+${baseBonus}% de Dano`)) {
+      evolvedDesc = evolvedDesc.replace(`+${baseBonus}% de Dano`, `+${newBonus}% de Dano`);
+    } else if (evolvedDesc.includes(`+${baseBonus}%`)) {
+      evolvedDesc = evolvedDesc.replace(`+${baseBonus}%`, `+${newBonus}%`);
     }
   }
 

@@ -3,6 +3,7 @@ import type { DamagePreview } from '../types/game';
 import { Swords, HeartPulse, AlertTriangle, Wand2, Skull } from 'lucide-react';
 import { getAoELabel } from '../utils/pathfinding';
 import { evaluateOmnimagoReaction } from '../utils/elementalReactions';
+import { getAlchemistMixtureSummary } from '../utils/damage';
 
 interface ActionPreviewModalProps {
   preview: DamagePreview;
@@ -39,6 +40,9 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
     preview.target?.lastStunTurn !== undefined &&
     ((turnNumber ?? 1) - preview.target.lastStunTurn <= 1);
   const elementalReaction = evaluateOmnimagoReaction(preview.attacker, preview.target, preview.skill);
+  const alchemistSummary = !preview.skill ? getAlchemistMixtureSummary(preview.attacker) : null;
+  const hasAlchemistMix = Boolean(alchemistSummary && alchemistSummary.count > 0);
+  const preparingMixture = preview.skill?.isAlchemistMixture ? preview.skill.alchemistMixture : undefined;
 
   return (
     <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1B2030] border-2 border-[#D4AD65] p-3 sm:p-4 rounded-2xl shadow-2xl text-[#F3F4F8] max-w-md w-[calc(100%-1rem)] sm:w-full select-none max-h-[85vh] overflow-y-auto">
@@ -69,7 +73,7 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
                     : 'bg-[#FF5252]/15 text-[#FF5252] border-[#FF5252]/30'
             }`}
         >
-          {isSummon ? 'INVOCAÇÃO' : isTeleport ? 'TELEPORTE' : isSupportOnly ? 'SUPORTE' : preview.damageType.toUpperCase()}
+          {isSummon ? 'INVOCAÇÃO' : isTeleport ? 'TELEPORTE' : preparingMixture ? 'REAGENTE' : isSupportOnly ? 'SUPORTE' : preview.damageType.toUpperCase()}
         </span>
       </div>
 
@@ -107,6 +111,97 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
       </div>
 
       <div className="my-3 space-y-2">
+        {preparingMixture && (
+          <div className="bg-[#064E3B]/35 p-3 rounded-xl border border-[#10B981]/50 space-y-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-[#34D399] uppercase tracking-wider text-[10px]">
+                ⚗️ Preparar Reagente (Não consome ataque)
+              </span>
+              <span className="font-black text-[#6EE7B7]">+{preparingMixture.damageBonusPercent}% Dano</span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 text-[11px] text-[#ECFDF5]">
+              {preparingMixture.aoeRadius ? (
+                <span className="px-2 py-0.5 rounded bg-[#10131C]/70 border border-[#F59E0B]/40 text-[#FCD34D] font-bold">
+                  💥 Área Raio {preparingMixture.aoeRadius}
+                </span>
+              ) : null}
+              {preparingMixture.rangeBonus ? (
+                <span className="px-2 py-0.5 rounded bg-[#10131C]/70 border border-[#38BDF8]/40 text-[#7DD3FC] font-bold">
+                  🎯 +{preparingMixture.rangeBonus} Alcance
+                </span>
+              ) : null}
+              {preparingMixture.lifestealPercent ? (
+                <span className="px-2 py-0.5 rounded bg-[#10131C]/70 border border-[#EF4444]/40 text-[#FCA5A5] font-bold">
+                  🩸 {preparingMixture.lifestealPercent}% Roubo de Vida
+                </span>
+              ) : null}
+              {preparingMixture.ignoresShield ? (
+                <span className="px-2 py-0.5 rounded bg-[#10131C]/70 border border-[#A855F7]/40 text-[#D8B4FE] font-bold">
+                  🛡️⚡ Ignora Escudos
+                </span>
+              ) : null}
+              {[preparingMixture.statusEffect, preparingMixture.secondaryStatusEffect]
+                .filter(Boolean)
+                .map((eff, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded bg-[#10131C]/70 border border-[#10B981]/40 text-[#A7F3D0] font-bold">
+                    {eff!.type === 'slow' && `👣 Lentidão -${eff!.value} Mov (${eff!.duration}T)`}
+                    {eff!.type === 'poison' && `☠️ Veneno (${eff!.duration}T)`}
+                    {eff!.type === 'burn' && `🔥 Queimadura (${eff!.duration}T)`}
+                    {eff!.type === 'debuff_def' && `🛡️ Defesa -${eff!.value}% (${eff!.duration}T)`}
+                    {eff!.type === 'stun' && `⚡ Atordoar (${eff!.duration}T)`}
+                  </span>
+                ))}
+            </div>
+            <p className="text-[10px] text-[#A7F3D0]/80">
+              Acumula no frasco e dura pelos próximos 2 Ataques Normais.
+            </p>
+          </div>
+        )}
+
+        {hasAlchemistMix && alchemistSummary && (
+          <div className="bg-[#064E3B]/35 p-2.5 rounded-xl border border-[#10B981]/50 space-y-1.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-[#34D399] uppercase tracking-wider text-[10px]">
+                🧪 Reação Alquímica ({alchemistSummary.count} {alchemistSummary.count === 1 ? 'reagente' : 'reagentes'})
+              </span>
+              <span className="font-black text-[#6EE7B7]">+{alchemistSummary.damageBonusPercent}% Dano</span>
+            </div>
+            <div className="flex flex-wrap gap-1 text-[10px]">
+              {alchemistSummary.mixtures.map((m) => (
+                <span key={m.id} className="px-1.5 py-0.5 rounded bg-[#10B981]/15 border border-[#10B981]/40 text-[#A7F3D0] font-semibold">
+                  ⚗️ {m.name} ({m.remainingAttacks ?? 1} {(m.remainingAttacks ?? 1) === 1 ? 'atq' : 'atqs'})
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-wrap gap-1 text-[10px]">
+              {alchemistSummary.aoeRadius > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-[#FF9800]/20 border border-[#FF9800]/40 text-[#FDBA74] font-bold">
+                  💥 Área Raio {alchemistSummary.aoeRadius} ({preview.aoeTargetsCount ?? 1} {(preview.aoeTargetsCount ?? 1) === 1 ? 'alvo' : 'alvos'})
+                </span>
+              )}
+              {alchemistSummary.lifestealPercent > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-[#10B981]/20 border border-[#10B981]/40 text-[#6EE7B7] font-bold">
+                  🩸 {alchemistSummary.lifestealPercent}% Roubo de Vida
+                </span>
+              )}
+              {alchemistSummary.ignoresShield && (
+                <span className="px-1.5 py-0.5 rounded bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#D8B4FE] font-bold">
+                  🛡️⚡ Ignora Escudos
+                </span>
+              )}
+              {alchemistSummary.statusEffects.map((eff, idx) => (
+                <span key={idx} className="px-1.5 py-0.5 rounded bg-[#10131C]/80 border border-[#343B50] text-[#F3F4F8] font-bold">
+                  {eff.type === 'slow' && `👣 Lentidão -${eff.value} Mov (${eff.duration}T)`}
+                  {eff.type === 'poison' && `☠️ Veneno (${eff.duration}T)`}
+                  {eff.type === 'burn' && `🔥 Queimadura (${eff.duration}T)`}
+                  {eff.type === 'debuff_def' && `🛡️ Defesa -${eff.value}% (${eff.duration}T)`}
+                  {eff.type === 'stun' && (isBossStunImmune ? '⚡ Stun (Boss Resiste)' : `⚡ Atordoar (${eff.duration}T)`)}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
         {isSummon && (
           <div className="bg-[#10131C] p-3 rounded-xl border border-[#A855F7]/30 space-y-1.5 text-xs">
             <div className="font-bold text-[#C084FC] flex items-center gap-1.5">
@@ -511,11 +606,13 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
         >
           {isTeleport
             ? 'Confirmar Teleporte'
-            : isHeal
-              ? 'Confirmar Ação'
-              : preview.isGroundTarget
-                ? 'Confirmar Ataque em Área'
-                : 'Confirmar Ataque'}
+            : preparingMixture
+              ? 'Adicionar ao Frasco'
+              : isHeal
+                ? 'Confirmar Ação'
+                : preview.isGroundTarget
+                  ? 'Confirmar Ataque em Área'
+                  : 'Confirmar Ataque'}
         </button>
       </div>
     </div>

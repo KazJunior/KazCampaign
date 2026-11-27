@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Unit, SelectedAction } from '../types/game';
+import { getAlchemistMixtureSummary } from '../utils/damage';
 import {ClassLineageAvatar } from './ClassLineageAvatar';
 import {
   Footprints,
@@ -103,6 +104,8 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const excessShieldEffect = selectedUnit.statusEffects?.find((e) => e.type === 'excess_shield' && e.duration > 0);
   const immuneEffect = selectedUnit.statusEffects?.find((e) => e.type === 'immune' && e.duration > 0);
   const isImmune = !!immuneEffect;
+  const alchemistSummary = getAlchemistMixtureSummary(selectedUnit);
+  const hasAlchemistMixtures = alchemistSummary.count > 0;
   const isBossMonster = Boolean(selectedUnit.isBoss || selectedUnit.isMiniBoss);
   const isStunImmuneConsecutive =
     isBossMonster &&
@@ -220,12 +223,30 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(selectedUnit.isUntargetable || isPoisoned || isBurned || isStunned || isSlowed || isFreezing || isGaled || isElectrified || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isAtkDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
+        {(selectedUnit.isUntargetable || hasAlchemistMixtures || isPoisoned || isBurned || isStunned || isSlowed || isFreezing || isGaled || isElectrified || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isAtkDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
             </div>
             <div className="flex flex-wrap gap-1.5">
+              {hasAlchemistMixtures && (
+                <>
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#10B981]/20 border border-[#10B981]/50 text-[#34D399] flex items-center gap-1"
+                    title={`Frasco carregado: ${alchemistSummary.mixtures.map((m) => `${m.name} (${m.remainingAttacks ?? 1} atq)`).join(', ')}`}
+                  >
+                    ⚗️ Frasco ({alchemistSummary.count}): +{alchemistSummary.damageBonusPercent}% Dano
+                  </span>
+                  {alchemistSummary.mixtures.map((mix) => (
+                    <span
+                      key={mix.id}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-[#064E3B]/50 border border-[#10B981]/40 text-[#A7F3D0] flex items-center gap-1"
+                    >
+                      🧪 {mix.name} ({mix.remainingAttacks ?? 1} {(mix.remainingAttacks ?? 1) === 1 ? 'atq' : 'atqs'})
+                    </span>
+                  ))}
+                </>
+              )}
               {selectedUnit.isUntargetable && (
                 <span
                   className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#14B8A6]/20 border border-[#14B8A6]/50 text-[#5EEAD4] flex items-center gap-1"
@@ -405,7 +426,12 @@ export const SidePanel: React.FC<SidePanelProps> = ({
             </div>
             <div>
               <div className="text-[10px] text-[#A7B0C4]">Alcance Base</div>
-              <div className="font-black text-[#F3F4F8] text-sm">{selectedUnit.range} casas</div>
+              <div className="font-black text-[#F3F4F8] text-sm">
+                {selectedUnit.range + alchemistSummary.rangeBonus} casas
+                {alchemistSummary.rangeBonus > 0 && (
+                  <span className="text-[10px] font-bold text-[#38BDF8] ml-1">(+{alchemistSummary.rangeBonus})</span>
+                )}
+              </div>
             </div>
           </div>
         </div>

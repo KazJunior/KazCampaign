@@ -155,6 +155,16 @@ export const SkillChoiceModal: React.FC<SkillChoiceModalProps> = ({ unit, unlock
                         </div>
                       )}
 
+                      {skill.alchemistMixture && (
+                        <div className="bg-[#1B2030] p-1.5 rounded-lg border border-[#343B50] flex items-center justify-between">
+                          <span className="text-[#A7B0C4]">Bônus Frasco:</span>
+                          <span className="text-[#34D399]">
+                            +{skill.alchemistMixture.damageBonusPercent}%{' '}
+                            <strong className="text-[#56E59A]">→ +{evolved.alchemistMixture?.damageBonusPercent}% Dano</strong>
+                          </span>
+                        </div>
+                      )}
+
                       <div className="bg-[#1B2030] p-1.5 rounded-lg border border-[#343B50] flex items-center justify-between">
                         <span className="text-[#A7B0C4]">Recarga:</span>
                         <span>

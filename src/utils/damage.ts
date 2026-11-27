@@ -1,5 +1,80 @@
-import type { DamagePreview, DamageType, Skill, Unit } from '../types/game';
+import type { AlchemistMixture, DamagePreview, DamageType, Skill, StatusEffect, Unit } from '../types/game';
 import { evaluateOmnimagoReaction } from './elementalReactions';
+
+export const ALCHEMIST_MIXTURE_DEFAULT_ATTACKS = 2;
+
+export function consumeAlchemistMixturesAttack(mixtures?: AlchemistMixture[]): AlchemistMixture[] {
+  if (!mixtures || mixtures.length === 0) return [];
+  return mixtures
+    .map((m) => ({
+      ...m,
+      remainingAttacks: (m.remainingAttacks ?? 1) - 1,
+    }))
+    .filter((m) => (m.remainingAttacks ?? 0) > 0);
+}
+
+export interface AlchemistMixtureSummary {
+  count: number;
+  mixtures: AlchemistMixture[];
+  damageBonusPercent: number;
+  aoeRadius: number;
+  lifestealPercent: number;
+  rangeBonus: number;
+  ignoresShield: boolean;
+  statusEffects: StatusEffect[];
+  maxRemainingAttacks: number;
+}
+
+export function getAlchemistMixtureSummary(unit: Unit): AlchemistMixtureSummary {
+  const mixtures = (unit.alchemistMixtures || []).filter((m) => (m.remainingAttacks ?? 1) > 0);
+  let damageBonusPercent = 0;
+  let aoeRadius = 0;
+  let lifestealPercent = 0;
+  let rangeBonus = 0;
+  let ignoresShield = false;
+  let maxRemainingAttacks = 0;
+  const statusByType = new Map<StatusEffect['type'], StatusEffect>();
+
+  const registerStatus = (eff?: StatusEffect) => {
+    if (!eff) return;
+    const existing = statusByType.get(eff.type);
+    if (!existing) {
+      statusByType.set(eff.type, { ...eff });
+    } else {
+      statusByType.set(eff.type, {
+        ...existing,
+        duration: Math.max(existing.duration, eff.duration),
+        value: Math.max(existing.value, eff.value),
+      });
+    }
+  };
+
+  for (const mix of mixtures) {
+    damageBonusPercent += mix.damageBonusPercent || 0;
+    if (mix.aoeRadius && mix.aoeRadius > aoeRadius) aoeRadius = mix.aoeRadius;
+    if (mix.lifestealPercent && mix.lifestealPercent > 0) {
+      lifestealPercent = Math.min(100, lifestealPercent + mix.lifestealPercent);
+    }
+    if (mix.rangeBonus && mix.rangeBonus > 0) rangeBonus += mix.rangeBonus;
+    if (mix.ignoresShield) ignoresShield = true;
+    const rem = mix.remainingAttacks ?? 1;
+    if (rem > maxRemainingAttacks) maxRemainingAttacks = rem;
+    registerStatus(mix.statusEffect);
+    registerStatus(mix.secondaryStatusEffect);
+  }
+
+  return {
+    count: mixtures.length,
+    mixtures,
+    damageBonusPercent,
+    aoeRadius,
+    lifestealPercent,
+    rangeBonus,
+    ignoresShield,
+    statusEffects: Array.from(statusByType.values()),
+    maxRemainingAttacks,
+  };
+}
 
 export interface CalculatedDamage {
   rawDamage: number;
@@ -52,8 +127,9 @@ export function calculateBaseDamage(
       if (attacker.lineageHealShieldFlatScalingBonus) {
         power += attacker.lineageHealShieldFlatScalingBonus;
       }
-      if (skill.id === 'resistencia_suprema') {
-        const ratio = skill.power ? Math.min(1.0, power) : 0.5;
+      if (skill.id === 'resistencia_suprema' || skill.id === 'infusao_revigorante') {
+        const defaultRatio = skill.id === 'infusao_revigorante' ? 0.4 : 0.5;
+        const ratio = skill.power ? Math.min(1.0, power) : defaultRatio;
         healAmount = Math.max(1, Math.round(attacker.maxHp * ratio));
       } else if (skill.healsWithAtk) {
         healAmount = Math.round(attacker.atk * power);
@@ -207,6 +283,12 @@ export function calculateBaseDamage(
     attackStat = Math.round(attackStat * (1 + invisBuff.value / 100));
   }
 
+  // Misturas cumulativas do Alquimista aplicadas ao Ataque Normal antes da defesa (como multiplicador de poder)
+  const alchemistSummary = getAlchemistMixtureSummary(attacker);
+  if (alchemistSummary.damageBonusPercent > 0) {
+    attackStat = Math.round(attackStat * (1 + alchemistSummary.damageBonusPercent / 100));
+  }
+
   if (attacker.lineageCentaurCharge && attacker.centaurMovedTilesThisTurn && attacker.centaurMovedTilesThisTurn > 0) {
     attackStat = Math.round(attackStat * (1 + (attacker.centaurMovedTilesThisTurn * 5) / 100));
   }
@@ -305,9 +387,10 @@ export function getDamagePreview(
   const maxDamage = Math.max(minDamage, Math.ceil(base * 1.1));
   const avgDamage = Math.round((minDamage + maxDamage) / 2);
 
-  // Consider active shields when previewing target HP after hit (unless skill or reaction ignores shields)
+  // Consider active shields when previewing target HP after hit (unless skill, alchemist mixture or reaction ignores shields)
   const previewReaction = evaluateOmnimagoReaction(attacker, target, skill);
-  const targetShield = skill?.ignoresShield || previewReaction?.ignoresShield
+  const alchemistSummary = !skill ? getAlchemistMixtureSummary(attacker) : null;
+  const targetShield = skill?.ignoresShield || alchemistSummary?.ignoresShield || previewReaction?.ignoresShield
     ? 0
     : (target.statusEffects
         ?.filter((e) => e.type === 'shield' && e.value > 0)

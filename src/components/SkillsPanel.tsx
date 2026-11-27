@@ -252,7 +252,10 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
             // Damage type badge color
             let badgeBg = 'bg-[#4C8DFF]/20 text-[#4C8DFF] border-[#4C8DFF]/30';
             let damageTypeName = 'Físico';
-            if (skill.damageType === 'magical') {
+            if (skill.isAlchemistMixture && skill.alchemistMixture) {
+              badgeBg = 'bg-[#10B981]/20 text-[#34D399] border-[#10B981]/40';
+              damageTypeName = `⚗️ +${skill.alchemistMixture.damageBonusPercent}% Dano`;
+            } else if (skill.damageType === 'magical') {
               badgeBg = 'bg-[#B58AFF]/20 text-[#B58AFF] border-[#B58AFF]/30';
               damageTypeName = 'Mágico';
             } else if (skill.damageType === 'healing') {
@@ -353,9 +356,9 @@ export const SkillsPanel: React.FC<SkillsPanelProps> = ({
                           🎯 Alvo no Solo
                         </span>
                       )}
-                      {skill.id === 'resistencia_suprema' ? (
+                      {skill.id === 'resistencia_suprema' || skill.id === 'infusao_revigorante' ? (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#56E59A]/15 border border-[#56E59A]/40 text-[#56E59A]">
-                          {Math.round((skill.power || 0.5) * 100)}% Vida Máx
+                          {Math.round((skill.power || (skill.id === 'infusao_revigorante' ? 0.4 : 0.5)) * 100)}% Vida Máx
                         </span>
                       ) : skill.power > 0 ? (
                         <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-[#1B2030] border border-[#343B50] text-[#D4AD65]">

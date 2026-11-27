@@ -105,10 +105,12 @@ export interface AlchemistMixture {
   damageBonusPercent: number;
   aoeRadius?: number;
   statusEffect?: StatusEffect;
+  secondaryStatusEffect?: StatusEffect;
   lifestealPercent?: number;
   rangeBonus?: number;
   color?: string;
   ignoresShield?: boolean;
+  remainingAttacks?: number;
 }
 
 export interface Skill {

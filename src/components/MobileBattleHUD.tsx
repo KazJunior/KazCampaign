@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Unit, SelectedAction, Skill, BattlePhase } from '../types/game';
+import { getAlchemistMixtureSummary } from '../utils/damage';
 import { getUnitAvatar } from './SidePanel';
 import { ClassLineageAvatar } from './ClassLineageAvatar';
 import { getAoELabel } from '../utils/pathfinding';
@@ -463,6 +464,23 @@ export const MobileBattleHUD: React.FC<MobileBattleHUDProps> = ({
             <span>⚡ Unidade Atordoada: Incapaz de agir ou usar habilidades!</span>
           </div>
         )}
+
+        {/* Active Alchemist Mixtures Strip */}
+        {selectedUnit.alchemistMixtures && selectedUnit.alchemistMixtures.length > 0 && (() => {
+          const mixSummary = getAlchemistMixtureSummary(selectedUnit);
+          return (
+            <div className="px-3 py-1.5 bg-[#064E3B]/50 border-b border-[#10B981]/40 flex items-center justify-between gap-2 text-[11px] text-[#6EE7B7] font-bold">
+              <span className="truncate">
+                ⚗️ Frasco ({mixSummary.count}): +{mixSummary.damageBonusPercent}% Dano
+                {mixSummary.aoeRadius > 0 ? ` • Área R${mixSummary.aoeRadius}` : ''}
+                {mixSummary.rangeBonus > 0 ? ` • +${mixSummary.rangeBonus} Alc` : ''}
+              </span>
+              <span className="text-[10px] text-[#A7F3D0] shrink-0">
+                {mixSummary.maxRemainingAttacks} {mixSummary.maxRemainingAttacks === 1 ? 'atq' : 'atqs'}
+              </span>
+            </div>
+          );
+        })()}
 
         {/* Expandable Tabs (Skills & Stats) */}
         {isExpanded && (
