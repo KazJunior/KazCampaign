@@ -54,7 +54,8 @@ export type StatusEffectType =
   | 'bleed'
   | 'summon_lifetime'
   | 'freezing'
-  | 'gale';
+  | 'gale'
+  | 'stack_overflow';
 
 export const DEBUFF_STATUS_TYPES: ReadonlySet<StatusEffectType> = new Set([
   'poison',
@@ -70,6 +71,7 @@ export const DEBUFF_STATUS_TYPES: ReadonlySet<StatusEffectType> = new Set([
   'dark_cocoon',
   'freezing',
   'gale',
+  'stack_overflow',
 ]);
 
 export function isDebuffStatus(type: StatusEffectType): boolean {
@@ -261,6 +263,8 @@ export interface Unit {
   bossVersion?: 'neutral' | 'dark' | 'light'; // Fase 45: Versão escolhida pelo cristal destruído
   crystalsAlive?: boolean; // Fase 45: Imune enquanto os cristais estiverem ativos
   lightDoubleActionPending?: boolean; // Fase 45 (Luz): Se o escudo de 800 não for destruído, ganha dupla ação
+  rollbackArmed?: boolean; // Fase 210 (Núcleo Null-0): Se o Escudo Kernel não for destruído, ativa Ctrl+Z Rollback
+  deadPixelSpawnTurn?: number; // Turno em que o Dead Pixel foi invocado (auto-detona no turno seguinte se sobreviver)
   lastStunTurn?: number; // Turno da batalha em que a unidade foi atordoada por último (impede stun em turnos consecutivos em chefes)
   lastClockHandStunTurn?: number; // Turno da batalha em que o herói foi atordoado pelos ponteiros do relógio (impede stun consecutivo do ponteiro)
   monsterTypeId?: string;

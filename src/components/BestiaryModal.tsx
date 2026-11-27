@@ -609,6 +609,7 @@ function getAvatarIcon(key: string, size = 20) {
     case 'glitch_binary_assassin':
     case 'glitch_error_weaver':
     case 'glitch_static_golem':
+    case 'glitch_dead_pixel':
       return <Sparkles size={size} />;
     case 'valgar_butcher_boss':
       return <Hammer size={size} />;

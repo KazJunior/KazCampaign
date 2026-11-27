@@ -51,6 +51,9 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
   const alchemistSummary = !preview.skill ? getAlchemistMixtureSummary(preview.attacker) : null;
   const hasAlchemistMix = Boolean(alchemistSummary && alchemistSummary.count > 0);
   const preparingMixture = preview.skill?.isAlchemistMixture ? preview.skill.alchemistMixture : undefined;
+  const stackOverflowEffect = preview.skill
+    ? preview.attacker.statusEffects?.find((e) => e.type === 'stack_overflow' && e.duration > 0)
+    : undefined;
 
   return (
     <div className="fixed bottom-3 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 bg-[#1B2030] border-2 border-[#D4AD65] p-3 sm:p-4 rounded-2xl shadow-2xl text-[#F3F4F8] max-w-md w-[calc(100%-1rem)] sm:w-full select-none max-h-[85vh] overflow-y-auto">
@@ -139,6 +142,23 @@ export const ActionPreviewModal: React.FC<ActionPreviewModalProps> = ({
       </div>
 
       <div className="my-3 space-y-2">
+        {stackOverflowEffect && (
+          <div className="bg-[#831843]/60 p-2.5 rounded-xl border border-[#EC4899]/80 space-y-1 text-xs animate-pulse">
+            <div className="flex items-center justify-between">
+              <span className="font-black text-[#F9A8D4] uppercase tracking-wider text-[10px] flex items-center gap-1">
+                <AlertTriangle size={13} className="text-[#EC4899]" />
+                STACK OVERFLOW ATIVO
+              </span>
+              <span className="font-black text-[#F472B6]">
+                -{stackOverflowEffect.value || 12}% HP Máx & +1T CD
+              </span>
+            </div>
+            <p className="text-[11px] text-[#FCE7F3]/95">
+              Usar qualquer habilidade vai estourar a pilha! Prefira <strong>Ataque Básico</strong> neste turno para evitar o dano e a penalidade de recarga.
+            </p>
+          </div>
+        )}
+
         {isCanhaoHumanoAlly && (
           <div className="bg-[#0C4A6E]/50 p-2.5 rounded-xl border border-[#38BDF8]/60 space-y-1 text-xs">
             <div className="flex items-center justify-between">

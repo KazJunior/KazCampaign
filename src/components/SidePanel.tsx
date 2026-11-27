@@ -89,6 +89,10 @@ export const SidePanel: React.FC<SidePanelProps> = ({
   const isFreezing = !!freezingEffect;
   const electrifiedEffect = selectedUnit.statusEffects?.find((e) => e.type === 'electrified' && e.duration > 0);
   const isElectrified = !!electrifiedEffect;
+  const stackOverflowEffect = selectedUnit.statusEffects?.find((e) => e.type === 'stack_overflow' && e.duration > 0);
+  const hasStackOverflow = !!stackOverflowEffect;
+  const hasRollbackArmed = Boolean(selectedUnit.rollbackArmed);
+  const isDeadPixelUnit = selectedUnit.monsterTypeId === 'dead_pixel';
   const slowPenalty = (slowEffect ? (slowEffect.value ?? 1) : 0) + (galeEffect ? (galeEffect.value ?? 1) : 0);
   const buffMovEffect = selectedUnit.statusEffects?.find((e) => e.type === 'buff_mov' && e.duration > 0);
   const movBonus = buffMovEffect ? (buffMovEffect.value ?? 1) : 0;
@@ -223,7 +227,7 @@ export const SidePanel: React.FC<SidePanelProps> = ({
         </div>
 
         {/* Status Effects List */}
-        {(selectedUnit.isUntargetable || hasAlchemistMixtures || isPoisoned || isBurned || isStunned || isSlowed || isFreezing || isGaled || isElectrified || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isAtkDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
+        {(selectedUnit.isUntargetable || hasAlchemistMixtures || isPoisoned || isBurned || isStunned || isSlowed || isFreezing || isGaled || isElectrified || hasStackOverflow || hasRollbackArmed || isDeadPixelUnit || activeShield || activeBuffAtk || isStealthed || isDefDebuffed || isAtkDebuffed || isStunImmuneConsecutive || isImmune || !!selectedUnit.timeAnchor) && (
           <div className="bg-[#10131C] p-2.5 rounded-xl border border-[#343B50] space-y-1.5">
             <div className="text-[10px] font-bold text-[#D4AD65] uppercase tracking-wider">
               Efeitos de Status Ativos
@@ -327,6 +331,30 @@ export const SidePanel: React.FC<SidePanelProps> = ({
               {isElectrified && (
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FACC15]/20 border border-[#FACC15]/40 text-[#FDE047] flex items-center gap-1">
                   ⚡ Eletrificado ({electrifiedEffect?.duration}T)
+                </span>
+              )}
+              {hasStackOverflow && (
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#EC4899]/25 border border-[#EC4899]/60 text-[#F9A8D4] flex items-center gap-1"
+                  title="Stack Overflow: Usar qualquer habilidade causa -12% HP Máx e +1T de recarga. Use Ataque Básico para evitar!"
+                >
+                  💥 Stack Overflow ({stackOverflowEffect?.duration}T — Evite Habilidades!)
+                </span>
+              )}
+              {hasRollbackArmed && (
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#06B6D4]/25 border border-[#06B6D4]/60 text-[#67E8F9] flex items-center gap-1"
+                  title="Se o Escudo Kernel sobreviver até o próximo turno do chefe, Núcleo Null-0 dispara Ctrl+Z: cura 600 HP e zera recargas!"
+                >
+                  ⏪ Ctrl+Z Armado (Quebre o Escudo!)
+                </span>
+              )}
+              {isDeadPixelUnit && (
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#EC4899]/25 border border-[#EC4899]/60 text-[#F9A8D4] flex items-center gap-1"
+                  title="Detona em área 3x3 (150% MAG + Lentidão) se sobreviver até o próximo turno inimigo!"
+                >
+                  👾 Bomba de Memória (Destrua em 1T!)
                 </span>
               )}
               {activeShield && (
@@ -701,6 +729,7 @@ export function getUnitAvatar(key: string, size = 16) {
     case 'glitch_binary_assassin':
     case 'glitch_error_weaver':
     case 'glitch_static_golem':
+    case 'glitch_dead_pixel':
       return <Zap size={size} />;
     case 'astaroth_boss':
     case 'malakor_final_boss':

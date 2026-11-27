@@ -1198,6 +1198,9 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'glitch_architect_boss':
       buildGlitchArchitectBossMini(char);
       break;
+    case 'glitch_dead_pixel':
+      buildDeadPixelMini(char);
+      break;
     case 'totem_cura':
       buildTotemMini(char, 0x10b981);
       break;
@@ -6526,6 +6529,28 @@ function buildGlitchArchitectBossMini(group: THREE.Group) {
     shard.name = 'glitchPixelFlicker';
     group.add(shard);
   }
+}
+
+// Dead Pixel (Invocação explosiva do Núcleo Null-0)
+function buildDeadPixelMini(group: THREE.Group) {
+  const coreMat = new THREE.MeshStandardMaterial({ color: 0x05070e, roughness: 0.35, metalness: 0.7 });
+  const magMat = new THREE.MeshStandardMaterial({ color: 0xec4899, emissive: 0xec4899, emissiveIntensity: 2.0 });
+  const cyanMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x06b6d4, emissiveIntensity: 1.9 });
+
+  const cube = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), coreMat);
+  cube.position.set(0, 0.38, 0);
+  cube.castShadow = true;
+  group.add(cube);
+
+  const wireA = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.08, 0.36), magMat);
+  wireA.position.set(0, 0.38, 0);
+  wireA.name = 'glitchPixelFlicker';
+  group.add(wireA);
+
+  const wireB = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.14), cyanMat);
+  wireB.position.set(0.08, 0.44, -0.06);
+  wireB.name = 'glitchPixelFlicker';
+  group.add(wireB);
 }
 
 

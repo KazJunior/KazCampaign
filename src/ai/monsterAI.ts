@@ -89,7 +89,12 @@ export function decideMonsterAction(
         const hasActiveBuff = monster.statusEffects?.some((e) => e.type === 'buff_atk' && e.duration > 0);
         const hpRatio = monster.currentHp / monster.maxHp;
 
-        if (act.skill.debuffsAllPlayersAtk) {
+        if (act.skill.id === 'null0_vazamento_dead_pixels') {
+          const aliveDeadPixels = allyMonsters.filter((m) => m.monsterTypeId === 'dead_pixel').length;
+          if (aliveDeadPixels < 2) {
+            score = 260;
+          }
+        } else if (act.skill.debuffsAllPlayersAtk) {
           const anyPlayerUndebuffed = allAlivePlayers.some((p) => !p.statusEffects?.some((e) => e.type === 'debuff_atk' && e.duration > 0));
           if (anyPlayerUndebuffed || !hasActiveShield) {
             score = 260;
@@ -97,8 +102,13 @@ export function decideMonsterAction(
         } else if (effect?.type === 'shield' || act.skill.casterStatusEffect?.type === 'shield') {
           // Never recast shield if unit already has active shield
           if (!hasActiveShield) {
-            if (role === 'tank' || act.skill.id === 'quimera_escudo_cabra' || act.skill.id === 'luz_escudo_dupla_acao') {
-              score = 230; // Tanks and Light Boss prioritize establishing their shield
+            if (
+              role === 'tank' ||
+              act.skill.id === 'quimera_escudo_cabra' ||
+              act.skill.id === 'luz_escudo_dupla_acao' ||
+              act.skill.id === 'null0_firewall_rollback'
+            ) {
+              score = 275; // Tanks, Light Boss, and Null-0 prioritize establishing their shield/rollback
             } else if (role === 'support') {
               score = hpRatio < 0.6 ? 180 : 70;
             } else {

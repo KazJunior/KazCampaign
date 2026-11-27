@@ -4279,6 +4279,15 @@ export function App() {
       return;
     }
 
+    const overflowCasterId = selectedUnit.id;
+    const overflowCasterMaxHp = selectedUnit.maxHp;
+    const overflowCasterX = selectedUnit.x;
+    const overflowCasterY = selectedUnit.y;
+    const overflowEffect = activeSkill
+      ? selectedUnit.statusEffects?.find((e) => e.type === 'stack_overflow' && e.duration > 0)
+      : undefined;
+
+    const executeConfirmAttackBody = async () => {
     if (!timePortalSpawnedRef.current) {
       hasPlayerActedInStage1Ref.current = true;
     }
@@ -8559,6 +8568,34 @@ export function App() {
     }
 
     setTimeout(() => checkBattleStatusWithUnits(updatedUnits), 200);
+    };
+
+    await executeConfirmAttackBody();
+
+    // Armadilha Stack Overflow (Núcleo Null-0): usar qualquer habilidade causa dano percentual e +1T de recarga
+    if (overflowEffect) {
+      const pct = Math.max(1, overflowEffect.value || 12) / 100;
+      const overflowDmg = Math.max(1, Math.round(overflowCasterMaxHp * pct));
+      addFloatingNumber(overflowCasterX, overflowCasterY, `-${overflowDmg} (Stack Overflow!)`, 'magical', '#EC4899');
+      addFloatingNumber(overflowCasterX, overflowCasterY, '💥 STACK OVERFLOW! +1T Recarga!', 'status', '#EC4899');
+      soundManager.playMagicSpell();
+      setUnits((prev) =>
+        prev.map((u) => {
+          if (u.id !== overflowCasterId || u.isDead) return u;
+          const newHp = Math.max(1, u.currentHp - overflowDmg);
+          return {
+            ...u,
+            currentHp: newHp,
+            statusEffects: (u.statusEffects || []).filter((e) => e.type !== 'stack_overflow'),
+            skills: u.skills.map((s) =>
+              s.requiredSkillUses
+                ? s
+                : { ...s, currentCooldown: (s.currentCooldown ?? 0) + 1 }
+            ),
+          };
+        })
+      );
+    }
   };
 
   // ANIMATED AI Turn
@@ -8703,6 +8740,50 @@ export function App() {
         );
       }
 
+      // Núcleo Null-0: Firewall & Rollback (Ctrl+Z) — se o Escudo Kernel sobreviveu, cura 600 HP e zera recargas
+      if (initialMonsterCheck.monsterTypeId === 'arquiteto_da_falha' && initialMonsterCheck.rollbackArmed) {
+        if (hasIntactShield) {
+          const rollbackHeal = Math.min(600, Math.max(0, initialMonsterCheck.maxHp - initialMonsterCheck.currentHp));
+          const restoredHp = Math.min(initialMonsterCheck.maxHp, initialMonsterCheck.currentHp + 600);
+          soundManager.playHeal();
+          soundManager.playMagicSpell();
+          addFloatingNumber(
+            initialMonsterCheck.x,
+            initialMonsterCheck.y,
+            `⏪ Ctrl+Z ROLLBACK! +${rollbackHeal} HP & Recargas Zeradas!`,
+            'healing',
+            '#06B6D4'
+          );
+          currentUnits = currentUnits.map((u) =>
+            u.id === initialMonsterCheck.id
+              ? {
+                  ...u,
+                  currentHp: restoredHp,
+                  rollbackArmed: false,
+                  skills: u.skills.map((s) =>
+                    s.id.startsWith('boss_') || s.cooldownMax >= 90 ? s : { ...s, currentCooldown: 0 }
+                  ),
+                }
+              : u
+          );
+          setUnits([...currentUnits]);
+          await new Promise((r) => setTimeout(r, 420 * delayMult));
+        } else {
+          addFloatingNumber(
+            initialMonsterCheck.x,
+            initialMonsterCheck.y,
+            '💥 Firewall Quebrado: Rollback Cancelado!',
+            'status',
+            '#10B981'
+          );
+          currentUnits = currentUnits.map((u) =>
+            u.id === initialMonsterCheck.id ? { ...u, rollbackArmed: false } : u
+          );
+          setUnits([...currentUnits]);
+          await new Promise((r) => setTimeout(r, 260 * delayMult));
+        }
+      }
+
       while (extraTurnsAllowed > 0) {
         extraTurnsAllowed--;
         const monsterUnit = currentUnits.find((u) => u.id === monster.id);
@@ -8713,6 +8794,105 @@ export function App() {
         if (isStunned) {
           addFloatingNumber(freshMonster.x, freshMonster.y, 'Atordoado!', 'status', '#FACC15');
           await new Promise((r) => setTimeout(r, 200 * delayMult));
+          break;
+        }
+
+        // Dead Pixel (Vazamento de Memória): se sobreviveu 1 turno inteiro, detona em área 3x3 (150% MAG + Lentidão) e se destrói
+        if (freshMonster.monsterTypeId === 'dead_pixel') {
+          if (turnNumberRef.current > (freshMonster.deadPixelSpawnTurn ?? 0)) {
+            addFloatingNumber(freshMonster.x, freshMonster.y, '💥 DEAD PIXEL DETONOU!', 'status', '#EC4899');
+            soundManager.playMagicSpell();
+            const blastTiles = getAoETiles(
+              { x: freshMonster.x, y: freshMonster.y },
+              1,
+              grid[0].length,
+              grid.length,
+              'circle',
+              null
+            );
+            const blastTargets = currentUnits.filter(
+              (u) =>
+                u.faction === 'player' &&
+                !u.isDead &&
+                !u.isUntargetable &&
+                blastTiles.some((pt) => pt.x === u.x && pt.y === u.y)
+            );
+            const deadPixelBlastSkill: Skill = {
+              id: 'dead_pixel_detonation',
+              name: 'Estouro de Memória',
+              description: 'Detonação de Dead Pixel em área 3x3.',
+              power: 1.5,
+              damageType: 'magical',
+              targetType: 'enemy',
+              iconName: 'Zap',
+              rangeMin: 0,
+              rangeMax: 1,
+              cooldownMax: 0,
+              currentCooldown: 0,
+              aoeRadius: 1,
+              aoeType: 'circle',
+            };
+            if (boardRef.current && blastTargets.length > 0) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, blastTargets[0].id, 'magical', 1, deadPixelBlastSkill);
+            }
+            for (const bt of blastTargets) {
+              const res = rollActualDamage(freshMonster, bt, deadPixelBlastSkill);
+              let actualDmg = res.finalDamage;
+              let btEffects = [...(bt.statusEffects || [])];
+              for (let i = 0; i < btEffects.length; i++) {
+                if (btEffects[i].type === 'shield' && btEffects[i].value > 0) {
+                  const sh = btEffects[i];
+                  const absorbed = Math.min(sh.value, actualDmg);
+                  sh.value -= absorbed;
+                  actualDmg -= absorbed;
+                  addFloatingNumber(bt.x, bt.y, `-${absorbed} (Escudo)`, 'shield', '#38BDF8');
+                  if (actualDmg === 0) break;
+                }
+              }
+              btEffects = btEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+              if (!bt.lineageCrowdControlImmunity) {
+                btEffects = [
+                  ...btEffects.filter((e) => e.type !== 'slow'),
+                  { type: 'slow' as const, duration: 2, value: 1, appliedTurn: turnNumberRef.current },
+                ];
+                addFloatingNumber(bt.x, bt.y, '👣 Lentidão (-1 Mov, 2T)!', 'status', '#60A5FA');
+              }
+              let newHp = Math.max(0, bt.currentHp - actualDmg);
+              let usedPhoenix = false;
+              if (newHp === 0 && (bt.lineagePhoenixRevive || bt.lineagePhoenixRevive1Hp) && !bt.hasUsedPhoenixRevive) {
+                newHp = 1;
+                usedPhoenix = true;
+                soundManager.playHeal();
+                addFloatingNumber(bt.x, bt.y, '🔥 Sobreviveu com 1 HP (Fênix)!', 'healing', '#F97316');
+              }
+              if (actualDmg > 0) {
+                addFloatingNumber(bt.x, bt.y, `-${actualDmg}`, 'magical', '#EC4899');
+              }
+              if (newHp === 0) {
+                soundManager.playDeath();
+                if (boardRef.current) await boardRef.current.playDeathAnimation(bt.id);
+              }
+              currentUnits = currentUnits.map((u) =>
+                u.id === bt.id
+                  ? {
+                      ...u,
+                      currentHp: newHp,
+                      isDead: newHp === 0,
+                      statusEffects: newHp === 0 ? [] : btEffects,
+                      hasUsedPhoenixRevive: usedPhoenix ? true : u.hasUsedPhoenixRevive,
+                    }
+                  : u
+              );
+            }
+            if (boardRef.current) {
+              await boardRef.current.playDeathAnimation(freshMonster.id);
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === freshMonster.id ? { ...u, currentHp: 0, isDead: true, statusEffects: [] } : u
+            );
+            setUnits([...currentUnits]);
+            await new Promise((r) => setTimeout(r, 250 * delayMult));
+          }
           break;
         }
 
@@ -9129,13 +9309,68 @@ export function App() {
           });
           addFloatingNumber(freshMonster.x, freshMonster.y, '⚡ Ponteiros do Relógio Entram em Sobrecarga!', 'status', '#FCD34D');
         } else if (bossType === 'arquiteto_da_falha') {
-          // Fase Secreta 210: Núcleo Null-0, Arquiteto da Falha (<50% HP Ultimate)
-          addFloatingNumber(freshMonster.x, freshMonster.y, '⚡ ERRO FATAL: COLAPSO DO SISTEMA (180%)!', 'status', '#EC4899');
+          // Fase Secreta 210: Núcleo Null-0, Arquiteto da Falha — Formatação do Setor (rm -rf /) (<50% HP Ultimate)
+          addFloatingNumber(freshMonster.x, freshMonster.y, '⚡ rm -rf /: FORMATAÇÃO DO SETOR (170%)!', 'status', '#EC4899');
           soundManager.playMagicSpell();
           setIsGlitchVisualActive(true);
           if (glitchVisualTimerRef.current) clearTimeout(glitchVisualTimerRef.current);
           glitchVisualTimerRef.current = setTimeout(() => setIsGlitchVisualActive(false), 3200);
 
+          // 1. Corrompe permanentemente todas as bordas da arena + cria 2 novos Pilares Glitch em casas internas livres
+          let pillarsSpawned = 0;
+          setGrid((prevGrid) => {
+            const gH = prevGrid.length;
+            const gW = prevGrid[0]?.length || 0;
+            const candidatePillars = [
+              { x: 2, y: 3 }, { x: 7, y: 3 },
+              { x: 4, y: 4 }, { x: 5, y: 4 },
+              { x: 2, y: 5 }, { x: 7, y: 5 },
+              { x: 3, y: 2 }, { x: 6, y: 2 },
+              { x: 3, y: 6 }, { x: 6, y: 6 },
+            ].filter(
+              (pt) =>
+                pt.x > 0 && pt.x < gW - 1 &&
+                pt.y > 0 && pt.y < gH - 1 &&
+                prevGrid[pt.y]?.[pt.x]?.isWalkable &&
+                prevGrid[pt.y]?.[pt.x]?.obstacle === 'none' &&
+                !currentUnits.some((u) => !u.isDead && u.x === pt.x && u.y === pt.y)
+            );
+            const chosenPillars = candidatePillars.slice(0, 2);
+            pillarsSpawned = chosenPillars.length;
+
+            const nextGrid = prevGrid.map((row, rY) =>
+              row.map((cell, cX) => {
+                const isBorder = cX === 0 || cX === gW - 1 || rY === 0 || rY === gH - 1;
+                const isNewPillar = chosenPillars.some((pt) => pt.x === cX && pt.y === rY);
+                if (isNewPillar) {
+                  return {
+                    ...cell,
+                    obstacle: 'glitch_pillar' as const,
+                    isWalkable: false,
+                    blocksVision: true,
+                    borderFire: isBorder ? true : cell.borderFire,
+                  };
+                }
+                if (isBorder) {
+                  return { ...cell, borderFire: true };
+                }
+                return cell;
+              })
+            );
+            gridRef.current = nextGrid;
+            return nextGrid;
+          });
+          addFloatingNumber(
+            freshMonster.x,
+            freshMonster.y,
+            pillarsSpawned > 0
+              ? `🔥 Borda Corrompida & +${pillarsSpawned} Pilares Glitch!`
+              : '🔥 Borda Corrompida Permanentemente!',
+            'status',
+            '#F97316'
+          );
+
+          // 2. Pulso global de 170% de dano mágico em todos os heróis vivos
           for (const target of livingPlayers) {
             if (boardRef.current) {
               await boardRef.current.playAttackAnimation(freshMonster.id, target.id, 'magical', 0, bossSkill);
@@ -9155,39 +9390,50 @@ export function App() {
               }
             }
             currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
-            currentEffects = [
-              ...currentEffects.filter((e) => e.type !== 'electrified' && e.type !== 'silence'),
-              { type: 'electrified' as const, duration: 2, value: 2, appliedTurn: turnNumberRef.current },
-              { type: 'silence' as const, duration: 1, value: 1, appliedTurn: turnNumberRef.current },
-            ];
 
-            const newHp = Math.max(0, target.currentHp - actualDmg);
+            let newHp = Math.max(0, target.currentHp - actualDmg);
+            let usedPhoenixNow = false;
+            if (newHp === 0 && (target.lineagePhoenixRevive || target.lineagePhoenixRevive1Hp) && !target.hasUsedPhoenixRevive) {
+              newHp = 1;
+              usedPhoenixNow = true;
+              soundManager.playHeal();
+              addFloatingNumber(target.x, target.y, '🔥 Sobreviveu com 1 HP (Fênix)!', 'healing', '#F97316');
+            }
             if (actualDmg > 0) addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#EC4899');
-            addFloatingNumber(target.x, target.y, '🔇 Silenciado & ⚡ Eletrificado!', 'status', '#06B6D4');
 
             if (newHp === 0) {
               soundManager.playDeath();
               if (boardRef.current) await boardRef.current.playDeathAnimation(target.id);
             }
             currentUnits = currentUnits.map((u) =>
-              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+              u.id === target.id
+                ? {
+                    ...u,
+                    currentHp: newHp,
+                    isDead: newHp === 0,
+                    statusEffects: newHp === 0 ? [] : currentEffects,
+                    hasUsedPhoenixRevive: usedPhoenixNow ? true : u.hasUsedPhoenixRevive,
+                  }
+                : u
             );
           }
 
-          // Escudo Kernel de 350 pontos no Núcleo Null-0
+          // 3. Escudo Kernel Reforçado (650 pts, 2T) com Rollback (Ctrl+Z) Armado + Overclock permanente (+15% Dano)
           currentUnits = currentUnits.map((u) =>
             u.id === freshMonster.id
               ? {
                   ...u,
+                  rollbackArmed: true,
                   statusEffects: [
-                    ...(u.statusEffects || []).filter((e) => e.type !== 'shield'),
-                    { type: 'shield' as const, duration: 3, value: 350, appliedTurn: turnNumberRef.current },
+                    ...(u.statusEffects || []).filter((e) => e.type !== 'shield' && e.type !== 'buff_atk'),
+                    { type: 'shield' as const, duration: 2, value: 650, appliedTurn: turnNumberRef.current },
+                    { type: 'buff_atk' as const, duration: 99, value: 15, appliedTurn: turnNumberRef.current },
                   ],
                 }
               : u
           );
           soundManager.playShield();
-          addFloatingNumber(freshMonster.x, freshMonster.y, '🛡️ +350 Escudo Kernel!', 'shield', '#06B6D4');
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🛡️ +650 Escudo Kernel (Ctrl+Z Armado) & +15% Overclock!', 'shield', '#06B6D4');
         } else {
           // Fase 50: Malakor (cronos_abissal) - 220% de dano mágico em todos ignorando escudos + Stun de 2 turnos no alvo de maior ataque
           addFloatingNumber(freshMonster.x, freshMonster.y, '⌛ COLAPSO TEMPORAL ETERNO (220% Direto)!', 'status', '#B91C1C');
@@ -9484,8 +9730,162 @@ export function App() {
               }
 
               currentUnits = currentUnits.map((u) =>
-                u.id === freshTarget.id ? { ...u, currentHp: newHp, statusEffects: currentEffects } : u
+                u.id === freshTarget.id
+                  ? {
+                      ...u,
+                      currentHp: newHp,
+                      statusEffects: currentEffects,
+                      ...(skill.id === 'null0_firewall_rollback' ? { rollbackArmed: true } : {}),
+                    }
+                  : u
               );
+
+              if (skill.id === 'null0_firewall_rollback') {
+                soundManager.playShield();
+                addFloatingNumber(freshTarget.x, freshTarget.y, '🛡️ Firewall Armado — Quebre o Escudo antes do Ctrl+Z!', 'status', '#06B6D4');
+              }
+
+              // Núcleo Null-0: Vazamento de Memória — invoca até 2 Dead Pixels perto dos heróis (limite 3 vivos)
+              if (skill.id === 'null0_vazamento_dead_pixels') {
+                const aliveDeadPixels = currentUnits.filter((u) => !u.isDead && u.monsterTypeId === 'dead_pixel').length;
+                const maxToSpawn = Math.min(2, Math.max(0, 3 - aliveDeadPixels));
+                if (maxToSpawn > 0) {
+                  const livingHeroList = currentUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isUntargetable);
+                  const activeGrid = gridRef.current;
+                  const gH = activeGrid.length;
+                  const gW = activeGrid[0]?.length || 0;
+                  const candidateSpots: { x: number; y: number; dist: number }[] = [];
+
+                  for (let gy = 0; gy < gH; gy++) {
+                    for (let gx = 0; gx < gW; gx++) {
+                      const tile = activeGrid[gy]?.[gx];
+                      if (!tile || !tile.isWalkable) continue;
+                      if (currentUnits.some((u) => !u.isDead && u.x === gx && u.y === gy)) continue;
+                      const minHeroDist = livingHeroList.reduce(
+                        (best, h) => Math.min(best, Math.max(Math.abs(h.x - gx), Math.abs(h.y - gy))),
+                        99
+                      );
+                      candidateSpots.push({ x: gx, y: gy, dist: minHeroDist + (tile.borderFire ? 3 : 0) });
+                    }
+                  }
+
+                  candidateSpots.sort((a, b) => a.dist - b.dist);
+                  const spawnedPixels: Unit[] = [];
+                  for (const spot of candidateSpots) {
+                    if (spawnedPixels.length >= maxToSpawn) break;
+                    if (spawnedPixels.some((sp) => sp.x === spot.x && sp.y === spot.y)) continue;
+                    const dpUnit = createMonsterUnit(
+                      'dead_pixel',
+                      `enemy_dead_pixel_${Date.now()}_${spawnedPixels.length}`,
+                      spot.x,
+                      spot.y,
+                      0
+                    );
+                    dpUnit.deadPixelSpawnTurn = turnNumberRef.current;
+                    spawnedPixels.push(dpUnit);
+                    addFloatingNumber(spot.x, spot.y, '👾 Dead Pixel! Destrua em 1T!', 'status', '#EC4899');
+                  }
+
+                  if (spawnedPixels.length > 0) {
+                    currentUnits = [...currentUnits, ...spawnedPixels];
+                    soundManager.playMagicSpell();
+                    addFloatingNumber(
+                      freshAttacker.x,
+                      freshAttacker.y,
+                      `👾 Vazamento de Memória (+${spawnedPixels.length} Dead Pixels)!`,
+                      'status',
+                      '#EC4899'
+                    );
+                  }
+                }
+              }
+            } else if (
+              skill?.id === 'null0_desync_espacial' &&
+              currentUnits.filter((u) => u.faction === 'player' && !u.isDead && !u.isUntargetable).length >= 2
+            ) {
+              // --- NÚCLEO NULL-0: DESYNC ESPACIAL (Troca 2 heróis de lugar + 140% MAG + Choque de Distância + Eletrificado) ---
+              const livingDesyncHeroes = currentUnits.filter(
+                (u) => u.faction === 'player' && !u.isDead && !u.isUntargetable
+              );
+              const heroA = livingDesyncHeroes.find((u) => u.id === freshTarget.id) || livingDesyncHeroes[0];
+              const otherHeroes = livingDesyncHeroes.filter((u) => u.id !== heroA.id);
+              const heroB = otherHeroes[Math.floor(Math.random() * otherHeroes.length)];
+
+              soundManager.playMagicSpell();
+              setIsGlitchVisualActive(true);
+              if (glitchVisualTimerRef.current) clearTimeout(glitchVisualTimerRef.current);
+              glitchVisualTimerRef.current = setTimeout(() => setIsGlitchVisualActive(false), 1400);
+
+              if (boardRef.current) {
+                await boardRef.current.playAttackAnimation(freshAttacker.id, heroA.id, 'magical', 0, skill);
+                await Promise.all([
+                  boardRef.current.playMoveAnimation(heroA.id, heroA.x, heroA.y, heroB.x, heroB.y),
+                  boardRef.current.playMoveAnimation(heroB.id, heroB.x, heroB.y, heroA.x, heroA.y),
+                ]);
+              }
+
+              const swapDist = Math.min(5, Math.abs(heroA.x - heroB.x) + Math.abs(heroA.y - heroB.y));
+              const swappedPairs = [
+                { hero: heroA, newX: heroB.x, newY: heroB.y },
+                { hero: heroB, newX: heroA.x, newY: heroA.y },
+              ];
+
+              addFloatingNumber(freshAttacker.x, freshAttacker.y, '🔀 DESYNC ESPACIAL!', 'status', '#06B6D4');
+
+              for (const { hero, newX, newY } of swappedPairs) {
+                const baseRes = rollActualDamage(freshAttacker, hero, skill);
+                const distShock = swapDist > 0 ? Math.max(1, Math.round(hero.maxHp * 0.02)) * swapDist : 0;
+                let actualDmg = baseRes.finalDamage + distShock;
+                let hEffects = [...(hero.statusEffects || [])];
+
+                for (let i = 0; i < hEffects.length; i++) {
+                  if (hEffects[i].type === 'shield' && hEffects[i].value > 0) {
+                    const sh = hEffects[i];
+                    const absorbed = Math.min(sh.value, actualDmg);
+                    sh.value -= absorbed;
+                    actualDmg -= absorbed;
+                    addFloatingNumber(newX, newY, `-${absorbed} (Escudo)`, 'shield', '#38BDF8');
+                    if (actualDmg === 0) break;
+                  }
+                }
+                hEffects = hEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+                hEffects = [
+                  ...hEffects.filter((e) => e.type !== 'electrified'),
+                  { type: 'electrified' as const, duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+                ];
+
+                let newHp = Math.max(0, hero.currentHp - actualDmg);
+                let usedPhoenix = false;
+                if (newHp === 0 && (hero.lineagePhoenixRevive || hero.lineagePhoenixRevive1Hp) && !hero.hasUsedPhoenixRevive) {
+                  newHp = 1;
+                  usedPhoenix = true;
+                  soundManager.playHeal();
+                  addFloatingNumber(newX, newY, '🔥 Sobreviveu com 1 HP (Fênix)!', 'healing', '#F97316');
+                }
+                if (actualDmg > 0) {
+                  addFloatingNumber(newX, newY, `-${actualDmg} (Desync)`, 'magical', '#06B6D4');
+                }
+                addFloatingNumber(newX, newY, '⚡ Eletrificado (2T)!', 'status', '#FACC15');
+
+                if (newHp === 0) {
+                  soundManager.playDeath();
+                  if (boardRef.current) await boardRef.current.playDeathAnimation(hero.id);
+                }
+
+                currentUnits = currentUnits.map((u) =>
+                  u.id === hero.id
+                    ? {
+                        ...u,
+                        x: newX,
+                        y: newY,
+                        currentHp: newHp,
+                        isDead: newHp === 0,
+                        statusEffects: newHp === 0 ? [] : hEffects,
+                        hasUsedPhoenixRevive: usedPhoenix ? true : u.hasUsedPhoenixRevive,
+                      }
+                    : u
+                );
+              }
             } else {
               // --- MONSTER ATTACK / OFFENSIVE ACTION ON PLAYER UNITS ---
               let finalMonsterX = freshAttacker.x;
@@ -10146,6 +10546,7 @@ export function App() {
                       else if (eff.type === 'gale') addFloatingNumber(finalTargetX, finalTargetY, `🌪️ Ventania (-${eff.value || 1} Mov)!`, 'status', '#2DD4BF');
                       else if (eff.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
                       else if (eff.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
+                      else if (eff.type === 'stack_overflow') addFloatingNumber(finalTargetX, finalTargetY, '💥 STACK OVERFLOW (1T)! Evite habilidades!', 'status', '#EC4899');
                     }
                   }
 
@@ -10166,6 +10567,7 @@ export function App() {
                       else if (eff2.type === 'gale') addFloatingNumber(finalTargetX, finalTargetY, `🌪️ Ventania (-${eff2.value || 1} Mov)!`, 'status', '#2DD4BF');
                       else if (eff2.type === 'silence') addFloatingNumber(finalTargetX, finalTargetY, '🔇 Silenciado (1T)!', 'status', '#A855F7');
                       else if (eff2.type === 'dark_cocoon') addFloatingNumber(finalTargetX, finalTargetY, '🕸️ Casulo de Escuridão (2T)!', 'status', '#581C87');
+                      else if (eff2.type === 'stack_overflow') addFloatingNumber(finalTargetX, finalTargetY, '💥 STACK OVERFLOW (1T)! Evite habilidades!', 'status', '#EC4899');
                     }
                   }
                 }
@@ -11424,6 +11826,11 @@ export function App() {
       const updatedActiveAdv = prev.activeAdventure
         ? { ...prev.activeAdventure, unitsState: updatedUnitsState }
         : null;
+      const updatedProgress = {
+        ...prev,
+        unitsState: updatedUnitsState,
+        activeAdventure: updatedActiveAdv,
+      };
       progressRef.current = updatedProgress;
       savePlayerProgress(updatedProgress);
       return updatedProgress;
