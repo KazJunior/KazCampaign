@@ -3,8 +3,8 @@ export interface Point {
   y: number;
 }
 
-export type TerrainType = 'grass' | 'stone' | 'sand' | 'dirt' | 'water' | 'swamp' | 'void';
-export type ObstacleType = 'none' | 'tree' | 'rock' | 'ruins' | 'shrine' | 'wall' | 'pillar' | 'ice_pillar' | 'thorns' | 'tombstone' | 'note' | 'crystal_fire' | 'crystal_ice' | 'crystal_wind' | 'crystal_lightning' | 'time_portal';
+export type TerrainType = 'grass' | 'stone' | 'sand' | 'dirt' | 'water' | 'swamp' | 'void' | 'glitch';
+export type ObstacleType = 'none' | 'tree' | 'rock' | 'ruins' | 'shrine' | 'wall' | 'pillar' | 'ice_pillar' | 'thorns' | 'tombstone' | 'note' | 'crystal_fire' | 'crystal_ice' | 'crystal_wind' | 'crystal_lightning' | 'time_portal' | 'glitch_pillar';
 
 export interface TileData {
   x: number;

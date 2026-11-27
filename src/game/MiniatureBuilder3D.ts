@@ -1171,6 +1171,33 @@ function buildCharacterMesh(unit: Unit): THREE.Group {
     case 'barril_polvora_gravity':
       buildBarrilPolvoraMini(char, 'gravity');
       break;
+    case 'shinobi_ruptura':
+      buildShinobiRupturaMini(char);
+      break;
+    case 'glitch_pixel_wraith':
+      buildGlitchMonsterMini(char, 'wraith');
+      break;
+    case 'glitch_firewall_sentinel':
+      buildGlitchMonsterMini(char, 'sentinel');
+      break;
+    case 'glitch_corrupt_drone':
+      buildGlitchMonsterMini(char, 'drone');
+      break;
+    case 'glitch_binary_assassin':
+      buildGlitchMonsterMini(char, 'assassin');
+      break;
+    case 'glitch_error_weaver':
+      buildGlitchMonsterMini(char, 'weaver');
+      break;
+    case 'glitch_static_golem':
+      buildGlitchMonsterMini(char, 'golem');
+      break;
+    case 'glitch_kage_boss':
+      buildGlitchKageBossMini(char);
+      break;
+    case 'glitch_architect_boss':
+      buildGlitchArchitectBossMini(char);
+      break;
     case 'totem_cura':
       buildTotemMini(char, 0x10b981);
       break;
@@ -6265,6 +6292,240 @@ function buildBarrilPolvoraMini(group: THREE.Group, variant: 'standard' | 'shrap
   const spark = new THREE.Mesh(new THREE.OctahedronGeometry(0.068, 0), glowMat);
   spark.position.set(0.07, 0.73, 0);
   group.add(spark);
+}
+
+// Classe Secreta: Shinobi da Ruptura (Ninjutsu Glitch + Estática Neon)
+function buildShinobiRupturaMini(group: THREE.Group) {
+  const suitMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.65, metalness: 0.25 });
+  const armorMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.4, metalness: 0.6 });
+  const magentaGlow = new THREE.MeshStandardMaterial({
+    color: 0xec4899,
+    emissive: 0xec4899,
+    emissiveIntensity: 1.65,
+  });
+  const cyanGlow = new THREE.MeshStandardMaterial({
+    color: 0x06b6d4,
+    emissive: 0x06b6d4,
+    emissiveIntensity: 1.65,
+  });
+
+  // Boots & agile legs
+  for (const side of [-1, 1]) {
+    const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.048, 0.36, 8), suitMat);
+    leg.position.set(side * 0.09, 0.18, 0);
+    leg.castShadow = true;
+    group.add(leg);
+
+    const shinGlow = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.04, 0.08), cyanGlow);
+    shinGlow.position.set(side * 0.09, 0.14, 0.03);
+    group.add(shinGlow);
+  }
+
+  // Torso & cyber-shinobi vest
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.34, 0.16), armorMat);
+  torso.position.set(0, 0.52, 0);
+  torso.castShadow = true;
+  group.add(torso);
+
+  const coreStripe = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.175), magentaGlow);
+  coreStripe.position.set(0, 0.54, 0);
+  group.add(coreStripe);
+
+  // Flowing glitch scarf
+  const scarfCollar = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.038, 6, 12), magentaGlow);
+  scarfCollar.rotation.x = Math.PI / 2;
+  scarfCollar.position.set(0, 0.69, 0);
+  group.add(scarfCollar);
+
+  const scarfTail = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.04, 0.38), magentaGlow);
+  scarfTail.position.set(0.04, 0.64, -0.22);
+  scarfTail.rotation.x = -0.25;
+  group.add(scarfTail);
+
+  // Hooded ninja head + glowing cyan cyber visor
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.135, 10, 10), suitMat);
+  head.position.set(0, 0.82, 0);
+  head.castShadow = true;
+  group.add(head);
+
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.055, 0.08), cyanGlow);
+  visor.position.set(0, 0.83, 0.10);
+  group.add(visor);
+
+  // Arms + Glitch Katana Blade
+  for (const side of [-1, 1]) {
+    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.28, 6), suitMat);
+    arm.position.set(side * 0.18, 0.53, 0.04);
+    arm.rotation.z = side * 0.28;
+    group.add(arm);
+  }
+
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.58, 0.055), cyanGlow);
+  blade.position.set(0.24, 0.64, 0.18);
+  blade.rotation.x = 0.45;
+  blade.rotation.z = -0.2;
+  group.add(blade);
+
+  // Floating glitch pixel fragments around the shinobi
+  const offsets: [number, number, number, boolean][] = [
+    [-0.28, 0.78, -0.08, true],
+    [0.30, 0.92, -0.12, false],
+    [-0.22, 0.36, 0.16, false],
+    [0.18, 1.04, 0.06, true],
+  ];
+  offsets.forEach(([ox, oy, oz, isCyan]) => {
+    const px = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.065, 0.065), isCyan ? cyanGlow : magentaGlow);
+    px.position.set(ox, oy, oz);
+    px.name = 'glitchPixelFlicker';
+    group.add(px);
+  });
+}
+
+// Monstros da Ruptura do Código (Fases 201..210)
+function buildGlitchMonsterMini(
+  group: THREE.Group,
+  kind: 'wraith' | 'sentinel' | 'drone' | 'assassin' | 'weaver' | 'golem'
+) {
+  const darkMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5, metalness: 0.65 });
+  const primaryHex =
+    kind === 'sentinel'
+      ? 0xf59e0b
+      : kind === 'drone' || kind === 'assassin'
+        ? 0xec4899
+        : kind === 'weaver'
+          ? 0xa855f7
+          : 0x06b6d4;
+  const secondaryHex = kind === 'wraith' || kind === 'golem' ? 0xec4899 : 0x06b6d4;
+
+  const glowPrimary = new THREE.MeshStandardMaterial({
+    color: primaryHex,
+    emissive: primaryHex,
+    emissiveIntensity: 1.5,
+  });
+  const glowSecondary = new THREE.MeshStandardMaterial({
+    color: secondaryHex,
+    emissive: secondaryHex,
+    emissiveIntensity: 1.4,
+  });
+
+  if (kind === 'drone') {
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.18, 0), darkMat);
+    core.position.set(0, 0.62, 0);
+    group.add(core);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.25, 0.025, 6, 16), glowPrimary);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 0.62, 0);
+    group.add(ring);
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.06, 0.08), glowSecondary);
+    eye.position.set(0, 0.62, 0.16);
+    group.add(eye);
+  } else if (kind === 'golem' || kind === 'sentinel') {
+    const scale = kind === 'golem' ? 1.18 : 1.0;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.38 * scale, 0.44 * scale, 0.28 * scale), darkMat);
+    body.position.set(0, 0.44 * scale, 0);
+    body.castShadow = true;
+    group.add(body);
+    const core = new THREE.Mesh(new THREE.BoxGeometry(0.18 * scale, 0.18 * scale, 0.30 * scale), glowPrimary);
+    core.position.set(0, 0.46 * scale, 0);
+    group.add(core);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.22 * scale, 0.18 * scale, 0.20 * scale), darkMat);
+    head.position.set(0, 0.78 * scale, 0);
+    group.add(head);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.18 * scale, 0.05, 0.22 * scale), glowSecondary);
+    visor.position.set(0, 0.78 * scale, 0.02);
+    group.add(visor);
+  } else {
+    // wraith / assassin / weaver: sleek hovering or ninja-glitch silhouette
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.20, 0.60, 6), darkMat);
+    body.position.set(0, 0.42, 0);
+    body.castShadow = true;
+    group.add(body);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, 0.18), darkMat);
+    head.position.set(0, 0.80, 0);
+    group.add(head);
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.05, 0.06), glowPrimary);
+    visor.position.set(0, 0.80, 0.09);
+    group.add(visor);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.42, 0.04), glowSecondary);
+    blade.position.set(0.22, 0.54, 0.12);
+    blade.rotation.x = 0.35;
+    group.add(blade);
+  }
+
+  // Orbiting pixel shard
+  const px = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), glowPrimary);
+  px.position.set(-0.26, 0.84, 0);
+  px.name = 'glitchPixelFlicker';
+  group.add(px);
+}
+
+// Mini-Boss 205: Kage Corrompido (Eco 404)
+function buildGlitchKageBossMini(group: THREE.Group) {
+  buildShinobiRupturaMini(group);
+  group.scale.set(1.38, 1.38, 1.38);
+
+  const haloMat = new THREE.MeshStandardMaterial({
+    color: 0xec4899,
+    emissive: 0xec4899,
+    emissiveIntensity: 1.8,
+  });
+  const halo = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.024, 6, 18), haloMat);
+  halo.position.set(0, 0.86, -0.18);
+  halo.name = 'glitchPixelFlicker';
+  group.add(halo);
+}
+
+// Boss Final 210: Núcleo Null-0, Arquiteto da Falha
+function buildGlitchArchitectBossMini(group: THREE.Group) {
+  const obsidianMat = new THREE.MeshStandardMaterial({ color: 0x090d1a, roughness: 0.3, metalness: 0.85 });
+  const cyanMat = new THREE.MeshStandardMaterial({
+    color: 0x06b6d4,
+    emissive: 0x06b6d4,
+    emissiveIntensity: 1.9,
+  });
+  const magentaMat = new THREE.MeshStandardMaterial({
+    color: 0xec4899,
+    emissive: 0xec4899,
+    emissiveIntensity: 1.9,
+  });
+
+  // Central fractured obsidian octahedron core
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.38, 0), obsidianMat);
+  core.position.set(0, 0.92, 0);
+  core.castShadow = true;
+  group.add(core);
+
+  // Inner glowing eye cube
+  const eye = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), magentaMat);
+  eye.position.set(0, 0.92, 0);
+  eye.name = 'glitchPixelFlicker';
+  group.add(eye);
+
+  // Twin intersecting neon rings
+  const ringA = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.032, 8, 24), cyanMat);
+  ringA.position.set(0, 0.92, 0);
+  ringA.rotation.x = Math.PI / 3;
+  ringA.name = 'shrineRuneRing';
+  group.add(ringA);
+
+  const ringB = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.028, 8, 24), magentaMat);
+  ringB.position.set(0, 0.92, 0);
+  ringB.rotation.y = Math.PI / 4;
+  ringB.rotation.x = -Math.PI / 3;
+  ringB.name = 'shrineRuneRing';
+  group.add(ringB);
+
+  // 4 floating glitch monolith shards orbiting around the Architect
+  for (let i = 0; i < 4; i++) {
+    const ang = (i * Math.PI * 2) / 4;
+    const shard = new THREE.Mesh(
+      new THREE.BoxGeometry(0.14, 0.42, 0.14),
+      i % 2 === 0 ? cyanMat : magentaMat
+    );
+    shard.position.set(Math.cos(ang) * 0.62, 0.72 + (i % 2) * 0.25, Math.sin(ang) * 0.62);
+    shard.name = 'glitchPixelFlicker';
+    group.add(shard);
+  }
 }
 
 

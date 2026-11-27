@@ -394,4 +394,5 @@ export const DEFAULT_CLASS_LINEAGES: Record<string, string> = {
   artifice: 'anao',
   cavaleiro: 'humano',
   canhoneiro: 'anao',
+  shinobi_ruptura: 'humano',
 };

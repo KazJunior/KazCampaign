@@ -177,6 +177,8 @@ function getClassIcon(avatarKey: string, size = 24) {
       return <Shield size={size} />;
     case 'canhoneiro':
       return <Bomb size={size} />;
+    case 'shinobi_ruptura':
+      return <Sparkles size={size} />;
     default:
       return <Sparkles size={size} />;
   }

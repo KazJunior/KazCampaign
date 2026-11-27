@@ -1427,6 +1427,166 @@ export const MONSTER_DEFINITIONS: Record<string, MonsterDefinition> = {
   },
 
   // =========================================================================
+  // --- MONSTROS & CHEFES DA RUPTURA DO CÓDIGO (FASES SECRETAS 201..210) ---
+  // =========================================================================
+  espectro_pixel: {
+    typeId: 'espectro_pixel',
+    name: 'Espectro de Pixel',
+    role: 'attacker',
+    act: 1,
+    maxHp: 155,
+    atk: 34,
+    mag: 14,
+    def: 11,
+    res: 12,
+    mov: 4,
+    range: 1,
+    color: '#06B6D4',
+    avatarKey: 'glitch_pixel_wraith',
+    skillId: 'glitch_estocada_pixel',
+    skillIds: ['glitch_estocada_pixel'],
+    description: 'Entidade fragmentada em cubos neon que pisca entre quadros, aplicando choques eletrificados em quem tenta fugir.',
+  },
+  sentinela_firewall: {
+    typeId: 'sentinela_firewall',
+    name: 'Sentinela Firewall',
+    role: 'tank',
+    act: 1,
+    maxHp: 225,
+    atk: 30,
+    mag: 12,
+    def: 18,
+    res: 15,
+    mov: 2,
+    range: 1,
+    color: '#F59E0B',
+    avatarKey: 'glitch_firewall_sentinel',
+    skillId: 'glitch_barreira_firewall',
+    skillIds: ['glitch_barreira_firewall'],
+    description: 'Guardião blindado de código de segurança que ergue escudos digitais e força heróis a atacá-lo.',
+  },
+  drone_corrompido: {
+    typeId: 'drone_corrompido',
+    name: 'Drone Corrompido',
+    role: 'attacker',
+    act: 1,
+    maxHp: 145,
+    atk: 35,
+    mag: 18,
+    def: 10,
+    res: 13,
+    mov: 3,
+    range: 4,
+    color: '#EC4899',
+    avatarKey: 'glitch_corrupt_drone',
+    skillId: 'glitch_rajada_corrompida',
+    skillIds: ['glitch_rajada_corrompida'],
+    description: 'Unidade flutuante de reconhecimento infectada que dispara rajadas à distância quebrando armaduras.',
+  },
+  assassino_binario: {
+    typeId: 'assassino_binario',
+    name: 'Assassino Binário',
+    role: 'attacker',
+    act: 1,
+    maxHp: 170,
+    atk: 39,
+    mag: 16,
+    def: 12,
+    res: 12,
+    mov: 4,
+    range: 1,
+    color: '#D946EF',
+    avatarKey: 'glitch_binary_assassin',
+    skillId: 'glitch_corte_sombra_binaria',
+    skillIds: ['glitch_corte_sombra_binaria'],
+    description: 'Eco ninja dessincronizado que salta diretamente para a retaguarda do grupo infligindo queimadura digital.',
+  },
+  mago_erro: {
+    typeId: 'mago_erro',
+    name: 'Tecelão de Erros',
+    role: 'support',
+    act: 1,
+    maxHp: 160,
+    atk: 16,
+    mag: 38,
+    def: 10,
+    res: 17,
+    mov: 3,
+    range: 4,
+    color: '#8B5CF6',
+    avatarKey: 'glitch_error_weaver',
+    skillId: 'glitch_pulso_silenciador',
+    skillIds: ['glitch_pulso_silenciador'],
+    description: 'Arcanista corrompido que injeta pulsos de erro em cruz, silenciando habilidades de heróis atingidos.',
+  },
+  golem_estatica: {
+    typeId: 'golem_estatica',
+    name: 'Golem de Estática',
+    role: 'tank',
+    act: 1,
+    maxHp: 245,
+    atk: 38,
+    mag: 16,
+    def: 19,
+    res: 16,
+    mov: 2,
+    range: 1,
+    color: '#38BDF8',
+    avatarKey: 'glitch_static_golem',
+    skillId: 'glitch_esmagamento_estatico',
+    skillIds: ['glitch_esmagamento_estatico'],
+    description: 'Colosso feito de ruído estático solidificado que esmaga o chão em área e retarda todos ao redor.',
+  },
+  kage_corrompido: {
+    typeId: 'kage_corrompido',
+    name: 'Kage Corrompido (Eco 404)',
+    role: 'attacker',
+    act: 1,
+    maxHp: 1650,
+    atk: 46,
+    mag: 34,
+    def: 17,
+    res: 17,
+    mov: 4,
+    range: 2,
+    color: '#EC4899',
+    avatarKey: 'glitch_kage_boss',
+    isMiniBoss: true,
+    skillId: 'boss_kage_corte_fantasma',
+    skillIds: [
+      'boss_kage_corte_fantasma',
+      'boss_kage_fenda_cruzada',
+      'boss_kage_desync_escudo',
+      'boss_kage_linha_estatica',
+    ],
+    description: 'MINI-BOSS SECRETO (Fase 205): O primeiro Shinobi tragado pela falha do código. Salta sobre a retaguarda, rasga o mapa em X e silencia quem tenta conter seu desync.',
+  },
+  arquiteto_da_falha: {
+    typeId: 'arquiteto_da_falha',
+    name: 'Núcleo Null-0, Arquiteto da Falha',
+    role: 'attacker',
+    act: 1,
+    maxHp: 3200,
+    atk: 54,
+    mag: 58,
+    def: 22,
+    res: 23,
+    mov: 3,
+    range: 5,
+    color: '#06B6D4',
+    avatarKey: 'glitch_architect_boss',
+    isBoss: true,
+    skillId: 'boss_arquiteto_feixe_null',
+    skillIds: [
+      'boss_arquiteto_feixe_null',
+      'boss_arquiteto_tempestade_dados',
+      'boss_arquiteto_roubo_clock',
+      'boss_arquiteto_matriz_x',
+    ],
+    description: 'BOSS SECRETO FINAL (Fase 210): A consciência central da Ruptura do Código. Dispara feixes em cruz longa, rouba recargas, corrompe o solo e aos 50% de HP aciona o Colapso do Sistema. Derrote-o para liberar o Shinobi da Ruptura!',
+  },
+
+  // =========================================================================
   // --- BONECOS DE TREINO (MODO TREINAMENTO) ---
   // =========================================================================
   boneco_treino: {
@@ -1493,6 +1653,8 @@ export const STAGE_20_PLUS_BOSS_HP: Record<string, number> = {
   cronos_abissal: 15500,
   fantasma_do_tempo: 1500,
   verme_cosmico_tempo: 3000,
+  kage_corrompido: 1650,
+  arquiteto_da_falha: 3200,
 };
 
 export const STAGE_20_PLUS_BOSS_SKILL_POWERS: Record<string, Record<string, number>> = {
@@ -1669,7 +1831,13 @@ export function createMonsterUnit(
     typeId === 'automato_engrenagens' ||
     typeId === 'sabujo_temporal' ||
     typeId === 'cultista_cronos' ||
-    typeId === 'draco_cronologico'
+    typeId === 'draco_cronologico' ||
+    typeId === 'espectro_pixel' ||
+    typeId === 'sentinela_firewall' ||
+    typeId === 'drone_corrompido' ||
+    typeId === 'assassino_binario' ||
+    typeId === 'mago_erro' ||
+    typeId === 'golem_estatica'
   ) {
     // Monstros normais exclusivos da Fenda Temporal (Fases 101 a 110):
     // Cerca de 30% mais fortes que os monstros normais equivalentes das fases 1 a 10 (base +30% e crescimento +30%)

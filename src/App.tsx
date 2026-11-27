@@ -769,6 +769,10 @@ export function App() {
   const [isPrismaticBannerActive, setIsPrismaticBannerActive] = useState(false);
   const prismaticVisualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prismaticBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isGlitchRiftBannerActive, setIsGlitchRiftBannerActive] = useState(false);
+  const [isGlitchVisualActive, setIsGlitchVisualActive] = useState(false);
+  const glitchRiftBannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const glitchVisualTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [showObjectives, setShowObjectives] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -935,6 +939,8 @@ export function App() {
     hasPlayerActedInStage1Ref.current = false;
     timePortalSpawnedRef.current = false;
     setIsTimeRiftBannerActive(false);
+    setIsGlitchRiftBannerActive(false);
+    setIsGlitchVisualActive(false);
 
     if (lvlConfig.id === 110) {
       setIsClockHandBannerActive(true);
@@ -948,12 +954,18 @@ export function App() {
     let bannerObj: { name: string; subtitle: string; phase?: number } | null = null;
     if (bossFound) {
       const isSecretTimeStage = lvlConfig.id >= 101 && lvlConfig.id <= 110;
-      const stageLabel = isSecretTimeStage ? `FASE SECRETA ${lvlConfig.id - 100}` : `FASE ${lvlConfig.id}`;
+      const isSecretGlitchStage = lvlConfig.id >= 201 && lvlConfig.id <= 210;
+      const isAnySecretStage = isSecretTimeStage || isSecretGlitchStage;
+      const stageLabel = isSecretTimeStage
+        ? `FASE SECRETA ${lvlConfig.id - 100}`
+        : isSecretGlitchStage
+          ? `SETOR GLITCH ${lvlConfig.id - 200}`
+          : `FASE ${lvlConfig.id}`;
       bannerObj = {
         name: bossFound.name,
         subtitle: bossFound.isBoss
-          ? `BOSS ${isSecretTimeStage ? 'SECRETO ' : 'PODEROSO '}(${stageLabel}) — ${lvlConfig.subtitle}`
-          : `MINI BOSS ${isSecretTimeStage ? 'SECRETO ' : ''}(${stageLabel}) — ${lvlConfig.subtitle}`,
+          ? `BOSS ${isAnySecretStage ? 'SECRETO ' : 'PODEROSO '}(${stageLabel}) — ${lvlConfig.subtitle}`
+          : `MINI BOSS ${isAnySecretStage ? 'SECRETO ' : ''}(${stageLabel}) — ${lvlConfig.subtitle}`,
         phase: 1,
       };
       setActiveBossBanner(bannerObj);
@@ -3842,6 +3854,80 @@ export function App() {
     }
   };
 
+  // SEGREDO DA FASE 5: Andar para fora do mapa em direção ao pixel corrompido (Glitch)
+  const handleStage5GlitchClick = async () => {
+    if (isAnimatingAction || isDailyMode || isTrainingMode || currentLevel?.id !== 5) return;
+    if (phase !== 'player_turn') {
+      soundManager.playSelect();
+      addFloatingNumber(9, 0, '⚡ [ERRO 0x05] Inicie a batalha e aproxime um herói do canto!', 'status', '#EC4899');
+      return;
+    }
+
+    const exitX = (grid[0]?.length || 10) - 1; // 9
+    const exitY = 0;
+
+    if (
+      !selectedUnit ||
+      selectedUnit.faction !== 'player' ||
+      selectedUnit.isDead ||
+      isPowderBarrelUnit(selectedUnit)
+    ) {
+      soundManager.playSelect();
+      addFloatingNumber(exitX, exitY, '⚡ [ERRO 0x05] Selecione um herói perto do canto (9,0) e ande para fora!', 'status', '#06B6D4');
+      return;
+    }
+
+    const isStunned = selectedUnit.statusEffects?.some((e) => (e.type === 'stun' || e.type === 'dark_cocoon') && e.duration > 0);
+    if (isStunned) {
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, 'Atordoado!', 'status', '#FACC15');
+      return;
+    }
+
+    const distToExit = Math.abs(selectedUnit.x - exitX) + Math.abs(selectedUnit.y - exitY);
+    const canReachExit =
+      distToExit <= 1 ||
+      (!selectedUnit.hasMoved &&
+        getReachableTiles(selectedUnit, grid, units).some((pt) => pt.x === exitX && pt.y === exitY));
+
+    if (!canReachExit) {
+      soundManager.playSelect();
+      addFloatingNumber(exitX, exitY, '⚡ [ERRO 0x05] Aproxime-se do canto superior direito para sair do mapa!', 'status', '#EC4899');
+      return;
+    }
+
+    setIsAnimatingAction(true);
+    setSelectedAction('none');
+    setActiveSkill(null);
+    setDamagePreview(null);
+    setTargetUnitId(null);
+    setTargetAoEPoint(null);
+    setTargetTeleportPoint(null);
+
+    if (boardRef.current) {
+      if (selectedUnit.x !== exitX || selectedUnit.y !== exitY) {
+        await boardRef.current.playMoveAnimation(selectedUnit.id, selectedUnit.x, selectedUnit.y, exitX, exitY);
+      }
+      // Herói ultrapassa o limite do mapa e toca o pixel corrompido!
+      await boardRef.current.playMoveAnimation(selectedUnit.id, exitX, exitY, exitX + 1.45, exitY);
+    }
+
+    soundManager.playUpgrade();
+    soundManager.playMagicSpell();
+    addFloatingNumber(exitX, exitY, '⚡ ERRO 0x05 — FORA DO MAPA!', 'status', '#06B6D4');
+
+    setIsGlitchVisualActive(true);
+    setIsGlitchRiftBannerActive(true);
+    if (glitchVisualTimerRef.current) clearTimeout(glitchVisualTimerRef.current);
+    if (glitchRiftBannerTimerRef.current) clearTimeout(glitchRiftBannerTimerRef.current);
+    glitchVisualTimerRef.current = setTimeout(() => setIsGlitchVisualActive(false), 3500);
+    glitchRiftBannerTimerRef.current = setTimeout(() => setIsGlitchRiftBannerActive(false), 3800);
+
+    setIsAnimatingAction(false);
+    setTimeout(() => {
+      startLevel(201);
+    }, 1350);
+  };
+
   // CANHONEIRO: Resolvedor central de Detonação de Barris de Pólvora & Reação em Cadeia (BFS)
   const detonateBarrelChain = async (
     initialBarrelIds: string[],
@@ -6715,6 +6801,14 @@ export function App() {
       await boardRef.current.playAttackAnimation(selectedUnit.id, target.id, damageType, aoeRadius, skill, targetAoEPoint || undefined);
     }
 
+    if (skill?.id === 'tela_azul_fatal') {
+      soundManager.playVictory();
+      if (glitchVisualTimerRef.current) clearTimeout(glitchVisualTimerRef.current);
+      setIsGlitchVisualActive(true);
+      addFloatingNumber(selectedUnit.x, selectedUnit.y, '⚡ ERRO FATAL: TELA AZUL DO SISTEMA!', 'status', '#06B6D4');
+      glitchVisualTimerRef.current = setTimeout(() => setIsGlitchVisualActive(false), 3800);
+    }
+
     if (skill?.id === 'lagrimas_rubras') {
       soundManager.playVictory();
       if (voidColorDrainTimerRef.current) {
@@ -8638,6 +8732,7 @@ export function App() {
            freshMonster.name.toLowerCase().includes('valgar') ? 'valgar_sanguinario' :
            freshMonster.name.toLowerCase().includes('leviat') ? 'leviata_vazio' :
            freshMonster.name.toLowerCase().includes('verme') ? 'verme_cosmico_tempo' :
+           freshMonster.name.toLowerCase().includes('null-0') || freshMonster.name.toLowerCase().includes('arquiteto') ? 'arquiteto_da_falha' :
            freshMonster.name.toLowerCase().includes('malakor') ? 'cronos_abissal' : 'astaroth');
 
         let bossSkill: Skill;
@@ -8651,6 +8746,8 @@ export function App() {
           bossSkill = SKILLS.boss_leviata_singularidade;
         } else if (bossType === 'verme_cosmico_tempo') {
           bossSkill = SKILLS.boss_verme_colapso_fim_dos_tempos;
+        } else if (bossType === 'arquiteto_da_falha') {
+          bossSkill = SKILLS.boss_arquiteto_colapso_sistema;
         } else {
           bossSkill = SKILLS.boss_malakor_colapso_temporal;
         }
@@ -9031,6 +9128,66 @@ export function App() {
             return nextGrid;
           });
           addFloatingNumber(freshMonster.x, freshMonster.y, '⚡ Ponteiros do Relógio Entram em Sobrecarga!', 'status', '#FCD34D');
+        } else if (bossType === 'arquiteto_da_falha') {
+          // Fase Secreta 210: Núcleo Null-0, Arquiteto da Falha (<50% HP Ultimate)
+          addFloatingNumber(freshMonster.x, freshMonster.y, '⚡ ERRO FATAL: COLAPSO DO SISTEMA (180%)!', 'status', '#EC4899');
+          soundManager.playMagicSpell();
+          setIsGlitchVisualActive(true);
+          if (glitchVisualTimerRef.current) clearTimeout(glitchVisualTimerRef.current);
+          glitchVisualTimerRef.current = setTimeout(() => setIsGlitchVisualActive(false), 3200);
+
+          for (const target of livingPlayers) {
+            if (boardRef.current) {
+              await boardRef.current.playAttackAnimation(freshMonster.id, target.id, 'magical', 0, bossSkill);
+            }
+            const res = rollActualDamage(freshMonster, target, bossSkill);
+            let actualDmg = res.finalDamage;
+            let currentEffects = [...(target.statusEffects || [])];
+
+            for (let i = 0; i < currentEffects.length; i++) {
+              if (currentEffects[i].type === 'shield' && currentEffects[i].value > 0) {
+                const sh = currentEffects[i];
+                const dmgAbsorbed = Math.min(sh.value, actualDmg);
+                sh.value -= dmgAbsorbed;
+                actualDmg -= dmgAbsorbed;
+                addFloatingNumber(target.x, target.y, '-' + dmgAbsorbed + ' (Escudo)', 'shield', '#38BDF8');
+                if (actualDmg === 0) break;
+              }
+            }
+            currentEffects = currentEffects.filter((e) => e.type !== 'shield' || e.value > 0);
+            currentEffects = [
+              ...currentEffects.filter((e) => e.type !== 'electrified' && e.type !== 'silence'),
+              { type: 'electrified' as const, duration: 2, value: 2, appliedTurn: turnNumberRef.current },
+              { type: 'silence' as const, duration: 1, value: 1, appliedTurn: turnNumberRef.current },
+            ];
+
+            const newHp = Math.max(0, target.currentHp - actualDmg);
+            if (actualDmg > 0) addFloatingNumber(target.x, target.y, '-' + actualDmg, 'magical', '#EC4899');
+            addFloatingNumber(target.x, target.y, '🔇 Silenciado & ⚡ Eletrificado!', 'status', '#06B6D4');
+
+            if (newHp === 0) {
+              soundManager.playDeath();
+              if (boardRef.current) await boardRef.current.playDeathAnimation(target.id);
+            }
+            currentUnits = currentUnits.map((u) =>
+              u.id === target.id ? { ...u, currentHp: newHp, isDead: newHp === 0, statusEffects: currentEffects } : u
+            );
+          }
+
+          // Escudo Kernel de 350 pontos no Núcleo Null-0
+          currentUnits = currentUnits.map((u) =>
+            u.id === freshMonster.id
+              ? {
+                  ...u,
+                  statusEffects: [
+                    ...(u.statusEffects || []).filter((e) => e.type !== 'shield'),
+                    { type: 'shield' as const, duration: 3, value: 350, appliedTurn: turnNumberRef.current },
+                  ],
+                }
+              : u
+          );
+          soundManager.playShield();
+          addFloatingNumber(freshMonster.x, freshMonster.y, '🛡️ +350 Escudo Kernel!', 'shield', '#06B6D4');
         } else {
           // Fase 50: Malakor (cronos_abissal) - 220% de dano mágico em todos ignorando escudos + Stun de 2 turnos no alvo de maior ataque
           addFloatingNumber(freshMonster.x, freshMonster.y, '⌛ COLAPSO TEMPORAL ETERNO (220% Direto)!', 'status', '#B91C1C');
@@ -10787,7 +10944,7 @@ export function App() {
             statusEffects: finalEffects,
             skills: u.skills.map((s) => {
               if (s.requiredSkillUses && s.requiredSkillUses > 0) return s;
-              if (didAutoRewind && (s.id === 'pirueta_reversa_delta' || s.id === 'quarta_bala_dalet')) {
+              if (didAutoRewind && (s.id === 'pirueta_reversa_delta' || s.id === 'quarta_bala_dalet' || s.id === 'jutsu_clone_estatico')) {
                 return {
                   ...s,
                   currentCooldown: s.cooldownMax,
@@ -11037,6 +11194,12 @@ export function App() {
       newlyUnlocked.push('dancarina_tempo');
     }
 
+    // SECRET CLASS UNLOCK: Shinobi da Ruptura (Glitch)
+    // Condição: Derrotar o Núcleo Null-0 na 10ª Fase Secreta do Glitch (ID 210)
+    if (currentLevel.id === 210 && !currentUnlocked.includes('shinobi_ruptura')) {
+      newlyUnlocked.push('shinobi_ruptura');
+    }
+
     // RARE DROP CLASS UNLOCK: Sniper
     // Condição: 2% de chance de drop raro ao vencer qualquer fase
     if (!currentUnlocked.includes('sniper') && Math.random() < 0.02) {
@@ -11060,7 +11223,9 @@ export function App() {
     const nextUnlocked =
       currentLevel.id <= 50
         ? Math.max(latestProg.unlockedLevel, currentLevel.id + 1)
-        : latestProg.unlockedLevel;
+        : currentLevel.id === 210
+          ? Math.max(latestProg.unlockedLevel, 16)
+          : latestProg.unlockedLevel;
     const completedList = Array.from(new Set([...latestProg.completedLevels, currentLevel.id]));
     const totalGold = (Number(latestProg.gold) || 0) + goldReward;
     const totalRunGold = (Number(latestProg.activeAdventure?.goldEarnedInRun) || 0) + goldReward;
@@ -11102,8 +11267,8 @@ export function App() {
       updatedActiveAdventure = null;
       nextUnitsState = createInitialUnitsState();
     } else {
-      // Advance active adventure to next stage (if finishing secret stage 110, return to Stage 2 of main campaign)
-      const nextStageId = currentLevel.id === 110 ? 2 : currentLevel.id + 1;
+      // Advance active adventure to next stage (if finishing secret stage 110 -> Stage 2; secret stage 210 -> Stage 16)
+      const nextStageId = currentLevel.id === 110 ? 2 : currentLevel.id === 210 ? 16 : currentLevel.id + 1;
       updatedActiveAdventure = {
         currentLevelId: nextStageId,
         startedAt: latestProg.activeAdventure?.startedAt || new Date().toISOString(),
@@ -11259,7 +11424,6 @@ export function App() {
       const updatedActiveAdv = prev.activeAdventure
         ? { ...prev.activeAdventure, unitsState: updatedUnitsState }
         : null;
-      const updatedProgress = { ...prev, unitsState: updatedUnitsState, activeAdventure: updatedActiveAdv };
       progressRef.current = updatedProgress;
       savePlayerProgress(updatedProgress);
       return updatedProgress;
@@ -11838,6 +12002,8 @@ export function App() {
             ? 'sepia-[.35] saturate-150 contrast-110 brightness-95 duration-700'
             : isPrismaticVisualActive
             ? 'saturate-[1.55] contrast-110 brightness-105 duration-500'
+            : isGlitchVisualActive
+            ? 'hue-rotate-15 saturate-[1.85] contrast-125 duration-150'
             : 'duration-500'
         }`}
       >
@@ -12010,6 +12176,8 @@ export function App() {
             onTileHover={(x, y) => setHoveredTile(y === null ? null : { x, y })}
             hoveredTile={hoveredTile}
             activeSkill={activeSkill || undefined}
+            levelId={isTrainingMode || isDailyMode ? undefined : currentLevel?.id}
+            onStage5GlitchClick={handleStage5GlitchClick}
           />
         </main>
 
@@ -12178,10 +12346,17 @@ export function App() {
                 levelUps: [],
               }
             }
-            hasNextLevel={!isDailyMode && (currentLevel.id < LEVELS.length || (currentLevel.id >= 101 && currentLevel.id <= 110))}
+            hasNextLevel={
+              !isDailyMode &&
+              (currentLevel.id < LEVELS.length ||
+                (currentLevel.id >= 101 && currentLevel.id <= 110) ||
+                (currentLevel.id >= 201 && currentLevel.id <= 210))
+            }
             playerGold={progress.gold}
             unlockedClassesCount={progress.unlockedClasses?.length || 4}
-            onNextLevel={() => startLevel(currentLevel.id === 110 ? 2 : currentLevel.id + 1)}
+            onNextLevel={() =>
+              startLevel(currentLevel.id === 110 ? 2 : currentLevel.id === 210 ? 16 : currentLevel.id + 1)
+            }
             onRetry={isDailyMode ? handleStartDailyDungeon : handleStartNewAdventure}
             onGoToMenu={() => { if (isDailyMode) { handleExitDailyDungeon(); } else { setCurrentView('level_select'); } }}
           />
@@ -12414,6 +12589,29 @@ export function App() {
               FOGO, GELO, VENTO E RAIO... CURVEM-SE À CONVERGÊNCIA!
             </span>
             <div className="h-1.5 w-72 sm:w-[30rem] rounded-full bg-gradient-to-r from-[#FF5722] via-[#FACC15] via-[#06B6D4] to-[#14B8A6] shadow-[0_0_24px_rgba(217,70,239,0.9)]" />
+          </div>
+        </div>
+      )}
+
+      {isGlitchRiftBannerActive && (
+        <div className="fixed inset-0 z-[150] pointer-events-none flex flex-col items-center justify-center px-6 text-center animate-fade-in transition-opacity bg-fuchsia-950/35 backdrop-blur-[2px]">
+          <div className="relative flex flex-col items-center gap-3 animate-pulse bg-[#090D1A]/95 border-2 border-[#06B6D4] px-8 py-6 rounded-2xl shadow-[0_0_65px_rgba(236,72,153,0.7)]">
+            <span className="text-xs sm:text-sm font-extrabold uppercase tracking-[0.25em] text-[#22D3EE]">
+              ⚡ ERRO CRÍTICO 0x05 — LIMITE DO MAPA ROMPIDO ⚡
+            </span>
+            <span
+              className="text-2xl sm:text-4xl md:text-5xl font-black uppercase tracking-[0.12em] text-[#EC4899] select-none"
+              style={{
+                textShadow:
+                  '3px 0 0 rgba(6, 182, 212, 0.95), -3px 0 0 rgba(236, 72, 153, 0.95), 0 0 35px rgba(236, 72, 153, 0.85)',
+              }}
+            >
+              Ruptura do Código Detectada
+            </span>
+            <p className="text-xs sm:text-sm text-[#BAE6FD] font-semibold max-w-md">
+              Você tocou o pixel corrompido fora do mapa! Entrando nos 10 Setores Secretos do Glitch... Derrote o <span className="text-[#EC4899] font-black">Núcleo Null-0</span> para despertar o <span className="text-[#22D3EE] font-black">Shinobi da Ruptura</span>!
+            </p>
+            <div className="h-1 w-64 sm:w-96 rounded-full bg-gradient-to-r from-[#06B6D4] via-[#EC4899] to-[#06B6D4] shadow-[0_0_20px_#EC4899]" />
           </div>
         </div>
       )}

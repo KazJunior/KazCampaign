@@ -694,9 +694,18 @@ export function getUnitAvatar(key: string, size = 16) {
       return <Clock size={size} />;
     case 'goblin':
     case 'abyssal_tentacle':
+    case 'shinobi_ruptura':
+    case 'glitch_pixel_wraith':
+    case 'glitch_firewall_sentinel':
+    case 'glitch_corrupt_drone':
+    case 'glitch_binary_assassin':
+    case 'glitch_error_weaver':
+    case 'glitch_static_golem':
       return <Zap size={size} />;
     case 'astaroth_boss':
     case 'malakor_final_boss':
+    case 'glitch_kage_boss':
+    case 'glitch_architect_boss':
       return <Crown size={size} />;
     case 'spectral_harbinger_boss':
     case 'void_leviathan_boss':

@@ -74,6 +74,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   const isPlayerTurn = phase === 'player_turn';
   const isDeployment = phase === 'deployment';
   const isSecretTimeStage = levelNumber >= 101 && levelNumber <= 110;
+  const isSecretGlitchStage = levelNumber >= 201 && levelNumber <= 210;
 
   return (
     <>
@@ -88,10 +89,16 @@ export const TopBar: React.FC<TopBarProps> = ({
             className={
               isSecretTimeStage
                 ? 'bg-[#EF4444]/15 border border-[#EF4444]/50 text-[#F87171] px-3 py-1 rounded-md font-bold text-sm tracking-wide shadow-[0_0_12px_rgba(239,68,68,0.25)]'
-                : 'bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 py-1 rounded-md font-bold text-sm tracking-wide'
+                : isSecretGlitchStage
+                  ? 'bg-[#EC4899]/15 border border-[#06B6D4]/60 text-[#22D3EE] px-3 py-1 rounded-md font-bold text-sm tracking-wide shadow-[0_0_14px_rgba(236,72,153,0.35)]'
+                  : 'bg-[#D4AD65]/10 border border-[#D4AD65]/30 text-[#D4AD65] px-3 py-1 rounded-md font-bold text-sm tracking-wide'
             }
           >
-            {isSecretTimeStage ? `FENDA DO TEMPO ${levelNumber - 100} / 10` : `FASE ${levelNumber} / 50`}
+            {isSecretTimeStage
+              ? `FENDA DO TEMPO ${levelNumber - 100} / 10`
+              : isSecretGlitchStage
+                ? `RUPTURA GLITCH ${levelNumber - 200} / 10`
+                : `FASE ${levelNumber} / 50`}
           </div>
           <div>
             <h1 className="font-bold text-base text-[#F3F4F8] leading-tight">{levelName}</h1>
@@ -302,10 +309,12 @@ export const TopBar: React.FC<TopBarProps> = ({
             className={
               isSecretTimeStage
                 ? 'bg-[#EF4444]/20 text-[#F87171] border border-[#EF4444]/50 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0'
-                : 'bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/40 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0'
+                : isSecretGlitchStage
+                  ? 'bg-[#EC4899]/20 text-[#22D3EE] border border-[#06B6D4]/60 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0'
+                  : 'bg-[#D4AD65]/20 text-[#D4AD65] border border-[#D4AD65]/40 text-[10px] font-black px-1.5 py-0.5 rounded shrink-0'
             }
           >
-            {isSecretTimeStage ? `FT${levelNumber - 100}` : `F${levelNumber}`}
+            {isSecretTimeStage ? `FT${levelNumber - 100}` : isSecretGlitchStage ? `GL${levelNumber - 200}` : `F${levelNumber}`}
           </span>
           <span className="text-xs font-bold text-[#F3F4F8] truncate leading-tight">
             {levelName}

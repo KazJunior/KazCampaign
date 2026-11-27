@@ -218,6 +218,13 @@ export const CLASS_UPGRADES: Record<string, ClassUpgradeTier[]> = {
     { level: 4, cost: 80000, bonus: { hp: 36, atk: 5, def: 1, res: 1 }, name: 'Bateria de Cerco', description: '+36 HP, +5 ATK, +1 DEF e +1 RES permanente.' },
     { level: 5, cost: 100000, bonus: { hp: 48, atk: 8, def: 2, res: 2 }, name: 'Mestre da Artilharia', description: '+48 HP, +8 ATK, +2 DEF e +2 RES permanente.' },
   ],
+  shinobi_ruptura: [
+    { level: 1, cost: 10000, bonus: { hp: 16, atk: 2, mag: 1 }, name: 'Kunai Dessincronizada', description: '+16 HP, +2 ATK e +1 MAG permanente.' },
+    { level: 2, cost: 30000, bonus: { hp: 24, atk: 3, mag: 2, res: 1 }, name: 'Manto de Estática', description: '+24 HP, +3 ATK, +2 MAG e +1 RES permanente.' },
+    { level: 3, cost: 50000, bonus: { hp: 32, atk: 4, mag: 2, def: 1, res: 1 }, name: 'Lâmina 0xFF', description: '+32 HP, +4 ATK, +2 MAG, +1 DEF e +1 RES permanente.' },
+    { level: 4, cost: 80000, bonus: { hp: 44, atk: 6, mag: 3, def: 1, res: 2 }, name: 'Ninjutsu do Kernel', description: '+44 HP, +6 ATK, +3 MAG, +1 DEF e +2 RES permanente.' },
+    { level: 5, cost: 100000, bonus: { hp: 62, atk: 8, mag: 5, def: 2, res: 3 }, name: 'Soberano da Falha', description: '+62 HP, +8 ATK, +5 MAG, +2 DEF e +3 RES permanente.' },
+  ],
 
 };
 

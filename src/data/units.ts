@@ -524,7 +524,25 @@ export const CLASS_DEFINITIONS: Record<string, ClassDefinition> = {
     baseSkillId: 'tiro_de_canhao',
     description: 'Mestre da pólvora que espalha Barris Explosivos, de Estilhaços e Gravitacionais pelo campo de batalha. Chuta, ricocheteia e detona barris em Reações em Cadeia devastadoras de longo alcance.',
     statGrowth: { hp: 9, atk: 4, mag: 1, def: 2, res: 1 },
-  }
+  },
+  shinobi_ruptura: {
+    className: 'shinobi_ruptura',
+    name: 'Shinobi da Ruptura',
+    role: 'Ninjutsu Glitch, Desync & Execução',
+    isSecret: true,
+    maxHp: 84,
+    atk: 31,
+    mag: 16,
+    def: 6,
+    res: 7,
+    mov: 4,
+    range: 2,
+    color: '#EC4899',
+    avatarKey: 'shinobi_ruptura',
+    baseSkillId: 'kunai_corrompida',
+    description: 'Assassino das sombras que domina a própria falha do código da realidade. Dessincroniza entre posições, silencia habilidades com bugs fatais, executa alvos em cadeia e trava o campo de batalha com a Tela Azul Fatal.',
+    statGrowth: { hp: 10, atk: 4, mag: 2, def: 1, res: 2 },
+  },
 };
 
 export const INITIAL_CLASSES: string[] = ['guerreiro', 'arqueiro', 'mago', 'curandeiro'];
@@ -674,7 +692,16 @@ Para que ele morra de verdade e seus pecados sejam purificados, o traidor deve s
 Deixe cinco voltas da ampulheta passarem em absoluto silêncio, sem dar um único passo ou erguer a lâmina. Uma ruptura carmesim se abrirá no coração da clareira.
 
 Atravesse o portal proibido, supere o Fantasma do Tempo e abata o Verme Cósmico que devora a eternidade para despertar a Dançarina do Tempo.`,
-  }
+  },
+  shinobi_ruptura: {
+    title: 'Shinobi da Ruptura',
+    description: 'Na Fase 5 (Covil do Devorador), encontre o pixel corrompido piscando fora do mapa no canto superior direito. Aproxime um herói da borda e clique para andar para fora do mapa em direção ao glitch. Vença as 10 Fases Secretas da Ruptura do Código, derrotando o Núcleo Null-0 na 10ª fase.',
+    riddle: `Além da borda onde o mundo deveria terminar, um erro pisca no vazio do Covil do Devorador...
+
+Não aceite os limites impostos pelo tabuleiro: leve um herói até o canto superior direito e dê um passo para fora da própria realidade em direção ao pixel corrompido.
+
+Sobreviva aos dez setores do código quebrado, derrote o Kage Corrompido e destrua o Núcleo Null-0 para despertar o Shinobi da Ruptura.`,
+  },
 };
 
 export function isMeleeClassForSecretUnlock(className: string): boolean {
@@ -684,7 +711,8 @@ export function isMeleeClassForSecretUnlock(className: string): boolean {
     cDef.range === 1 ||
     className === 'cavaleiro_arcano' ||
     className === 'lanceiro' ||
-    className === 'dancarina_tempo'
+    className === 'dancarina_tempo' ||
+    className === 'shinobi_ruptura'
   );
 }
 
@@ -811,9 +839,12 @@ export function sanitizeUnlockedClasses(
     }
   });
 
-  // 3. Automatically restore Dançarina do Tempo for players who already defeated Stage 110
+  // 3. Automatically restore secret stage classes for players who defeated Stage 110 / Stage 210
   if (completedLevels.includes(110)) {
     allowed.add('dancarina_tempo');
+  }
+  if (completedLevels.includes(210)) {
+    allowed.add('shinobi_ruptura');
   }
 
   return Array.from(allowed);

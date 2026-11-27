@@ -29,6 +29,8 @@ export function getTerrainBaseColor(terrain: TerrainType, isAlt: boolean): numbe
       return isAlt ? 0x263c2c : 0x2d4834; // Murky mossy marsh
     case 'void':
       return isAlt ? 0x0f0c1b : 0x171228; // Deep stellar obsidian
+    case 'glitch':
+      return isAlt ? 0x080d1a : 0x11182c; // Corrupted cyber-grid obsidian
   }
 }
 
@@ -43,6 +45,7 @@ export function createRichTile(tile: TileData, x: number, y: number): THREE.Grou
   const isWater = tile.terrain === 'water';
   const isSwamp = tile.terrain === 'swamp';
   const isVoid = tile.terrain === 'void';
+  const isGlitch = tile.terrain === 'glitch';
   const isGrass = tile.terrain === 'grass';
   const isStone = tile.terrain === 'stone';
   const isSand = tile.terrain === 'sand';
@@ -50,7 +53,7 @@ export function createRichTile(tile: TileData, x: number, y: number): THREE.Grou
   // 1.1 Base Foundation Slab (Earthy / Stone bedrock underneath)
   const baseGeo = new THREE.BoxGeometry(0.98, 0.22, 0.98);
   const baseMat = new THREE.MeshStandardMaterial({
-    color: isVoid ? 0x090710 : isStone ? 0x1e293b : 0x1f1914,
+    color: isVoid || isGlitch ? 0x070a14 : isStone ? 0x1e293b : 0x1f1914,
     roughness: 0.9,
     metalness: 0.05,
   });
@@ -151,6 +154,34 @@ export function createRichTile(tile: TileData, x: number, y: number): THREE.Grou
       crack.rotation.y = hash * Math.PI;
       crack.name = 'voidCrack';
       group.add(crack);
+    } else if (isGlitch) {
+      // Digital neon circuit trace & flickering corrupted pixel strip
+      const isMagenta = (x + y) % 2 === 0;
+      const traceGeo = new THREE.BoxGeometry(0.62, 0.012, 0.055);
+      const traceMat = new THREE.MeshStandardMaterial({
+        color: isMagenta ? 0xec4899 : 0x06b6d4,
+        emissive: isMagenta ? 0xec4899 : 0x06b6d4,
+        emissiveIntensity: 0.95,
+        roughness: 0.2,
+      });
+      const trace = new THREE.Mesh(traceGeo, traceMat);
+      trace.position.set((hash - 0.5) * 0.2, 0.046, (hash2 - 0.5) * 0.2);
+      trace.rotation.y = hash > 0.5 ? Math.PI / 2 : 0;
+      trace.name = 'glitchCrack';
+      group.add(trace);
+
+      if (hash > 0.65) {
+        const pxGeo = new THREE.BoxGeometry(0.11, 0.02, 0.11);
+        const pxMat = new THREE.MeshStandardMaterial({
+          color: isMagenta ? 0x06b6d4 : 0xec4899,
+          emissive: isMagenta ? 0x06b6d4 : 0xec4899,
+          emissiveIntensity: 1.3,
+        });
+        const px = new THREE.Mesh(pxGeo, pxMat);
+        px.position.set((hash2 - 0.5) * 0.5, 0.052, (hash - 0.5) * 0.5);
+        px.name = 'glitchPixelFlicker';
+        group.add(px);
+      }
     }
   }
 
@@ -873,6 +904,42 @@ export function createRichObstacle(type: ObstacleType, x: number, y: number): TH
       break;
     }
 
+    case 'glitch_pillar': {
+      // Fractured cyber-monolith with floating cyan/magenta glitch cubes
+      const monoMat = new THREE.MeshStandardMaterial({ color: 0x0b1120, roughness: 0.35, metalness: 0.8 });
+      const cyanMat = new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        emissive: 0x06b6d4,
+        emissiveIntensity: 1.5,
+      });
+      const magMat = new THREE.MeshStandardMaterial({
+        color: 0xec4899,
+        emissive: 0xec4899,
+        emissiveIntensity: 1.5,
+      });
+
+      const baseBlock = new THREE.Mesh(new THREE.BoxGeometry(0.54, 0.42, 0.54), monoMat);
+      baseBlock.position.set(0, 0.21, 0);
+      baseBlock.castShadow = true;
+      group.add(baseBlock);
+
+      const midBlock = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.44, 0.42), monoMat);
+      midBlock.position.set(0.04, 0.68, -0.03);
+      midBlock.castShadow = true;
+      group.add(midBlock);
+
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.06, 0.48), cyanMat);
+      strip.position.set(0, 0.44, 0);
+      strip.name = 'glitchCrack';
+      group.add(strip);
+
+      const topShard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, 0.24), magMat);
+      topShard.position.set(-0.04, 1.08, 0.04);
+      topShard.name = 'glitchPixelFlicker';
+      group.add(topShard);
+      break;
+    }
+
     default:
       break;
   }
@@ -1024,6 +1091,25 @@ export function updateEnvironmentAnimations(scene: THREE.Scene, time: number): v
       if (mesh.material instanceof THREE.MeshStandardMaterial) {
         mesh.material.emissiveIntensity = 0.7 + Math.sin(time * 3 + obj.position.x) * 0.35;
       }
+    } else if (obj.name === 'glitchCrack') {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.material instanceof THREE.MeshStandardMaterial) {
+        const pulse = Math.sin(time * 9 + obj.position.x * 5 + obj.position.z * 3);
+        mesh.material.emissiveIntensity = pulse > 0.7 ? 2.2 : 0.75 + Math.abs(pulse) * 0.5;
+      }
+    } else if (obj.name === 'glitchPixelFlicker') {
+      const tick = Math.floor(time * 12);
+      const jitter = Math.sin(tick * 7.3 + obj.id * 1.7);
+      obj.visible = jitter > -0.78;
+      obj.rotation.y = time * 1.8 + obj.id;
+      const scalePulse = 0.85 + Math.abs(Math.sin(time * 10 + obj.id)) * 0.38;
+      obj.scale.set(scalePulse, scalePulse, scalePulse);
+    } else if (obj.name === 'stage5OffBoardGlitch') {
+      const tick = Math.floor(time * 14);
+      const blink = Math.sin(tick * 5.7);
+      obj.visible = blink > -0.65;
+      obj.position.y = 0.42 + Math.sin(time * 4.5) * 0.09;
+      obj.rotation.y = time * 1.6;
     } else if (obj.name === 'ambientMotes') {
       // Drifting atmospheric dust motes
       const points = obj as THREE.Points;

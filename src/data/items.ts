@@ -1994,16 +1994,32 @@ export function rollStageItemDrops(
 ): ItemDefinition[] {
   let pool = getItemsDroppedByMonsters(monsterTypeIds);
 
-  // Fallback para todos os itens caso a lista esteja vazia (respeitando Ato 1 e Fenda Temporal)
+  // Fallback para todos os itens caso a lista esteja vazia (respeitando Fases do Glitch 5-15, Ato 1 e Fenda Temporal)
   if (pool.length === 0) {
+    const GLITCH_RIFT_MONSTERS = [
+      'espectro_pixel', 'sentinela_firewall', 'drone_corrompido', 'assassino_binario',
+      'mago_erro', 'golem_estatica', 'kage_corrompido', 'arquiteto_da_falha',
+    ];
+    const STAGE_5_TO_15_MONSTERS = [
+      'devorador', 'bruxa_espinhos', 'draco_volcanico', 'lobo_espectral',
+      'mimico', 'cavaleiro_caido', 'mago_trevas', 'golem_basalto',
+      'astaroth', 'kobold_artilheiro', 'salamandra_magma', 'elemental_brasa',
+      'cao_infernal', 'espectro_cinzento', 'ferreiro_amaldicoado', 'automato_vapor',
+      'verme_da_lava', 'gargula_ferro', 'piromante_cultista', 'arauto_espectral',
+    ];
     const ACT1_AND_TIME_RIFT_MONSTERS = [
       'goblin', 'orc', 'aranha', 'mago_trevas', 'lobo_espectral', 'golem_basalto',
       'bruxa_espinhos', 'cavaleiro_caido', 'mimico', 'draco_volcanico', 'devorador', 'astaroth',
       'guardiao_relogio', 'tecelao_do_tempo', 'automato_engrenagens', 'sabujo_temporal',
-      'cultista_cronos', 'draco_cronologico', 'fantasma_do_tempo', 'verme_cosmico_tempo'
+      'cultista_cronos', 'draco_cronologico', 'fantasma_do_tempo', 'verme_cosmico_tempo',
     ];
+    const isGlitchRift = monsterTypeIds.some((id) => GLITCH_RIFT_MONSTERS.includes(id));
     const isEarlyOrTimeRift = monsterTypeIds.some((id) => ACT1_AND_TIME_RIFT_MONSTERS.includes(id));
-    if (isEarlyOrTimeRift) {
+    if (isGlitchRift) {
+      pool = Object.values(ITEMS).filter((it) =>
+        it.droppedByMonsterTypeIds.some((m) => STAGE_5_TO_15_MONSTERS.includes(m))
+      );
+    } else if (isEarlyOrTimeRift) {
       pool = Object.values(ITEMS).filter((it) =>
         it.droppedByMonsterTypeIds.some((m) => ACT1_AND_TIME_RIFT_MONSTERS.includes(m))
       );

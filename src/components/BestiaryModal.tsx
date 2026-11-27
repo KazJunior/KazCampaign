@@ -594,6 +594,8 @@ function getAvatarIcon(key: string, size = 20) {
       return <Music size={size} />;
     case 'astaroth_boss':
     case 'malakor_final_boss':
+    case 'glitch_kage_boss':
+    case 'glitch_architect_boss':
       return <Crown size={size} />;
     case 'spectral_harbinger_boss':
     case 'void_leviathan_boss':
@@ -601,6 +603,12 @@ function getAvatarIcon(key: string, size = 20) {
     case 'forge_titan_boss':
       return <Flame size={size} />;
     case 'rune_master_boss':
+    case 'glitch_pixel_wraith':
+    case 'glitch_firewall_sentinel':
+    case 'glitch_corrupt_drone':
+    case 'glitch_binary_assassin':
+    case 'glitch_error_weaver':
+    case 'glitch_static_golem':
       return <Sparkles size={size} />;
     case 'valgar_butcher_boss':
       return <Hammer size={size} />;

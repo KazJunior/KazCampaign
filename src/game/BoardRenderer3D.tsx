@@ -49,6 +49,8 @@ interface BoardRenderer3DProps {
   onTileHover: (x: number, y: number | null) => void;
   hoveredTile: Point | null;
   activeSkill?: Skill;
+  levelId?: number;
+  onStage5GlitchClick?: () => void;
 }
 
 export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3DProps>(({
@@ -64,6 +66,8 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
   onTileClick,
   onTileHover,
   hoveredTile,
+  levelId,
+  onStage5GlitchClick,
 }, ref) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [cameraMode, setCameraMode] = useState<'isometric' | 'topdown'>('isometric');
@@ -81,6 +85,7 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
   const isDraggingRef = useRef<boolean>(false);
   const initialPinchDistRef = useRef<number | null>(null);
   const initialPinchZoomRef = useRef<number>(1.0);
+  const stage5GlitchHitRef = useRef<THREE.Mesh | null>(null);
 
   useEffect(() => {
     cameraModeRef.current = cameraMode;
@@ -358,7 +363,71 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
         }
       }
     }
-  }, [grid, gridWidth, gridHeight]);
+
+    // 3. Segredo da Fase 5: Pixel Corrompido (Glitch) piscando FORA DO MAPA no canto superior direito!
+    stage5GlitchHitRef.current = null;
+    if (levelId === 5) {
+      const glitchGroup = new THREE.Group();
+      glitchGroup.name = 'stage5OffBoardGlitch';
+      // Posicionado fora do tabuleiro além do canto superior direito (9, 0)
+      glitchGroup.position.set(gridWidth + 1.05, 0.42, 0.5);
+
+      const coreMat = new THREE.MeshStandardMaterial({
+        color: 0x090d1a,
+        emissive: 0xec4899,
+        emissiveIntensity: 0.7,
+      });
+      const cyanMat = new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        emissive: 0x06b6d4,
+        emissiveIntensity: 2.2,
+      });
+      const magMat = new THREE.MeshStandardMaterial({
+        color: 0xec4899,
+        emissive: 0xec4899,
+        emissiveIntensity: 2.2,
+      });
+
+      const mainPixel = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, 0.32), coreMat);
+      glitchGroup.add(mainPixel);
+
+      const rgbCyan = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.14, 0.24), cyanMat);
+      rgbCyan.position.set(0.16, 0.14, -0.08);
+      rgbCyan.name = 'glitchPixelFlicker';
+      glitchGroup.add(rgbCyan);
+
+      const rgbMag = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.16, 0.22), magMat);
+      rgbMag.position.set(-0.15, -0.10, 0.10);
+      rgbMag.name = 'glitchPixelFlicker';
+      glitchGroup.add(rgbMag);
+
+      const miniPx = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.11, 0.11), cyanMat);
+      miniPx.position.set(-0.34, 0.22, -0.14);
+      miniPx.name = 'glitchPixelFlicker';
+      glitchGroup.add(miniPx);
+
+      const glitchLight = new THREE.PointLight(0xec4899, 2.0, 3.6);
+      glitchLight.position.set(0, 0.25, 0);
+      glitchGroup.add(glitchLight);
+
+      group.add(glitchGroup);
+
+      // Sutil pista de pixels vazando na borda do ladrilho (9, 0) em direção ao vazio
+      const edgeLeak = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.04, 0.22), cyanMat);
+      edgeLeak.position.set(gridWidth + 0.12, 0.08, 0.5);
+      edgeLeak.name = 'glitchPixelFlicker';
+      group.add(edgeLeak);
+
+      // Colisor invisível generoso para facilitar o clique fora do mapa em direção ao pixel
+      const hitGeo = new THREE.BoxGeometry(1.9, 1.4, 1.9);
+      const hitMat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+      const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+      hitMesh.position.set(gridWidth + 0.95, 0.45, 0.5);
+      hitMesh.name = 'stage5OffBoardGlitchHit';
+      group.add(hitMesh);
+      stage5GlitchHitRef.current = hitMesh;
+    }
+  }, [grid, gridWidth, gridHeight, levelId]);
 
   // Rebuild Highlights
   // Rebuild Highlights (Movement Range, Attack Range, AoE, Deployment & Selection)
@@ -1056,6 +1125,20 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
     // Hover raycasting when not dragging (for desktop mouse hover)
     if (!isDraggingRef.current && activePointersRef.current.size <= 1) {
+      // Verifica se o ponteiro está sobre o Pixel Corrompido fora do mapa na Fase 5
+      if (levelId === 5 && stage5GlitchHitRef.current && cameraRef.current) {
+        const rect = container.getBoundingClientRect();
+        const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        const rc = new THREE.Raycaster();
+        rc.setFromCamera(new THREE.Vector2(ndcX, ndcY), cameraRef.current);
+        if (rc.intersectObject(stage5GlitchHitRef.current, false).length > 0) {
+          onTileHover(-1, null);
+          container.style.cursor = 'pointer';
+          return;
+        }
+      }
+
       const target = getTargetTileFromPointer(e.clientX, e.clientY);
       if (target) {
         onTileHover(target.x, target.y);
@@ -1103,6 +1186,31 @@ export const BoardRenderer3D = forwardRef<BoardRenderer3DHandle, BoardRenderer3D
 
     // Block clicks during animations
     if (animEngineRef.current?.isAnimating) return;
+
+    // Fase 5: Clique fora do mapa em direção ao Pixel Corrompido (Glitch)
+    if (levelId === 5 && onStage5GlitchClick && cameraRef.current && mountRef.current) {
+      const rect = mountRef.current.getBoundingClientRect();
+      const ndcX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const ndcY = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      const rc = new THREE.Raycaster();
+      rc.setFromCamera(new THREE.Vector2(ndcX, ndcY), cameraRef.current);
+
+      const hitGlitchMesh =
+        stage5GlitchHitRef.current && rc.intersectObject(stage5GlitchHitRef.current, false).length > 0;
+      const planePt = new THREE.Vector3();
+      const hitPlane = rc.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), planePt);
+      const clickedOffMapCorner =
+        Boolean(hitPlane) &&
+        planePt.x >= gridWidth &&
+        planePt.x <= gridWidth + 2.4 &&
+        planePt.z >= -0.8 &&
+        planePt.z <= 1.8;
+
+      if (hitGlitchMesh || clickedOffMapCorner) {
+        onStage5GlitchClick();
+        return;
+      }
+    }
 
     const target = getTargetTileFromPointer(e.clientX, e.clientY);
     if (target) {

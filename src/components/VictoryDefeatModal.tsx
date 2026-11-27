@@ -49,7 +49,12 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
   }, [isVictory, isDailyDungeon]);
 
   const isSecretTimeStage = levelNumber >= 101 && levelNumber <= 110;
-  const stageLabel = isSecretTimeStage ? `Fase Secreta ${levelNumber - 100} (Fenda do Tempo)` : `Fase ${levelNumber}`;
+  const isSecretGlitchStage = levelNumber >= 201 && levelNumber <= 210;
+  const stageLabel = isSecretTimeStage
+    ? `Fase Secreta ${levelNumber - 100} (Fenda do Tempo)`
+    : isSecretGlitchStage
+      ? `Setor Glitch ${levelNumber - 200} (Ruptura do Código)`
+      : `Fase ${levelNumber}`;
 
   const getTitle = () => {
     if (isDailyDungeon) {
@@ -57,6 +62,7 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
     }
     if (isVictory) {
       if (levelNumber === 110) return 'Fenda do Tempo Conquistada!';
+      if (levelNumber === 210) return 'Ruptura do Código Conquistada!';
       return !hasNextLevel ? 'Vitória Suprema da Campanha!' : 'Fase Concluída!';
     }
     return 'Aventura Encerrada!';
@@ -71,6 +77,9 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
     if (isVictory) {
       if (levelNumber === 110) {
         return 'Incrível! Você derrotou o Verme Cósmico Devorador do Tempo, superou as 10 fases secretas e desbloqueou a Dançarina do Tempo!';
+      }
+      if (levelNumber === 210) {
+        return 'Incrível! Você derrotou o Núcleo Null-0, superou os 10 setores corrompidos do Glitch e desbloqueou o Shinobi da Ruptura!';
       }
       return !hasNextLevel
         ? 'Incrível! Você derrotou o Dragão Malakor e superou todas as 50 fases!'
@@ -208,7 +217,16 @@ export const VictoryDefeatModal: React.FC<VictoryDefeatModalProps> = ({
                     onClick={onNextLevel}
                     className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#D4AD65] via-[#E5C27E] to-[#B88E43] hover:from-[#E5C27E] hover:to-[#A77E36] text-[#10131C] font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95"
                   >
-                    Avançar para a Fase {levelNumber + 1} <ChevronRight size={18} />
+                    {levelNumber === 110
+                      ? 'Retornar à Campanha (Fase 2)'
+                      : levelNumber === 210
+                        ? 'Retornar à Campanha (Fase 16)'
+                        : isSecretTimeStage
+                          ? `Avançar para Fenda do Tempo ${levelNumber - 100 + 1}`
+                          : isSecretGlitchStage
+                            ? `Avançar para Setor Glitch ${levelNumber - 200 + 1}`
+                            : `Avançar para a Fase ${levelNumber + 1}`}{' '}
+                    <ChevronRight size={18} />
                   </button>
                   <button
                     onClick={onGoToMenu}

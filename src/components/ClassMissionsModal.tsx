@@ -629,6 +629,8 @@ function getClassGlyph(avatarKey?: string): React.ReactNode {
       return <Shield size={20} />;
     case 'canhoneiro':
       return <Bomb size={20} />;
+    case 'shinobi_ruptura':
+      return <Sparkles size={20} />;
     case 'omnimage':
       return <Sparkles size={20} />;
     default:

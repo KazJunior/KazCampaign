@@ -57,6 +57,7 @@ const ALL_VALID_CLASSES = new Set<string>([
   'artifice',
   'cavaleiro',
   'canhoneiro',
+  'shinobi_ruptura',
 ]);
 
 const LINEAGE_QUEST_THRESHOLDS: Array<{
@@ -326,6 +327,9 @@ function resolveUnlockedClasses(
   }
   if (completedLevels.includes(110)) {
     allowed.add('dancarina_tempo');
+  }
+  if (completedLevels.includes(210)) {
+    allowed.add('shinobi_ruptura');
   }
 
   // 4. Preserve valid classes found in leaderboard party (if level requirement met)

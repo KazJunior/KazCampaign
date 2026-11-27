@@ -1695,6 +1695,259 @@ export const SECRET_TIME_LEVELS: LevelConfig[] = [
   },
 ];
 
+// =========================================================================
+// --- 10 FASES SECRETAS DA RUPTURA DO CÓDIGO (GLITCH — IDs 201..210) ---
+// Desbloqueia a classe oculta Shinobi da Ruptura ao vencer a Fase 210!
+// =========================================================================
+export const SECRET_GLITCH_LEVELS: LevelConfig[] = [
+  {
+    id: 201,
+    name: 'Setor 0x01 — Margem Corrompida',
+    subtitle: 'RUPTURA DO CÓDIGO 1 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'Você ultrapassou os limites do mapa da Fase 5 e caiu na dimensão corrompida do código! Sobreviva aos 10 setores do Glitch para despertar o Shinobi da Ruptura.',
+    objectives: ['Derrote todas as anomalias digitais', 'Sobreviva à Ruptura do Código'],
+    grid: createGrid(10, 8, 'glitch', {
+      '2,2': { obstacle: 'glitch_pillar' },
+      '7,2': { obstacle: 'glitch_pillar' },
+      '4,4': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'espectro_pixel', x: 2, y: 1, levelOffset: 2 },
+      { monsterTypeId: 'espectro_pixel', x: 7, y: 1, levelOffset: 2 },
+      { monsterTypeId: 'drone_corrompido', x: 5, y: 0, levelOffset: 2 },
+    ],
+    rewards: { gold: 2200, xpPerUnit: 1100 },
+  },
+  {
+    id: 202,
+    name: 'Setor 0x02 — Corredor de Estática',
+    subtitle: 'RUPTURA DO CÓDIGO 2 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'Sentinelas Firewall bloqueiam o corredor enquanto Drones Corrompidos disparam à distância.',
+    objectives: ['Elimine a patrulha de segurança corrompida'],
+    grid: createGrid(10, 8, 'glitch', {
+      '1,3': { obstacle: 'glitch_pillar' },
+      '4,2': { obstacle: 'glitch_pillar' },
+      '5,2': { obstacle: 'glitch_pillar' },
+      '8,3': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'sentinela_firewall', x: 3, y: 2, levelOffset: 3 },
+      { monsterTypeId: 'sentinela_firewall', x: 6, y: 2, levelOffset: 3 },
+      { monsterTypeId: 'drone_corrompido', x: 2, y: 0, levelOffset: 3 },
+      { monsterTypeId: 'espectro_pixel', x: 7, y: 1, levelOffset: 3 },
+    ],
+    rewards: { gold: 2600, xpPerUnit: 1400 },
+  },
+  {
+    id: 203,
+    name: 'Setor 0x03 — Memória Fragmentada',
+    subtitle: 'RUPTURA DO CÓDIGO 3 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'Assassinos Binários surgem entre blocos de memória quebrados, saltando diretamente na retaguarda.',
+    objectives: ['Destrua os Assassinos Binários e Tecelões de Erros'],
+    grid: createGrid(10, 8, 'glitch', {
+      '2,4': { obstacle: 'glitch_pillar' },
+      '7,4': { obstacle: 'glitch_pillar' },
+      '4,1': { obstacle: 'glitch_pillar' },
+      '5,3': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'assassino_binario', x: 1, y: 1, levelOffset: 4 },
+      { monsterTypeId: 'assassino_binario', x: 8, y: 1, levelOffset: 4 },
+      { monsterTypeId: 'mago_erro', x: 4, y: 0, levelOffset: 4 },
+      { monsterTypeId: 'espectro_pixel', x: 6, y: 2, levelOffset: 4 },
+    ],
+    rewards: { gold: 3000, xpPerUnit: 1700 },
+  },
+  {
+    id: 204,
+    name: 'Setor 0x04 — Muralha do Firewall',
+    subtitle: 'RUPTURA DO CÓDIGO 4 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'Golens de Estática e Sentinelas Firewall formam uma barreira pesada antes do Santuário 404.',
+    objectives: ['Rompa a linha de defesa digital'],
+    grid: createGrid(10, 8, 'glitch', {
+      '3,3': { obstacle: 'glitch_pillar' },
+      '6,3': { obstacle: 'glitch_pillar' },
+      '0,2': { obstacle: 'glitch_pillar' },
+      '9,2': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'golem_estatica', x: 4, y: 2, levelOffset: 5 },
+      { monsterTypeId: 'sentinela_firewall', x: 5, y: 2, levelOffset: 5 },
+      { monsterTypeId: 'mago_erro', x: 2, y: 0, levelOffset: 5 },
+      { monsterTypeId: 'drone_corrompido', x: 7, y: 0, levelOffset: 5 },
+      { monsterTypeId: 'espectro_pixel', x: 8, y: 1, levelOffset: 5 },
+    ],
+    rewards: { gold: 3500, xpPerUnit: 2100 },
+  },
+  {
+    id: 205,
+    name: 'Setor 0x05 — Santuário 404',
+    subtitle: 'CONFRONTO COM MINI BOSS SECRETO',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'O Kage Corrompido (Eco 404) aguarda no centro do setor! Ele salta sobre sua retaguarda e rasga o campo em X com estática letal.',
+    objectives: ['Derrote o MINI-BOSS Kage Corrompido (Eco 404)!', 'Elimine sua escolta binária'],
+    grid: createGrid(10, 8, 'glitch', {
+      '2,2': { obstacle: 'glitch_pillar' },
+      '7,2': { obstacle: 'glitch_pillar' },
+      '2,5': { obstacle: 'glitch_pillar' },
+      '7,5': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'kage_corrompido', x: 4, y: 1, levelOffset: 5, isMiniBoss: true },
+      { monsterTypeId: 'assassino_binario', x: 1, y: 1, levelOffset: 5 },
+      { monsterTypeId: 'drone_corrompido', x: 8, y: 1, levelOffset: 5 },
+    ],
+    rewards: { gold: 6500, xpPerUnit: 3200 },
+    hasMiniBoss: true,
+  },
+  {
+    id: 206,
+    name: 'Setor 0x06 — Labirinto Binário',
+    subtitle: 'RUPTURA DO CÓDIGO 6 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'O código fica mais denso após o Santuário 404. Pilares de dados criam emboscadas para Assassinos Binários e Tecelões de Erros.',
+    objectives: ['Elimine todas as ameaças no Labirinto Binário'],
+    grid: createGrid(10, 8, 'glitch', {
+      '2,3': { obstacle: 'glitch_pillar' },
+      '4,3': { obstacle: 'glitch_pillar' },
+      '5,3': { obstacle: 'glitch_pillar' },
+      '7,3': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'assassino_binario', x: 1, y: 1, levelOffset: 6 },
+      { monsterTypeId: 'assassino_binario', x: 8, y: 1, levelOffset: 6 },
+      { monsterTypeId: 'mago_erro', x: 3, y: 0, levelOffset: 6 },
+      { monsterTypeId: 'mago_erro', x: 6, y: 0, levelOffset: 6 },
+      { monsterTypeId: 'sentinela_firewall', x: 5, y: 2, levelOffset: 6 },
+    ],
+    rewards: { gold: 4200, xpPerUnit: 2800 },
+  },
+  {
+    id: 207,
+    name: 'Setor 0x07 — Fenda dos Ecos',
+    subtitle: 'RUPTURA DO CÓDIGO 7 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'Golens de Estática avançam enquanto Espectros de Pixel e Drones cercam seus flancos.',
+    objectives: ['Sobrepuje a onda de ecos corrompidos'],
+    grid: createGrid(10, 8, 'glitch', {
+      '1,2': { obstacle: 'glitch_pillar' },
+      '8,2': { obstacle: 'glitch_pillar' },
+      '4,4': { obstacle: 'glitch_pillar' },
+      '5,4': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'golem_estatica', x: 3, y: 2, levelOffset: 7 },
+      { monsterTypeId: 'golem_estatica', x: 6, y: 2, levelOffset: 7 },
+      { monsterTypeId: 'espectro_pixel', x: 0, y: 1, levelOffset: 7 },
+      { monsterTypeId: 'espectro_pixel', x: 9, y: 1, levelOffset: 7 },
+      { monsterTypeId: 'drone_corrompido', x: 4, y: 0, levelOffset: 7 },
+    ],
+    rewards: { gold: 4800, xpPerUnit: 3400 },
+  },
+  {
+    id: 208,
+    name: 'Setor 0x08 — Kernel Instável',
+    subtitle: 'RUPTURA DO CÓDIGO 8 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'A pressão da anomalia intensifica o poder dos guardiões próximos ao Núcleo Null-0.',
+    objectives: ['Expurgue a guarda de elite do Kernel'],
+    grid: createGrid(10, 8, 'glitch', {
+      '3,2': { obstacle: 'glitch_pillar' },
+      '6,2': { obstacle: 'glitch_pillar' },
+      '1,4': { obstacle: 'glitch_pillar' },
+      '8,4': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'sentinela_firewall', x: 4, y: 2, levelOffset: 8 },
+      { monsterTypeId: 'golem_estatica', x: 5, y: 2, levelOffset: 8 },
+      { monsterTypeId: 'assassino_binario', x: 2, y: 1, levelOffset: 8 },
+      { monsterTypeId: 'mago_erro', x: 7, y: 0, levelOffset: 8 },
+      { monsterTypeId: 'drone_corrompido', x: 2, y: 0, levelOffset: 8 },
+      { monsterTypeId: 'espectro_pixel', x: 8, y: 1, levelOffset: 8 },
+    ],
+    rewards: { gold: 5400, xpPerUnit: 4000 },
+  },
+  {
+    id: 209,
+    name: 'Setor 0x09 — Limiar do Colapso',
+    subtitle: 'RUPTURA DO CÓDIGO 9 / 10',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'Última linha de defesa antes do Núcleo da Ruptura! Toda a falange digital tenta impedir sua chegada.',
+    objectives: ['Derrote a vanguarda final do Arquiteto da Falha'],
+    grid: createGrid(10, 8, 'glitch', {
+      '2,3': { obstacle: 'glitch_pillar' },
+      '7,3': { obstacle: 'glitch_pillar' },
+      '4,1': { obstacle: 'glitch_pillar' },
+      '5,1': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'golem_estatica', x: 3, y: 2, levelOffset: 9 },
+      { monsterTypeId: 'sentinela_firewall', x: 6, y: 2, levelOffset: 9 },
+      { monsterTypeId: 'assassino_binario', x: 1, y: 1, levelOffset: 9 },
+      { monsterTypeId: 'assassino_binario', x: 8, y: 1, levelOffset: 9 },
+      { monsterTypeId: 'mago_erro', x: 3, y: 0, levelOffset: 9 },
+      { monsterTypeId: 'drone_corrompido', x: 6, y: 0, levelOffset: 9 },
+    ],
+    rewards: { gold: 6200, xpPerUnit: 4600 },
+  },
+  {
+    id: 210,
+    name: 'Setor 0xFF — Núcleo da Ruptura',
+    subtitle: 'CONFRONTO COM BOSS SECRETO DO GLITCH',
+    environment: 'abyss',
+    width: 10,
+    height: 8,
+    description: 'O Núcleo Null-0, Arquiteto da Falha, manifesta-se no coração da dimensão corrompida! Aos 50% de vida ele dispara o ERRO FATAL: Colapso do Sistema. Abata-o para desbloquear a classe oculta Shinobi da Ruptura!',
+    objectives: [
+      'Derrote o BOSS SECRETO Núcleo Null-0, Arquiteto da Falha!',
+      'Desbloqueie a classe oculta Shinobi da Ruptura!',
+    ],
+    grid: createGrid(10, 8, 'glitch', {
+      '1,2': { obstacle: 'glitch_pillar' },
+      '8,2': { obstacle: 'glitch_pillar' },
+      '3,4': { obstacle: 'glitch_pillar' },
+      '6,4': { obstacle: 'glitch_pillar' },
+    }),
+    deploymentZone: standardDeployment,
+    enemySpawns: [
+      { monsterTypeId: 'arquiteto_da_falha', x: 4, y: 1, levelOffset: 9, isBoss: true },
+    ],
+    rewards: { gold: 18000, xpPerUnit: 6000 },
+    hasFinalBoss: true,
+  },
+];
+
 /**
  * Retorna se a casa (x, y) está dentro da área dos ponteiros do relógio no turno indicado.
  * Utilizado na batalha contra o Verme Cósmico Devorador do Tempo (Fase Secreta 110).
@@ -1723,7 +1976,11 @@ export function isTileInClockHands(x: number, y: number, turn: number, _width: n
 }
 
 export function getLevelById(levelId: number): LevelConfig | undefined {
-  return LEVELS.find((l) => l.id === levelId) || SECRET_TIME_LEVELS.find((l) => l.id === levelId);
+  return (
+    LEVELS.find((l) => l.id === levelId) ||
+    SECRET_TIME_LEVELS.find((l) => l.id === levelId) ||
+    SECRET_GLITCH_LEVELS.find((l) => l.id === levelId)
+  );
 }
 
 
