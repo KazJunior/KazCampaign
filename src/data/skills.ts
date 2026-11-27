@@ -7449,7 +7449,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'self',
     isAlchemistMixture: true,
@@ -7472,7 +7472,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'self',
     isAlchemistMixture: true,
@@ -7495,7 +7495,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 2,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'self',
     isAlchemistMixture: true,
@@ -7564,7 +7564,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'self',
     isAlchemistMixture: true,
@@ -7633,7 +7633,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'self',
     cleansesDebuffs: true,
@@ -7650,7 +7650,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'self',
     statusEffect: { type: 'invisible', duration: 2, value: 1 },
@@ -7666,7 +7666,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 4,
+    cooldownMax: 3,
     currentCooldown: 0,
     targetType: 'self',
     isAlchemistMixture: true,
@@ -7689,7 +7689,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 5,
+    cooldownMax: 4,
     currentCooldown: 0,
     targetType: 'self',
     isAlchemistMixture: true,
@@ -7714,7 +7714,7 @@ export const SKILLS: Record<string, Skill> = {
     rangeMin: 0,
     rangeMax: 0,
     aoeRadius: 0,
-    cooldownMax: 6,
+    cooldownMax: 5,
     currentCooldown: 0,
     targetType: 'self',
     isAlchemistMixture: true,
@@ -10073,6 +10073,22 @@ export function getLearnableSkillsForClass(className: string, unlockedMissionSki
   return Array.from(new Set([...base, ...unlockedRewards]));
 }
 
+const ALCHEMIST_SKILL_IDS = new Set([
+  'reagente_explosivo',
+  'reagente_glacial',
+  'reagente_venenoso',
+  'reagente_acido',
+  'reagente_vampirico',
+  'reagente_neurotoxico',
+  'catalisador_etereo',
+  'reagente_incendiario',
+  'infusao_revigorante',
+  'muralha_de_fumaca',
+  'reagente_radioativo',
+  'megabomba_quimica',
+  'pedra_filosofal',
+]);
+
 /** Nível máximo de evolução de cada habilidade */
 export const MAX_SKILL_LEVEL = 5;
 
@@ -10139,6 +10155,10 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     // 1° habilidade do mago possui cooldown reduzido para 3
     if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
       clone.cooldownMax = 3;
+    }
+    // Habilidades do Alquimista respeitam sua recarga própria (reduzida em 1 turno)
+    if (ALCHEMIST_SKILL_IDS.has(clone.id)) {
+      clone.cooldownMax = SKILLS[clone.id]?.cooldownMax ?? clone.cooldownMax;
     }
     if (clone.statusEffect?.type === 'burn' || clone.statusEffect?.type === 'poison') {
       clone.statusEffect = { ...clone.statusEffect, duration: Math.min(2, clone.statusEffect.duration), value: 2 };
@@ -10250,6 +10270,10 @@ export function getEvolvedSkill(baseSkill: Skill, level: number = 1): Skill {
     // 1° habilidade do mago possui cooldown reduzido para 3
     if (clone.id === 'bola_de_fogo' || clone.id === 'lanca_chamas') {
       clone.cooldownMax = 3;
+    }
+    // Habilidades do Alquimista respeitam sua recarga própria (reduzida em 1 turno)
+    if (ALCHEMIST_SKILL_IDS.has(clone.id)) {
+      clone.cooldownMax = SKILLS[clone.id]?.cooldownMax ?? clone.cooldownMax;
     }
 
   // Aumento de efeito de status (+5% no valor por nível até o Nv. 5; nunca altera duração de stun/slow/taunt/freezing/gale)

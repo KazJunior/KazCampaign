@@ -56,6 +56,7 @@ import {
   loadLiveBattleState,
   clearLiveBattleState,
   mergeMissionAndLineageFields,
+  hasPendingCloudSave,
 } from './utils/storage';
 import { soundManager } from './utils/audio';
 import { getAttackableTiles, getAoETiles, getReachableTiles, getPathTo } from './utils/pathfinding';
@@ -537,9 +538,9 @@ export function App() {
   useEffect(() => {
     const handleGoldSync = (e: Event) => {
       const custom = e as CustomEvent<{ gold: number }>;
-      if (custom.detail && typeof custom.detail.gold === 'number') {
+      if (custom.detail && typeof custom.detail.gold === 'number' && Number.isFinite(custom.detail.gold)) {
         setProgress((prev) => {
-          if (prev.gold !== custom.detail.gold) {
+          if (custom.detail.gold > (Number(prev.gold) || 0)) {
             const next = { ...prev, gold: custom.detail.gold };
             progressRef.current = next;
             return next;
@@ -567,12 +568,16 @@ export function App() {
 
     const handleWindowFocus = async () => {
       if (!authUser || authUser.id === 0) return;
+      if (hasPendingCloudSave()) return;
       try {
         const cloudP = await fetchCloudProgress();
-        if (cloudP) {
+        if (cloudP && !hasPendingCloudSave()) {
           const prevSnapshot = progressRef.current;
           const missionAndLineage = mergeMissionAndLineageFields(prevSnapshot, cloudP, true);
-          const nextGold = typeof cloudP.gold === 'number' ? cloudP.gold : prevSnapshot.gold;
+          const nextGold =
+            typeof cloudP.gold === 'number'
+              ? Math.max(cloudP.gold, Number(prevSnapshot.gold) || 0)
+              : prevSnapshot.gold;
           const cloudClassesList = (Array.isArray(cloudP.unlockedClasses) ? cloudP.unlockedClasses : []).map(normalizeClassId);
           const cloudClassesSet = new Set(cloudClassesList);
           const prevClassesList = (prevSnapshot.unlockedClasses || []).map(normalizeClassId);
@@ -706,6 +711,7 @@ export function App() {
   });
   const turnNumberRef = useRef<number>(turnNumber);
   turnNumberRef.current = turnNumber;
+  const handleVictoryRef = useRef<(finalUnitsState: Unit[]) => void>(() => {});
   const [phase, setPhase] = useState<BattlePhase>(() => {
     const liveBattle = loadLiveBattleState();
     const loadedProg = loadPlayerProgress();
@@ -801,12 +807,19 @@ export function App() {
 
     // Auto-discover monsters for Bestiary
     const enemyMonsterTypeIds = lvlConfig.enemySpawns.map((s) => s.monsterTypeId);
-    const prevDiscovered = progress.discoveredMonsterIds || [];
+    const latestStartProg = progressRef.current;
+    const prevDiscovered = latestStartProg.discoveredMonsterIds || [];
     const mergedDiscovered = Array.from(new Set([...prevDiscovered, ...enemyMonsterTypeIds]));
     if (mergedDiscovered.length !== prevDiscovered.length) {
-      const updatedP = { ...progress, discoveredMonsterIds: mergedDiscovered };
-      setProgress(updatedP);
-      savePlayerProgress(updatedP);
+      setProgress((prev) => {
+        const updatedP = {
+          ...prev,
+          discoveredMonsterIds: Array.from(new Set([...(prev.discoveredMonsterIds || []), ...enemyMonsterTypeIds])),
+        };
+        progressRef.current = updatedP;
+        savePlayerProgress(updatedP);
+        return updatedP;
+      });
     }
 
     const tileGrid: TileData[][] = lvlConfig.grid.map((row, y) =>
@@ -1589,6 +1602,7 @@ export function App() {
 
         if (!prev.activeAdventure) {
           const next: PlayerProgress = { ...prev, discoveredItemIds: nextDiscovered };
+          progressRef.current = next;
           savePlayerProgress(next);
           return next;
         }
@@ -1603,6 +1617,7 @@ export function App() {
           activeAdventure: updatedAdv,
           discoveredItemIds: nextDiscovered,
         };
+        progressRef.current = next;
         savePlayerProgress(next);
         return next;
       });
@@ -1623,6 +1638,7 @@ export function App() {
 
       if (!prev.activeAdventure) {
         const nextP: PlayerProgress = { ...prev, discoveredItemIds: nextDiscovered };
+        progressRef.current = nextP;
         savePlayerProgress(nextP);
         return nextP;
       }
@@ -1662,6 +1678,7 @@ export function App() {
         activeAdventure: updatedAdv,
         discoveredItemIds: nextDiscovered,
       };
+      progressRef.current = nextP;
       savePlayerProgress(nextP);
       return nextP;
     });
@@ -1728,6 +1745,7 @@ export function App() {
         ...prev,
         activeAdventure: updatedAdv,
       };
+      progressRef.current = nextP;
       savePlayerProgress(nextP);
       return nextP;
     });
@@ -2679,11 +2697,11 @@ export function App() {
     }
 
     if (enemyLiving.length === 0) {
-      handleVictory(currentUnits);
+      handleVictoryRef.current(currentUnits);
     } else if (playerLiving.length === 0) {
       handleDefeat();
     }
-  }, [handleDefeat, checkAndTriggerChimeraSplit, checkAndTriggerCrystalDestruction]);
+  }, [handleDefeat, checkAndTriggerChimeraSplit, checkAndTriggerCrystalDestruction, isTrainingMode, trainingConfig]);
 
   // ANIMATED Tile Click Handler
   const handleTileClick = async (x: number, y: number) => {
@@ -9301,8 +9319,13 @@ export function App() {
     });
 
     const goldMultiplier =
-      1 + getGeneralGoldMultiplier(latestProg.generalUpgrades?.goldBoost || 0) + (petPassives.goldBoostPercent / 100) + lineageGoldBonusRatio;
-    const goldReward = Math.round(currentLevel.rewards.gold * goldMultiplier);
+      1 +
+      getGeneralGoldMultiplier(latestProg.generalUpgrades?.goldBoost || 0) +
+      ((petPassives.goldBoostPercent || 0) / 100) +
+      lineageGoldBonusRatio;
+    const baseStageGold = Number(currentLevel.rewards?.gold) || 0;
+    const safeGoldMultiplier = Number.isFinite(goldMultiplier) && goldMultiplier > 0 ? goldMultiplier : 1;
+    const goldReward = Math.max(0, Math.round(baseStageGold * safeGoldMultiplier));
     const levelUps: { unitName: string; oldLevel: number; newLevel: number }[] = [];
     const statChoiceQueue: { unit: Unit; newLevel: number }[] = [];
     const updatedUnitsState = { ...latestProg.unitsState };
@@ -9424,8 +9447,8 @@ export function App() {
         ? Math.max(latestProg.unlockedLevel, currentLevel.id + 1)
         : latestProg.unlockedLevel;
     const completedList = Array.from(new Set([...latestProg.completedLevels, currentLevel.id]));
-    const totalGold = latestProg.gold + goldReward;
-    const totalRunGold = (latestProg.activeAdventure?.goldEarnedInRun || 0) + goldReward;
+    const totalGold = (Number(latestProg.gold) || 0) + goldReward;
+    const totalRunGold = (Number(latestProg.activeAdventure?.goldEarnedInRun) || 0) + goldReward;
 
     // Drop de itens ao final da fase com base nos monstros presentes e no bônus de drop
     const dropBonusLvl = getGeneralDropBonus(latestProg.generalUpgrades?.dropRate || 0);
@@ -9586,55 +9609,46 @@ export function App() {
     if (newlyUnlocked.length > 0) setPendingUnlockClasses(newlyUnlocked);
     if (droppedItems.length > 0) setPendingLootItems(droppedItems);
   };
+  handleVictoryRef.current = handleVictory;
 
   const handleChooseStat = (chosenStat: StatType) => {
     if (pendingStatChoices.length === 0) return;
     const currentUpgrade = pendingStatChoices[0];
     const { unit, newLevel } = currentUpgrade;
     const className = unit.className;
-    const uState = progress.unitsState[className] || {
-      className,
-      level: newLevel,
-      xp: 0,
-      bonusAtk: 0,
-      bonusDef: 0,
-      bonusHp: 0,
-      bonusMag: 0,
-      bonusRes: 0,
-      learnedSkillIds: [],
-    };
 
-    let bonusHp = uState.bonusHp || 0;
-    let bonusAtk = uState.bonusAtk || 0;
-    let bonusMag = uState.bonusMag || 0;
-    let bonusDef = uState.bonusDef || 0;
-    let bonusRes = uState.bonusRes || 0;
-
-    if (chosenStat === 'hp') bonusHp += 15;
-    else if (chosenStat === 'atk') bonusAtk += 3;
-    else if (chosenStat === 'mag') bonusMag += 3;
-    else if (chosenStat === 'def') bonusDef += 3;
-    else if (chosenStat === 'res') bonusRes += 3;
-
-    const updatedUnitsState = {
-      ...progress.unitsState,
-      [className]: {
-        ...uState,
-        bonusHp,
-        bonusAtk,
-        bonusMag,
-        bonusDef,
-        bonusRes,
-      },
-    };
-
-    const updatedActiveAdv = progress.activeAdventure
-      ? { ...progress.activeAdventure, unitsState: updatedUnitsState }
-      : null;
-
-    const updatedProgress = { ...progress, unitsState: updatedUnitsState, activeAdventure: updatedActiveAdv };
-    setProgress(updatedProgress);
-    savePlayerProgress(updatedProgress);
+    setProgress((prev) => {
+      const prevUnitsState = prev.unitsState || {};
+      const prevUState = prevUnitsState[className] || {
+        className,
+        level: newLevel,
+        xp: 0,
+        bonusAtk: 0,
+        bonusDef: 0,
+        bonusHp: 0,
+        bonusMag: 0,
+        bonusRes: 0,
+        learnedSkillIds: [],
+      };
+      const updatedUnitsState = {
+        ...prevUnitsState,
+        [className]: {
+          ...prevUState,
+          bonusHp: (prevUState.bonusHp || 0) + (chosenStat === 'hp' ? 15 : 0),
+          bonusAtk: (prevUState.bonusAtk || 0) + (chosenStat === 'atk' ? 3 : 0),
+          bonusMag: (prevUState.bonusMag || 0) + (chosenStat === 'mag' ? 3 : 0),
+          bonusDef: (prevUState.bonusDef || 0) + (chosenStat === 'def' ? 3 : 0),
+          bonusRes: (prevUState.bonusRes || 0) + (chosenStat === 'res' ? 3 : 0),
+        },
+      };
+      const updatedActiveAdv = prev.activeAdventure
+        ? { ...prev.activeAdventure, unitsState: updatedUnitsState }
+        : null;
+      const updatedProgress = { ...prev, unitsState: updatedUnitsState, activeAdventure: updatedActiveAdv };
+      progressRef.current = updatedProgress;
+      savePlayerProgress(updatedProgress);
+      return updatedProgress;
+    });
 
     // 1 nova habilidade a cada 3 níveis!
     if (newLevel % 3 === 0) {
@@ -9699,24 +9713,29 @@ export function App() {
       }
     }
 
-    const updatedUnitsState = {
-      ...progress.unitsState,
-      [className]: {
-        ...uState,
-        learnedSkillIds: learnedList,
-        skillLevels,
-      },
-    };
-    const updatedActiveAdv = progress.activeAdventure
-      ? { ...progress.activeAdventure, unitsState: updatedUnitsState }
-      : null;
-    const updatedProgress = {
-      ...progress,
-      unitsState: updatedUnitsState,
-      activeAdventure: updatedActiveAdv,
-    };
-    setProgress(updatedProgress);
-    savePlayerProgress(updatedProgress);
+    setProgress((prev) => {
+      const prevUnitsState = prev.unitsState || {};
+      const prevUState = prevUnitsState[className] || uState;
+      const updatedUnitsState = {
+        ...prevUnitsState,
+        [className]: {
+          ...prevUState,
+          learnedSkillIds: learnedList,
+          skillLevels,
+        },
+      };
+      const updatedActiveAdv = prev.activeAdventure
+        ? { ...prev.activeAdventure, unitsState: updatedUnitsState }
+        : null;
+      const updatedProgress = {
+        ...prev,
+        unitsState: updatedUnitsState,
+        activeAdventure: updatedActiveAdv,
+      };
+      progressRef.current = updatedProgress;
+      savePlayerProgress(updatedProgress);
+      return updatedProgress;
+    });
 
     // Atualiza imediatamente o array de unidades ativas da batalha e a unidade selecionada
     setUnits((prevUnits) =>

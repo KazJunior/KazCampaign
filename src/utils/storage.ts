@@ -477,60 +477,12 @@ export function savePlayerProgress(progress: PlayerProgress): void {
     }
 
     localStorage.setItem(PROGRESS_KEY, JSON.stringify(safeProgress));
-    const applyCloudSaveResponse = (res: { ok: boolean; gold?: number; unlockedClasses?: string[] } | null) => {
-      if (!res) return;
-      try {
-        const raw = localStorage.getItem(PROGRESS_KEY);
-        const current = raw ? JSON.parse(raw) : { ...safeProgress };
-        let changed = false;
-
-        if (typeof res.gold === 'number' && res.gold !== current.gold) {
-          current.gold = res.gold;
-          changed = true;
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('kazcampaign_gold_sync', { detail: { gold: res.gold } }));
-          }
-        }
-
-        if (Array.isArray(res.unlockedClasses) && res.unlockedClasses.length > 0) {
-          const prevSet = new Set<string>((Array.isArray(current.unlockedClasses) ? current.unlockedClasses : []).map(normalizeClassId));
-          const merged = Array.from(new Set([...prevSet, ...res.unlockedClasses.map(normalizeClassId)]));
-          if (merged.length !== prevSet.size) {
-            current.unlockedClasses = merged;
-            changed = true;
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('kazcampaign_classes_sync', { detail: { unlockedClasses: merged } }));
-            }
-          }
-        }
-
-        if (changed) {
-          localStorage.setItem(PROGRESS_KEY, JSON.stringify(current));
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    saveCloudProgress(safeProgress, true)
-      .then((res) => {
-        if (res && res.ok) {
-          applyCloudSaveResponse(res);
-          return;
-        }
-        // Retry automático após 2s caso a gravação na nuvem falhe por oscilação de rede
-        if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
-        cloudSyncTimeout = setTimeout(() => {
-          try {
-            const latestRaw = localStorage.getItem(PROGRESS_KEY);
-            const latestParsed = latestRaw ? JSON.parse(latestRaw) : safeProgress;
-            saveCloudProgress(latestParsed, false).then(applyCloudSaveResponse).catch(() => { });
-          } catch {
-            saveCloudProgress(safeProgress, false).then(applyCloudSaveResponse).catch(() => { });
-          }
-        }, 2000);
-      })
-      .catch(() => { });
+    cloudSaveSeq++;
+    if (cloudSyncTimeout) {
+      clearTimeout(cloudSyncTimeout);
+      cloudSyncTimeout = null;
+    }
+    enqueueCloudSave(true);
   } catch (err) {
     console.error('Failed to save progress to localStorage:', err);
   }
@@ -538,6 +490,11 @@ export function savePlayerProgress(progress: PlayerProgress): void {
 
 export function resetPlayerProgress(): PlayerProgress {
   try {
+    if (cloudSyncTimeout) {
+      clearTimeout(cloudSyncTimeout);
+      cloudSyncTimeout = null;
+    }
+    cloudSaveSeq++;
     localStorage.removeItem(PROGRESS_KEY);
     localStorage.removeItem('rpg_tactics_progress_v1');
     localStorage.removeItem(BATTLE_STATE_KEY);
@@ -548,6 +505,122 @@ export function resetPlayerProgress(): PlayerProgress {
 }
 
 let cloudSyncTimeout: any = null;
+let cloudSaveSeq = 0;
+let cloudSaveInFlight = false;
+let cloudSavePendingFlush = false;
+let cloudSavePendingKeepalive = false;
+
+export function hasPendingCloudSave(): boolean {
+  return cloudSaveInFlight || cloudSavePendingFlush || Boolean(cloudSyncTimeout);
+}
+
+function applyLatestCloudResponse(
+  res: { ok: boolean; gold?: number; unlockedClasses?: string[] } | null,
+  requestSeq: number
+): void {
+  if (!res || !res.ok) return;
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY);
+    if (!raw) return;
+    const current = JSON.parse(raw);
+    let changed = false;
+
+    // Só aplica ouro retornado pela nuvem se nenhuma gravação local mais nova ocorreu durante a requisição
+    // e apenas quando o servidor tiver ouro MAIOR (ex: pending_gold de cupom/admin ou sync de outra aba),
+    // impedindo que respostas antigas revertam ouro recém-ganho em fases.
+    if (
+      requestSeq === cloudSaveSeq &&
+      typeof res.gold === 'number' &&
+      Number.isFinite(res.gold) &&
+      res.gold > (Number(current.gold) || 0)
+    ) {
+      current.gold = res.gold;
+      changed = true;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('kazcampaign_gold_sync', { detail: { gold: res.gold } }));
+      }
+    }
+
+    if (Array.isArray(res.unlockedClasses) && res.unlockedClasses.length > 0) {
+      const prevSet = new Set<string>(
+        (Array.isArray(current.unlockedClasses) ? current.unlockedClasses : []).map(normalizeClassId)
+      );
+      const merged = Array.from(new Set([...prevSet, ...res.unlockedClasses.map(normalizeClassId)]));
+      if (merged.length !== prevSet.size) {
+        current.unlockedClasses = merged;
+        changed = true;
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('kazcampaign_classes_sync', { detail: { unlockedClasses: merged } }));
+        }
+      }
+    }
+
+    if (changed) {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify(current));
+    }
+  } catch {
+    // ignore
+  }
+}
+
+function enqueueCloudSave(keepalive = false): void {
+  if (cloudSaveInFlight) {
+    cloudSavePendingFlush = true;
+    cloudSavePendingKeepalive = cloudSavePendingKeepalive || keepalive;
+    return;
+  }
+
+  let payload: any = null;
+  try {
+    const latestRaw = localStorage.getItem(PROGRESS_KEY);
+    if (latestRaw) payload = JSON.parse(latestRaw);
+  } catch {
+    payload = null;
+  }
+  if (!payload) return;
+
+  cloudSaveInFlight = true;
+  const requestSeq = cloudSaveSeq;
+
+  saveCloudProgress(payload, keepalive)
+    .then((res) => {
+      cloudSaveInFlight = false;
+      if (res && res.ok) {
+        applyLatestCloudResponse(res, requestSeq);
+        if (cloudSavePendingFlush) {
+          const nextKeepalive = cloudSavePendingKeepalive;
+          cloudSavePendingFlush = false;
+          cloudSavePendingKeepalive = false;
+          enqueueCloudSave(nextKeepalive);
+        }
+        return;
+      }
+
+      if (cloudSavePendingFlush) {
+        const nextKeepalive = cloudSavePendingKeepalive;
+        cloudSavePendingFlush = false;
+        cloudSavePendingKeepalive = false;
+        enqueueCloudSave(nextKeepalive);
+        return;
+      }
+
+      // Retry automático após 2s caso a gravação na nuvem falhe por oscilação de rede
+      if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
+      cloudSyncTimeout = setTimeout(() => {
+        cloudSyncTimeout = null;
+        enqueueCloudSave(false);
+      }, 2000);
+    })
+    .catch(() => {
+      cloudSaveInFlight = false;
+      if (cloudSavePendingFlush) {
+        const nextKeepalive = cloudSavePendingKeepalive;
+        cloudSavePendingFlush = false;
+        cloudSavePendingKeepalive = false;
+        enqueueCloudSave(nextKeepalive);
+      }
+    });
+}
 
 export function saveLiveBattleState(battleState: ActiveBattleState | null, syncCloud = false, keepalive = false): void {
   try {
@@ -573,38 +646,20 @@ export function saveLiveBattleState(battleState: ActiveBattleState | null, syncC
         parsed.updatedAt = nowIso;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify(parsed));
 
-        const syncReturnedGold = (res: any) => {
-          if (res && typeof res.gold === 'number') {
-            try {
-              const rawNow = localStorage.getItem(PROGRESS_KEY);
-              if (rawNow) {
-                const currentNow = JSON.parse(rawNow);
-                if (currentNow.gold !== res.gold) {
-                  currentNow.gold = res.gold;
-                  localStorage.setItem(PROGRESS_KEY, JSON.stringify(currentNow));
-                  if (typeof window !== 'undefined') {
-                    window.dispatchEvent(new CustomEvent('kazcampaign_gold_sync', { detail: { gold: res.gold } }));
-                  }
-                }
-              }
-            } catch { }
-          }
-        };
-
         if (syncCloud || keepalive) {
-          if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
-          saveCloudProgress(parsed, keepalive).then(syncReturnedGold).catch(() => { });
+          if (cloudSyncTimeout) {
+            clearTimeout(cloudSyncTimeout);
+            cloudSyncTimeout = null;
+          }
+          cloudSaveSeq++;
+          enqueueCloudSave(keepalive);
         } else {
           // Sincronização periódica suave na nuvem (debounced 800ms) lendo o estado mais recente
           if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout);
           cloudSyncTimeout = setTimeout(() => {
-            try {
-              const latestRaw = localStorage.getItem(PROGRESS_KEY);
-              const latestParsed = latestRaw ? JSON.parse(latestRaw) : parsed;
-              saveCloudProgress(latestParsed).then(syncReturnedGold).catch(() => { });
-            } catch {
-              saveCloudProgress(parsed).then(syncReturnedGold).catch(() => { });
-            }
+            cloudSyncTimeout = null;
+            cloudSaveSeq++;
+            enqueueCloudSave(false);
           }, 800);
         }
       }
